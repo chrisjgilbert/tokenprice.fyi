@@ -20,7 +20,9 @@ class TrendsController < ApplicationController
       }
     end.to_json
 
-    @events_json = MarketEvent.chronological.map do |me|
+    market_events_records = MarketEvent.chronological.to_a
+
+    @events_json = market_events_records.map do |me|
       {
         date:  me.event_date.iso8601,
         title: me.title,
@@ -40,7 +42,7 @@ class TrendsController < ApplicationController
       }
     end
 
-    market_events = MarketEvent.chronological.map do |me|
+    market_events = market_events_records.map do |me|
       {
         date:  me.event_date.iso8601,
         title: me.title,

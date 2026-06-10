@@ -550,7 +550,7 @@
             <% @models.each do |model| %>
               <%# Highlight the sorted column %>
               <% sort_col = @sort %>
-              <tr class="clickable" onclick="location.href='<%= model_path(model) %>'">
+              <tr class="clickable" onclick="location.href='<%= j(model_path(model)) %>'">
                 <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">
                     <%= link_to model_path(model) do %>

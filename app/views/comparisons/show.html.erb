@@ -287,25 +287,24 @@
         <span class="sel-btn-caret"><%= raw ApplicationHelper::ICONS[:chevron_down] %></span>
       </button>
 
-      <div class="cmp-pop" data-compare-target="popA" role="listbox" aria-label="Select model A">
+      <div class="cmp-pop" data-compare-target="popA" aria-label="Select model A">
         <div class="cmp-pop-search">
           <%= raw ApplicationHelper::ICONS[:search] %>
           <input type="search"
                  placeholder="Search models…"
                  autocomplete="off"
+                 aria-label="Search models"
                  data-compare-target="searchA"
                  data-action="input->compare#searchA">
         </div>
-        <ul class="cmp-pop-list" data-compare-target="listA">
+        <ul class="cmp-pop-list" data-compare-target="listA" role="listbox">
           <% @all_models.each do |m| %>
-            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>">
+            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>" role="option" aria-selected="<%= @left&.slug == m.slug ? 'true' : 'false' %>">
               <button class="cmp-pop-item <%= 'current' if @left&.slug == m.slug %>"
                       data-action="click->compare#pick"
                       data-side="A"
                       data-slug="<%= m.slug %>"
-                      aria-disabled="<%= @right&.slug == m.slug ? 'true' : 'false' %>"
-                      role="option"
-                      aria-selected="<%= @left&.slug == m.slug ? 'true' : 'false' %>">
+                      aria-disabled="<%= @right&.slug == m.slug ? 'true' : 'false' %>">
                 <%= provider_square(m.provider, size: :sm) %>
                 <span class="cmp-pop-item-info">
                   <span class="cmp-pop-item-name"><%= m.name %></span>
@@ -342,25 +341,24 @@
         <span class="sel-btn-caret"><%= raw ApplicationHelper::ICONS[:chevron_down] %></span>
       </button>
 
-      <div class="cmp-pop" data-compare-target="popB" role="listbox" aria-label="Select model B">
+      <div class="cmp-pop" data-compare-target="popB" aria-label="Select model B">
         <div class="cmp-pop-search">
           <%= raw ApplicationHelper::ICONS[:search] %>
           <input type="search"
                  placeholder="Search models…"
                  autocomplete="off"
+                 aria-label="Search models"
                  data-compare-target="searchB"
                  data-action="input->compare#searchB">
         </div>
-        <ul class="cmp-pop-list" data-compare-target="listB">
+        <ul class="cmp-pop-list" data-compare-target="listB" role="listbox">
           <% @all_models.each do |m| %>
-            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>">
+            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>" role="option" aria-selected="<%= @right&.slug == m.slug ? 'true' : 'false' %>">
               <button class="cmp-pop-item <%= 'current' if @right&.slug == m.slug %>"
                       data-action="click->compare#pick"
                       data-side="B"
                       data-slug="<%= m.slug %>"
-                      aria-disabled="<%= @left&.slug == m.slug ? 'true' : 'false' %>"
-                      role="option"
-                      aria-selected="<%= @right&.slug == m.slug ? 'true' : 'false' %>">
+                      aria-disabled="<%= @left&.slug == m.slug ? 'true' : 'false' %>">
                 <%= provider_square(m.provider, size: :sm) %>
                 <span class="cmp-pop-item-info">
                   <span class="cmp-pop-item-name"><%= m.name %></span>

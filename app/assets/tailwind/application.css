@@ -157,7 +157,18 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
 @keyframes tp-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .4; } }
 
 @media (max-width: 760px) {
-  .tp-nav-links { display: none; }
+  .tp-nav-links {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    gap: 2px;
+    margin-left: 0;
+  }
+  .tp-nav-link {
+    font-size: 12.5px;
+    padding: 5px 9px;
+    white-space: nowrap;
+  }
 }
 
 /* ============================================================ BADGES */
@@ -387,6 +398,7 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 /* Checkbox chips */
 .tp-check-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .tp-check {
+  position: relative;
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 13px 8px 11px; border-radius: var(--radius-pill);
   border: 1px solid var(--color-slate-300); background: #fff;

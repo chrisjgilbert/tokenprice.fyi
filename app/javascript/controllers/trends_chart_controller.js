@@ -68,6 +68,10 @@ function logTicks(minV, maxV) {
 // ── Linear tick generation ────────────────────────────────────────────────────
 function linearTicks(minV, maxV, count = 6) {
   const range = maxV - minV
+  if (range < 1e-12) {
+    if (minV === 0) return [0, 0.5, 1]
+    return [minV * 0.5, minV, minV * 1.5]
+  }
   const rawStep = range / (count - 1)
   const mag = Math.pow(10, Math.floor(Math.log10(rawStep)))
   const step = Math.ceil(rawStep / mag) * mag
@@ -310,6 +314,8 @@ export default class extends Controller {
   _buildEventsPopover() {
     if (!this.hasEventsPopoverListTarget) return
 
+    this.eventsPopoverListTarget.textContent = ""
+
     const marketEvents = this.eventsValue
       .filter(e => e.kind === "market")
       .slice()
@@ -345,7 +351,6 @@ export default class extends Controller {
       frag.appendChild(row)
     })
 
-    this.eventsPopoverListTarget.innerHTML = ""
     this.eventsPopoverListTarget.appendChild(frag)
   }
 
@@ -356,17 +361,19 @@ export default class extends Controller {
     // Find and flash the event line in the SVG
     if (!this.hasSvgTarget) return
     const lines = this.svgTarget.querySelectorAll(`[data-event-date="${dateStr}"]`)
+    clearTimeout(this._flashTimeout)
     lines.forEach(el => {
       el.style.transition = "none"
       el.style.opacity = "1"
       el.style.strokeWidth = "3"
-      clearTimeout(this._flashTimeout)
-      this._flashTimeout = setTimeout(() => {
+    })
+    this._flashTimeout = setTimeout(() => {
+      lines.forEach(el => {
         el.style.transition = "stroke-width 0.4s, opacity 0.4s"
         el.style.strokeWidth = ""
         el.style.opacity = ""
-      }, 600)
-    })
+      })
+    }, 600)
   }
 
   // ── Chart rendering ──────────────────────────────────────────────────────────
@@ -786,16 +793,33 @@ export default class extends Controller {
       return { name: m.name, color, val }
     })
 
-    let html = `<div class="trends-tooltip-date">${fmtDateFull(date)}</div>`
-    rows.forEach(r => {
-      html += `<div class="trends-tooltip-row">
-        <span class="trends-tooltip-dot" style="background:${r.color}"></span>
-        <span class="trends-tooltip-name">${r.name}</span>
-        <span class="trends-tooltip-price">${fmtPrice(r.val)}/M</span>
-      </div>`
-    })
+    tip.textContent = ""
+    const dateDiv = document.createElement("div")
+    dateDiv.className = "trends-tooltip-date"
+    dateDiv.textContent = fmtDateFull(date)
+    tip.appendChild(dateDiv)
 
-    tip.innerHTML = html
+    rows.forEach(r => {
+      const row = document.createElement("div")
+      row.className = "trends-tooltip-row"
+
+      const dot = document.createElement("span")
+      dot.className = "trends-tooltip-dot"
+      dot.style.background = r.color
+
+      const name = document.createElement("span")
+      name.className = "trends-tooltip-name"
+      name.textContent = r.name
+
+      const price = document.createElement("span")
+      price.className = "trends-tooltip-price"
+      price.textContent = fmtPrice(r.val) + "/M"
+
+      row.appendChild(dot)
+      row.appendChild(name)
+      row.appendChild(price)
+      tip.appendChild(row)
+    })
     this._positionTooltip(mouseEvent)
     tip.classList.add("visible")
   }
@@ -804,12 +828,25 @@ export default class extends Controller {
     if (!this.hasTooltipTarget) return
     const tip = this.tooltipTarget
     const kindLabel = ev.kind === "market" ? "Market event" : "Model launch"
-    let html = `<div class="trends-tooltip-date" style="color:${ev.kind === "market" ? "#fb7185" : "rgba(255,255,255,.5)"}">${kindLabel} · ${fmtDateFull(parseDate(ev.date))}</div>`
-    html += `<div style="font-weight:600;color:#fff;font-size:12.5px;margin-bottom:${ev.note ? "4px" : "0"}">${ev.title}</div>`
+    tip.textContent = ""
+
+    const dateDiv = document.createElement("div")
+    dateDiv.className = "trends-tooltip-date"
+    dateDiv.style.color = ev.kind === "market" ? "#fb7185" : "rgba(255,255,255,.5)"
+    dateDiv.textContent = kindLabel + " · " + fmtDateFull(parseDate(ev.date))
+    tip.appendChild(dateDiv)
+
+    const titleDiv = document.createElement("div")
+    Object.assign(titleDiv.style, { fontWeight: "600", color: "#fff", fontSize: "12.5px", marginBottom: ev.note ? "4px" : "0" })
+    titleDiv.textContent = ev.title
+    tip.appendChild(titleDiv)
+
     if (ev.note) {
-      html += `<div style="font-size:11.5px;color:rgba(255,255,255,.65);line-height:1.45">${ev.note}</div>`
+      const noteDiv = document.createElement("div")
+      Object.assign(noteDiv.style, { fontSize: "11.5px", color: "rgba(255,255,255,.65)", lineHeight: "1.45" })
+      noteDiv.textContent = ev.note
+      tip.appendChild(noteDiv)
     }
-    tip.innerHTML = html
     this._positionTooltip(mouseEvent)
     tip.classList.add("visible")
   }
@@ -839,30 +876,45 @@ export default class extends Controller {
   _renderLegend(series) {
     if (!this.hasLegendTarget) return
 
-    let html = series.map(({ model: m, color }) =>
-      `<span class="trends-legend-item">
-        <span class="trends-legend-line" style="background:${color}"></span>
-        ${m.name}
-      </span>`
-    ).join("")
+    const frag = document.createDocumentFragment()
+
+    series.forEach(({ model: m, color }) => {
+      const item = document.createElement("span")
+      item.className = "trends-legend-item"
+      const line = document.createElement("span")
+      line.className = "trends-legend-line"
+      line.style.background = color
+      item.appendChild(line)
+      item.appendChild(document.createTextNode(m.name))
+      frag.appendChild(item)
+    })
 
     if (this.showEvents) {
       const marketEvents = this.eventsValue.filter(e => e.kind === "market")
       const launchEvents = this.eventsValue.filter(e => e.kind === "launch")
       if (marketEvents.length) {
-        html += `<span class="trends-legend-item">
-          <span class="trends-legend-dash" style="border-color:#e11d48"></span>
-          Market event
-        </span>`
+        const item = document.createElement("span")
+        item.className = "trends-legend-item"
+        const dash = document.createElement("span")
+        dash.className = "trends-legend-dash"
+        dash.style.borderColor = "#e11d48"
+        item.appendChild(dash)
+        item.appendChild(document.createTextNode("Market event"))
+        frag.appendChild(item)
       }
       if (launchEvents.length) {
-        html += `<span class="trends-legend-item">
-          <span class="trends-legend-dash" style="border-color:#94a3b8"></span>
-          Model launch
-        </span>`
+        const item = document.createElement("span")
+        item.className = "trends-legend-item"
+        const dash = document.createElement("span")
+        dash.className = "trends-legend-dash"
+        dash.style.borderColor = "#94a3b8"
+        item.appendChild(dash)
+        item.appendChild(document.createTextNode("Model launch"))
+        frag.appendChild(item)
       }
     }
 
-    this.legendTarget.innerHTML = html
+    this.legendTarget.textContent = ""
+    this.legendTarget.appendChild(frag)
   }
 }
