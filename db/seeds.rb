@@ -19,7 +19,11 @@ providers = {
   openai:    { name: "OpenAI",    website: "https://openai.com",        accent: "#10A37F" },
   google:    { name: "Google",    website: "https://ai.google.dev",     accent: "#4285F4" },
   xai:       { name: "xAI",        website: "https://x.ai",              accent: "#1F2937" },
-  deepseek:  { name: "DeepSeek",  website: "https://www.deepseek.com",  accent: "#4D6BFE" }
+  deepseek:  { name: "DeepSeek",  website: "https://www.deepseek.com",  accent: "#4D6BFE" },
+  meta:      { name: "Meta",      website: "https://www.llama.com",     accent: "#0866FF" },
+  mistral:   { name: "Mistral",   website: "https://mistral.ai",        accent: "#FA520F" },
+  alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED" },
+  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -80,15 +84,15 @@ catalog = [
   # ---- OpenAI -----------------------------------------------------------
   {
     provider: :openai, name: "GPT-5.5", tier: "frontier", status: "active",
-    context_window: 922_000, max_output_tokens: 128_000, released_on: nil,
-    description: "OpenAI's frontier model for complex professional workloads. ~1M token context, text + image input.",
-    prices: [ { on: "2026-02-01", in: 5, out: 30, cached: 0.50, src: "openai.com/api/pricing", note: "Date approximate" } ]
+    context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-04-23",
+    description: "OpenAI's frontier model for complex professional workloads. 1M token context, text + image input, native computer use.",
+    prices: [ { on: "2026-04-23", in: 5, out: 30, cached: 0.50, src: "openai.com/api/pricing" } ]
   },
   {
     provider: :openai, name: "GPT-5.5 Pro", tier: "frontier", status: "active",
-    context_window: 922_000, max_output_tokens: 128_000, released_on: nil,
-    description: "Highest-stakes reasoning variant of GPT-5.5.",
-    prices: [ { on: "2026-02-01", in: 30, out: 180, src: "openai.com/api/pricing", note: "Date approximate" } ]
+    context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-04-24",
+    description: "Highest-accuracy reasoning variant of GPT-5.5.",
+    prices: [ { on: "2026-04-24", in: 30, out: 180, src: "openai.com/api/pricing" } ]
   },
 
   # ---- Google -----------------------------------------------------------
@@ -114,9 +118,9 @@ catalog = [
   # ---- xAI --------------------------------------------------------------
   {
     provider: :xai, name: "Grok 4.3", tier: "frontier", status: "active",
-    context_window: 256_000, max_output_tokens: 64_000, released_on: nil,
-    description: "xAI's current flagship — aggressively priced for a frontier model.",
-    prices: [ { on: "2026-04-01", in: 1.25, out: 2.50, src: "docs.x.ai", note: "Date approximate" } ]
+    context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-04-30",
+    description: "xAI's current flagship — aggressively priced for a frontier model, with a 1M token context window.",
+    prices: [ { on: "2026-04-30", in: 1.25, out: 2.50, src: "docs.x.ai" } ]
   },
   {
     provider: :xai, name: "Grok 4", tier: "frontier", status: "legacy",
@@ -126,9 +130,9 @@ catalog = [
   },
   {
     provider: :xai, name: "Grok 4.1 Fast", tier: "small", status: "active",
-    context_window: 256_000, max_output_tokens: 64_000, released_on: nil,
-    description: "Low-cost, fast Grok variant for high-throughput use.",
-    prices: [ { on: "2026-03-01", in: 0.20, out: 0.50, src: "docs.x.ai", note: "Date approximate" } ]
+    context_window: 2_000_000, max_output_tokens: 64_000, released_on: nil,
+    description: "Low-cost, fast Grok variant for high-throughput use, with a 2M token context window.",
+    prices: [ { on: "2026-03-01", in: 0.20, out: 0.50, cached: 0.05, src: "docs.x.ai", note: "Date approximate" } ]
   },
 
   # ---- DeepSeek ---------------------------------------------------------
@@ -140,6 +144,32 @@ catalog = [
       { on: "2026-02-01", in: 1.74, out: 3.48, cached: 0.0145, src: "api-docs.deepseek.com", note: "Launch / pre-cut pricing" },
       { on: "2026-05-31", in: 0.435, out: 0.87, cached: 0.003625, src: "deepseek.ai/blog", note: "75% permanent price cut" }
     ]
+  },
+
+  # ---- Open-weight models (hosted prices vary by provider) --------------
+  {
+    provider: :meta, name: "Llama 4 Maverick", tier: "frontier", status: "active",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: nil,
+    description: "Meta's open-weight MoE flagship. Inexpensive but hosted pricing varies widely by provider; figures are a representative hosted rate.",
+    prices: [ { on: "2026-01-01", in: 0.15, out: 0.60, src: "pricepertoken.com", note: "Representative hosted rate; varies by provider" } ]
+  },
+  {
+    provider: :mistral, name: "Mistral Large 3", tier: "frontier", status: "active",
+    context_window: 256_000, max_output_tokens: nil, released_on: nil,
+    description: "Mistral's Apache-2.0 open-weight frontier model.",
+    prices: [ { on: "2026-01-01", in: 2, out: 6, src: "mistral.ai/pricing", note: "Date approximate" } ]
+  },
+  {
+    provider: :alibaba, name: "Qwen3 Max", tier: "frontier", status: "active",
+    context_window: 256_000, max_output_tokens: nil, released_on: "2025-09-01",
+    description: "Alibaba's flagship Qwen model — strong frontier performance at low cost.",
+    prices: [ { on: "2025-09-01", in: 0.78, out: 3.90, src: "pricepertoken.com", note: "Date approximate" } ]
+  },
+  {
+    provider: :moonshot, name: "Kimi K2.6", tier: "frontier", status: "active",
+    context_window: 256_000, max_output_tokens: nil, released_on: "2026-04-01",
+    description: "Moonshot AI's open-weight frontier model. Direct-API rate shown; hosted providers differ.",
+    prices: [ { on: "2026-04-01", in: 0.55, out: 2.65, src: "platform.moonshot.ai", note: "Direct API rate; date approximate" } ]
   }
 ]
 
@@ -158,6 +188,11 @@ catalog.each do |row|
     released_on:       row[:released_on],
     description:       row[:description]
   )
+
+  wanted_dates = row[:prices].map { |p| Date.parse(p[:on]) }
+  # Keep the seed declarative: drop snapshots that are no longer listed
+  # (e.g. when a launch date is corrected) so re-seeding can't leave phantoms.
+  model.price_points.where.not(effective_on: wanted_dates).destroy_all
 
   row[:prices].each do |p|
     point = model.price_points.find_or_initialize_by(effective_on: Date.parse(p[:on]))
