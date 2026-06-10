@@ -82,6 +82,18 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name=dir]", count: 0
   end
 
+  test "frame navigation is scoped so row links break out of the frame" do
+    get root_url
+    # Model/provider links inside the frame must be full page visits — the
+    # show pages have no `models` frame, so in-frame navigation would render
+    # Turbo's "Content missing".
+    assert_select "turbo-frame#models[target=_top]", count: 1
+    # Only the sort header links and the filter form stay inside the frame.
+    assert_select "thead a[data-turbo-frame=models]", count: 6
+    assert_select "form#filters[data-turbo-frame=models]", count: 1
+    assert_select "tbody a[data-turbo-frame]", count: 0
+  end
+
   test "index can be searched" do
     get root_url(q: "deepseek")
     assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/

@@ -83,7 +83,9 @@
 
 <% filter_params = { tier: @tier, q: @query.presence, providers: @provider_slugs.presence }.compact %>
 <% sort_params = { sort: (@sort unless @sort == "blended"), dir: (@dir unless @dir == "asc") }.compact %>
-<%= turbo_frame_tag "models" do %>
+<%# target="_top": links in here (model/provider rows, clear-filters) are real
+    page navigations — only the sort links opt back into the frame. %>
+<%= turbo_frame_tag "models", target: "_top" do %>
 <%# Default sort travels implicitly, keeping filter-submit URLs clean. %>
 <%= hidden_field_tag :sort, @sort, form: "filters", id: nil if sort_params.key?(:sort) %>
 <%= hidden_field_tag :dir, @dir, form: "filters", id: nil if sort_params.key?(:dir) %>
@@ -91,7 +93,7 @@
 <div class="mb-2 flex items-baseline justify-between text-sm text-slate-500">
   <p data-models-count><%= pluralize(@models.size, "model") %></p>
   <% if filter_params.any? %>
-    <%= link_to "Clear filters", root_path(sort_params), data: { turbo_frame: "_top" }, class: "font-medium text-indigo-600 hover:underline" %>
+    <%= link_to "Clear filters", root_path(sort_params), class: "font-medium text-indigo-600 hover:underline" %>
   <% end %>
 </div>
 
@@ -134,7 +136,7 @@
         <tr>
           <td colspan="8" class="px-4 py-12 text-center text-slate-500">
             No models match your filters.
-            <%= link_to "Clear filters", root_path(sort_params), data: { turbo_frame: "_top" }, class: "font-medium text-indigo-600 hover:underline" %>
+            <%= link_to "Clear filters", root_path(sort_params), class: "font-medium text-indigo-600 hover:underline" %>
           </td>
         </tr>
       <% end %>
