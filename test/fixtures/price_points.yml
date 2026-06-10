@@ -1,0 +1,25 @@
+opus_launch:
+  ai_model: opus
+  effective_on: 2026-05-28
+  input_per_mtok: 5
+  output_per_mtok: 25
+  cached_input_per_mtok: 0.5
+  source: anthropic.com/pricing
+
+deepseek_launch:
+  ai_model: deepseek_v4
+  effective_on: 2026-02-01
+  input_per_mtok: 1.74
+  output_per_mtok: 3.48
+  cached_input_per_mtok: 0.0145
+  source: api-docs.deepseek.com
+  note: Launch pricing
+
+deepseek_cut:
+  ai_model: deepseek_v4
+  effective_on: 2026-05-31
+  input_per_mtok: 0.435
+  output_per_mtok: 0.87
+  cached_input_per_mtok: 0.003625
+  source: deepseek.ai/blog
+  note: 75% permanent price cut

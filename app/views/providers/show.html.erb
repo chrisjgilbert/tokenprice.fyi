@@ -1,0 +1,45 @@
+<% content_for :title, "#{@provider.name} model pricing — tokenprice.fyi" %>
+
+<nav class="mb-6 text-sm text-slate-500">
+  <%= link_to "← All models", root_path, class: "hover:text-indigo-600" %>
+</nav>
+
+<header class="mb-8 flex items-center gap-3">
+  <span class="h-8 w-8 rounded-lg" style="background: <%= @provider.accent || '#6366f1' %>"></span>
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight"><%= @provider.name %></h1>
+    <% if @provider.website %>
+      <%= link_to @provider.website.sub(%r{\Ahttps?://}, ""), @provider.website, class: "text-sm text-slate-500 hover:underline" %>
+    <% end %>
+  </div>
+</header>
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3 font-medium">Model</th>
+        <th class="px-4 py-3 font-medium">Tier</th>
+        <th class="px-4 py-3 font-medium text-right">Input</th>
+        <th class="px-4 py-3 font-medium text-right">Output</th>
+        <th class="px-4 py-3 font-medium text-right">Context</th>
+        <th class="px-4 py-3 font-medium text-right">Released</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @models.each do |model| %>
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3">
+            <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
+            <%= status_badge(model.status) %>
+          </td>
+          <td class="px-4 py-3"><%= tier_badge(model.tier) %></td>
+          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
+          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
+          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
+          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,74 @@
+<% content_for :title, "LLM API price tracker — tokenprice.fyi" %>
+
+<section class="mb-8">
+  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">What does a million tokens cost?</h1>
+  <p class="mt-3 max-w-2xl text-slate-600">
+    Live-ish pricing for every frontier LLM, side by side. Sort by input, output, or a blended rate,
+    and see how prices have moved over time.
+  </p>
+</section>
+
+<% if @cheapest_frontier %>
+  <%= link_to model_path(@cheapest_frontier), class: "group mb-8 flex items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 hover:border-indigo-200" do %>
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Cheapest frontier model</p>
+      <p class="mt-1 text-xl font-semibold"><%= @cheapest_frontier.name %></p>
+      <p class="text-sm text-slate-500"><%= @cheapest_frontier.provider.name %> · <%= usd(@cheapest_frontier.blended_per_mtok) %> blended / 1M tokens</p>
+    </div>
+    <div class="text-right">
+      <p class="text-sm text-slate-500">in <%= usd(@cheapest_frontier.current_input) %> · out <%= usd(@cheapest_frontier.current_output) %></p>
+      <span class="text-sm font-medium text-indigo-600 group-hover:underline">View history →</span>
+    </div>
+  <% end %>
+<% end %>
+
+<div class="mb-4 flex flex-wrap items-center gap-2 text-sm">
+  <span class="text-slate-500">Filter:</span>
+  <% [["All", nil], ["Frontier", "frontier"], ["Mid", "mid"], ["Small / fast", "small"]].each do |label, value| %>
+    <%= link_to label, root_path(tier: value, sort: @sort, dir: @dir),
+          class: "rounded-full px-3 py-1 ring-1 ring-inset #{@tier == value ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-100'}" %>
+  <% end %>
+</div>
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3 font-medium"><%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th class="px-4 py-3 font-medium">Tier</th>
+        <th class="px-4 py-3 font-medium text-right"><%= sort_link "Input", "input", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th class="px-4 py-3 font-medium text-right"><%= sort_link "Output", "output", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th class="px-4 py-3 font-medium text-right">Cached in</th>
+        <th class="px-4 py-3 font-medium text-right"><%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th class="px-4 py-3 font-medium text-right" title="Blended $/1M tokens at a 3:1 input:output mix">
+          <%= sort_link "Blended", "blended", current_sort: @sort, current_dir: @dir, tier: @tier %>
+        </th>
+        <th class="px-4 py-3 font-medium text-right"><%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @models.each do |model| %>
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3">
+            <%= link_to model.name, model_path(model), class: "font-medium text-slate-900 hover:text-indigo-600" %>
+            <div class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+              <%= link_to model.provider.name, provider_path(model.provider), class: "hover:underline" %>
+              <%= status_badge(model.status) %>
+            </div>
+          </td>
+          <td class="px-4 py-3"><%= tier_badge(model.tier) %></td>
+          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
+          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
+          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(model.current_cached_input) %></td>
+          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
+          <td class="px-4 py-3 text-right font-semibold tabular-nums"><%= usd(model.blended_per_mtok) %></td>
+          <td class="px-4 py-3 text-right text-slate-500 tabular-nums"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<p class="mt-4 text-xs text-slate-500">
+  Blended price assumes a 3:1 input-to-output token mix — a rough stand-in for a typical chat/agent workload, so models with different input vs output pricing can be ranked on one number.
+</p>
