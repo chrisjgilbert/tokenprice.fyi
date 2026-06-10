@@ -48,11 +48,13 @@ module ApplicationHelper
   # filters (tier, providers, search query). Targets the models frame
   # explicitly — the frame itself defaults to _top so row links break out —
   # and advances the URL so sorted views stay shareable.
-  def sort_link(label, key, current_sort:, current_dir:, filters: {})
+  def sort_link(label, key, current_sort:, current_dir:, filters: {}, &url_builder)
     active = current_sort == key
     next_dir = active && current_dir == "asc" ? "desc" : "asc"
     arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
-    link_to root_path(filters.merge(sort: key, dir: next_dir)),
+    sort_params = filters.merge(sort: key, dir: next_dir)
+    target_url = block_given? ? yield(sort_params) : root_path(sort_params)
+    link_to target_url,
             class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
             data: { turbo_frame: "models", turbo_action: "advance" },
             "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
