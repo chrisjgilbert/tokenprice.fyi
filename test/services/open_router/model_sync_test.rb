@@ -1,0 +1,159 @@
+require "test_helper"
+
+module OpenRouter
+  class ModelSyncTest < ActiveSupport::TestCase
+    # A stub standing in for OpenRouter::Client — returns a fixed catalogue.
+    FakeClient = Struct.new(:rows) { def models = rows }
+
+    # Build an OpenRouter-shaped model hash. Prices are USD *per token* strings,
+    # exactly as the real API returns them.
+    def or_model(id:, name:, prompt:, completion:, cache_read: "0",
+                 context: 200_000, max_out: 8_192, created: 1_700_000_000,
+                 output_modalities: [ "text" ], description: "An OpenRouter model.")
+      {
+        "id" => id, "name" => name, "created" => created,
+        "description" => description, "context_length" => context,
+        "architecture" => { "output_modalities" => output_modalities },
+        "pricing" => { "prompt" => prompt, "completion" => completion,
+                       "input_cache_read" => cache_read },
+        "top_provider" => { "context_length" => context, "max_completion_tokens" => max_out }
+      }
+    end
+
+    def sync(rows, today: Date.current)
+      ModelSync.new(client: FakeClient.new(rows), today: today,
+                    logger: ActiveSupport::Logger.new(nil)).call
+    end
+
+    test "creates new models, skips curated duplicates and free/non-text rows" do
+      rows = [
+        # Duplicates curated `opus` (Claude Opus 4.8) -> skipped, left untouched.
+        or_model(id: "anthropic/claude-opus-4.8", name: "Anthropic: Claude Opus 4.8",
+                 prompt: "0.000005", completion: "0.000025"),
+        # New model under the existing Anthropic provider.
+        or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                 prompt: "0.000001", completion: "0.000005"),
+        # New provider + model.
+        or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                 prompt: "0.0000001", completion: "0.0000004"),
+        # Free model -> skipped.
+        or_model(id: "freeco/free-1", name: "FreeCo: Free 1",
+                 prompt: "0", completion: "0"),
+        # Embeddings (non-text output) -> skipped.
+        or_model(id: "embedco/embed-1", name: "EmbedCo: Embed 1",
+                 prompt: "0.00000002", completion: "0", output_modalities: [ "embedding" ])
+      ]
+
+      result = assert_difference("AiModel.count", 2) { sync(rows) }
+
+      assert_equal 2, result.created
+      assert_equal 3, result.skipped
+
+      # Curated Opus is untouched: no parallel record, original data intact.
+      assert_equal 1, AiModel.where("name = ?", "Claude Opus 4.8").count
+      opus = ai_models(:opus).reload
+      assert_equal AiModel::MANUAL_SOURCE, opus.source
+      assert_equal "Test model.", opus.description
+      assert_equal 1, opus.price_points.count
+
+      # Free / embedding rows created neither providers nor models.
+      assert_nil Provider.find_by(slug: "freeco")
+      assert_nil Provider.find_by(slug: "embedco")
+    end
+
+    test "a created model is mapped onto our schema" do
+      sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005", context: 200_000,
+                      max_out: 64_000, created: Time.utc(2025, 10, 15).to_i) ])
+
+      model = AiModel.find_by!(openrouter_id: "anthropic/claude-haiku-4.5")
+      assert_equal providers(:anthropic), model.provider
+      assert_equal "Claude Haiku 4.5", model.name
+      assert_equal "anthropic-claude-haiku-4-5", model.slug
+      assert_equal AiModel::OPENROUTER_SOURCE, model.source
+      assert_equal 200_000, model.context_window
+      assert_equal 64_000, model.max_output_tokens
+      assert_equal Date.new(2025, 10, 15), model.released_on
+      assert_equal "mid", model.tier
+
+      price = model.current_price
+      assert_equal 1.0, price.input_per_mtok
+      assert_equal 5.0, price.output_per_mtok
+      assert_nil price.cached_input_per_mtok # "0" cache read normalised to nil
+      assert_equal "openrouter.ai", price.source
+    end
+
+    test "creates and names an unknown provider from the catalogue" do
+      assert_difference("Provider.count", 1) do
+        sync([ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                        prompt: "0.0000001", completion: "0.0000004") ])
+      end
+
+      provider = Provider.find_by!(slug: "newlab")
+      assert_equal "NewLab", provider.name
+      assert_equal "small", provider.ai_models.first.tier # cheap -> small tier
+    end
+
+    test "is idempotent: re-running writes no new models or price points" do
+      rows = [ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                        prompt: "0.000001", completion: "0.000005") ]
+      sync(rows)
+
+      assert_no_difference [ "AiModel.count", "PricePoint.count" ] do
+        result = sync(rows, today: Date.current + 1)
+        assert_equal 0, result.created
+        assert_equal 0, result.repriced
+        assert_equal 1, result.enriched
+      end
+    end
+
+    test "appends a dated price point only when the price moves" do
+      id = "anthropic/claude-haiku-4.5"
+      sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005") ])
+      model = AiModel.find_by!(openrouter_id: id)
+      assert_equal 1, model.price_points.count
+
+      # Price moves the next day -> a new snapshot is appended.
+      result = sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.0000008", completion: "0.000005") ],
+                     today: Date.current + 1)
+      assert_equal 1, result.repriced
+      assert_equal 2, model.reload.price_points.count
+      assert_equal 0.8, model.current_price.input_per_mtok
+      assert_equal Date.current + 1, model.current_price.effective_on
+    end
+
+    test "enriches an admin-linked curated model without overwriting its data" do
+      deepseek = ai_models(:deepseek_v4)
+      deepseek.update!(openrouter_id: "deepseek/deepseek-v4-pro", description: "Curated copy.")
+      before = deepseek.price_points.count
+
+      sync([ or_model(id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro",
+                      prompt: "0.0000009", completion: "0.0000018") ],
+           today: Date.current)
+
+      deepseek.reload
+      # Stays curated, keeps its hand-written description and tier.
+      assert_equal AiModel::MANUAL_SOURCE, deepseek.source
+      assert_equal "Curated copy.", deepseek.description
+      assert_equal "frontier", deepseek.tier
+      # But its price history is enriched from OpenRouter.
+      assert_equal before + 1, deepseek.price_points.count
+      assert_equal "openrouter.ai", deepseek.current_price.source
+    end
+
+    test "one malformed row does not abort the whole sync" do
+      rows = [
+        { "id" => "broken/row" }, # no pricing -> skipped, not fatal
+        or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                 prompt: "0.0000001", completion: "0.0000004")
+      ]
+
+      result = nil
+      assert_difference("AiModel.count", 1) { result = sync(rows) }
+      assert_equal 1, result.created
+      assert_equal 1, result.skipped
+    end
+  end
+end

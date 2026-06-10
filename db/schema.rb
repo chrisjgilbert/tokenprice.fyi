@@ -10,21 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_083922) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_171057) do
   create_table "ai_models", force: :cascade do |t|
     t.integer "context_window"
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "max_output_tokens"
     t.string "name", null: false
+    t.string "openrouter_id"
     t.integer "provider_id", null: false
     t.date "released_on"
     t.string "slug", null: false
+    t.string "source", default: "manual", null: false
     t.string "status", default: "active", null: false
     t.string "tier", default: "frontier", null: false
     t.datetime "updated_at", null: false
+    t.index ["openrouter_id"], name: "index_ai_models_on_openrouter_id", unique: true
     t.index ["provider_id"], name: "index_ai_models_on_provider_id"
     t.index ["slug"], name: "index_ai_models_on_slug", unique: true
+    t.index ["source"], name: "index_ai_models_on_source"
     t.index ["status"], name: "index_ai_models_on_status"
     t.index ["tier"], name: "index_ai_models_on_tier"
   end
