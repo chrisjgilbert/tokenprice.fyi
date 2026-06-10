@@ -82,7 +82,7 @@
 <% end %>
 
 <% filter_params = { tier: @tier, q: @query.presence, providers: @provider_slugs.presence }.compact %>
-<% sort_params = { sort: (@sort unless @sort == "blended"), dir: (@dir unless @dir == "asc") }.compact %>
+<% sort_params = { sort: (@sort unless @sort == "name"), dir: (@dir unless @dir == "asc") }.compact %>
 <%# target="_top": links in here (model/provider rows, clear-filters) are real
     page navigations — only the sort links opt back into the frame. %>
 <%= turbo_frame_tag "models", target: "_top" do %>
