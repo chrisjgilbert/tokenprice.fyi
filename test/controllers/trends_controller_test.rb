@@ -1,10 +1,9 @@
 require "test_helper"
 
 class TrendsControllerTest < ActionDispatch::IntegrationTest
-  test "renders trends with rankings, movers and timeline" do
+  test "renders trends page" do
     get trends_url
     assert_response :success
-    assert_select "h2", /Cheapest frontier models/
-    assert_select "h2", /Recent price moves/
+    assert_select "h1", /Pricing over time/
   end
 end

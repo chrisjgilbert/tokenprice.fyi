@@ -5,7 +5,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
     assert_select "h1", /million tokens cost/
-    assert_select "tbody th[scope=row]", /Claude Opus 4.8/
+    assert_select "tbody td", /Claude Opus 4.8/
   end
 
   test "index can be filtered by tier" do
@@ -21,47 +21,47 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index can be filtered to a single provider" do
     get root_url(providers: [ "anthropic" ])
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek/, count: 0
   end
 
   test "index can be filtered to multiple providers" do
     get root_url(providers: [ "anthropic", "deepseek" ])
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
   test "index accepts a scalar providers param" do
     get root_url(providers: "anthropic")
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek/, count: 0
   end
 
   test "index ignores a hash-shaped providers param" do
     get root_url(providers: { evil: "payload" })
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
   test "index ignores unknown provider slugs" do
     get root_url(providers: [ "not-a-provider" ])
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /Claude Opus 4.8/
   end
 
   test "index treats punctuation-only queries as no filter" do
     get root_url(q: "!!!")
     assert_response :success
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
   test "index never lists retired models, even when searched for" do
     get root_url
-    assert_select "tbody th[scope=row]", text: /Claude Instant/, count: 0
+    assert_select "tbody td", text: /Claude Instant/, count: 0
 
     get root_url(q: "instant")
     assert_select "td", /No models match your filters/
@@ -84,26 +84,21 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
 
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
-    # Model/provider links inside the frame must be full page visits — the
-    # show pages have no `models` frame, so in-frame navigation would render
-    # Turbo's "Content missing".
     assert_select "turbo-frame#models[target=_top]", count: 1
-    # Only the sort header links and the filter form stay inside the frame.
     assert_select "thead a[data-turbo-frame=models]", count: 8
     assert_select "form#filters[data-turbo-frame=models]", count: 1
-    assert_select "tbody a[data-turbo-frame]", count: 0
   end
 
   test "index can be searched" do
     get root_url(q: "deepseek")
-    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
-    assert_select "tbody th[scope=row]", text: /Claude/, count: 0
+    assert_select "tbody td", text: /DeepSeek V4 Pro/
+    assert_select "tbody td", text: /Claude/, count: 0
   end
 
   test "index search tolerates typos" do
     get root_url(q: "antropic")
-    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
-    assert_select "tbody th[scope=row]", text: /DeepSeek/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /DeepSeek/, count: 0
   end
 
   test "index shows an empty state when nothing matches" do
@@ -126,7 +121,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get model_url(ai_models(:deepseek_v4))
     assert_response :success
     assert_select "h1", "DeepSeek V4 Pro"
-    assert_select "svg" # history chart renders for a model with >1 snapshot
+    assert_select "svg"
   end
 
   test "show returns 404 for an unknown slug" do

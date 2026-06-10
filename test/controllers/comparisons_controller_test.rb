@@ -4,13 +4,14 @@ class ComparisonsControllerTest < ActionDispatch::IntegrationTest
   test "renders a default comparison with no params" do
     get compare_url
     assert_response :success
-    assert_select "form"
+    assert_select "h1", /Compare two models/
   end
 
   test "compares the two requested models" do
     get compare_url(a: ai_models(:opus).slug, b: ai_models(:deepseek_v4).slug)
     assert_response :success
-    assert_select "th", /Claude Opus 4.8/
-    assert_select "th", /DeepSeek V4 Pro/
+    assert_select ".sel-btn-name", /Claude Opus 4.8/
+    assert_select ".sel-btn-name", /DeepSeek V4 Pro/
+    assert_select ".cmp-table"
   end
 end

@@ -21,7 +21,7 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || "name"
+    @sort = params[:sort].presence_in(SORTS.keys) || "blended"
     @dir  = params[:dir] == "desc" ? "desc" : "asc"
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
@@ -38,6 +38,16 @@ class ModelsController < ApplicationController
     # Headline stat: cheapest frontier model by blended price.
     @cheapest_frontier = AiModel.listed.frontier.includes(:price_points, :provider)
                                 .min_by { |m| m.blended_per_mtok || Float::INFINITY }
+
+    # Hero events timeline (loaded once; lives outside the Turbo Frame).
+    # Only loaded on full-page renders, not on Turbo Frame refreshes.
+    unless request.headers["Turbo-Frame"] == "models"
+      @all_events = helpers.build_all_events
+      @all_models_count = AiModel.listed.count
+      @providers_count = Provider.count
+      @cheapest_model = AiModel.listed.includes(:price_points, :provider)
+                               .min_by { |m| m.blended_per_mtok || Float::INFINITY }
+    end
   end
 
   def show
