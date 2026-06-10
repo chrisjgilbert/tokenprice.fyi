@@ -26,7 +26,9 @@ class ModelsController < ApplicationController
     @query = params[:q].to_s.strip[0, 100]
 
     models = scope.to_a
-    models.select! { |m| m.matches?(@query) } if @query.present?
+    # Queries with no alphanumerics ("!!!", emoji) can't match any term and
+    # would vacuously match everything — skip them rather than pretend to filter.
+    models.select! { |m| m.matches?(@query) } if @query.match?(/[a-z0-9]/i)
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"
     @models = models
