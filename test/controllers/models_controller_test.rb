@@ -55,6 +55,11 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", /No models match your filters/
   end
 
+  test "index caps pathological search queries" do
+    get root_url(q: "abc " * 2_000)
+    assert_response :success
+  end
+
   test "search and provider filters combine" do
     get root_url(q: "opus", providers: [ "deepseek" ])
     assert_select "td", /No models match your filters/
