@@ -89,7 +89,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     # Turbo's "Content missing".
     assert_select "turbo-frame#models[target=_top]", count: 1
     # Only the sort header links and the filter form stay inside the frame.
-    assert_select "thead a[data-turbo-frame=models]", count: 6
+    assert_select "thead a[data-turbo-frame=models]", count: 8
     assert_select "form#filters[data-turbo-frame=models]", count: 1
     assert_select "tbody a[data-turbo-frame]", count: 0
   end
