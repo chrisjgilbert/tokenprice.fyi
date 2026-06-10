@@ -18,7 +18,7 @@ class AiModel < ApplicationRecord
   enum :tier, { frontier: "frontier", mid: "mid", small: "small" }, validate: true
   enum :status, { active: "active", legacy: "legacy", retired: "retired" }, validate: true
 
-  validates :name, presence: true
+  validates :name, presence: true, length: { maximum: 255 }
   validates :slug, presence: true, uniqueness: true
   validates :source, presence: true
 
@@ -42,6 +42,13 @@ class AiModel < ApplicationRecord
   # Oldest price snapshot — the launch price.
   def launch_price
     @launch_price ||= price_points.min_by(&:effective_on)
+  end
+
+  # Drop the memoized current/launch prices. The importer calls this after
+  # appending a snapshot in-process so a later read recomputes instead of
+  # returning a stale memo.
+  def forget_price_cache!
+    @current_price = @launch_price = nil
   end
 
   def current_input  = current_price&.input_per_mtok

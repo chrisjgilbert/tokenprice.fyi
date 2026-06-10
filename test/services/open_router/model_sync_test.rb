@@ -91,7 +91,33 @@ module OpenRouter
 
       provider = Provider.find_by!(slug: "newlab")
       assert_equal "NewLab", provider.name
-      assert_equal "small", provider.ai_models.first.tier # cheap -> small tier
+      # Imported models land in a neutral tier for a human to re-curate.
+      assert_equal "mid", provider.ai_models.first.tier
+    end
+
+    test "names a new provider from the namespace when the row has no colon prefix" do
+      sync([ or_model(id: "nous/hermes-4", name: "Hermes 4",
+                      prompt: "0.0000004", completion: "0.0000004") ])
+
+      provider = Provider.find_by!(slug: "nous")
+      assert_equal "Nous", provider.name # not "Hermes 4"
+      assert_equal "Hermes 4", provider.ai_models.first.name
+    end
+
+    test "an unchanged price with a 0/nil cached mismatch does not churn" do
+      model = ai_models(:deepseek_v4)
+      model.update!(openrouter_id: "deepseek/deepseek-v4-pro")
+      # A curated point storing literal 0 for the cached tier.
+      model.price_points.create!(effective_on: Date.current, input_per_mtok: 1,
+                                 output_per_mtok: 2, cached_input_per_mtok: 0)
+
+      # Same input/output, no cached tier in the API payload (-> nil).
+      assert_no_difference "PricePoint.count" do
+        result = sync([ or_model(id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro",
+                                 prompt: "0.000001", completion: "0.000002", cache_read: "0") ],
+                      today: Date.current + 1)
+        assert_equal 0, result.repriced
+      end
     end
 
     test "is idempotent: re-running writes no new models or price points" do
