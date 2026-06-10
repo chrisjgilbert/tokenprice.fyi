@@ -175,7 +175,7 @@ catalog = [
     provider: :google, name: "Gemini 2.5 Pro", tier: "frontier", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-06-17",
     description: "First Gemini with native thinking/reasoning. Context-tiered: $1.25/$10 ≤200K, $2.50/$15 beyond.",
-    prices: [ { on: "2025-06-17", in: 1.25, out: 10, cached: 0.13, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier" } ]
+    prices: [ { on: "2025-06-17", in: 1.25, out: 10, cached: 0.125, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier" } ]
   },
   {
     provider: :google, name: "Gemini 3.5 Flash", tier: "mid", status: "active",
@@ -281,7 +281,7 @@ catalog = [
   },
   {
     provider: :mistral, name: "Mistral Large 3", tier: "frontier", status: "active",
-    context_window: 128_000, max_output_tokens: nil, released_on: "2025-12-02",
+    context_window: 262_000, max_output_tokens: nil, released_on: "2025-12-02",
     description: "Mistral's Apache-2.0 open-weight frontier model (675B total / 41B active MoE). 75% cheaper than Large 2 at $0.50/$1.50.",
     prices: [ { on: "2025-12-02", in: 0.50, out: 1.50, src: "mistral.ai/pricing" } ]
   },
@@ -293,9 +293,9 @@ catalog = [
   },
   {
     provider: :alibaba, name: "Qwen 3.7 Max", tier: "frontier", status: "active",
-    context_window: 256_000, max_output_tokens: nil, released_on: "2026-05-21",
-    description: "Alibaba's latest flagship Qwen model, announced at Alibaba Cloud Summit.",
-    prices: [ { on: "2026-05-21", in: 2.50, out: 7.50, src: "codersera.com/blog/qwen-3-7-max-launch-guide-2026", note: "List price; 50% promotional discount available" } ]
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2026-05-20",
+    description: "Alibaba's latest flagship Qwen model with 1M context, announced at Alibaba Cloud Summit.",
+    prices: [ { on: "2026-05-20", in: 2.50, out: 7.50, src: "codersera.com/blog/qwen-3-7-max-launch-guide-2026", note: "List price; 50% promotional discount available; date approximate" } ]
   },
   {
     provider: :alibaba, name: "Qwen3 Max", tier: "frontier", status: "legacy",
@@ -309,8 +309,8 @@ catalog = [
   {
     provider: :moonshot, name: "Kimi K2.6", tier: "frontier", status: "active",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-04-20",
-    description: "Moonshot AI's latest open-weight frontier model with 300-agent swarm support. Direct-API rate shown; hosted providers differ.",
-    prices: [ { on: "2026-04-20", in: 0.60, out: 2.50, cached: 0.15, src: "platform.moonshot.ai", note: "Direct API rate" } ]
+    description: "Moonshot AI's latest open-weight frontier model with 300-agent swarm support. Direct-API rate shown; some providers charge up to $0.95/$4.00.",
+    prices: [ { on: "2026-04-20", in: 0.60, out: 2.50, cached: 0.15, src: "platform.moonshot.ai", note: "Direct API rate; hosted providers may charge more" } ]
   },
   {
     provider: :moonshot, name: "Kimi K2.5", tier: "frontier", status: "legacy",
