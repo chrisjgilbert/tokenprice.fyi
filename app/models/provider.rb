@@ -3,6 +3,8 @@ class Provider < ApplicationRecord
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
+  validates :accent, format: { with: /\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/,
+                               message: "must be a hex colour like #4f46e5" }, allow_blank: true
 
   before_validation :set_slug, on: :create
 

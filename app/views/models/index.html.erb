@@ -12,75 +12,592 @@
       }) %>
 <% end %>
 
-<section class="mb-8">
-  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">What does a million tokens cost?</h1>
-  <p class="mt-3 max-w-2xl text-slate-600">
-    Live-ish pricing for every frontier LLM, side by side. Sort by input, output, or a blended rate,
-    and see how prices have moved over time.
-  </p>
-</section>
+<style>
+  /* ── Hero ──────────────────────────────────────── */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 40px;
+    align-items: start;
+    margin-bottom: 64px;
+  }
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+  }
 
-<% if @cheapest_frontier %>
-  <%= link_to model_path(@cheapest_frontier), class: "group mb-8 flex items-center justify-between gap-4 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 hover:border-indigo-200" do %>
+  /* Eyebrow pill */
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--color-indigo-50);
+    border: 1px solid var(--color-indigo-100);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-indigo-700);
+    letter-spacing: .04em;
+    margin-bottom: 20px;
+  }
+  .hero-eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-indigo-500);
+    box-shadow: 0 0 0 3px var(--color-indigo-200);
+    animation: tp-pulse 2.4s var(--ease-default) infinite;
+    flex: none;
+  }
+
+  /* Hero headline */
+  .hero-h1 {
+    font-size: clamp(32px, 4vw, 46px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.06;
+    color: var(--color-slate-900);
+    margin-bottom: 18px;
+  }
+  .hero-h1 .accent { color: var(--color-indigo-600); }
+
+  .hero-sub {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--color-slate-500);
+    max-width: 500px;
+    margin-bottom: 36px;
+  }
+
+  /* Hero stats row */
+  .hero-stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {}
+  .hero-stat-val {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--color-slate-900);
+    display: block;
+    line-height: 1;
+  }
+  .hero-stat-label {
+    font-size: 12px;
+    color: var(--color-slate-400);
+    font-weight: 500;
+    margin-top: 5px;
+    display: block;
+    letter-spacing: .01em;
+  }
+
+  /* Latest update card */
+  .hero-card {
+    border-radius: var(--radius-xl);
+    background: linear-gradient(160deg, #14163a, #1e2150 55%, #2a2f6e);
+    border: 1px solid rgba(99,102,241,.22);
+    box-shadow: 0 24px 64px -16px rgba(79,70,229,.38), 0 4px 16px rgba(0,0,0,.28);
+    position: relative;
+    overflow: hidden;
+    padding: 28px;
+  }
+  /* Radial indigo glow */
+  .hero-card::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(99,102,241,.28) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  /* Faint grid overlay */
+  .hero-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+    border-radius: inherit;
+  }
+  .hero-card-inner { position: relative; z-index: 1; }
+
+  .hero-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    color: rgba(165,180,252,.9);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .hero-card-tag svg { width: 13px; height: 13px; }
+
+  .hero-card-headline { margin-bottom: 18px; }
+  .hero-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .hero-card-kind-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    margin-bottom: 8px;
+  }
+  .hero-card-kind-chip.launch {
+    background: rgba(16,185,129,.15);
+    color: #6ee7b7;
+    border: 1px solid rgba(16,185,129,.25);
+  }
+  .hero-card-kind-chip.market {
+    background: rgba(244,63,94,.12);
+    color: #fda4af;
+    border: 1px solid rgba(244,63,94,.22);
+  }
+
+  .hero-card-date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(148,163,184,.8);
+    margin-bottom: 8px;
+  }
+  .hero-card-note {
+    font-size: 13.5px;
+    color: rgba(203,213,225,.85);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .hero-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+  }
+  .hero-card-chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    color: rgba(203,213,225,.9);
+  }
+
+  /* Timeline divider */
+  .hero-divider {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(100,116,139,.7);
+    margin: 20px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,.07);
+  }
+
+  /* Timeline rows */
+  .hero-timeline { display: flex; flex-direction: column; gap: 12px; }
+  .hero-tl-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  .hero-tl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(244,63,94,.8);
+    flex: none;
+    margin-left: 1px;
+  }
+  .hero-tl-title {
+    flex: 1;
+    font-size: 13px;
+    color: rgba(203,213,225,.9);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .hero-tl-kind {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .hero-tl-kind.launch {
+    background: rgba(16,185,129,.12);
+    color: #6ee7b7;
+  }
+  .hero-tl-kind.market {
+    background: rgba(244,63,94,.1);
+    color: #fda4af;
+  }
+  .hero-tl-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(100,116,139,.9);
+    white-space: nowrap;
+    flex: none;
+  }
+
+  /* Filters card */
+  .filters-card {
+    background: #fff;
+    border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .filters-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    flex-wrap: wrap;
+  }
+  .filters-divider {
+    height: 1px;
+    background: var(--color-slate-100);
+    margin: 0;
+  }
+  .filters-bottom {
+    padding: 14px 20px;
+  }
+
+  /* Result bar */
+  .result-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .result-count {
+    font-size: 13px;
+    color: var(--color-slate-500);
+    font-weight: 500;
+  }
+</style>
+
+<%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
+<% if @all_events %>
+  <% latest_event = @all_events.last %>
+  <% recent_events = @all_events.last(5).first(4) %>
+
+  <div class="hero-grid">
+    <%# Left column %>
     <div>
-      <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Cheapest frontier model</p>
-      <p class="mt-1 text-xl font-semibold"><%= @cheapest_frontier.name %></p>
-      <p class="text-sm text-slate-500"><%= @cheapest_frontier.provider.name %> · <%= usd(@cheapest_frontier.blended_per_mtok) %> blended / 1M tokens</p>
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Live LLM API price index
+      </div>
+
+      <h1 class="hero-h1">
+        What does a <span class="accent">million tokens</span> cost?
+      </h1>
+
+      <p class="hero-sub">
+        Every major model's API pricing, normalized to dollars per million tokens —
+        quoted as a simple input&thinsp;/&thinsp;output pair you can actually budget against.
+      </p>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-val num"><%= @all_models_count %></span>
+          <span class="hero-stat-label">Models tracked</span>
+        </div>
+        <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
+          <span class="hero-stat-val num"><%= @providers_count %></span>
+          <span class="hero-stat-label">Providers</span>
+        </div>
+        <% if @cheapest_model %>
+          <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
+            <span class="hero-stat-val"><%= io_price(@cheapest_model) %></span>
+            <span class="hero-stat-label">Cheapest I/O /1M</span>
+          </div>
+        <% end %>
+      </div>
     </div>
-    <div class="text-right">
-      <p class="text-sm text-slate-500">in <%= usd(@cheapest_frontier.current_input) %> · out <%= usd(@cheapest_frontier.current_output) %></p>
-      <span class="text-sm font-medium text-indigo-600 group-hover:underline">View history →</span>
+
+    <%# Right column: latest update card %>
+    <div class="hero-card">
+      <div class="hero-card-inner">
+        <div class="hero-card-tag">
+          <%= icon(:spark, size: 13) %>
+          Latest update
+        </div>
+
+        <% if latest_event %>
+          <div class="hero-card-headline">
+            <div>
+              <span class="hero-card-kind-chip <%= latest_event.kind == 'launch' ? 'launch' : 'market' %>">
+                <%= latest_event.kind == "launch" ? "New model" : "Price change" %>
+              </span>
+            </div>
+            <div class="hero-card-title"><%= latest_event.title %></div>
+            <div class="hero-card-date"><%= fmt_date_full(latest_event.date) %></div>
+            <% if latest_event.note.present? %>
+              <div class="hero-card-note"><%= latest_event.note %></div>
+            <% end %>
+            <% if latest_event.kind == "launch" && latest_event.model %>
+              <% m = latest_event.model %>
+              <div class="hero-card-chips">
+                <%= tier_badge(m.tier) %>
+                <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>
+                <% if m.context_window %>
+                  <span class="hero-card-chip num"><%= tokens_short(m.context_window) %> ctx</span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="hero-divider">Recent activity</div>
+
+        <div class="hero-timeline">
+          <% recent_events.reverse.each do |ev| %>
+            <div class="hero-tl-row">
+              <% if ev.kind == "launch" && ev.provider %>
+                <div style="flex:none"><%= provider_square(ev.provider, size: :sm) %></div>
+              <% else %>
+                <div class="hero-tl-dot"></div>
+              <% end %>
+              <span class="hero-tl-title"><%= ev.title %></span>
+              <span class="hero-tl-kind <%= ev.kind == 'launch' ? 'launch' : 'market' %>">
+                <%= ev.kind == "launch" ? "Launch" : "Market" %>
+              </span>
+              <span class="hero-tl-date"><%= fmt_date(ev.date) %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <div style="margin-top:20px">
+          <%= link_to trends_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+            See the full timeline →
+          <% end %>
+        </div>
+      </div>
     </div>
-  <% end %>
+  </div>
 <% end %>
 
-<div class="mb-4 flex flex-wrap items-center gap-2 text-sm">
-  <span class="text-slate-500">Filter:</span>
-  <% [["All", nil], ["Frontier", "frontier"], ["Mid", "mid"], ["Small / fast", "small"]].each do |label, value| %>
-    <%= link_to label, root_path(tier: value, sort: @sort, dir: @dir),
-          class: "rounded-full px-3 py-1 ring-1 ring-inset #{@tier == value ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-100'}" %>
-  <% end %>
-</div>
+<%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
+<p class="tp-section-label mb-4">Price table</p>
 
-<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-  <table class="min-w-full divide-y divide-slate-200 text-sm">
-    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-      <tr>
-        <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-        <th scope="col" class="px-4 py-3 font-medium">Tier</th>
-        <th scope="col" aria-sort="<%= aria_sort_for("input", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Input", "input", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("output", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Output", "output", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-        <th scope="col" class="px-4 py-3 font-medium text-right">Cached in</th>
-        <th scope="col" aria-sort="<%= aria_sort_for("context", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("blended", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right" title="Blended $/1M tokens at a 3:1 input:output mix">
-          <%= sort_link "Blended", "blended", current_sort: @sort, current_dir: @dir, tier: @tier %>
-        </th>
-        <th scope="col" aria-sort="<%= aria_sort_for("released", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-100">
-      <% @models.each do |model| %>
-        <tr class="hover:bg-slate-50">
-          <th scope="row" class="px-4 py-3 text-left font-normal">
-            <%= link_to model.name, model_path(model), class: "font-medium text-slate-900 hover:text-indigo-600" %>
-            <div class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-              <%= link_to model.provider.name, provider_path(model.provider), class: "hover:underline" %>
-              <%= status_badge(model.status) %>
-            </div>
-          </th>
-          <td class="px-4 py-3"><%= tier_badge(model.tier) %></td>
-          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
-          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
-          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(model.current_cached_input) %></td>
-          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
-          <td class="px-4 py-3 text-right font-semibold tabular-nums"><%= usd(model.blended_per_mtok) %></td>
-          <td class="px-4 py-3 text-right text-slate-500 tabular-nums"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<% sort_params = { sort: (@sort unless @sort == "blended"), dir: (@dir unless @dir == "asc") }.compact %>
 
-<p class="mt-4 text-xs text-slate-500">
-  Blended price assumes a 3:1 input-to-output token mix — a rough stand-in for a typical chat/agent workload, so models with different input vs output pricing can be ranked on one number.
+<%= form_with url: root_path, method: :get, id: "filters", role: "search", "aria-label": "Filter models",
+      data: { controller: "filters",
+              action: "submit->filters#clearPending formdata->filters#clean turbo:frame-load@document->filters#announce",
+              turbo_frame: "models", turbo_action: "replace" } do %>
+  <p class="sr-only" role="status" data-filters-target="status"></p>
+
+  <div class="filters-card">
+    <div class="filters-top">
+      <%# Search %>
+      <div class="tp-search">
+        <%= icon(:search, size: 18) %>
+        <label for="q" class="sr-only">Search models or providers</label>
+        <%= search_field_tag :q, @query, placeholder: "Search models or providers…", autocomplete: "off",
+              data: { action: "input->filters#search" } %>
+      </div>
+
+      <%# Tier radio pills %>
+      <div class="tp-pills" role="group" aria-label="Filter by tier">
+        <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
+          <label class="tp-pill <%= @tier == value.presence ? 'active' : '' %>">
+            <%= radio_button_tag :tier, value, @tier == value.presence,
+                  class: "sr-only", data: { action: "change->filters#submit" } %>
+            <%= label %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <hr class="filters-divider">
+
+    <%# Provider checkboxes %>
+    <div class="filters-bottom">
+      <fieldset>
+        <legend class="sr-only">Filter by provider</legend>
+        <div class="tp-check-row">
+          <% @providers.each do |provider| %>
+            <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
+            <label class="tp-check" data-checked="<%= checked %>">
+              <input type="checkbox" name="providers[]" value="<%= provider.slug %>"
+                     id="provider_<%= provider.slug %>"
+                     <% if checked %>checked<% end %>
+                     data-action="change->filters#submit"
+                     style="position:absolute;opacity:0;width:0;height:0">
+              <%= provider_square(provider, size: :sm) %>
+              <span class="tp-check-box">
+                <%= icon(:check, size: 12) %>
+              </span>
+              <%= provider.name %>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <noscript>
+    <%= submit_tag "Apply filters", name: nil,
+          class: "tp-btn tp-btn-primary tp-btn-sm mb-4" %>
+  </noscript>
+<% end %>
+
+<%# ── TABLE (Turbo Frame — refreshed on filter changes) ───────────── %>
+<% filter_params = { tier: @tier, q: @query.presence, providers: @provider_slugs.presence }.compact %>
+
+<%# target="_top": links in here (model/provider rows, clear-filters) are real
+    page navigations — only the sort links opt back into the frame. %>
+<%= turbo_frame_tag "models", target: "_top" do %>
+  <%# Default sort travels implicitly, keeping filter-submit URLs clean. %>
+  <%= hidden_field_tag :sort, @sort, form: "filters", id: nil if sort_params.key?(:sort) %>
+  <%= hidden_field_tag :dir, @dir, form: "filters", id: nil if sort_params.key?(:dir) %>
+
+  <div class="result-bar">
+    <p class="result-count" data-models-count><%= pluralize(@models.size, "model") %> of <%= AiModel.listed.count %></p>
+    <% if filter_params.any? %>
+      <%= link_to "Clear filters", root_path(sort_params), class: "text-sm font-medium text-indigo-600 hover:underline" %>
+    <% end %>
+  </div>
+
+  <div class="tp-table-wrap">
+    <div class="tp-table-scroll">
+      <table class="tp-data">
+        <thead>
+          <% th_cls = ->(key) {
+               cls = "sortable"
+               cls += " sort-active" if @sort == key
+               cls += " desc" if @sort == key && @dir == "desc"
+               cls
+             } %>
+          <tr>
+            <th scope="col" class="<%= th_cls.('name') %>" aria-sort="<%= aria_sort_for('name', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="<%= th_cls.('tier') %>" aria-sort="<%= aria_sort_for('tier', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Tier", "tier", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('input') %>" aria-sort="<%= aria_sort_for('input', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Input /1M", "input", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('output') %>" aria-sort="<%= aria_sort_for('output', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Output /1M", "output", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('cached') %>" aria-sort="<%= aria_sort_for('cached', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Cached in /1M", "cached", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('context') %>" aria-sort="<%= aria_sort_for('context', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('blended') %>" aria-sort="<%= aria_sort_for('blended', current_sort: @sort, current_dir: @dir) %>" title="I/O avg assumes a 3:1 input:output mix">
+              <%= sort_link "I/O avg /1M", "blended", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+            <th scope="col" class="numeric <%= th_cls.('released') %>" aria-sort="<%= aria_sort_for('released', current_sort: @sort, current_dir: @dir) %>">
+              <%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @models.empty? %>
+            <tr>
+              <td colspan="8">
+                <div class="tp-empty">
+                  <div class="tp-empty-icon">
+                    <%= icon(:empty, size: 26) %>
+                  </div>
+                  <p class="text-base font-semibold text-slate-700 mb-2">No models match your filters</p>
+                  <%= link_to "Clear all filters", root_path(sort_params), class: "text-sm font-medium text-indigo-600 hover:underline" %>
+                </div>
+              </td>
+            </tr>
+          <% else %>
+            <% @models.each do |model| %>
+              <%# Highlight the sorted column %>
+              <% sort_col = @sort %>
+              <tr class="clickable" onclick="location.href='<%= j(model_path(model)) %>'">
+                <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
+                  <div class="tp-model-cell">
+                    <%= link_to model_path(model) do %>
+                      <%= provider_square(model.provider, size: :md) %>
+                    <% end %>
+                    <div class="tp-model-meta">
+                      <div class="tp-model-name">
+                        <%= link_to model.name, model_path(model), style: "color:inherit;text-decoration:none" %>
+                      </div>
+                      <div class="tp-model-sub">
+                        <%= link_to model.provider.name, provider_path(model.provider),
+                              class: "tp-prov-name hover:underline" %>
+                        <%= status_badge(model.status) %>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
+                  <%= tier_badge(model.tier) %>
+                </td>
+                <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_input) %>
+                </td>
+                <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_output) %>
+                </td>
+                <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_cached_input) %>
+                </td>
+                <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
+                  <%= tokens_short(model.context_window) %>
+                </td>
+                <td class="numeric <%= sort_col == 'blended' ? 'tp-col-highlight' : '' %>">
+                  <span class="tp-blended-val num"><%= usd(model.blended_per_mtok) %></span>
+                </td>
+                <td class="numeric <%= sort_col == 'released' ? 'tp-col-highlight' : '' %>">
+                  <%= fmt_date(model.released_on) %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<p class="mt-4 text-xs text-slate-400">
+  I/O avg assumes a 3:1 input-to-output token mix — a rough stand-in for a typical chat/agent workload, so models with different input vs. output pricing can be ranked on one number.
 </p>

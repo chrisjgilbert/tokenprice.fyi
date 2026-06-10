@@ -15,6 +15,9 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="<%= request.base_url %>/og.svg">
     <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -26,30 +29,37 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <header class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-10">
-      <div class="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between gap-6">
-        <%= link_to root_path, class: "flex items-center gap-2 font-semibold tracking-tight" do %>
-          <span class="text-indigo-600 text-xl">◎</span>
-          <span>tokenprice<span class="text-slate-400">.fyi</span></span>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <nav class="tp-nav">
+      <div class="tp-nav-inner">
+        <%= link_to root_path, class: "tp-brand" do %>
+          <%= brand_mark(28) %>
+          <span>tokenprice<span class="fyi">.fyi</span></span>
         <% end %>
-        <nav aria-label="Primary" class="flex items-center gap-1 text-sm font-medium text-slate-600">
-          <%= link_to "Prices", root_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(root_path)}" %>
-          <%= link_to "Compare", compare_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(compare_path)}" %>
-          <%= link_to "Trends", trends_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(trends_path)}" %>
-        </nav>
+        <div class="tp-nav-links">
+          <%= nav_link "Models", root_path, active: current_page?(root_path) %>
+          <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
+          <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
+        </div>
+        <span class="tp-nav-spacer"></span>
+        <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
       </div>
-    </header>
+    </nav>
 
-    <main class="mx-auto max-w-6xl px-5 py-10">
+    <main class="shell">
       <%= yield %>
     </main>
 
-    <footer class="mx-auto max-w-6xl px-5 py-10 mt-10 border-t border-slate-200 text-sm text-slate-500">
-      <p>
-        Prices are USD per 1M tokens, standard API tier. Anthropic figures are authoritative;
-        other providers are best-effort from public pricing pages and may lag. Not affiliated with any provider.
-      </p>
+    <footer class="tp-foot">
+      <div class="tp-foot-inner">
+        <%= link_to root_path, class: "tp-brand", style: "font-size:14px" do %>
+          <%= brand_mark(22) %>
+          <span>tokenprice<span class="fyi">.fyi</span></span>
+        <% end %>
+        <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
+        <span>Representative data · USD per 1M tokens</span>
+      </div>
     </footer>
+    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
   </body>
 </html>

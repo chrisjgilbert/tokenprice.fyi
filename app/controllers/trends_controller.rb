@@ -1,19 +1,57 @@
 class TrendsController < ApplicationController
   def index
-    @year = Date.current.year
+    models = AiModel.listed.includes(:provider, :price_points).to_a
 
-    # Cheapest → priciest frontier models, by blended price.
-    @frontier_ranked = AiModel.listed.frontier.includes(:provider, :price_points).to_a
-                              .sort_by { |m| m.blended_per_mtok || Float::INFINITY }
+    @models_json = models.map do |m|
+      {
+        slug:     m.slug,
+        name:     m.name,
+        provider: m.provider.slug,
+        provider_name: m.provider.name,
+        provider_accent: m.provider.accent,
+        tier:     m.tier,
+        history:  m.price_points.sort_by(&:effective_on).map do |pp|
+          {
+            date:   pp.effective_on.iso8601,
+            input:  pp.input_per_mtok.to_f,
+            output: pp.output_per_mtok.to_f
+          }
+        end
+      }
+    end.to_json
 
-    # Models whose price has actually moved (more than one snapshot).
-    @movers = AiModel.includes(:provider, :price_points).to_a
-                     .select(&:price_changed?)
-                     .sort_by { |m| m.blended_change_since_launch || Float::INFINITY }
+    market_events_records = MarketEvent.chronological.to_a
 
-    # Release timeline for the current year.
-    @timeline = AiModel.includes(:provider)
-                       .where(released_on: Date.new(@year, 1, 1)..Date.new(@year, 12, 31))
-                       .order(released_on: :asc).to_a
+    @events_json = market_events_records.map do |me|
+      {
+        date:  me.event_date.iso8601,
+        title: me.title,
+        kind:  me.kind,
+        note:  me.note
+      }
+    end.to_json
+
+    # Also build launch events from models
+    launch_events = models.select { |m| m.released_on }.map do |m|
+      {
+        date:  m.released_on.iso8601,
+        title: "#{m.name} released",
+        kind:  "launch",
+        note:  "#{m.provider.name} ships #{m.name}.",
+        model: m.slug
+      }
+    end
+
+    market_events = market_events_records.map do |me|
+      {
+        date:  me.event_date.iso8601,
+        title: me.title,
+        kind:  me.kind,
+        note:  me.note,
+        model: nil
+      }
+    end
+
+    @all_events_json = (market_events + launch_events).sort_by { |e| e[:date] }.to_json
   end
 end
