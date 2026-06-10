@@ -1,0 +1,39 @@
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold tracking-tight">Providers</h1>
+  <%= link_to "+ New provider", new_admin_provider_path,
+        class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" %>
+</div>
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th scope="col" class="px-4 py-3 font-medium">Provider</th>
+        <th scope="col" class="px-4 py-3 font-medium">Website</th>
+        <th scope="col" class="px-4 py-3 font-medium text-right">Models</th>
+        <th scope="col" class="px-4 py-3 font-medium text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @providers.each do |provider| %>
+        <tr>
+          <th scope="row" class="px-4 py-3 text-left font-normal">
+            <span class="inline-flex items-center gap-2">
+              <span class="h-3 w-3 rounded" style="background: <%= safe_hex(provider.accent) %>"></span>
+              <%= link_to provider.name, edit_admin_provider_path(provider), class: "font-medium hover:text-indigo-600" %>
+            </span>
+          </th>
+          <td class="px-4 py-3 text-slate-500"><%= provider.website %></td>
+          <td class="px-4 py-3 text-right text-slate-500"><%= provider.ai_models.size %></td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
+            <%= link_to "Edit", edit_admin_provider_path(provider), class: "text-slate-500 hover:underline" %>
+            <span class="text-slate-300">·</span>
+            <%= button_to "Delete", admin_provider_path(provider), method: :delete,
+                  form: { data: { turbo_confirm: "Delete #{provider.name}?" }, class: "inline" },
+                  class: "text-rose-600 hover:underline bg-transparent" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
