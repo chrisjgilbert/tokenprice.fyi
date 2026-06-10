@@ -61,7 +61,34 @@ class AiModel < ApplicationRecord
     price_points.count > 1
   end
 
+  # Fuzzy match against name, provider and slug. Every word in the query must
+  # be a substring of some search term, or — to forgive typos and skipped
+  # punctuation ("antropic", "gpt52") — an in-order subsequence of one.
+  def matches?(query)
+    words = query.to_s.downcase.scan(/[a-z0-9]+/)
+    words.all? do |word|
+      search_terms.any? { |term| term.include?(word) || subsequence_of?(word, term) }
+    end
+  end
+
   private
+
+  # Individual words plus punctuation-stripped runs, so "4.8" is findable as
+  # both "4 8" and "48", and "GPT-5.2" as "gpt52".
+  def search_terms
+    @search_terms ||= [ name, provider.name, slug ].flat_map { |s|
+      text = s.to_s.downcase
+      text.scan(/[a-z0-9]+/) + [ text.gsub(/[^a-z0-9]/, "") ]
+    }.uniq
+  end
+
+  def subsequence_of?(needle, haystack)
+    return false if needle.length < 3 || needle.length > haystack.length
+
+    i = 0
+    haystack.each_char { |c| i += 1 if c == needle[i] }
+    i == needle.length
+  end
 
   def set_slug
     self.slug ||= name&.parameterize

@@ -34,11 +34,52 @@
   <% end %>
 <% end %>
 
-<div class="mb-4 flex flex-wrap items-center gap-2 text-sm">
-  <span class="text-slate-500">Filter:</span>
-  <% [["All", nil], ["Frontier", "frontier"], ["Mid", "mid"], ["Small / fast", "small"]].each do |label, value| %>
-    <%= link_to label, root_path(tier: value, sort: @sort, dir: @dir),
-          class: "rounded-full px-3 py-1 ring-1 ring-inset #{@tier == value ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-100'}" %>
+<% pill_classes = "cursor-pointer rounded-full px-3 py-1 ring-1 ring-inset bg-white text-slate-600 ring-slate-200 hover:bg-slate-100 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:ring-indigo-600 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-600" %>
+<%# Sort/dir live as hidden inputs inside the frame (see below), so the form
+    always submits whatever sort the table is currently showing. %>
+<%= form_with url: root_path, method: :get, id: "filters", role: "search",
+      data: { controller: "filters", turbo_frame: "models", turbo_action: "advance" },
+      class: "mb-4 space-y-3" do %>
+  <div class="max-w-xs">
+    <label for="q" class="sr-only">Search models or providers</label>
+    <%= search_field_tag :q, @query, placeholder: "Search models or providers…", autocomplete: "off",
+          data: { action: "input->filters#search" },
+          class: "w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-inset ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600" %>
+  </div>
+
+  <fieldset class="flex flex-wrap items-center gap-2 text-sm">
+    <legend class="sr-only">Filter by provider</legend>
+    <span aria-hidden="true" class="text-slate-500">Provider:</span>
+    <% @providers.each do |provider| %>
+      <label>
+        <%= check_box_tag "providers[]", provider.slug, @provider_slugs.include?(provider.slug),
+              id: "provider_#{provider.slug}", class: "peer sr-only", data: { action: "change->filters#submit" } %>
+        <span class="<%= pill_classes %>"><%= provider.name %></span>
+      </label>
+    <% end %>
+  </fieldset>
+
+  <fieldset class="flex flex-wrap items-center gap-2 text-sm">
+    <legend class="sr-only">Filter by tier</legend>
+    <span aria-hidden="true" class="text-slate-500">Tier:</span>
+    <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small / fast", "small"]].each do |label, value| %>
+      <label>
+        <%= radio_button_tag :tier, value, @tier == value.presence, class: "peer sr-only", data: { action: "change->filters#submit" } %>
+        <span class="<%= pill_classes %>"><%= label %></span>
+      </label>
+    <% end %>
+  </fieldset>
+<% end %>
+
+<% filter_params = { tier: @tier, q: @query.presence, providers: @provider_slugs.presence }.compact %>
+<%= turbo_frame_tag "models" do %>
+<%= hidden_field_tag :sort, @sort, form: "filters", id: nil %>
+<%= hidden_field_tag :dir, @dir, form: "filters", id: nil %>
+
+<div class="mb-2 flex items-baseline justify-between text-sm text-slate-500">
+  <p aria-live="polite"><%= pluralize(@models.size, "model") %></p>
+  <% if filter_params.any? %>
+    <%= link_to "Clear filters", root_path(sort: @sort, dir: @dir), data: { turbo_frame: "_top" }, class: "font-medium text-indigo-600 hover:underline" %>
   <% end %>
 </div>
 
@@ -46,16 +87,16 @@
   <table class="min-w-full divide-y divide-slate-200 text-sm">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
       <tr>
-        <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" class="px-4 py-3 font-medium">Tier</th>
-        <th scope="col" aria-sort="<%= aria_sort_for("input", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Input", "input", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("output", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Output", "output", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th scope="col" aria-sort="<%= aria_sort_for("input", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Input", "input", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
+        <th scope="col" aria-sort="<%= aria_sort_for("output", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Output", "output", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" class="px-4 py-3 font-medium text-right">Cached in</th>
-        <th scope="col" aria-sort="<%= aria_sort_for("context", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th scope="col" aria-sort="<%= aria_sort_for("context", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" aria-sort="<%= aria_sort_for("blended", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right" title="Blended $/1M tokens at a 3:1 input:output mix">
-          <%= sort_link "Blended", "blended", current_sort: @sort, current_dir: @dir, tier: @tier %>
+          <%= sort_link "Blended", "blended", current_sort: @sort, current_dir: @dir, filters: filter_params %>
         </th>
-        <th scope="col" aria-sort="<%= aria_sort_for("released", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, tier: @tier %></th>
+        <th scope="col" aria-sort="<%= aria_sort_for("released", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100">
@@ -77,9 +118,18 @@
           <td class="px-4 py-3 text-right text-slate-500 tabular-nums"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
         </tr>
       <% end %>
+      <% if @models.empty? %>
+        <tr>
+          <td colspan="8" class="px-4 py-12 text-center text-slate-500">
+            No models match your filters.
+            <%= link_to "Clear filters", root_path(sort: @sort, dir: @dir), data: { turbo_frame: "_top" }, class: "font-medium text-indigo-600 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
     </tbody>
   </table>
 </div>
+<% end %>
 
 <p class="mt-4 text-xs text-slate-500">
   Blended price assumes a 3:1 input-to-output token mix — a rough stand-in for a typical chat/agent workload, so models with different input vs output pricing can be ranked on one number.

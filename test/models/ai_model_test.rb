@@ -33,6 +33,30 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not model.valid?
   end
 
+  test "matches? finds substrings of name, provider and slug" do
+    model = ai_models(:opus)
+    assert model.matches?("opus")
+    assert model.matches?("Anthropic")
+    assert model.matches?("claude-opus")
+  end
+
+  test "matches? forgives punctuation differences and typos" do
+    model = ai_models(:opus)
+    assert model.matches?("opus 4.8")
+    assert model.matches?("opus48")
+    assert model.matches?("antropic"), "subsequence match should forgive a dropped letter"
+  end
+
+  test "matches? requires every query word to match" do
+    assert_not ai_models(:opus).matches?("opus gemini")
+    assert_not ai_models(:opus).matches?("deepseek")
+  end
+
+  test "matches? accepts everything for a blank query" do
+    assert ai_models(:opus).matches?("")
+    assert ai_models(:opus).matches?(nil)
+  end
+
   test "price helpers use the eager-loaded association without extra queries" do
     model = AiModel.includes(:price_points).find(ai_models(:deepseek_v4).id)
     assert_queries_count(0) do
