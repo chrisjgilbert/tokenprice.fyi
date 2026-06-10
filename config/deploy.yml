@@ -7,7 +7,7 @@ image: tokenprice
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - 46.224.179.132
   # job:
   #   hosts:
   #     - 192.168.0.1
