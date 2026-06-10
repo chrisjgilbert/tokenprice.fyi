@@ -1,19 +1,16 @@
 module ApplicationHelper
   # Format a USD-per-million-tokens figure. Sub-dollar prices keep more
   # precision (DeepSeek is $0.435); dollar-plus prices show cents.
+  # Returns a styled "—" span for nil (HTML — only use in HTML contexts).
   def usd(value)
-    return content_tag(:span, "—", class: "text-slate-400") if value.nil?
+    return content_tag(:span, "—", class: "text-slate-500") if value.nil?
 
-    value = value.to_f
-    formatted =
-      if value.zero?
-        "0"
-      elsif value < 1
-        format("%.4f", value).sub(/0+$/, "").sub(/\.$/, "")
-      else
-        format("%.2f", value)
-      end
-    "$#{formatted}"
+    "$#{usd_amount(value)}"
+  end
+
+  # Plain-text money string (no HTML). Safe to interpolate into SVG/attributes.
+  def usd_plain(value)
+    value.nil? ? "—" : "$#{usd_amount(value)}"
   end
 
   # Render a signed percentage. Cheaper (negative) is good → green; pricier → rose.
@@ -53,9 +50,30 @@ module ApplicationHelper
     next_dir = active && current_dir == "asc" ? "desc" : "asc"
     arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
     link_to root_path(sort: key, dir: next_dir, tier: tier),
-            class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}" do
-      safe_join([ label, content_tag(:span, arrow, class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
+            class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
+            "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
+      safe_join([ label, content_tag(:span, arrow, "aria-hidden": "true", class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
     end
+  end
+
+  HEX_COLOR = /\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/
+
+  # Only let a validated hex colour reach an inline style attribute.
+  def safe_hex(value, fallback = "#6366f1")
+    value.to_s.match?(HEX_COLOR) ? value : fallback
+  end
+
+  # Emit a JSON-LD <script> block. Escapes "</" so a model/provider name can
+  # never break out of the script element.
+  def json_ld(data)
+    content_tag :script, raw(JSON.generate(data).gsub("</", '<\/')), type: "application/ld+json"
+  end
+
+  # The current sort direction for a column, as an aria-sort value.
+  def aria_sort_for(key, current_sort:, current_dir:)
+    return "none" unless current_sort == key
+
+    current_dir == "asc" ? "ascending" : "descending"
   end
 
   # Compact token count: 1_000_000 -> "1M", 200_000 -> "200K".
@@ -68,6 +86,19 @@ module ApplicationHelper
       "#{count / 1_000}K"
     else
       count.to_s
+    end
+  end
+
+  private
+
+  def usd_amount(value)
+    value = value.to_f
+    if value.zero?
+      "0"
+    elsif value < 1
+      format("%.4f", value).sub(/0+$/, "").sub(/\.$/, "")
+    else
+      format("%.2f", value)
     end
   end
 end

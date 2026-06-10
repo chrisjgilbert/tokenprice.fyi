@@ -9,7 +9,7 @@ class TrendsController < ApplicationController
     # Models whose price has actually moved (more than one snapshot).
     @movers = AiModel.includes(:provider, :price_points).to_a
                      .select(&:price_changed?)
-                     .sort_by { |m| m.blended_change_since_launch || 0 }
+                     .sort_by { |m| m.blended_change_since_launch || Float::INFINITY }
 
     # Release timeline for the current year.
     @timeline = AiModel.includes(:provider)
