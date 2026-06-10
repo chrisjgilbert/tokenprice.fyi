@@ -91,10 +91,10 @@
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
-        <th scope="col" class="px-4 py-3 font-medium">Tier</th>
+        <th scope="col" aria-sort="<%= aria_sort_for("tier", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link "Tier", "tier", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" aria-sort="<%= aria_sort_for("input", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Input", "input", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" aria-sort="<%= aria_sort_for("output", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Output", "output", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
-        <th scope="col" class="px-4 py-3 font-medium text-right">Cached in</th>
+        <th scope="col" aria-sort="<%= aria_sort_for("cached", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Cached in", "cached", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" aria-sort="<%= aria_sort_for("context", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params %></th>
         <th scope="col" aria-sort="<%= aria_sort_for("blended", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right" title="Blended $/1M tokens at a 3:1 input:output mix">
           <%= sort_link "Blended", "blended", current_sort: @sort, current_dir: @dir, filters: filter_params %>

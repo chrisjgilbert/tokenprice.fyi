@@ -3,9 +3,11 @@ class ModelsController < ApplicationController
     "blended"  => ->(m) { m.blended_per_mtok || Float::INFINITY },
     "input"    => ->(m) { m.current_input  || Float::INFINITY },
     "output"   => ->(m) { m.current_output || Float::INFINITY },
+    "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },
     "context"  => ->(m) { m.context_window || 0 },
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
-    "name"     => ->(m) { m.name.to_s.downcase }
+    "name"     => ->(m) { m.name.to_s.downcase },
+    "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
   def index
