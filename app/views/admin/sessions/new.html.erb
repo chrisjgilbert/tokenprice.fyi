@@ -1,0 +1,11 @@
+<div class="mx-auto max-w-sm pt-10">
+  <h1 class="mb-1 text-2xl font-bold tracking-tight">tokenprice.fyi admin</h1>
+  <p class="mb-6 text-sm text-slate-500">Enter the admin password to continue.</p>
+
+  <%= form_with url: admin_login_path, method: :post do |f| %>
+    <%= f.label :password, "Password", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.password_field :password, autocomplete: "current-password", autofocus: true,
+          class: "block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+    <%= f.submit "Sign in", class: "mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 cursor-pointer" %>
+  <% end %>
+</div>

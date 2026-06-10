@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Admin — tokenprice.fyi</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
+    <% if session[:admin] %>
+      <header class="border-b border-slate-200 bg-white">
+        <div class="mx-auto max-w-5xl px-5 h-14 flex items-center justify-between">
+          <div class="flex items-center gap-4 text-sm font-medium">
+            <%= link_to "Admin", admin_root_path, class: "font-semibold" %>
+            <%= link_to "Models", admin_models_path, class: "text-slate-600 hover:text-slate-900" %>
+            <%= link_to "Providers", admin_providers_path, class: "text-slate-600 hover:text-slate-900" %>
+            <%= link_to "View site ↗", root_path, class: "text-slate-600 hover:text-slate-900" %>
+          </div>
+          <%= button_to "Sign out", admin_logout_path, method: :delete,
+                class: "text-sm text-slate-500 hover:text-slate-900" %>
+        </div>
+      </header>
+    <% end %>
+
+    <main class="mx-auto max-w-5xl px-5 py-8">
+      <% if notice %>
+        <div role="status" class="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-inset ring-emerald-600/20"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div role="alert" class="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-inset ring-rose-600/20"><%= alert %></div>
+      <% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

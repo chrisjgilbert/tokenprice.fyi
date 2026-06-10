@@ -65,6 +65,21 @@ Covers the pricing/blended-price domain logic and every public route.
 For now, prices live in `db/seeds.rb` (idempotent — safe to re-run). Edit a model's `prices:`
 array to add a snapshot, then `bin/rails db:seed`.
 
+## Admin
+
+A password-protected admin at `/admin` for adding/editing prices, models, and providers
+by hand (e.g. when you read a new price online). Auth is a single shared password — its
+bcrypt digest lives in encrypted credentials, verified in `Admin::SessionsController`.
+
+Set the password once:
+
+```bash
+bin/rails 'admin:set_password[your-password]'   # writes admin_password_digest to credentials
+```
+
+Then sign in at `/admin/login`. In production, supply `RAILS_MASTER_KEY` so credentials
+decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
+
 ## Roadmap
 
 The schema and Solid Queue are set up for where this is heading:
