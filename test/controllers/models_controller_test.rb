@@ -27,6 +27,21 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
 
   test "index can be filtered to multiple providers" do
     get root_url(providers: [ "anthropic", "deepseek" ])
+    assert_response :success
+    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
+    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
+  end
+
+  test "index accepts a scalar providers param" do
+    get root_url(providers: "anthropic")
+    assert_response :success
+    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
+    assert_select "tbody th[scope=row]", text: /DeepSeek/, count: 0
+  end
+
+  test "index ignores a hash-shaped providers param" do
+    get root_url(providers: { evil: "payload" })
+    assert_response :success
     assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
     assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
   end
@@ -35,6 +50,48 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get root_url(providers: [ "not-a-provider" ])
     assert_response :success
     assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
+  end
+
+  test "index treats punctuation-only queries as no filter" do
+    get root_url(q: "!!!")
+    assert_response :success
+    assert_select "tbody th[scope=row]", text: /Claude Opus 4.8/
+    assert_select "tbody th[scope=row]", text: /DeepSeek V4 Pro/
+  end
+
+  test "index never lists retired models, even when searched for" do
+    get root_url
+    assert_select "tbody th[scope=row]", text: /Claude Instant/, count: 0
+
+    get root_url(q: "instant")
+    assert_select "td", /No models match your filters/
+  end
+
+  test "sort links carry the active filters and sort state rides in the form" do
+    get root_url(q: "claude", providers: [ "anthropic" ], sort: "input", dir: "desc")
+    assert_response :success
+    assert_select "thead a[href*='q=claude']"
+    assert_select "thead a[href*='providers%5B%5D=anthropic']"
+    assert_select "input[type=hidden][name=sort][value=input][form=filters]", count: 1
+    assert_select "input[type=hidden][name=dir][value=desc][form=filters]", count: 1
+  end
+
+  test "default sort state is omitted from the filter form" do
+    get root_url
+    assert_select "input[type=hidden][name=sort]", count: 0
+    assert_select "input[type=hidden][name=dir]", count: 0
+  end
+
+  test "frame navigation is scoped so row links break out of the frame" do
+    get root_url
+    # Model/provider links inside the frame must be full page visits — the
+    # show pages have no `models` frame, so in-frame navigation would render
+    # Turbo's "Content missing".
+    assert_select "turbo-frame#models[target=_top]", count: 1
+    # Only the sort header links and the filter form stay inside the frame.
+    assert_select "thead a[data-turbo-frame=models]", count: 6
+    assert_select "form#filters[data-turbo-frame=models]", count: 1
+    assert_select "tbody a[data-turbo-frame]", count: 0
   end
 
   test "index can be searched" do

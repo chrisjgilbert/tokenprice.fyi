@@ -45,15 +45,16 @@ module ApplicationHelper
   end
 
   # Clickable column header that toggles sort direction, preserving active
-  # filters (tier, providers, search query). Advances the URL so sorted views
-  # stay shareable even when navigated inside the models turbo frame.
+  # filters (tier, providers, search query). Targets the models frame
+  # explicitly — the frame itself defaults to _top so row links break out —
+  # and advances the URL so sorted views stay shareable.
   def sort_link(label, key, current_sort:, current_dir:, filters: {})
     active = current_sort == key
     next_dir = active && current_dir == "asc" ? "desc" : "asc"
     arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
     link_to root_path(filters.merge(sort: key, dir: next_dir)),
             class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
-            data: { turbo_action: "advance" },
+            data: { turbo_frame: "models", turbo_action: "advance" },
             "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
       safe_join([ label, content_tag(:span, arrow, "aria-hidden": "true", class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
     end
