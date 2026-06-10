@@ -12,4 +12,16 @@ Rails.application.routes.draw do
   get "trends",  to: "trends#index",     as: :trends
 
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
+
+  namespace :admin do
+    root "models#index"
+    get    "login",  to: "sessions#new"
+    post   "login",  to: "sessions#create"
+    delete "logout", to: "sessions#destroy"
+
+    resources :providers
+    resources :models do
+      resources :price_points, only: %i[new create edit update destroy]
+    end
+  end
 end

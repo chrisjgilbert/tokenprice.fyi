@@ -13,3 +13,22 @@ module ActiveSupport
     # Add more helper methods to be used by all tests here...
   end
 end
+
+# Admin auth helpers. The login password's bcrypt digest normally lives in
+# encrypted credentials; tests inject a known digest so they don't depend on
+# the master key being present (it isn't on CI).
+ADMIN_TEST_PASSWORD = "test-password-123"
+ADMIN_TEST_DIGEST = BCrypt::Password.create(ADMIN_TEST_PASSWORD).to_s
+
+class ActionDispatch::IntegrationTest
+  # Override the credentials accessor directly — `credentials` memoizes its
+  # options at boot, so mutating the underlying hash afterwards isn't seen.
+  def stub_admin_digest!(digest = ADMIN_TEST_DIGEST)
+    Rails.application.credentials.define_singleton_method(:admin_password_digest) { digest }
+  end
+
+  def sign_in_admin
+    stub_admin_digest!
+    post admin_login_path, params: { password: ADMIN_TEST_PASSWORD }
+  end
+end
