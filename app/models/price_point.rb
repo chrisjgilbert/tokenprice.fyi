@@ -1,7 +1,9 @@
 class PricePoint < ApplicationRecord
   belongs_to :ai_model
 
-  validates :effective_on, presence: true, uniqueness: { scope: :ai_model_id }
+  validates :effective_on, presence: true,
+            uniqueness: { scope: :ai_model_id,
+                          message: "already has a price on this date — edit that snapshot instead" }
   validates :input_per_mtok, :output_per_mtok,
             presence: true,
             numericality: { greater_than_or_equal_to: 0 }

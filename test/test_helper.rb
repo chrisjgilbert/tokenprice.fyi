@@ -31,4 +31,13 @@ class ActionDispatch::IntegrationTest
     stub_admin_digest!
     post admin_login_path, params: { password: ADMIN_TEST_PASSWORD }
   end
+
+  # Remove the per-test digest override so it can't leak into a later test
+  # in the same process.
+  teardown do
+    creds = Rails.application.credentials
+    if creds.singleton_methods.include?(:admin_password_digest)
+      creds.singleton_class.send(:remove_method, :admin_password_digest)
+    end
+  end
 end

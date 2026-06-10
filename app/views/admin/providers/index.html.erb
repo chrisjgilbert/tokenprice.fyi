@@ -24,7 +24,7 @@
             </span>
           </th>
           <td class="px-4 py-3 text-slate-500"><%= provider.website %></td>
-          <td class="px-4 py-3 text-right text-slate-500"><%= provider.ai_models.size %></td>
+          <td class="px-4 py-3 text-right text-slate-500"><%= @model_counts[provider.id] || 0 %></td>
           <td class="px-4 py-3 text-right whitespace-nowrap">
             <%= link_to "Edit", edit_admin_provider_path(provider), class: "text-slate-500 hover:underline" %>
             <span class="text-slate-300">·</span>

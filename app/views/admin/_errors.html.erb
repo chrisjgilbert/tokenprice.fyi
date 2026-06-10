@@ -1,5 +1,5 @@
 <% if record.errors.any? %>
-  <div class="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-inset ring-rose-600/20">
+  <div role="alert" tabindex="-1" autofocus class="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-inset ring-rose-600/20">
     <p class="font-medium"><%= pluralize(record.errors.count, "error") %> stopped this from saving:</p>
     <ul class="mt-1 list-disc pl-5">
       <% record.errors.full_messages.each do |msg| %>
