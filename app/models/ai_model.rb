@@ -61,7 +61,41 @@ class AiModel < ApplicationRecord
     price_points.count > 1
   end
 
+  # Fuzzy match against name, provider and slug. Every word in the query must
+  # be a substring of some search term, or — to forgive typos like
+  # "antropic" — an in-order subsequence of a single word.
+  def matches?(query)
+    words = query.to_s.downcase.scan(/[a-z0-9]+/)
+    words.all? do |word|
+      search_words.any? { |term| term.include?(word) || subsequence_of?(word, term) } ||
+        search_runs.any? { |run| run.include?(word) }
+    end
+  end
+
   private
+
+  def search_words
+    @search_words ||= search_sources.flat_map { |s| s.scan(/[a-z0-9]+/) }.uniq
+  end
+
+  # Punctuation-stripped runs ("claudeopus48") catch queries that skip the
+  # separators, like "gpt55". Substring-only: subsequence matching against
+  # runs this long would let almost any short letter combo match.
+  def search_runs
+    @search_runs ||= search_sources.map { |s| s.gsub(/[^a-z0-9]/, "") }.uniq
+  end
+
+  def search_sources
+    [ name, provider&.name, slug ].map { |s| s.to_s.downcase }
+  end
+
+  def subsequence_of?(needle, haystack)
+    return false if needle.length < 3 || needle.length > haystack.length
+
+    i = 0
+    haystack.each_char { |c| i += 1 if c == needle[i] }
+    i == needle.length
+  end
 
   def set_slug
     self.slug ||= name&.parameterize
