@@ -4,6 +4,7 @@ module Admin
 
     def index
       @providers = Provider.order(:name)
+      @model_counts = AiModel.group(:provider_id).count
     end
 
     def new

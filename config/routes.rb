@@ -19,8 +19,8 @@ Rails.application.routes.draw do
     post   "login",  to: "sessions#create"
     delete "logout", to: "sessions#destroy"
 
-    resources :providers
-    resources :models do
+    resources :providers, except: :show
+    resources :models, except: :show do
       resources :price_points, only: %i[new create edit update destroy]
     end
   end

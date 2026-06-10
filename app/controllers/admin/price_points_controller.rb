@@ -10,7 +10,8 @@ module Admin
     def create
       @price_point = @model.price_points.new(price_point_params)
       if @price_point.save
-        redirect_to admin_models_path, notice: "Added #{@model.name} price for #{@price_point.effective_on}."
+        redirect_to edit_admin_model_path(@model),
+                    notice: "Added #{@model.name} price for #{@price_point.effective_on.strftime('%-d %b %Y')}."
       else
         render :new, status: :unprocessable_entity
       end
@@ -20,7 +21,7 @@ module Admin
 
     def update
       if @price_point.update(price_point_params)
-        redirect_to admin_models_path, notice: "Updated price."
+        redirect_to edit_admin_model_path(@model), notice: "Updated price."
       else
         render :edit, status: :unprocessable_entity
       end

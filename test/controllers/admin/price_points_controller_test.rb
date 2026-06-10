@@ -16,7 +16,7 @@ class Admin::PricePointsControllerTest < ActionDispatch::IntegrationTest
         effective_on: Date.new(2026, 6, 1), input_per_mtok: 4, output_per_mtok: 20
       } }
     end
-    assert_redirected_to admin_models_path
+    assert_redirected_to edit_admin_model_path(model)
     assert_equal 4, model.reload.current_input
   end
 
