@@ -62,15 +62,57 @@ Covers the pricing/blended-price domain logic and every public route.
 
 ## Updating prices
 
-For now, prices live in `db/seeds.rb` (idempotent — safe to re-run). Edit a model's `prices:`
+Curated prices live in `db/seeds.rb` (idempotent — safe to re-run). Edit a model's `prices:`
 array to add a snapshot, then `bin/rails db:seed`.
+
+## OpenRouter sync
+
+A daily job (`OpenRouterSyncJob`, scheduled in `config/recurring.yml`) pulls
+[OpenRouter's](https://openrouter.ai) public model catalogue and uses it as an automated
+data source alongside the hand-curated catalogue and manual edits. It:
+
+- **Augments** the list — adds models we don't already track (keyed by `AiModel#openrouter_id`),
+  attaching them to the matching curated provider where one exists.
+- **Never clobbers curated data** — a model that duplicates a curated one (same provider, same
+  normalised name) is left to the curated record, and `source: "manual"` rows keep their
+  hand-written metadata and authoritative price history.
+- **Keeps history honest** — appends a new `PricePoint` (`source: "openrouter.ai"`) only when
+  the price actually moved since the last snapshot.
+
+The scheduled run fires in **production only** (like the other recurring jobs); locally, run it
+on demand with `bin/rails openrouter:sync`. No API key is needed for the public models endpoint;
+set `OPENROUTER_API_KEY` if you want authenticated requests. The mapping lives in
+`app/services/open_router/` (`Client` fetches, `ModelSync` imports).
+
+OpenRouter doesn't expose a capability tier, and price is a poor proxy for it, so imported models
+land in a neutral `mid` tier for a human to re-curate — this also keeps a bulk import out of the
+cheapest-frontier headline, which only ranks `frontier`-tier models.
+
+To opt a curated model into automated price enrichment, set its `openrouter_id` (e.g. via the
+admin) to the matching OpenRouter id — the sync will then append its price moves while leaving
+the curated metadata untouched.
+
+## Admin
+
+A password-protected admin at `/admin` for adding/editing prices, models, and providers
+by hand (e.g. when you read a new price online). Auth is a single shared password — its
+bcrypt digest lives in encrypted credentials, verified in `Admin::SessionsController`.
+
+Set the password once:
+
+```bash
+bin/rails 'admin:set_password[your-password]'   # writes admin_password_digest to credentials
+```
+
+Then sign in at `/admin/login`. In production, supply `RAILS_MASTER_KEY` so credentials
+decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
 
 ## Roadmap
 
 The schema and Solid Queue are set up for where this is heading:
 
-- **Scraper job** — a recurring Active Job (see `config/recurring.yml`) that checks provider
-  pricing pages and appends a `PricePoint` when something changes.
+- **Scraper job** — the OpenRouter sync above is the first of these. More provider-specific
+  sources (checking pricing pages directly) can append `PricePoint`s the same way.
 - **Model-news context** — pull release announcements (e.g. "Opus 4.8 released") and surface
   them alongside the price timeline.
 - Interactive charts (Chartkick/Chart.js or Inertia) once deployed somewhere with CDN access.

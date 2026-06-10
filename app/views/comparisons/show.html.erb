@@ -1,81 +1,478 @@
 <% content_for :title, "Compare #{@left&.name} vs #{@right&.name} — tokenprice.fyi" %>
 
+<%# ── Page-specific styles ──────────────────────────────────────────────── %>
+<style>
+/* ── Comparison table ─────────────────────────────────────────────────── */
+.cmp-table {
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: #fff;
+}
+.cmp-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) 1fr 1fr;
+  border-bottom: 1px solid var(--color-slate-100);
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-row .lbl {
+  padding: 17px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+  background: var(--color-slate-50);
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--color-slate-100);
+  font-family: var(--font-mono);
+}
+.cmp-cell {
+  padding: 17px 20px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+  border-right: 1px solid var(--color-slate-100);
+  position: relative;
+  transition: background .25s var(--ease-default);
+}
+.cmp-cell:last-child { border-right: none; }
+.cmp-cell .val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.cmp-cell.txt .val {
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+.cmp-cell.win { background: var(--color-emerald-50); }
+.cmp-cell.win .val { color: var(--color-emerald-700); }
+/* Accent row for I/O price */
+.cmp-row.accent .lbl {
+  background: var(--color-indigo-50);
+  color: var(--color-indigo-400);
+  border-right-color: var(--color-indigo-100);
+}
+.cmp-row.accent { border-bottom-color: var(--color-indigo-100); }
+.cmp-row.accent .cmp-cell { border-right-color: var(--color-indigo-100); }
+
+/* Win checkmark */
+.cmp-win-mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-emerald-500);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  opacity: 0;
+  transform: scale(.4);
+  transition: opacity .2s var(--ease-out), transform .22s var(--ease-out);
+}
+.cmp-win-mark svg { width: 11px; height: 11px; color: #fff; }
+.cmp-cell.win .cmp-win-mark { opacity: 1; transform: scale(1); }
+
+/* ── Selector buttons ──────────────────────────────────────────────────── */
+.sel-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  transition: border-color .18s var(--ease-default), box-shadow .18s var(--ease-default);
+}
+.sel-btn:hover { border-color: var(--color-indigo-200); }
+.sel-btn[aria-expanded="true"] {
+  border-color: var(--color-indigo-400);
+  box-shadow: 0 0 0 4px var(--color-indigo-100);
+}
+
+/* ── Popover ───────────────────────────────────────────────────────────── */
+.sel-wrap { position: relative; }
+.cmp-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: #fff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .16s var(--ease-default), transform .16s var(--ease-default);
+}
+.cmp-pop.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.cmp-pop-search {
+  position: relative;
+  flex: none;
+  margin-bottom: 8px;
+}
+.cmp-pop-search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-slate-400);
+  pointer-events: none;
+}
+.cmp-pop-search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px 0 36px;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 10px;
+  background: var(--color-slate-50);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-slate-900);
+  outline: none;
+  transition: border-color .16s var(--ease-default), box-shadow .16s var(--ease-default);
+}
+.cmp-pop-search input::placeholder { color: var(--color-slate-400); }
+.cmp-pop-search input:focus {
+  border-color: var(--color-indigo-400);
+  box-shadow: 0 0 0 3px var(--color-indigo-100);
+  background: #fff;
+}
+.cmp-pop-list {
+  overflow-y: auto;
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cmp-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 11px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  text-align: left;
+  transition: background .14s var(--ease-default);
+}
+.cmp-pop-item:hover { background: var(--color-slate-50); }
+.cmp-pop-item.current { background: var(--color-indigo-50); }
+.cmp-pop-item.current .cmp-pop-item-name { color: var(--color-indigo-700); }
+.cmp-pop-item[aria-disabled="true"] { opacity: .4; pointer-events: none; cursor: default; }
+.cmp-pop-item-info { flex: 1; min-width: 0; }
+.cmp-pop-item-name { font-size: 14px; font-weight: 600; letter-spacing: -0.02em; color: var(--color-slate-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmp-pop-item-price { font-size: 12px; font-family: var(--font-mono); color: var(--color-slate-400); letter-spacing: -0.01em; }
+
+/* ── Swap button ───────────────────────────────────────────────────────── */
+.cmp-swap-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-slate-300);
+  background: #fff;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+  margin: auto;
+  box-shadow: var(--shadow-xs);
+  transition: border-color .18s var(--ease-default), background .18s var(--ease-default), transform .25s var(--ease-default);
+  color: var(--color-slate-500);
+}
+.cmp-swap-btn:hover {
+  border-color: var(--color-indigo-400);
+  background: var(--color-indigo-50);
+  color: var(--color-indigo-600);
+  transform: rotate(180deg);
+}
+.cmp-swap-btn svg { width: 18px; height: 18px; }
+
+/* ── Selector grid ─────────────────────────────────────────────────────── */
+.cmp-selectors {
+  display: grid;
+  grid-template-columns: 42px 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+@media (max-width: 720px) {
+  .cmp-selectors {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cmp-swap-col { display: none; }
+}
+
+/* Selector info layout */
+.sel-btn-info { flex: 1; min-width: 0; }
+.sel-btn-name { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--color-slate-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sel-btn-sub  { font-size: 12px; color: var(--color-slate-400); margin-top: 2px; }
+.sel-btn-caret { flex: none; color: var(--color-slate-400); width: 17px; height: 17px; }
+
+/* ── Provider square sizes ─────────────────────────────────────────────── */
+.tp-prov-sq-sel {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  font-size: 16px;
+}
+</style>
+
+<%# ── Header ──────────────────────────────────────────────────────────────── %>
 <section class="mb-8">
-  <h1 class="text-3xl font-bold tracking-tight">Compare models</h1>
-  <p class="mt-2 text-slate-600">Put any two models side by side. Cheaper figure in each row is highlighted.</p>
+  <h1 class="text-4xl font-semibold tracking-tight text-slate-900">Compare two models</h1>
+  <p class="mt-2 text-slate-500 text-base">Put any two models head to head. The cheaper price — or larger context — wins each row.</p>
 </section>
 
-<%= form_with url: compare_path, method: :get, class: "mb-8 flex flex-wrap items-end gap-3" do |f| %>
-  <div>
-    <%= f.label :a, "Model A", class: "block text-xs font-medium text-slate-500 mb-1" %>
-    <%= f.select :a, options_from_collection_for_select(@all_models, :slug, :name, @left&.slug),
-          {}, class: "rounded-lg border-slate-300 bg-white py-2 pl-3 pr-8 text-sm" %>
-  </div>
-  <span class="pb-2 text-slate-400">vs</span>
-  <div>
-    <%= f.label :b, "Model B", class: "block text-xs font-medium text-slate-500 mb-1" %>
-    <%= f.select :b, options_from_collection_for_select(@all_models, :slug, :name, @right&.slug),
-          {}, class: "rounded-lg border-slate-300 bg-white py-2 pl-3 pr-8 text-sm" %>
-  </div>
-  <%= f.submit "Compare", class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 cursor-pointer" %>
-<% end %>
+<%# ── Selector row ─────────────────────────────────────────────────────────── %>
+<div data-controller="compare"
+     data-compare-slug-a-value="<%= @left&.slug %>"
+     data-compare-slug-b-value="<%= @right&.slug %>">
 
-<% if @left && @right %>
-  <%
-    # [label, value_lambda, comparison, format]
-    rows = [
-      ["Provider",          ->(m) { m.provider.name },                      :none,          :text],
-      ["Tier",              ->(m) { tier_badge(m.tier) },                   :none,          :raw],
-      ["Input / 1M",        ->(m) { m.current_input },                      :lower_better,  :usd],
-      ["Output / 1M",       ->(m) { m.current_output },                     :lower_better,  :usd],
-      ["Blended / 1M",      ->(m) { m.blended_per_mtok },                   :lower_better,  :usd],
-      ["Cached input / 1M", ->(m) { m.current_cached_input },               :lower_better,  :usd],
-      ["Context window",    ->(m) { m.context_window },                     :higher_better, :tokens],
-      ["Max output",        ->(m) { m.max_output_tokens },                  :higher_better, :tokens],
-      ["Released",          ->(m) { m.released_on&.strftime("%b %Y") || "—" }, :none,       :text]
-    ]
-  %>
-  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-    <table class="min-w-full divide-y divide-slate-200 text-sm">
-      <thead class="bg-slate-50">
-        <tr>
-          <th scope="col" class="px-4 py-3"><span class="sr-only">Attribute</span></th>
-          <% [@left, @right].each do |m| %>
-            <th scope="col" class="px-4 py-4 text-left">
-              <%= link_to m.name, model_path(m), class: "text-base font-semibold text-slate-900 hover:text-indigo-600" %>
-              <p class="text-xs font-normal text-slate-500"><%= m.provider.name %></p>
-            </th>
-          <% end %>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        <% rows.each do |label, fn, comparison, format| %>
-          <% a = fn.call(@left); b = fn.call(@right) %>
-          <% winner =
-               if comparison == :none || a.nil? || b.nil? || a.to_f == b.to_f
-                 nil
-               elsif comparison == :lower_better
-                 a.to_f < b.to_f ? :a : :b
-               else
-                 a.to_f > b.to_f ? :a : :b
-               end %>
-          <tr>
-            <th scope="row" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 whitespace-nowrap"><%= label %></th>
-            <% { a: a, b: b }.each do |side, value| %>
-              <td class="px-4 py-3 tabular-nums <%= 'font-semibold text-emerald-700' if winner == side %>">
-                <% case format
-                   when :usd %><%= usd(value) %>
-                <% when :tokens %><%= tokens_short(value) %>
-                <% else %><%= value %>
-                <% end %>
-                <% if winner == side %><span class="ml-1 text-emerald-600" aria-hidden="true">✓</span><span class="sr-only">best value</span><% end %>
-              </td>
-            <% end %>
-          </tr>
+  <div class="cmp-selectors">
+    <%# Swap button %>
+    <div class="cmp-swap-col" style="display:flex; align-items:center; justify-content:center; padding-top:4px;">
+      <button class="cmp-swap-btn"
+              data-action="click->compare#swap"
+              data-compare-target="swapBtn"
+              aria-label="Swap models"
+              title="Swap sides">
+        <%= raw ApplicationHelper::ICONS[:swap] %>
+      </button>
+    </div>
+
+    <%# Selector A %>
+    <div class="sel-wrap">
+      <button class="sel-btn"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+              data-compare-target="btnA"
+              data-action="click->compare#toggleA">
+        <%= provider_square(@left.provider, size: :md) if @left %>
+        <% unless @left %>
+          <span class="tp-prov-sq tp-prov-sq-md" style="background:#6366f1">?</span>
         <% end %>
-      </tbody>
-    </table>
+        <span class="sel-btn-info">
+          <span class="sel-btn-name"><%= @left&.name || "Select a model" %></span>
+          <span class="sel-btn-sub">
+            <% if @left %>
+              <%= @left.provider.name %> · <%= @left.tier&.titleize %>
+            <% else %>
+              Choose model A
+            <% end %>
+          </span>
+        </span>
+        <span class="sel-btn-caret"><%= raw ApplicationHelper::ICONS[:chevron_down] %></span>
+      </button>
+
+      <div class="cmp-pop" data-compare-target="popA" aria-label="Select model A">
+        <div class="cmp-pop-search">
+          <%= raw ApplicationHelper::ICONS[:search] %>
+          <input type="search"
+                 placeholder="Search models…"
+                 autocomplete="off"
+                 aria-label="Search models"
+                 data-compare-target="searchA"
+                 data-action="input->compare#searchA">
+        </div>
+        <ul class="cmp-pop-list" data-compare-target="listA" role="listbox">
+          <% @all_models.each do |m| %>
+            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>" role="option" aria-selected="<%= @left&.slug == m.slug ? 'true' : 'false' %>">
+              <button class="cmp-pop-item <%= 'current' if @left&.slug == m.slug %>"
+                      data-action="click->compare#pick"
+                      data-side="A"
+                      data-slug="<%= m.slug %>"
+                      aria-disabled="<%= @right&.slug == m.slug ? 'true' : 'false' %>">
+                <%= provider_square(m.provider, size: :sm) %>
+                <span class="cmp-pop-item-info">
+                  <span class="cmp-pop-item-name"><%= m.name %></span>
+                  <span class="cmp-pop-item-price"><%= usd(m.blended_per_mtok) %></span>
+                </span>
+              </button>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <%# Selector B %>
+    <div class="sel-wrap">
+      <button class="sel-btn"
+              aria-expanded="false"
+              aria-haspopup="listbox"
+              data-compare-target="btnB"
+              data-action="click->compare#toggleB">
+        <%= provider_square(@right.provider, size: :md) if @right %>
+        <% unless @right %>
+          <span class="tp-prov-sq tp-prov-sq-md" style="background:#6366f1">?</span>
+        <% end %>
+        <span class="sel-btn-info">
+          <span class="sel-btn-name"><%= @right&.name || "Select a model" %></span>
+          <span class="sel-btn-sub">
+            <% if @right %>
+              <%= @right.provider.name %> · <%= @right.tier&.titleize %>
+            <% else %>
+              Choose model B
+            <% end %>
+          </span>
+        </span>
+        <span class="sel-btn-caret"><%= raw ApplicationHelper::ICONS[:chevron_down] %></span>
+      </button>
+
+      <div class="cmp-pop" data-compare-target="popB" aria-label="Select model B">
+        <div class="cmp-pop-search">
+          <%= raw ApplicationHelper::ICONS[:search] %>
+          <input type="search"
+                 placeholder="Search models…"
+                 autocomplete="off"
+                 aria-label="Search models"
+                 data-compare-target="searchB"
+                 data-action="input->compare#searchB">
+        </div>
+        <ul class="cmp-pop-list" data-compare-target="listB" role="listbox">
+          <% @all_models.each do |m| %>
+            <li data-model-name="<%= m.name %>" data-model-provider="<%= m.provider.name %>" role="option" aria-selected="<%= @right&.slug == m.slug ? 'true' : 'false' %>">
+              <button class="cmp-pop-item <%= 'current' if @right&.slug == m.slug %>"
+                      data-action="click->compare#pick"
+                      data-side="B"
+                      data-slug="<%= m.slug %>"
+                      aria-disabled="<%= @left&.slug == m.slug ? 'true' : 'false' %>">
+                <%= provider_square(m.provider, size: :sm) %>
+                <span class="cmp-pop-item-info">
+                  <span class="cmp-pop-item-name"><%= m.name %></span>
+                  <span class="cmp-pop-item-price"><%= usd(m.blended_per_mtok) %></span>
+                </span>
+              </button>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
   </div>
-<% else %>
-  <p class="text-slate-500">Pick two models to compare.</p>
-<% end %>
+
+  <%# ── Comparison table ─────────────────────────────────────────────────── %>
+  <% if @left && @right %>
+    <%
+      # Determine numeric winner: :a, :b, or nil
+      winner_for = ->(a_val, b_val, comparison) do
+        next nil if comparison == :none
+        next nil if a_val.nil? && b_val.nil?
+        if comparison == :lower_better
+          a = a_val.nil? ? Float::INFINITY  : a_val.to_f
+          b = b_val.nil? ? Float::INFINITY  : b_val.to_f
+        else
+          a = a_val.nil? ? -Float::INFINITY : a_val.to_f
+          b = b_val.nil? ? -Float::INFINITY : b_val.to_f
+        end
+        next nil if a == b
+        comparison == :lower_better ? (a < b ? :a : :b) : (a > b ? :a : :b)
+      end
+    %>
+
+    <div class="cmp-table">
+
+      <%# Row 1 — I/O price (accent, no winner) %>
+      <div class="cmp-row accent">
+        <div class="lbl">I/O price /1M</div>
+        <div class="cmp-cell">
+          <span class="val"><%= io_price(@left) %></span>
+        </div>
+        <div class="cmp-cell">
+          <span class="val"><%= io_price(@right) %></span>
+        </div>
+      </div>
+
+      <%
+        numeric_rows = [
+          { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         cmp: :lower_better,  fmt: :usd },
+          { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        cmp: :lower_better,  fmt: :usd },
+          { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  cmp: :lower_better,  fmt: :usd },
+          { label: "I/O avg /1M",    a_val: @left.blended_per_mtok,      b_val: @right.blended_per_mtok,      cmp: :lower_better,  fmt: :usd },
+          { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
+        ]
+        text_rows = [
+          { label: "Tier",     a_val: tier_badge(@left.tier),   b_val: tier_badge(@right.tier),   fmt: :raw  },
+          { label: "Released", a_val: fmt_date(@left.released_on), b_val: fmt_date(@right.released_on), fmt: :text },
+          { label: "Status",   a_val: status_badge(@left.status),  b_val: status_badge(@right.status),  fmt: :raw  },
+          { label: "Provider", a_val: nil, b_val: nil, fmt: :provider },
+        ]
+      %>
+
+      <%# Numeric rows with winner highlighting %>
+      <% numeric_rows.each_with_index do |row, i| %>
+        <% w = winner_for.call(row[:a_val], row[:b_val], row[:cmp]) %>
+        <div class="cmp-row">
+          <div class="lbl"><%= row[:label] %></div>
+          <% [:a, :b].each do |side| %>
+            <% val    = side == :a ? row[:a_val] : row[:b_val] %>
+            <% is_win = w == side %>
+            <div class="cmp-cell <%= 'win' if is_win %>">
+              <span class="cmp-win-mark" aria-hidden="true" style="transition-delay:<%= is_win ? "#{i * 90}ms" : '0ms' %>">
+                <%= raw ApplicationHelper::ICONS[:check] %>
+              </span>
+              <span class="val">
+                <% if row[:fmt] == :usd %>
+                  <%= usd(val) %>
+                <% elsif row[:fmt] == :tokens %>
+                  <%= tokens_short(val) %>
+                <% end %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Text / non-comparable rows %>
+      <% text_rows.each do |row| %>
+        <div class="cmp-row">
+          <div class="lbl"><%= row[:label] %></div>
+          <% [:a, :b].each do |side| %>
+            <div class="cmp-cell txt">
+              <span class="val">
+                <% if row[:fmt] == :provider %>
+                  <% m = side == :a ? @left : @right %>
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <%= provider_square(m.provider, size: :md) %>
+                    <span><%= m.provider.name %></span>
+                  </div>
+                <% elsif row[:fmt] == :raw %>
+                  <% v = side == :a ? row[:a_val] : row[:b_val] %>
+                  <%= v.present? ? raw(v) : content_tag(:span, "—", class: "tp-muted-dash") %>
+                <% else %>
+                  <% v = side == :a ? row[:a_val] : row[:b_val] %>
+                  <%= v.present? ? v : content_tag(:span, "—", class: "tp-muted-dash") %>
+                <% end %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+    </div><%# /.cmp-table %>
+  <% else %>
+    <p class="text-slate-500">Pick two models above to compare them.</p>
+  <% end %>
+
+</div><%# /[data-controller="compare"] %>

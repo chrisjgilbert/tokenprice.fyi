@@ -1,0 +1,45 @@
+<nav class="mb-4 text-sm text-slate-500"><%= link_to "← Models", admin_models_path, class: "hover:text-slate-900" %></nav>
+<h1 class="mb-6 text-2xl font-bold tracking-tight">Edit <%= @model.name %></h1>
+
+<%= render "form", model: @model %>
+
+<section class="mt-10">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-lg font-semibold">Price history</h2>
+    <%= link_to "+ Add price", new_admin_model_price_point_path(@model),
+          class: "rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500" %>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th scope="col" class="px-4 py-3 font-medium">Effective</th>
+          <th scope="col" class="px-4 py-3 font-medium text-right">Input</th>
+          <th scope="col" class="px-4 py-3 font-medium text-right">Output</th>
+          <th scope="col" class="px-4 py-3 font-medium text-right">Cached</th>
+          <th scope="col" class="px-4 py-3 font-medium">Source</th>
+          <th scope="col" class="px-4 py-3 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @model.price_points.chronological.reverse_each do |pp| %>
+          <tr>
+            <td class="px-4 py-3 whitespace-nowrap"><%= pp.effective_on.strftime("%-d %b %Y") %></td>
+            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.input_per_mtok) %></td>
+            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.output_per_mtok) %></td>
+            <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(pp.cached_input_per_mtok) %></td>
+            <td class="px-4 py-3 text-slate-500"><%= pp.source %></td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <%= link_to "Edit", edit_admin_model_price_point_path(@model, pp), class: "text-slate-500 hover:underline" %>
+              <span class="text-slate-300">·</span>
+              <%= button_to "Delete", admin_model_price_point_path(@model, pp), method: :delete,
+                    form: { data: { turbo_confirm: "Delete this price snapshot?" }, class: "inline" },
+                    class: "text-rose-600 hover:underline bg-transparent" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>
