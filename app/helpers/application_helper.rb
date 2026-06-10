@@ -51,14 +51,25 @@ module ApplicationHelper
   def sort_link(label, key, current_sort:, current_dir:, filters: {}, &url_builder)
     active = current_sort == key
     next_dir = active && current_dir == "asc" ? "desc" : "asc"
-    arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
     sort_params = filters.merge(sort: key, dir: next_dir)
     target_url = block_given? ? yield(sort_params) : root_path(sort_params)
+
+    if active
+      arrow = current_dir == "asc" ? "▲" : "▼"
+      arrow_classes = "text-[10px] text-indigo-600"
+    else
+      arrow = "▲▼"
+      arrow_classes = "text-[8px] leading-none opacity-0 group-hover:opacity-60 transition-opacity"
+    end
+
     link_to target_url,
-            class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
+            class: "group inline-flex items-center gap-1 cursor-pointer hover:text-indigo-600 #{'text-indigo-600' if active}",
             data: { turbo_frame: "models", turbo_action: "advance" },
             "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
-      safe_join([ label, content_tag(:span, arrow, "aria-hidden": "true", class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
+      safe_join([
+        label,
+        content_tag(:span, arrow, "aria-hidden": "true", class: arrow_classes)
+      ], " ")
     end
   end
 
