@@ -139,6 +139,6 @@ export default class extends Controller {
     url.searchParams.set("b", this.slugBValue)
     // Turbo.visit does a full page replace which re-renders the server HTML
     // and updates the browser URL — exactly what we need.
-    window.Turbo.visit(url.toString(), { action: "replace" })
+    window.Turbo?.visit(url.toString(), { action: "replace" })
   }
 }
