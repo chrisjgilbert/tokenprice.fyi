@@ -62,24 +62,31 @@ class AiModel < ApplicationRecord
   end
 
   # Fuzzy match against name, provider and slug. Every word in the query must
-  # be a substring of some search term, or — to forgive typos and skipped
-  # punctuation ("antropic", "gpt52") — an in-order subsequence of one.
+  # be a substring of some search term, or — to forgive typos like
+  # "antropic" — an in-order subsequence of a single word.
   def matches?(query)
     words = query.to_s.downcase.scan(/[a-z0-9]+/)
     words.all? do |word|
-      search_terms.any? { |term| term.include?(word) || subsequence_of?(word, term) }
+      search_words.any? { |term| term.include?(word) || subsequence_of?(word, term) } ||
+        search_runs.any? { |run| run.include?(word) }
     end
   end
 
   private
 
-  # Individual words plus punctuation-stripped runs, so "4.8" is findable as
-  # both "4 8" and "48", and "GPT-5.2" as "gpt52".
-  def search_terms
-    @search_terms ||= [ name, provider.name, slug ].flat_map { |s|
-      text = s.to_s.downcase
-      text.scan(/[a-z0-9]+/) + [ text.gsub(/[^a-z0-9]/, "") ]
-    }.uniq
+  def search_words
+    @search_words ||= search_sources.flat_map { |s| s.scan(/[a-z0-9]+/) }.uniq
+  end
+
+  # Punctuation-stripped runs ("claudeopus48") catch queries that skip the
+  # separators, like "gpt55". Substring-only: subsequence matching against
+  # runs this long would let almost any short letter combo match.
+  def search_runs
+    @search_runs ||= search_sources.map { |s| s.gsub(/[^a-z0-9]/, "") }.uniq
+  end
+
+  def search_sources
+    [ name, provider&.name, slug ].map { |s| s.to_s.downcase }
   end
 
   def subsequence_of?(needle, haystack)

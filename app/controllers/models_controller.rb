@@ -22,7 +22,8 @@ class ModelsController < ApplicationController
     @sort = params[:sort].presence_in(SORTS.keys) || "blended"
     @dir  = params[:dir] == "desc" ? "desc" : "asc"
 
-    @query = params[:q].to_s.strip
+    # Capped so a pathological query can't burn CPU in the fuzzy matcher.
+    @query = params[:q].to_s.strip[0, 100]
 
     models = scope.to_a
     models.select! { |m| m.matches?(@query) } if @query.present?

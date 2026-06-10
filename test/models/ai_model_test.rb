@@ -52,6 +52,15 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not ai_models(:opus).matches?("deepseek")
   end
 
+  test "matches? does not subsequence-match across word boundaries" do
+    # Each is an in-order letter pick from "claudeopus48" but no single word.
+    %w[cap lap cs4 la8].each do |junk|
+      assert_not ai_models(:opus).matches?(junk), "#{junk.inspect} should not match Claude Opus 4.8"
+    end
+    # Within a single word a dropped letter still matches ("opus" sans u).
+    assert ai_models(:opus).matches?("ops")
+  end
+
   test "matches? accepts everything for a blank query" do
     assert ai_models(:opus).matches?("")
     assert ai_models(:opus).matches?(nil)
