@@ -359,4 +359,31 @@ catalog.each do |row|
   end
 end
 
-puts "Seeded #{Provider.count} providers, #{AiModel.count} models, #{PricePoint.count} price points."
+
+# ---------------------------------------------------------------------------
+# Market Events — curated industry milestones for Trends overlays
+# ---------------------------------------------------------------------------
+market_events = [
+  { title: "OpenAI cuts GPT-4o 50%", event_date: "2024-08-06",
+    note: "GPT-4o input drops $5→$2.50/1M and prompt caching arrives — the first big frontier price war shot." },
+  { title: "The DeepSeek moment", event_date: "2025-01-20",
+    note: "DeepSeek R1 ships near-frontier reasoning at ~1/20th the price. Markets jolt; pricing pressure spikes industry-wide." },
+  { title: "Long-context goes cheap", event_date: "2025-04-14",
+    note: "GPT-4.1 lands a 1M-token window at mid-tier pricing, matching Gemini on context economics." },
+  { title: "o3 price cut 80%", event_date: "2025-06-10",
+    note: "OpenAI slashes o3 by 80% ($10→$2/1M input), making frontier reasoning mainstream-affordable." },
+  { title: "GPT-5 sparks price war", event_date: "2025-08-07",
+    note: "GPT-5 launches at commodity pricing ($0.625/$5) — TechCrunch calls it a price-war trigger." },
+  { title: "Opus gets 67% cheaper", event_date: "2025-11-24",
+    note: "Anthropic drops Opus pricing from $15/$75 to $5/$25 with the Opus 4.5 release." },
+  { title: "DeepSeek V4 Pro 75% cut", event_date: "2026-05-22",
+    note: "DeepSeek makes a 75% promotional discount permanent, pricing V4 Pro at $0.435/$0.87." }
+]
+
+market_events.each do |attrs|
+  MarketEvent.find_or_initialize_by(event_date: Date.parse(attrs[:event_date]), title: attrs[:title]).tap do |e|
+    e.update!(kind: "market", note: attrs[:note])
+  end
+end
+
+puts "Seeded #{Provider.count} providers, #{AiModel.count} models, #{PricePoint.count} price points, #{MarketEvent.count} market events."

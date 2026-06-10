@@ -1,76 +1,518 @@
-<% content_for :title, "How LLM pricing is changing in #{@year} — tokenprice.fyi" %>
+<% content_for :title, "LLM pricing over time — tokenprice.fyi" %>
+<% content_for :description, "Track how model prices have moved since launch. Overlay model releases and market events. Compare frontier, budget, and custom model sets interactively." %>
 
-<section class="mb-10">
-  <h1 class="text-3xl font-bold tracking-tight">How pricing is changing</h1>
-  <p class="mt-2 max-w-2xl text-slate-600">The cheapest frontier intelligence, who has cut prices, and what shipped this year.</p>
-</section>
+<div class="trends-page">
+  <%# ── Page header ───────────────────────────────────────────────────── %>
+  <div class="trends-header">
+    <h1 class="trends-h1">Pricing over time</h1>
+    <p class="trends-subtitle">Track how model prices have moved since launch — overlay model releases and the market events that reset the curve. Pick a preset or build your own comparison.</p>
+  </div>
 
-<section class="mb-12">
-  <h2 class="mb-4 text-lg font-semibold">Cheapest frontier models</h2>
-  <ol class="space-y-2">
-    <% max = @frontier_ranked.map { |m| m.blended_per_mtok.to_f }.max %>
-    <% @frontier_ranked.each_with_index do |model, i| %>
-      <% pct = max.zero? ? 0 : (model.blended_per_mtok.to_f / max * 100).round %>
-      <li>
-        <%= link_to model_path(model), class: "group block rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-200" do %>
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500"><%= i + 1 %></span>
-              <div>
-                <p class="font-medium group-hover:text-indigo-600"><%= model.name %></p>
-                <p class="text-xs text-slate-500"><%= model.provider.name %></p>
+  <%# ── Main layout: sidebar + chart ────────────────────────────────── %>
+  <div
+    class="trends-layout"
+    data-controller="trends-chart"
+    data-trends-chart-models-value="<%= html_escape(@models_json) %>"
+    data-trends-chart-events-value="<%= html_escape(@all_events_json) %>"
+  >
+    <%# ── Sidebar ─────────────────────────────────────────────────────── %>
+    <aside class="trends-sidebar">
+      <%# Card 1: Presets %>
+      <div class="tp-card trends-sidebar-card">
+        <div class="trends-card-inner">
+          <span class="tp-field-label">Presets</span>
+          <div class="trends-preset-list" data-trends-chart-target="presetList">
+            <button
+              class="trends-preset-btn active"
+              data-action="click->trends-chart#selectPreset"
+              data-preset="anthropic-vs-openai"
+            >Anthropic vs OpenAI</button>
+            <button
+              class="trends-preset-btn"
+              data-action="click->trends-chart#selectPreset"
+              data-preset="frontier"
+            >All frontier</button>
+            <button
+              class="trends-preset-btn"
+              data-action="click->trends-chart#selectPreset"
+              data-preset="budget"
+            >Budget tier</button>
+            <button
+              class="trends-preset-btn"
+              data-action="click->trends-chart#selectPreset"
+              data-preset="the-cuts"
+            >Biggest price cuts</button>
+          </div>
+        </div>
+      </div>
+
+      <%# Card 2: Model picker %>
+      <div class="tp-card trends-sidebar-card">
+        <div class="trends-card-inner">
+          <span class="tp-field-label">
+            Models&nbsp;<span class="trends-sel-count" data-trends-chart-target="selCount">·&nbsp;<span class="trends-sel-n">0</span></span>
+          </span>
+          <div class="trends-model-list" data-trends-chart-target="modelList">
+            <%# Populated by Stimulus from JSON %>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <%# ── Chart card ──────────────────────────────────────────────────── %>
+    <div class="tp-card trends-chart-card">
+      <%# Toolbar %>
+      <div class="trends-toolbar">
+        <div class="trends-toolbar-left">
+          <div class="tp-seg" role="group" aria-label="Metric">
+            <button class="on" data-action="click->trends-chart#setMetric" data-metric="blended">I/O avg</button>
+            <button data-action="click->trends-chart#setMetric" data-metric="input">Input</button>
+            <button data-action="click->trends-chart#setMetric" data-metric="output">Output</button>
+          </div>
+          <div class="tp-seg" role="group" aria-label="Scale" data-trends-chart-target="scaleSeg">
+            <button class="on" data-action="click->trends-chart#setScale" data-scale="log">Log</button>
+            <button data-action="click->trends-chart#setScale" data-scale="linear">Linear</button>
+          </div>
+        </div>
+        <div class="trends-toolbar-right">
+          <label class="trends-toggle-label">
+            <span>Events</span>
+            <button
+              class="trends-toggle on"
+              role="switch"
+              aria-checked="true"
+              data-action="click->trends-chart#toggleEvents"
+              data-trends-chart-target="eventsToggle"
+            ><span class="trends-toggle-knob"></span></button>
+          </label>
+          <div class="trends-events-popover-wrap" data-trends-chart-target="eventsPopoverWrap">
+            <button
+              class="tp-btn tp-btn-ghost tp-btn-sm"
+              data-action="click->trends-chart#toggleEventsPopover"
+              data-trends-chart-target="eventsPopoverBtn"
+            >
+              <%= icon(:calendar) %>
+              Market events
+            </button>
+            <div class="trends-events-popover" data-trends-chart-target="eventsPopover">
+              <div class="trends-popover-header">Market events that reset pricing</div>
+              <div class="trends-popover-list" data-trends-chart-target="eventsPopoverList">
+                <%# Populated by Stimulus %>
               </div>
             </div>
-            <p class="text-sm font-semibold tabular-nums"><%= usd(model.blended_per_mtok) %><span class="font-normal text-slate-500"> /1M blended</span></p>
           </div>
-          <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full rounded-full bg-indigo-500" style="width: <%= [pct, 4].max %>%"></div>
-          </div>
-        <% end %>
-      </li>
-    <% end %>
-  </ol>
-</section>
+        </div>
+      </div>
 
-<section class="mb-12">
-  <h2 class="mb-4 text-lg font-semibold">Recent price moves</h2>
-  <% if @movers.any? %>
-    <div class="grid gap-3 sm:grid-cols-2">
-      <% @movers.each do |model| %>
-        <%= link_to model_path(model), class: "block rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-200" do %>
-          <div class="flex items-center justify-between">
-            <p class="font-medium"><%= model.name %></p>
-            <%= price_change_badge(model.blended_change_since_launch) %>
+      <%# SVG Chart area %>
+      <div class="trends-chart-area" data-trends-chart-target="chartArea">
+        <div class="trends-empty-state" data-trends-chart-target="emptyState">
+          <div class="tp-empty">
+            <div class="tp-empty-icon"><%= icon(:trend_down, size: 26) %></div>
+            <p class="font-medium">Select at least one model to plot.</p>
+            <p class="text-sm mt-1" style="color:var(--color-slate-400)">Choose a preset or pick models from the sidebar.</p>
           </div>
-          <p class="mt-1 text-sm text-slate-500">
-            <%= usd(model.launch_price.input_per_mtok) %> → <%= usd(model.current_input) %> input ·
-            <%= usd(model.launch_price.output_per_mtok) %> → <%= usd(model.current_output) %> output
-          </p>
-        <% end %>
-      <% end %>
+        </div>
+        <svg
+          class="trends-svg"
+          data-trends-chart-target="svg"
+          viewBox="0 0 880 380"
+          preserveAspectRatio="xMidYMid meet"
+          aria-label="Model price history chart"
+          role="img"
+        ></svg>
+        <div class="trends-tooltip" data-trends-chart-target="tooltip"></div>
+      </div>
+
+      <%# Legend %>
+      <div class="trends-legend" data-trends-chart-target="legend"></div>
     </div>
-  <% else %>
-    <p class="text-sm text-slate-500">No tracked price changes yet — they’ll show up here as prices move.</p>
-  <% end %>
-</section>
+  </div>
+</div>
 
-<section>
-  <h2 class="mb-4 text-lg font-semibold">Released in <%= @year %></h2>
-  <% if @timeline.any? %>
-    <ol class="relative ml-3 border-l border-slate-200">
-      <% @timeline.each do |model| %>
-        <li class="mb-5 ml-5">
-          <span class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-indigo-500"></span>
-          <time class="text-xs font-medium uppercase tracking-wide text-slate-400"><%= model.released_on.strftime("%-d %b") %></time>
-          <p class="mt-0.5">
-            <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
-            <span class="text-slate-400">·</span>
-            <span class="text-sm text-slate-500"><%= model.provider.name %> · in <%= usd(model.current_input) %> / out <%= usd(model.current_output) %></span>
-          </p>
-        </li>
-      <% end %>
-    </ol>
-  <% else %>
-    <p class="text-sm text-slate-500">No dated releases recorded for <%= @year %> yet.</p>
-  <% end %>
-</section>
+<style>
+/* ── Trends page layout ─────────────────────────────────────────────── */
+.trends-page {
+  padding-top: 36px;
+  padding-bottom: 60px;
+}
+.trends-header {
+  margin-bottom: 28px;
+}
+.trends-h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--color-slate-900);
+}
+.trends-subtitle {
+  margin-top: 10px;
+  max-width: 640px;
+  color: var(--color-slate-500);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── 2-column grid ──────────────────────────────────────────────────── */
+.trends-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .trends-layout {
+    grid-template-columns: 1fr;
+  }
+  .trends-sidebar {
+    position: static !important;
+  }
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.trends-sidebar {
+  position: sticky;
+  top: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.trends-sidebar-card {
+  overflow: hidden;
+}
+.trends-card-inner {
+  padding: 16px;
+}
+
+/* ── Presets ─────────────────────────────────────────────────────────── */
+.trends-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.trends-preset-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-slate-700);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .14s, color .14s, border-color .14s;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+}
+.trends-preset-btn:hover {
+  background: var(--color-slate-50);
+  border-color: var(--color-slate-200);
+}
+.trends-preset-btn.active {
+  background: var(--color-indigo-600);
+  color: #fff;
+  border-color: var(--color-indigo-600);
+}
+
+/* ── Model list ──────────────────────────────────────────────────────── */
+.trends-sel-count {
+  color: var(--color-indigo-600);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.trends-model-list {
+  max-height: 420px;
+  overflow-y: auto;
+  margin: 0 -16px;
+  padding: 0 8px;
+}
+.trends-model-list::-webkit-scrollbar { width: 4px; }
+.trends-model-list::-webkit-scrollbar-thumb { background: var(--color-slate-200); border-radius: 2px; }
+
+.trends-group-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 8px 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+  background: #fff;
+}
+.trends-model-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+  transition: background .12s;
+}
+.trends-model-row:hover { background: var(--color-slate-50); }
+.trends-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  transition: background .12s, box-shadow .12s;
+}
+.trends-model-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-slate-800);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trends-model-price {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-slate-400);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ── Chart card ──────────────────────────────────────────────────────── */
+.trends-chart-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────── */
+.trends-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-slate-100);
+  flex-wrap: wrap;
+}
+.trends-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.trends-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+/* Events toggle */
+.trends-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-slate-600);
+  cursor: pointer;
+  user-select: none;
+}
+.trends-toggle {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  border-radius: var(--radius-pill);
+  background: var(--color-slate-200);
+  border: none;
+  cursor: pointer;
+  transition: background .18s;
+  flex: none;
+  padding: 0;
+}
+.trends-toggle.on { background: var(--color-indigo-600); }
+.trends-toggle-knob {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: transform .18s var(--ease-default);
+}
+.trends-toggle.on .trends-toggle-knob { transform: translateX(15px); }
+
+/* Events popover */
+.trends-events-popover-wrap {
+  position: relative;
+}
+.trends-events-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  width: 360px;
+  background: #fff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.trends-events-popover.open { display: block; }
+.trends-popover-header {
+  padding: 13px 16px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+  border-bottom: 1px solid var(--color-slate-100);
+}
+.trends-popover-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.trends-event-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-slate-50);
+  cursor: pointer;
+  transition: background .12s;
+}
+.trends-event-row:last-child { border-bottom: none; }
+.trends-event-row:hover { background: var(--color-rose-50); }
+.trends-event-date {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-rose-500);
+  letter-spacing: .02em;
+}
+.trends-event-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+.trends-event-note {
+  font-size: 12px;
+  color: var(--color-slate-500);
+  line-height: 1.45;
+}
+
+/* ── Chart area ──────────────────────────────────────────────────────── */
+.trends-chart-area {
+  position: relative;
+  padding: 18px 18px 4px;
+}
+.trends-empty-state {
+  display: none;
+}
+.trends-empty-state.visible {
+  display: block;
+}
+.trends-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.trends-svg.hidden { display: none; }
+
+/* Tooltip */
+.trends-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15,23,42,.92);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  min-width: 180px;
+  max-width: 260px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: opacity .12s;
+  z-index: 20;
+  font-family: var(--font-sans);
+}
+.trends-tooltip.visible { opacity: 1; }
+.trends-tooltip-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 6px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.trends-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.trends-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.trends-tooltip-name {
+  flex: 1;
+  font-size: 12px;
+  color: rgba(255,255,255,.85);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trends-tooltip-price {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+.trends-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--color-slate-100);
+  min-height: 36px;
+}
+.trends-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-slate-600);
+}
+.trends-legend-line {
+  width: 22px;
+  height: 2.5px;
+  border-radius: 2px;
+  flex: none;
+}
+.trends-legend-dash {
+  width: 22px;
+  height: 0;
+  border-top: 2px dashed;
+  flex: none;
+  opacity: .7;
+}
+</style>
