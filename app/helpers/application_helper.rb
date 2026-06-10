@@ -44,18 +44,6 @@ module ApplicationHelper
                 class: "inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500"
   end
 
-  # Clickable column header that toggles sort direction, preserving the tier filter.
-  def sort_link(label, key, current_sort:, current_dir:, tier: nil)
-    active = current_sort == key
-    next_dir = active && current_dir == "asc" ? "desc" : "asc"
-    arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
-    link_to root_path(sort: key, dir: next_dir, tier: tier),
-            class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
-            "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
-      safe_join([ label, content_tag(:span, arrow, "aria-hidden": "true", class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
-    end
-  end
-
   HEX_COLOR = /\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/
 
   # Only let a validated hex colour reach an inline style attribute.
@@ -67,13 +55,6 @@ module ApplicationHelper
   # never break out of the script element.
   def json_ld(data)
     content_tag :script, raw(JSON.generate(data).gsub("</", '<\/')), type: "application/ld+json"
-  end
-
-  # The current sort direction for a column, as an aria-sort value.
-  def aria_sort_for(key, current_sort:, current_dir:)
-    return "none" unless current_sort == key
-
-    current_dir == "asc" ? "ascending" : "descending"
   end
 
   # Compact token count: 1_000_000 -> "1M", 200_000 -> "200K".

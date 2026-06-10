@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title><%= content_for(:title) || "tokenprice.fyi — LLM API price tracker" %></title>
+    <%# Inertia actions have no ERB template to call content_for, so they set @page_* ivars instead. %>
+    <title><%= content_for(:title) || @page_title || "tokenprice.fyi — LLM API price tracker" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="<%= content_for(:description) || 'Compare the price of every frontier LLM — Claude, GPT, Gemini, Grok, DeepSeek — and track how API token prices change over time.' %>">
+    <meta name="description" content="<%= content_for(:description) || @page_description || 'Compare the price of every frontier LLM — Claude, GPT, Gemini, Grok, DeepSeek — and track how API token prices change over time.' %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi' %>">
+    <meta property="og:title" content="<%= content_for(:title) || @page_title || 'tokenprice.fyi' %>">
     <meta property="og:description" content="<%= content_for(:description) || 'Compare LLM API token prices and track how they change over time.' %>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<%= request.original_url %>">
@@ -19,11 +20,14 @@
     <%= csp_meta_tag %>
 
     <%= yield :head %>
+    <%= json_ld(@json_ld) if @json_ld %>
 
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
 
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
+    <%= stylesheet_link_tag :app %>
+    <%= vite_client_tag %>
+    <%= vite_react_refresh_tag %>
+    <%= vite_javascript_tag "inertia.jsx" %>
   </head>
 
   <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
