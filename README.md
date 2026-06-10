@@ -79,9 +79,14 @@ data source alongside the hand-curated catalogue and manual edits. It:
 - **Keeps history honest** — appends a new `PricePoint` (`source: "openrouter.ai"`) only when
   the price actually moved since the last snapshot.
 
-Run it on demand with `bin/rails openrouter:sync`. No API key is needed for the public models
-endpoint; set `OPENROUTER_API_KEY` if you want authenticated requests. The mapping lives in
+The scheduled run fires in **production only** (like the other recurring jobs); locally, run it
+on demand with `bin/rails openrouter:sync`. No API key is needed for the public models endpoint;
+set `OPENROUTER_API_KEY` if you want authenticated requests. The mapping lives in
 `app/services/open_router/` (`Client` fetches, `ModelSync` imports).
+
+OpenRouter doesn't expose a capability tier, and price is a poor proxy for it, so imported models
+land in a neutral `mid` tier for a human to re-curate — this also keeps a bulk import out of the
+cheapest-frontier headline, which only ranks `frontier`-tier models.
 
 To opt a curated model into automated price enrichment, set its `openrouter_id` (e.g. via the
 admin) to the matching OpenRouter id — the sync will then append its price moves while leaving

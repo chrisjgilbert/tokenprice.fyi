@@ -21,6 +21,17 @@ module OpenRouter
     PER_MTOK           = 1_000_000
     PRICE_SOURCE_LABEL = "openrouter.ai".freeze
 
+    # Imported models land in a neutral tier and a human re-curates from there.
+    # Tier here means capability, which OpenRouter doesn't expose and price can't
+    # reliably stand in for (plenty of cheap frontier models, pricey small ones),
+    # so guessing would just produce confidently-wrong labels. "mid" also keeps a
+    # bulk import out of the cheapest-frontier headline, which only ranks
+    # frontier-tier models.
+    DEFAULT_TIER = "mid".freeze
+
+    # Defensive cap on the free-text description we copy from an untrusted API.
+    DESCRIPTION_LIMIT = 2_000
+
     # OpenRouter id namespaces mapped onto the providers we already curate, so
     # synced models attach to them instead of spawning duplicate providers.
     PROVIDER_SLUGS = {
@@ -141,13 +152,17 @@ module OpenRouter
       )
       point.note ||= "Imported from OpenRouter"
       point.save!
+      model.forget_price_cache!
       true
     end
 
     def same_price?(point, pricing)
       point.input_per_mtok == pricing[:input] &&
         point.output_per_mtok == pricing[:output] &&
-        point.cached_input_per_mtok == pricing[:cached]
+        # A missing cached tier reads back as nil from our own rows but may be a
+        # stored 0 on a curated/linked row — treat the two alike so an
+        # unchanged price never churns a fresh snapshot every day.
+        (point.cached_input_per_mtok || 0) == (pricing[:cached] || 0)
     end
 
     # --- providers & models ------------------------------------------------
@@ -176,14 +191,14 @@ module OpenRouter
         name:          model_name(row),
         slug:          unique_slug(row["id"]),
         status:        "active",
-        tier:          tier_for(row)
+        tier:          DEFAULT_TIER
       )
     end
 
     # Fill metadata from OpenRouter. For rows it owns the importer keeps the
     # data fresh; for an admin-linked curated row it only fills genuine blanks.
     def enrich(model, row)
-      desc     = row["description"].presence
+      desc     = row["description"].presence&.truncate(DESCRIPTION_LIMIT)
       context  = row.dig("top_provider", "context_length") || row["context_length"]
       max_out  = row.dig("top_provider", "max_completion_tokens")
       released = (Time.at(row["created"].to_i).utc.to_date if row["created"].present?)
@@ -203,23 +218,6 @@ module OpenRouter
       model.released_on ||= released
     end
 
-    # Price-based heuristic so a bulk import can't flood the "frontier" filter or
-    # the cheapest-frontier headline with hundreds of unvetted models. Admins
-    # can re-tier afterwards.
-    def tier_for(row)
-      pricing = parse_pricing(row["pricing"])
-      return "mid" unless pricing
-
-      blended = (pricing[:input] * AiModel::BLEND_INPUT_WEIGHT +
-                 pricing[:output] * AiModel::BLEND_OUTPUT_WEIGHT) /
-                (AiModel::BLEND_INPUT_WEIGHT + AiModel::BLEND_OUTPUT_WEIGHT)
-
-      if blended >= 10 then "frontier"
-      elsif blended >= 1 then "mid"
-      else "small"
-      end
-    end
-
     # --- naming & dedup ----------------------------------------------------
 
     def namespace_of(row)
@@ -228,8 +226,10 @@ module OpenRouter
 
     def provider_name(namespace, row)
       # OpenRouter names read "Anthropic: Claude 3.5 Sonnet" — the prefix is the
-      # provider's display name.
-      prefix = row["name"].to_s.split(":").first
+      # provider's display name. Without the colon the whole string is the model
+      # name, not the provider's, so fall back to the namespace instead.
+      name = row["name"].to_s
+      prefix = name.split(":", 2).first if name.include?(":")
       prefix.presence&.strip || namespace.tr("-", " ").split.map(&:capitalize).join(" ")
     end
 
