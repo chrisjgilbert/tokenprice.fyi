@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc><%= root_url %></loc></url>
+  <url><loc><%= trends_url %></loc></url>
+  <url><loc><%= compare_url %></loc></url>
+  <% @providers.each do |provider| %>
+    <url><loc><%= provider_url(provider) %></loc></url>
+  <% end %>
+  <% @models.each do |model| %>
+    <url>
+      <loc><%= model_url(model) %></loc>
+      <% if model.released_on %><lastmod><%= model.released_on.iso8601 %></lastmod><% end %>
+    </url>
+  <% end %>
+</urlset>

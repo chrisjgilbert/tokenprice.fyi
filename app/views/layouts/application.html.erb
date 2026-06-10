@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "tokenprice.fyi — LLM API price tracker" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= content_for(:description) || 'Compare the price of every frontier LLM — Claude, GPT, Gemini, Grok, DeepSeek — and track how API token prices change over time.' %>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="tokenprice.fyi">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi' %>">
+    <meta property="og:description" content="<%= content_for(:description) || 'Compare LLM API token prices and track how they change over time.' %>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<%= request.original_url %>">
+    <meta property="og:image" content="<%= request.base_url %>/og.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="<%= request.base_url %>/og.svg">
+    <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-10">
+      <div class="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between gap-6">
+        <%= link_to root_path, class: "flex items-center gap-2 font-semibold tracking-tight" do %>
+          <span class="text-indigo-600 text-xl">◎</span>
+          <span>tokenprice<span class="text-slate-400">.fyi</span></span>
+        <% end %>
+        <nav aria-label="Primary" class="flex items-center gap-1 text-sm font-medium text-slate-600">
+          <%= link_to "Prices", root_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(root_path)}" %>
+          <%= link_to "Compare", compare_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(compare_path)}" %>
+          <%= link_to "Trends", trends_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(trends_path)}" %>
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-5 py-10">
+      <%= yield %>
+    </main>
+
+    <footer class="mx-auto max-w-6xl px-5 py-10 mt-10 border-t border-slate-200 text-sm text-slate-500">
+      <p>
+        Prices are USD per 1M tokens, standard API tier. Anthropic figures are authoritative;
+        other providers are best-effort from public pricing pages and may lag. Not affiliated with any provider.
+      </p>
+    </footer>
+  </body>
+</html>

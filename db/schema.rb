@@ -1,0 +1,58 @@
+# This file is auto-generated from the current state of the database. Instead
+# of editing this file, please use the migrations feature of Active Record to
+# incrementally modify your database, and then regenerate this schema definition.
+#
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
+# be faster and is potentially less error prone than running all of your
+# migrations from scratch. Old migrations may fail to apply correctly if those
+# migrations use external dependencies or application code.
+#
+# It's strongly recommended that you check this file into your version control system.
+
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_083922) do
+  create_table "ai_models", force: :cascade do |t|
+    t.integer "context_window"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "max_output_tokens"
+    t.string "name", null: false
+    t.integer "provider_id", null: false
+    t.date "released_on"
+    t.string "slug", null: false
+    t.string "status", default: "active", null: false
+    t.string "tier", default: "frontier", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_id"], name: "index_ai_models_on_provider_id"
+    t.index ["slug"], name: "index_ai_models_on_slug", unique: true
+    t.index ["status"], name: "index_ai_models_on_status"
+    t.index ["tier"], name: "index_ai_models_on_tier"
+  end
+
+  create_table "price_points", force: :cascade do |t|
+    t.integer "ai_model_id", null: false
+    t.decimal "cached_input_per_mtok", precision: 12, scale: 6
+    t.datetime "created_at", null: false
+    t.date "effective_on", null: false
+    t.decimal "input_per_mtok", precision: 12, scale: 6, null: false
+    t.string "note"
+    t.decimal "output_per_mtok", precision: 12, scale: 6, null: false
+    t.string "source"
+    t.datetime "updated_at", null: false
+    t.index ["ai_model_id", "effective_on"], name: "index_price_points_on_ai_model_id_and_effective_on", unique: true
+    t.index ["ai_model_id"], name: "index_price_points_on_ai_model_id"
+  end
+
+  create_table "providers", force: :cascade do |t|
+    t.string "accent"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.string "website"
+    t.index ["slug"], name: "index_providers_on_slug", unique: true
+  end
+
+  add_foreign_key "ai_models", "providers"
+  add_foreign_key "price_points", "ai_models"
+end

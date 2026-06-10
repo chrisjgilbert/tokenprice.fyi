@@ -1,0 +1,81 @@
+<% content_for :title, "Compare #{@left&.name} vs #{@right&.name} — tokenprice.fyi" %>
+
+<section class="mb-8">
+  <h1 class="text-3xl font-bold tracking-tight">Compare models</h1>
+  <p class="mt-2 text-slate-600">Put any two models side by side. Cheaper figure in each row is highlighted.</p>
+</section>
+
+<%= form_with url: compare_path, method: :get, class: "mb-8 flex flex-wrap items-end gap-3" do |f| %>
+  <div>
+    <%= f.label :a, "Model A", class: "block text-xs font-medium text-slate-500 mb-1" %>
+    <%= f.select :a, options_from_collection_for_select(@all_models, :slug, :name, @left&.slug),
+          {}, class: "rounded-lg border-slate-300 bg-white py-2 pl-3 pr-8 text-sm" %>
+  </div>
+  <span class="pb-2 text-slate-400">vs</span>
+  <div>
+    <%= f.label :b, "Model B", class: "block text-xs font-medium text-slate-500 mb-1" %>
+    <%= f.select :b, options_from_collection_for_select(@all_models, :slug, :name, @right&.slug),
+          {}, class: "rounded-lg border-slate-300 bg-white py-2 pl-3 pr-8 text-sm" %>
+  </div>
+  <%= f.submit "Compare", class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 cursor-pointer" %>
+<% end %>
+
+<% if @left && @right %>
+  <%
+    # [label, value_lambda, comparison, format]
+    rows = [
+      ["Provider",          ->(m) { m.provider.name },                      :none,          :text],
+      ["Tier",              ->(m) { tier_badge(m.tier) },                   :none,          :raw],
+      ["Input / 1M",        ->(m) { m.current_input },                      :lower_better,  :usd],
+      ["Output / 1M",       ->(m) { m.current_output },                     :lower_better,  :usd],
+      ["Blended / 1M",      ->(m) { m.blended_per_mtok },                   :lower_better,  :usd],
+      ["Cached input / 1M", ->(m) { m.current_cached_input },               :lower_better,  :usd],
+      ["Context window",    ->(m) { m.context_window },                     :higher_better, :tokens],
+      ["Max output",        ->(m) { m.max_output_tokens },                  :higher_better, :tokens],
+      ["Released",          ->(m) { m.released_on&.strftime("%b %Y") || "—" }, :none,       :text]
+    ]
+  %>
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Attribute</span></th>
+          <% [@left, @right].each do |m| %>
+            <th scope="col" class="px-4 py-4 text-left">
+              <%= link_to m.name, model_path(m), class: "text-base font-semibold text-slate-900 hover:text-indigo-600" %>
+              <p class="text-xs font-normal text-slate-500"><%= m.provider.name %></p>
+            </th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% rows.each do |label, fn, comparison, format| %>
+          <% a = fn.call(@left); b = fn.call(@right) %>
+          <% winner =
+               if comparison == :none || a.nil? || b.nil? || a.to_f == b.to_f
+                 nil
+               elsif comparison == :lower_better
+                 a.to_f < b.to_f ? :a : :b
+               else
+                 a.to_f > b.to_f ? :a : :b
+               end %>
+          <tr>
+            <th scope="row" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 whitespace-nowrap"><%= label %></th>
+            <% { a: a, b: b }.each do |side, value| %>
+              <td class="px-4 py-3 tabular-nums <%= 'font-semibold text-emerald-700' if winner == side %>">
+                <% case format
+                   when :usd %><%= usd(value) %>
+                <% when :tokens %><%= tokens_short(value) %>
+                <% else %><%= value %>
+                <% end %>
+                <% if winner == side %><span class="ml-1 text-emerald-600" aria-hidden="true">✓</span><span class="sr-only">best value</span><% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-slate-500">Pick two models to compare.</p>
+<% end %>
