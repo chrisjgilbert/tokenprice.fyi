@@ -10,7 +10,11 @@
     <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi' %>">
     <meta property="og:description" content="<%= content_for(:description) || 'Compare LLM API token prices and track how they change over time.' %>">
     <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:url" content="<%= request.original_url %>">
+    <meta property="og:image" content="<%= request.base_url %>/og.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="<%= request.base_url %>/og.svg">
+    <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -29,7 +33,7 @@
           <span class="text-indigo-600 text-xl">◎</span>
           <span>tokenprice<span class="text-slate-400">.fyi</span></span>
         <% end %>
-        <nav class="flex items-center gap-1 text-sm font-medium text-slate-600">
+        <nav aria-label="Primary" class="flex items-center gap-1 text-sm font-medium text-slate-600">
           <%= link_to "Prices", root_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(root_path)}" %>
           <%= link_to "Compare", compare_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(compare_path)}" %>
           <%= link_to "Trends", trends_path, class: "px-3 py-2 rounded-md hover:bg-slate-100 #{'text-indigo-600' if current_page?(trends_path)}" %>

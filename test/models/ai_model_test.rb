@@ -32,4 +32,13 @@ class AiModelTest < ActiveSupport::TestCase
     model = AiModel.new(provider: providers(:anthropic), name: "X", tier: "nope")
     assert_not model.valid?
   end
+
+  test "price helpers use the eager-loaded association without extra queries" do
+    model = AiModel.includes(:price_points).find(ai_models(:deepseek_v4).id)
+    assert_queries_count(0) do
+      model.current_price
+      model.launch_price
+      model.blended_per_mtok
+    end
+  end
 end

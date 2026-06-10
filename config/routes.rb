@@ -10,4 +10,6 @@ Rails.application.routes.draw do
 
   get "compare", to: "comparisons#show", as: :compare
   get "trends",  to: "trends#index",     as: :trends
+
+  get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
 end

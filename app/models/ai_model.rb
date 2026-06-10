@@ -23,13 +23,15 @@ class AiModel < ApplicationRecord
   def to_param = slug
 
   # Most recent price snapshot — the "current" price.
+  # Uses the in-memory association (via max_by) so an eager-loaded
+  # `includes(:price_points)` isn't defeated by a fresh ordered query.
   def current_price
-    @current_price ||= price_points.chronological.last
+    @current_price ||= price_points.max_by(&:effective_on)
   end
 
   # Oldest price snapshot — the launch price.
   def launch_price
-    @launch_price ||= price_points.chronological.first
+    @launch_price ||= price_points.min_by(&:effective_on)
   end
 
   def current_input  = current_price&.input_per_mtok

@@ -5,7 +5,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
     assert_select "h1", /million tokens cost/
-    assert_select "td", /Claude Opus 4.8/
+    assert_select "tbody th[scope=row]", /Claude Opus 4.8/
   end
 
   test "index can be filtered by tier" do
@@ -28,5 +28,18 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "show returns 404 for an unknown slug" do
     get model_url(id: "does-not-exist")
     assert_response :not_found
+  end
+
+  test "index emits a canonical link and JSON-LD" do
+    get root_url(sort: "input", dir: "desc")
+    assert_response :success
+    assert_select "link[rel=canonical]", count: 1
+    assert_select "script[type='application/ld+json']", minimum: 1
+  end
+
+  test "show emits Product JSON-LD" do
+    get model_url(ai_models(:opus))
+    assert_select "script[type='application/ld+json']", minimum: 1
+    assert_includes @response.body, "\"@type\":\"Product\""
   end
 end

@@ -39,9 +39,9 @@
     <table class="min-w-full divide-y divide-slate-200 text-sm">
       <thead class="bg-slate-50">
         <tr>
-          <th class="px-4 py-3"></th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Attribute</span></th>
           <% [@left, @right].each do |m| %>
-            <th class="px-4 py-4 text-left">
+            <th scope="col" class="px-4 py-4 text-left">
               <%= link_to m.name, model_path(m), class: "text-base font-semibold text-slate-900 hover:text-indigo-600" %>
               <p class="text-xs font-normal text-slate-500"><%= m.provider.name %></p>
             </th>
@@ -60,7 +60,7 @@
                  a.to_f > b.to_f ? :a : :b
                end %>
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 whitespace-nowrap"><%= label %></th>
+            <th scope="row" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500 whitespace-nowrap"><%= label %></th>
             <% { a: a, b: b }.each do |side, value| %>
               <td class="px-4 py-3 tabular-nums <%= 'font-semibold text-emerald-700' if winner == side %>">
                 <% case format
@@ -68,6 +68,7 @@
                 <% when :tokens %><%= tokens_short(value) %>
                 <% else %><%= value %>
                 <% end %>
+                <% if winner == side %><span class="ml-1 text-emerald-600" aria-hidden="true">✓</span><span class="sr-only">best value</span><% end %>
               </td>
             <% end %>
           </tr>

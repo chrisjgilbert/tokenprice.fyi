@@ -5,7 +5,7 @@ class ModelsController < ApplicationController
     "output"   => ->(m) { m.current_output || Float::INFINITY },
     "context"  => ->(m) { m.context_window || 0 },
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
-    "name"     => ->(m) { m.name.downcase }
+    "name"     => ->(m) { m.name.to_s.downcase }
   }.freeze
 
   def index
