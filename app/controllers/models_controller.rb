@@ -21,7 +21,7 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || "blended"
+    @sort = params[:sort].presence_in(SORTS.keys) || "name"
     @dir  = params[:dir] == "desc" ? "desc" : "asc"
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
