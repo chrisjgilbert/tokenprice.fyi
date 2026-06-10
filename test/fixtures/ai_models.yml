@@ -9,6 +9,17 @@ opus:
   status: active
   description: Test model.
 
+retired_instant:
+  provider: anthropic
+  name: Claude Instant 1
+  slug: claude-instant-1
+  tier: small
+  context_window: 100000
+  max_output_tokens: 4096
+  released_on: 2023-03-14
+  status: retired
+  description: Retired test model — must never appear in listings.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
