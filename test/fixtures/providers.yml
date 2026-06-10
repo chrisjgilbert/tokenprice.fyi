@@ -1,0 +1,11 @@
+anthropic:
+  name: Anthropic
+  slug: anthropic
+  website: https://www.anthropic.com
+  accent: "#D97757"
+
+deepseek:
+  name: DeepSeek
+  slug: deepseek
+  website: https://www.deepseek.com
+  accent: "#4D6BFE"

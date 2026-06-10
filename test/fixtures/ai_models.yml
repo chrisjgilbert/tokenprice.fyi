@@ -1,0 +1,21 @@
+opus:
+  provider: anthropic
+  name: Claude Opus 4.8
+  slug: claude-opus-4-8
+  tier: frontier
+  context_window: 1000000
+  max_output_tokens: 128000
+  released_on: 2026-05-28
+  status: active
+  description: Test model.
+
+deepseek_v4:
+  provider: deepseek
+  name: DeepSeek V4 Pro
+  slug: deepseek-v4-pro
+  tier: frontier
+  context_window: 1000000
+  max_output_tokens: 384000
+  released_on: 2026-02-01
+  status: active
+  description: Test model with a price cut.
