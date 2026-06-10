@@ -8,16 +8,26 @@ class AiModel < ApplicationRecord
   belongs_to :provider
   has_many :price_points, dependent: :destroy
 
+  # Provenance of a model's data. Hand-curated rows are "manual" and are never
+  # overwritten by an automated importer; rows the OpenRouter sync owns are
+  # "openrouter". Plain string (not a strict enum) so new sources can be added
+  # without a migration.
+  MANUAL_SOURCE     = "manual"
+  OPENROUTER_SOURCE = "openrouter"
+
   enum :tier, { frontier: "frontier", mid: "mid", small: "small" }, validate: true
   enum :status, { active: "active", legacy: "legacy", retired: "retired" }, validate: true
 
-  validates :name, presence: true
+  validates :name, presence: true, length: { maximum: 255 }
   validates :slug, presence: true, uniqueness: true
+  validates :source, presence: true
 
   before_validation :set_slug, on: :create
 
   scope :listed, -> { where.not(status: "retired") }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
+  scope :curated, -> { where(source: MANUAL_SOURCE) }
+  scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
   # Pretty URLs: /models/claude-opus-4-8
   def to_param = slug
@@ -32,6 +42,13 @@ class AiModel < ApplicationRecord
   # Oldest price snapshot — the launch price.
   def launch_price
     @launch_price ||= price_points.min_by(&:effective_on)
+  end
+
+  # Drop the memoized current/launch prices. The importer calls this after
+  # appending a snapshot in-process so a later read recomputes instead of
+  # returning a stale memo.
+  def forget_price_cache!
+    @current_price = @launch_price = nil
   end
 
   def current_input  = current_price&.input_per_mtok
