@@ -25,7 +25,9 @@ export default class extends Controller {
     })
   }
 
-  search() {
+  search(event) {
+    if (event.isComposing) return
+
     clearTimeout(this.timeout)
     this.timeout = setTimeout(() => this.submit(), this.delayValue)
   }
@@ -33,6 +35,14 @@ export default class extends Controller {
   submit() {
     clearTimeout(this.timeout)
     this.element.requestSubmit()
+  }
+
+  // Drop empty fields from the submission so URLs stay clean
+  // (/?providers%5B%5D=anthropic rather than /?q=&tier=&providers...).
+  clean(event) {
+    for (const [name, value] of [...event.formData.entries()]) {
+      if (value === "") event.formData.delete(name)
+    }
   }
 
   // Pressing Enter in the search box submits the form natively; drop any
