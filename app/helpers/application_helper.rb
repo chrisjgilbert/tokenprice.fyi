@@ -44,13 +44,16 @@ module ApplicationHelper
                 class: "inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500"
   end
 
-  # Clickable column header that toggles sort direction, preserving the tier filter.
-  def sort_link(label, key, current_sort:, current_dir:, tier: nil)
+  # Clickable column header that toggles sort direction, preserving active
+  # filters (tier, providers, search query). Advances the URL so sorted views
+  # stay shareable even when navigated inside the models turbo frame.
+  def sort_link(label, key, current_sort:, current_dir:, filters: {})
     active = current_sort == key
     next_dir = active && current_dir == "asc" ? "desc" : "asc"
     arrow = active ? (current_dir == "asc" ? "▲" : "▼") : ""
-    link_to root_path(sort: key, dir: next_dir, tier: tier),
+    link_to root_path(filters.merge(sort: key, dir: next_dir)),
             class: "group inline-flex items-center gap-1 #{'text-indigo-600' if active}",
+            data: { turbo_action: "advance" },
             "aria-label": "Sort by #{label.downcase}, #{next_dir == 'asc' ? 'ascending' : 'descending'}" do
       safe_join([ label, content_tag(:span, arrow, "aria-hidden": "true", class: "text-[10px] #{'opacity-100' if active} #{'opacity-0 group-hover:opacity-40' unless active}") ], " ")
     end
