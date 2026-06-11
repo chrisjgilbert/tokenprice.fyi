@@ -151,8 +151,8 @@ catalog = [
   {
     provider: :openai, name: "GPT-5", tier: "frontier", status: "legacy",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-08-07",
-    description: "Launched at commodity pricing ($0.625/$5) so low TechCrunch said it may spark a price war. Superseded by GPT-5.5.",
-    prices: [ { on: "2025-08-07", in: 0.625, out: 5, cached: 0.0625, src: "openai.com/api/pricing" } ]
+    description: "Launched at commodity pricing ($1.25/$10) so low TechCrunch said it may spark a price war. Superseded by GPT-5.5.",
+    prices: [ { on: "2025-08-07", in: 1.25, out: 10, cached: 0.125, src: "openai.com/api/pricing" } ]
   },
   {
     provider: :openai, name: "o3", tier: "frontier", status: "active",
@@ -291,18 +291,18 @@ catalog = [
   {
     provider: :google, name: "Gemini 1.5 Pro", tier: "frontier", status: "retired",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-02-15",
-    description: "Introduced the 1M-token context window. Launched at $3.50/$10.50; received a ~70% price cut in August 2024.",
+    description: "Introduced the 1M-token context window. Launched at $7/$21; repriced twice to reach $1.25/$5 by late 2024.",
     prices: [
-      { on: "2024-02-15", in: 3.50, out: 10.50, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing" },
-      { on: "2024-08-12", in: 1.25, out: 5, src: "ai.google.dev/gemini-api/docs/pricing", note: "~70% price cut; tiered pricing for >200K tokens" }
+      { on: "2024-02-15", in: 7, out: 21, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing" },
+      { on: "2024-10-01", in: 1.25, out: 5, src: "ai.google.dev/gemini-api/docs/pricing", note: "Price cut to $1.25/$5 for ≤128K context tier" }
     ]
   },
   {
     provider: :google, name: "Gemini 1.5 Flash", tier: "mid", status: "retired",
-    context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-05-24",
-    description: "Budget model with 1M context. Launched at $0.35/$1.05; slashed 78% in August 2024 to undercut GPT-4o mini.",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-05-14",
+    description: "Budget model with 1M context. Launched at $0.35/$1.05 at Google I/O; slashed 78% in August 2024 to undercut GPT-4o mini.",
     prices: [
-      { on: "2024-05-24", in: 0.35, out: 1.05, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing" },
+      { on: "2024-05-14", in: 0.35, out: 1.05, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing at Google I/O" },
       { on: "2024-08-12", in: 0.075, out: 0.30, src: "ai.google.dev/gemini-api/docs/pricing", note: "78% input price cut" }
     ]
   },
@@ -346,9 +346,9 @@ catalog = [
   },
   {
     provider: :xai, name: "Grok 3 Mini", tier: "small", status: "retired",
-    context_window: 128_000, max_output_tokens: nil, released_on: "2025-02-17",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2025-06-10",
     description: "Budget Grok at $0.30/$0.50 — undercut o1-mini by 10× on input. Superseded by Grok 4.1 Fast.",
-    prices: [ { on: "2025-02-17", in: 0.30, out: 0.50, src: "docs.x.ai" } ]
+    prices: [ { on: "2025-06-10", in: 0.30, out: 0.50, src: "docs.x.ai", note: "API availability date; model previewed Feb 2025" } ]
   },
   {
     provider: :xai, name: "Grok 2", tier: "frontier", status: "retired",
@@ -548,7 +548,7 @@ market_events = [
     note: "Cached input tokens cost 90% less on Claude, making long-system-prompt and RAG workloads dramatically cheaper." },
   { title: "o1 creates reasoning price tier", event_date: "2024-09-12",
     note: "OpenAI's o1-preview launches at $15/$60 — a new pricing category where chain-of-thought tokens make effective costs 2–5× the list price." },
-  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-09-24",
+  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-10-01",
     note: "Google cuts Gemini 1.5 Pro to $1.25/$5.00 per 1M on prompts under 128K — the flagship tier joins the price war." },
   { title: "OpenAI caching: auto 50% off", event_date: "2024-10-01",
     note: "DevDay brings automatic prompt caching — a no-code 50% discount on recently seen input tokens across GPT-4o and o1 models." },
@@ -563,7 +563,7 @@ market_events = [
   { title: "o3 price cut 80%", event_date: "2025-06-10",
     note: "OpenAI slashes o3 by 80% ($10→$2/1M input), making frontier reasoning mainstream-affordable." },
   { title: "GPT-5 sparks price war", event_date: "2025-08-07",
-    note: "GPT-5 launches at commodity pricing ($0.625/$5) — TechCrunch calls it a price-war trigger." },
+    note: "GPT-5 launches at commodity pricing ($1.25/$10) — TechCrunch calls it a price-war trigger." },
   { title: "Qwen3 Max halved in price war", event_date: "2025-11-14",
     note: "Alibaba cuts Qwen3 Max roughly 50% as China's AI price war reignites, pressuring domestic and global rivals alike." },
   { title: "Opus gets 67% cheaper", event_date: "2025-11-24",
