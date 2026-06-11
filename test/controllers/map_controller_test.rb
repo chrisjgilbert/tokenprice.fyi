@@ -8,7 +8,7 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     # Fixtures place Anthropic in the US and DeepSeek in China.
     assert_select "svg.map-svg"
     assert_select ".map-country-card", minimum: 2
-    assert_select "h1", /geopolitics/i
+    assert_select "h1", /where your models/i
     assert_match "United States", response.body
     assert_match "China", response.body
     assert_match "🇺🇸", response.body

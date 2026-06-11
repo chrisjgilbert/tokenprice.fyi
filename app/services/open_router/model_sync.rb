@@ -51,6 +51,36 @@ module OpenRouter
       "moonshotai" => "moonshot-ai"
     }.freeze
 
+    # Country headquarters for known OpenRouter namespaces. Used when a new
+    # provider is created so it appears on the map immediately.
+    PROVIDER_COUNTRIES = {
+      "anthropic"    => { country: "United States",  country_code: "US" },
+      "openai"       => { country: "United States",  country_code: "US" },
+      "google"       => { country: "United States",  country_code: "US" },
+      "x-ai"         => { country: "United States",  country_code: "US" },
+      "deepseek"     => { country: "China",           country_code: "CN" },
+      "meta-llama"   => { country: "United States",  country_code: "US" },
+      "mistralai"    => { country: "France",          country_code: "FR" },
+      "qwen"         => { country: "China",           country_code: "CN" },
+      "moonshotai"   => { country: "China",           country_code: "CN" },
+      "cohere"       => { country: "Canada",          country_code: "CA" },
+      "ai21"         => { country: "Israel",          country_code: "IL" },
+      "nvidia"       => { country: "United States",  country_code: "US" },
+      "amazon"       => { country: "United States",  country_code: "US" },
+      "microsoft"    => { country: "United States",  country_code: "US" },
+      "perplexity"   => { country: "United States",  country_code: "US" },
+      "databricks"   => { country: "United States",  country_code: "US" },
+      "inflection"   => { country: "United States",  country_code: "US" },
+      "01-ai"        => { country: "China",           country_code: "CN" },
+      "zhipu"        => { country: "China",           country_code: "CN" },
+      "minimax"      => { country: "China",           country_code: "CN" },
+      "together"     => { country: "United States",  country_code: "US" },
+      "fireworks"    => { country: "United States",  country_code: "US" },
+      "sambanova"    => { country: "United States",  country_code: "US" },
+      "aleph-alpha"  => { country: "Germany",         country_code: "DE" },
+      "nousresearch" => { country: "United States",  country_code: "US" },
+    }.freeze
+
     Result = Struct.new(:created, :enriched, :repriced, :skipped, keyword_init: true) do
       def to_s
         "OpenRouter sync: #{created} created, #{enriched} enriched, " \
@@ -180,10 +210,15 @@ module OpenRouter
     def resolve_provider(row)
       namespace = namespace_of(row)
       slug      = PROVIDER_SLUGS[namespace] || namespace.parameterize
+      geo       = PROVIDER_COUNTRIES[namespace]
 
       Provider.find_or_create_by!(slug: slug) do |p|
         p.name    = provider_name(namespace, row)
         p.website = "https://openrouter.ai/#{namespace}"
+        if geo
+          p.country      = geo[:country]
+          p.country_code = geo[:country_code]
+        end
       end
     end
 
