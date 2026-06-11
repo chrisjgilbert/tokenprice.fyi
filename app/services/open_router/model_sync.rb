@@ -66,6 +66,8 @@ module OpenRouter
       catalog = @client.models
       @logger.info("OpenRouter sync: fetched #{catalog.size} models")
 
+      retire_latest_aliases
+
       catalog.each do |row|
         outcome =
           begin
@@ -87,6 +89,7 @@ module OpenRouter
     def import(row)
       pricing = parse_pricing(row["pricing"])
       return :skipped unless pricing && text_output?(row)
+      return :skipped if latest_alias?(row)
 
       provider = resolve_provider(row)
       model    = find_or_build_model(row, provider)
@@ -237,6 +240,24 @@ module OpenRouter
       raw = row["name"].to_s
       name = raw.include?(":") ? raw.split(":", 2).last.strip : raw.strip
       name.presence || row["id"].to_s
+    end
+
+    # "Latest" aliases (e.g. "Claude Opus Latest", "GPT-4o Latest") are
+    # floating pointers to whatever the current versioned model happens to
+    # be. They duplicate a versioned entry and confuse the pricing table.
+    def latest_alias?(row)
+      model_name(row).match?(/\blatest\b/i)
+    end
+
+    def retire_latest_aliases
+      ids = AiModel.from_openrouter.where.not(status: "retired")
+        .pluck(:id, :name)
+        .select { |_, name| name.match?(/\blatest\b/i) }
+        .map(&:first)
+      return if ids.empty?
+
+      retired = AiModel.where(id: ids).update_all(status: "retired")
+      @logger.info("OpenRouter sync: retired #{retired} 'Latest' alias(es)")
     end
 
     def curated_duplicate?(provider, row)
