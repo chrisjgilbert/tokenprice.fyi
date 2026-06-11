@@ -82,6 +82,11 @@
             <button data-action="click->trends-chart#setTimeRange" data-range="1y">1Y</button>
             <button class="on" data-action="click->trends-chart#setTimeRange" data-range="all">All</button>
           </div>
+          <span class="trends-toolbar-label" style="margin-left: 8px;">Scale</span>
+          <div class="tp-seg" role="group" aria-label="Price axis scale" data-trends-chart-target="scaleSeg">
+            <button class="on" data-action="click->trends-chart#setScale" data-scale="log">Log</button>
+            <button data-action="click->trends-chart#setScale" data-scale="linear">Linear</button>
+          </div>
         </div>
         <div class="trends-toolbar-right">
           <label class="trends-toggle-label">
