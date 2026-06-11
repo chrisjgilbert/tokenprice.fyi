@@ -120,8 +120,11 @@ catalog = [
   {
     provider: :anthropic, name: "Claude 3.5 Haiku", tier: "small", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-10-22",
-    description: "Upgraded Haiku — significantly more capable than Claude 3 Haiku but priced higher at $0.80/$4.",
-    prices: [ { on: "2024-10-22", in: 0.80, out: 4, src: "anthropic.com/pricing" } ]
+    description: "Upgraded Haiku — significantly more capable than Claude 3 Haiku but priced higher. Launched at $1/$5, cut 20% to $0.80/$4 six weeks later.",
+    prices: [
+      { on: "2024-10-22", in: 1, out: 5, src: "anthropic.com/pricing", note: "Launch pricing" },
+      { on: "2024-12-03", in: 0.80, out: 4, src: "anthropic.com/pricing", note: "20% price cut" }
+    ]
   },
   {
     provider: :anthropic, name: "Claude 3 Opus", tier: "frontier", status: "retired",
@@ -149,10 +152,10 @@ catalog = [
   },
   {
     provider: :anthropic, name: "Claude Instant", tier: "small", status: "retired",
-    context_window: 100_000, max_output_tokens: nil, released_on: "2023-08-09",
+    context_window: 100_000, max_output_tokens: nil, released_on: "2023-03-14",
     description: "Anthropic's original fast-and-cheap tier, predating Haiku. Repriced from $1.63/$5.51 to $0.80/$2.40 in late 2023.",
     prices: [
-      { on: "2023-08-09", in: 1.63, out: 5.51, src: "anthropic.com/pricing", note: "Claude Instant 1.2 list price; dated to the 1.2 release" },
+      { on: "2023-03-14", in: 1.63, out: 5.51, src: "anthropic.com/pricing", note: "Rate appears in Anthropic's April 2023 pricing PDF; dated to the Claude API launch" },
       { on: "2023-11-21", in: 0.80, out: 2.40, src: "anthropic.com/pricing", note: "Repriced alongside Claude 2.1; date approximate — confirm via Wayback" }
     ]
   },
@@ -242,8 +245,11 @@ catalog = [
   {
     provider: :openai, name: "o1-mini", tier: "small", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-09-12",
-    description: "Budget reasoning model at one-fifth of o1's price.",
-    prices: [ { on: "2024-09-12", in: 3, out: 12, src: "openai.com/api/pricing" } ]
+    description: "Budget reasoning model at one-fifth of o1's price. Cut to o3-mini's $1.10/$4.40 when that model launched.",
+    prices: [
+      { on: "2024-09-12", in: 3, out: 12, src: "openai.com/api/pricing", note: "Launch pricing" },
+      { on: "2025-01-31", in: 1.10, out: 4.40, src: "openai.com/api/pricing", note: "Repriced to match o3-mini at its launch; date approximate — confirm via Wayback" }
+    ]
   },
   {
     provider: :openai, name: "o1-preview", tier: "frontier", status: "retired",
@@ -404,8 +410,11 @@ catalog = [
   {
     provider: :xai, name: "Grok 2", tier: "frontier", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-08-13",
-    description: "xAI's first API model at $2/$10 — established the Grok pricing baseline.",
-    prices: [ { on: "2024-08-13", in: 2, out: 10, src: "docs.x.ai" } ]
+    description: "xAI's first API model. The public API beta (grok-beta) charged $5/$15; the $2/$10 Grok pricing baseline arrived that December.",
+    prices: [
+      { on: "2024-10-21", in: 5, out: 15, src: "docs.x.ai", note: "Public API beta pricing (grok-beta); date approximate — confirm via Wayback" },
+      { on: "2024-12-12", in: 2, out: 10, src: "docs.x.ai", note: "Repriced with the grok-2-1212 release" }
+    ]
   },
 
   # ---- DeepSeek ---------------------------------------------------------
@@ -427,8 +436,11 @@ catalog = [
   {
     provider: :deepseek, name: "DeepSeek R1", tier: "frontier", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-01-20",
-    description: "Open-weight reasoning model that stunned the industry at launch. Now routes to V4 Flash thinking mode; scheduled for deprecation July 2026.",
-    prices: [ { on: "2025-01-20", in: 0.55, out: 2.19, cached: 0.14, src: "api-docs.deepseek.com" } ]
+    description: "Open-weight reasoning model that stunned the industry at launch. Repriced with V3.2-Exp in September 2025; now routes to V4 Flash thinking mode and is scheduled for deprecation July 2026.",
+    prices: [
+      { on: "2025-01-20", in: 0.55, out: 2.19, cached: 0.14, src: "api-docs.deepseek.com", note: "Launch pricing" },
+      { on: "2025-09-29", in: 0.28, out: 0.42, cached: 0.028, src: "api-docs.deepseek.com", note: "V3.2-Exp repricing, applied to deepseek-reasoner as well as V3" }
+    ]
   },
   {
     provider: :deepseek, name: "DeepSeek V3", tier: "mid", status: "legacy",
@@ -443,7 +455,7 @@ catalog = [
     provider: :deepseek, name: "DeepSeek V2", tier: "mid", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-05-06",
     description: "Open-weight MoE whose ~$0.14/MTok input price triggered China's May 2024 LLM price war — Alibaba and Baidu slashed rates within weeks.",
-    prices: [ { on: "2024-05-06", in: 0.14, out: 0.28, src: "api-docs.deepseek.com", note: "≈1/2 RMB per MTok converted; unverified — confirm via Wayback" } ]
+    prices: [ { on: "2024-05-06", in: 0.14, out: 0.28, src: "api-docs.deepseek.com", note: "¥1/¥2 per MTok converted; corroborated by secondary sources — primary May 2024 capture still wanted" } ]
   },
 
   # ---- Cohere -----------------------------------------------------------
@@ -453,7 +465,7 @@ catalog = [
     description: "Cohere's enterprise RAG flagship, marketed as Command R+. The August 2024 refresh cut pricing from $3/$15 to $2.50/$10.",
     prices: [
       { on: "2024-04-04", in: 3, out: 15, src: "cohere.com/pricing", note: "Launch pricing" },
-      { on: "2024-08-30", in: 2.50, out: 10, src: "docs.cohere.com/changelog/command-gets-refreshed", note: "08-2024 refresh pricing" }
+      { on: "2024-08-30", in: 2.50, out: 10, src: "docs.cohere.com/changelog/command-gets-refreshed", note: "Pricing of the new command-r-plus-08-2024 version; the 04-2024 model kept launch pricing" }
     ]
   },
   {
@@ -462,7 +474,7 @@ catalog = [
     description: "Cohere's scalable RAG and tool-use workhorse. The August 2024 refresh cut input pricing 70% to $0.15/$0.60.",
     prices: [
       { on: "2024-03-11", in: 0.50, out: 1.50, src: "cohere.com/pricing", note: "Launch pricing" },
-      { on: "2024-08-30", in: 0.15, out: 0.60, src: "docs.cohere.com/changelog/command-gets-refreshed", note: "08-2024 refresh: 70% input price cut" }
+      { on: "2024-08-30", in: 0.15, out: 0.60, src: "docs.cohere.com/changelog/command-gets-refreshed", note: "Pricing of the new command-r-08-2024 version (70% input cut); the 03-2024 model kept launch pricing" }
     ]
   },
 
@@ -535,13 +547,13 @@ catalog = [
     provider: :mistral, name: "Mixtral 8x7B", tier: "mid", status: "retired",
     context_window: 32_768, max_output_tokens: nil, released_on: "2023-12-11",
     description: "Apache-2.0 MoE that put GPT-3.5-class quality in open weights, setting a price floor under proprietary small models. Figures are Mistral's own API rate.",
-    prices: [ { on: "2023-12-11", in: 0.70, out: 0.70, src: "mistral.ai/pricing", note: "USD list rate (open-mixtral-8x7b); Dec 2023 launch was EUR-priced — unverified, confirm via Wayback" } ]
+    prices: [ { on: "2024-02-26", in: 0.70, out: 0.70, src: "mistral.ai/pricing", note: "USD list rate from the Au Large release, which renamed mistral-small to open-mixtral-8x7b and introduced USD pricing; the Dec 2023 endpoint was EUR-priced" } ]
   },
   {
     provider: :mistral, name: "Mistral 7B", tier: "small", status: "retired",
     context_window: 32_768, max_output_tokens: nil, released_on: "2023-09-27",
     description: "Mistral's first open-weight model, served as the cheapest endpoint on La Plateforme from December 2023. Figures are Mistral's own API rate.",
-    prices: [ { on: "2023-12-11", in: 0.25, out: 0.25, src: "mistral.ai/pricing", note: "API launch (mistral-tiny, later open-mistral-7b); USD list rate — unverified, confirm via Wayback" } ]
+    prices: [ { on: "2024-02-26", in: 0.25, out: 0.25, src: "mistral.ai/pricing", note: "USD list rate from the Au Large release (mistral-tiny became open-mistral-7b); the Dec 2023 endpoint was EUR-priced and not flat" } ]
   },
   {
     provider: :alibaba, name: "Qwen 3.7 Max", tier: "frontier", status: "active",
