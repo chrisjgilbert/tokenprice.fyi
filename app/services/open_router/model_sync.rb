@@ -250,9 +250,14 @@ module OpenRouter
     end
 
     def retire_latest_aliases
-      retired = AiModel.from_openrouter.where.not(status: "retired")
-        .where("name LIKE ?", "% Latest").update_all(status: "retired")
-      @logger.info("OpenRouter sync: retired #{retired} 'Latest' alias(es)") if retired > 0
+      ids = AiModel.from_openrouter.where.not(status: "retired")
+        .pluck(:id, :name)
+        .select { |_, name| name.match?(/\blatest\b/i) }
+        .map(&:first)
+      return if ids.empty?
+
+      retired = AiModel.where(id: ids).update_all(status: "retired")
+      @logger.info("OpenRouter sync: retired #{retired} 'Latest' alias(es)")
     end
 
     def curated_duplicate?(provider, row)
