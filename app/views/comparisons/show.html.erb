@@ -413,6 +413,7 @@
           { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
         ]
         text_rows = [
+          { label: "Δ since launch", a_val: @left.blended_change_since_launch, b_val: @right.blended_change_since_launch, fmt: :change },
           { label: "Tier",     a_val: tier_badge(@left.tier),   b_val: tier_badge(@right.tier),   fmt: :raw  },
           { label: "Released", a_val: fmt_date(@left.released_on), b_val: fmt_date(@right.released_on), fmt: :text },
           { label: "Status",   a_val: status_badge(@left.status),  b_val: status_badge(@right.status),  fmt: :raw  },
@@ -457,6 +458,9 @@
                     <%= provider_square(m.provider, size: :md) %>
                     <span><%= m.provider.name %></span>
                   </div>
+                <% elsif row[:fmt] == :change %>
+                  <% v = side == :a ? row[:a_val] : row[:b_val] %>
+                  <%= v ? price_change_badge(v) : content_tag(:span, "—", class: "tp-muted-dash") %>
                 <% elsif row[:fmt] == :raw %>
                   <% v = side == :a ? row[:a_val] : row[:b_val] %>
                   <%= v.present? ? raw(v) : content_tag(:span, "—", class: "tp-muted-dash") %>
