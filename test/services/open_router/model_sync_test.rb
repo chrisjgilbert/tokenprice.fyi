@@ -170,16 +170,23 @@ module OpenRouter
     end
 
     test "retires previously-imported 'Latest' alias models" do
-      existing = AiModel.create!(
+      trailing = AiModel.create!(
         name: "Claude Opus Latest", slug: "claude-opus-latest",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-opus:latest",
         status: "active", tier: "mid"
       )
+      parenthesized = AiModel.create!(
+        name: "GPT-4o (Latest)", slug: "gpt-4o-latest",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "openai/gpt-4o:latest",
+        status: "active", tier: "mid"
+      )
 
       sync([])
 
-      assert_equal "retired", existing.reload.status
+      assert_equal "retired", trailing.reload.status
+      assert_equal "retired", parenthesized.reload.status
     end
 
     test "skips 'Latest' alias models that duplicate versioned entries" do
