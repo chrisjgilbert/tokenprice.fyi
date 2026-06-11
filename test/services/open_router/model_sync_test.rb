@@ -239,11 +239,32 @@ module OpenRouter
         openrouter_id: "anthropic/claude-sonnet-4.6:fast",
         status: "active", tier: "mid"
       )
+      # Marker only in the name; id stays plain (no ":fast" suffix).
+      named_fast = AiModel.create!(
+        name: "Claude Opus 4.7 (Fast)", slug: "claude-opus-4-7-fast",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "anthropic/claude-opus-4.7-fast",
+        status: "active", tier: "mid"
+      )
 
       sync([])
 
       assert_equal "retired", fast_opus.reload.status
       assert_equal "retired", fast_sonnet.reload.status
+      assert_equal "retired", named_fast.reload.status
+    end
+
+    test "leaves genuinely distinct models with 'Fast' in the name alone" do
+      grok = AiModel.create!(
+        name: "Grok 4.1 Fast", slug: "grok-4-1-fast",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "x-ai/grok-4.1-fast",
+        status: "active", tier: "small"
+      )
+
+      sync([])
+
+      assert_equal "active", grok.reload.status
     end
 
     test "skips ':fast' speed variant models during import" do
@@ -252,6 +273,9 @@ module OpenRouter
                  prompt: "0.00001", completion: "0.00005"),
         or_model(id: "anthropic/claude-opus-4.7:fast", name: "Anthropic: Claude Opus 4.7 (Fast)",
                  prompt: "0.00003", completion: "0.00015"),
+        # Marker only in the name; id has no ":fast" suffix.
+        or_model(id: "anthropic/claude-opus-4.6", name: "Anthropic: Claude Opus 4.6 (Fast)",
+                 prompt: "0.00003", completion: "0.00015"),
         or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
                  prompt: "0.0000001", completion: "0.0000004")
       ]
@@ -259,9 +283,10 @@ module OpenRouter
       result = assert_difference("AiModel.count", 1) { sync(rows) }
 
       assert_equal 1, result.created
-      assert_equal 2, result.skipped
+      assert_equal 3, result.skipped
       assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.8:fast")
       assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.7:fast")
+      assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.6")
       assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
     end
 

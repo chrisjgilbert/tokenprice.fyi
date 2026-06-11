@@ -36,6 +36,11 @@ module OpenRouter
     LATEST_NAME_RE = /\blatest\b/i
     LATEST_ID_RE   = /:latest\b/i
     FAST_ID_RE     = /:fast\b/i
+    # Some speed variants arrive with the ":fast" marker only in their display
+    # name (e.g. "Anthropic: Claude Opus 4.7 (Fast)") while the id stays plain.
+    # Match the parenthetical "(Fast)" suffix specifically so genuinely
+    # distinct models like "Grok 4.1 Fast" are left alone.
+    FAST_NAME_RE   = /\(\s*fast\s*\)/i
 
     # OpenRouter id namespaces mapped onto the providers we already curate, so
     # synced models attach to them instead of spawning duplicate providers.
@@ -323,22 +328,23 @@ module OpenRouter
       @logger.info("OpenRouter sync: retired #{retired} 'Latest' alias(es)")
     end
 
-    # Speed variants (e.g. "anthropic/claude-opus-4.8:fast") are the same
-    # model billed at a premium for faster output. They duplicate a
-    # versioned entry with inflated pricing and confuse comparisons.
+    # Speed variants (e.g. "anthropic/claude-opus-4.8:fast", or a plain id
+    # named "Claude Opus 4.7 (Fast)") are the same model billed at a premium
+    # for faster output. They duplicate a versioned entry with inflated
+    # pricing and confuse comparisons.
     def speed_variant?(row)
-      row["id"].to_s.match?(FAST_ID_RE)
+      row["id"].to_s.match?(FAST_ID_RE) || row["name"].to_s.match?(FAST_NAME_RE)
     end
 
     def retire_speed_variants
       ids = AiModel.from_openrouter.where.not(status: "retired")
-        .pluck(:id, :openrouter_id)
-        .select { |_, oid| oid.to_s.match?(FAST_ID_RE) }
+        .pluck(:id, :name, :openrouter_id)
+        .select { |_, name, oid| oid.to_s.match?(FAST_ID_RE) || name.to_s.match?(FAST_NAME_RE) }
         .map(&:first)
       return if ids.empty?
 
       retired = AiModel.where(id: ids).update_all(status: "retired")
-      @logger.info("OpenRouter sync: retired #{retired} ':fast' speed variant(s)")
+      @logger.info("OpenRouter sync: retired #{retired} speed variant(s)")
     end
 
     def curated_duplicate?(provider, row)
