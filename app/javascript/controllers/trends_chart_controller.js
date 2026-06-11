@@ -901,6 +901,12 @@ export default class extends Controller {
       avgLine.style.background = AVG_COLOR
       avgItem.appendChild(avgLine)
       avgItem.appendChild(document.createTextNode("Average"))
+
+      // % change of the average across the visible window (same badge the
+      // per-model legend rows use).
+      const avgDelta = this._changeBadge(this._avgSeries)
+      if (avgDelta) avgItem.appendChild(avgDelta)
+
       avgItem.addEventListener("mouseover", () => this._emphasize("__avg__"))
       avgItem.addEventListener("mouseout", () => this._emphasize(null))
       legend.appendChild(avgItem)
