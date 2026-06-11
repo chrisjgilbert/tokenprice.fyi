@@ -47,8 +47,23 @@
     </div>
 
     <div>
-      <%= f.label :description, class: "block text-sm font-medium text-slate-700 mb-1" %>
-      <%= f.text_area :description, rows: 3, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      <%= f.label :description, "Description (one-line summary)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_area :description, rows: 2, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <%= f.label :strengths, class: "block text-sm font-medium text-slate-700 mb-1" %>
+        <%= f.text_area :strengths, rows: 3, placeholder: "What it's good at", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      </div>
+      <div>
+        <%= f.label :best_for, "Best for (use cases)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+        <%= f.text_area :best_for, rows: 3, placeholder: "Typical workloads", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      </div>
+      <div>
+        <%= f.label :limitations, "Limitations (weaknesses)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+        <%= f.text_area :limitations, rows: 3, placeholder: "Trade-offs to know", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      </div>
     </div>
   </div>
 
