@@ -16,7 +16,7 @@
 <% end %>
 
 <style>
-  .hp { max-width: 720px; margin: 0 auto; padding: 24px 0 64px; }
+  .hp { max-width: 680px; margin: 0 auto; padding: 24px 0 48px; }
   .hp .hp-meta { font-family: var(--font-mono); font-size: 13px; color: var(--color-slate-400); margin-bottom: 14px; }
   .hp h1 { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; color: var(--color-slate-900); margin-bottom: 12px; }
   .hp .hp-subtitle { font-size: 18px; line-height: 1.6; color: var(--color-slate-500); margin-bottom: 40px; }
@@ -33,7 +33,7 @@
   .hp-tokens { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 24px; }
   .hp-token {
     display: inline-flex; align-items: center;
-    padding: 6px 12px; border-radius: 6px;
+    padding: 6px 12px; border-radius: var(--radius-sm);
     font-family: var(--font-mono); font-size: 14px; font-weight: 500;
     border: 1px solid;
   }
@@ -50,11 +50,11 @@
     display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
     align-items: center; gap: 0; margin: 24px 0 28px;
     background: var(--color-slate-50); border: 1px solid var(--color-slate-200);
-    border-radius: 12px; padding: 24px 20px; overflow: hidden;
+    border-radius: var(--radius-md); padding: 24px 20px; overflow: hidden;
   }
   .hp-flow-box {
     text-align: center; padding: 16px 12px;
-    border-radius: 10px; border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-md); border: 1px solid var(--color-slate-200);
     background: #fff;
   }
   .hp-flow-box-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-slate-400); margin-bottom: 6px; }
@@ -69,7 +69,7 @@
     gap: 14px; margin: 24px 0 28px;
   }
   .hp-dim {
-    padding: 20px; border-radius: 12px;
+    padding: 20px; border-radius: var(--radius-md);
     border: 1px solid var(--color-slate-200); background: #fff;
   }
   .hp-dim-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -86,7 +86,7 @@
   /* ── Calculation block ── */
   .hp-calc {
     background: var(--color-slate-900); color: #fff;
-    border-radius: 12px; padding: 28px 28px 24px; margin: 24px 0 28px;
+    border-radius: var(--radius-md); padding: 28px 28px 24px; margin: 24px 0 28px;
     font-family: var(--font-mono); font-size: 14px;
     overflow-x: auto;
   }
@@ -101,7 +101,7 @@
   .hp-calc-note { font-family: var(--font-sans); font-size: 13px; color: var(--color-slate-500); margin-top: 14px; }
 
   /* ── Ratio bar ── */
-  .hp-ratio { display: flex; height: 36px; border-radius: 8px; overflow: hidden; margin: 20px 0 10px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+  .hp-ratio { display: flex; height: 36px; border-radius: var(--radius-sm); overflow: hidden; margin: 20px 0 10px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
   .hp-ratio-seg { display: flex; align-items: center; justify-content: center; color: #fff; min-width: 40px; }
   .hp-ratio-input { background: #4f46e5; }
   .hp-ratio-output { background: #059669; }
@@ -123,7 +123,7 @@
   }
   .hp-cta a {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    padding: 10px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
     text-decoration: none; transition: all 0.2s var(--ease-default);
   }
   .hp-cta-primary { background: #4f46e5; color: #fff !important; }
@@ -165,7 +165,7 @@
     <span class="hp-token hp-token-3">isation</span>
   </div>
 
-  <p>The sentence "The cost of an API call depends on tokenisation" becomes <span class="num">10</span> tokens. Notice "tokenisation" splits into two: the model knows "token" and "isation" separately. Roughly, <strong>1 million tokens ≈ 750,000 words</strong> — about 10 novels.</p>
+  <p>The sentence "The cost of an API call depends on tokenisation" becomes <span class="num">10</span> tokens. Notice "tokenisation" splits into two: the model knows "token" and "isation" separately. Roughly, <strong>1 million tokens ≈ 750,000 words</strong> — about 8–10 novels.</p>
 
   <p>Prices are quoted <strong>per million tokens</strong> (per 1M). When you see <span class="num">$3.00</span> on a pricing page, that's <span class="num">$3.00</span> per million tokens — or <span class="num">$0.000003</span> per token. Tiny per call, but it compounds fast at volume.</p>
 
@@ -197,7 +197,7 @@
   <p>Output almost always costs more — typically <span class="num">2–5×</span> input price. Why? The model reads input tokens in parallel (fast, efficient), but <strong>generates output tokens one at a time</strong>, each requiring a full forward pass through the model. Generation is computationally harder than comprehension.</p>
 
   <% if @frontier_example %>
-    <p>For example, <%= @frontier_example.display_name %> charges <span class="num"><%= usd_plain(@frontier_example.current_input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.current_output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.current_output && @frontier_example.current_input && @frontier_example.current_input > 0 ? "#{(@frontier_example.current_output / @frontier_example.current_input).round(1)}×" : "—" %></span> the input price.</p>
+    <p>For example, <%= @frontier_example.name %> charges <span class="num"><%= usd_plain(@frontier_example.current_input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.current_output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.current_output && @frontier_example.current_input && @frontier_example.current_input > 0 ? "#{(@frontier_example.current_output / @frontier_example.current_input).round(1)}×" : "—" %></span> the input price.</p>
   <% end %>
 
   <h3>Where your money actually goes</h3>
@@ -280,7 +280,7 @@
     <span class="hp-mult hp-mult-green">Google: 75% off</span>
   </div>
 
-  <p>The catch: caching is prefix-based. The matching has to start from the beginning of your prompt and extend continuously. If your system prompt changes, the cache misses. Design your prompts with a <strong>stable prefix</strong> and variable content at the end.</p>
+  <p>The catch: the mechanism varies by provider. Anthropic and OpenAI use <strong>prefix-based caching</strong> — the matching starts from the beginning of your prompt and extends continuously, so a changed system prompt means a cache miss. Google uses <strong>explicit caching</strong> — you designate content to cache via the API. Either way, the principle is the same: design your prompts with <strong>stable, repeating content</strong> front and centre.</p>
 
   <p>For agent loops — where the same growing conversation gets resent on every step — cached input is often <strong>the largest line item on the bill</strong>. Two frontier models with the same headline price can differ sharply once caching enters the maths.</p>
 

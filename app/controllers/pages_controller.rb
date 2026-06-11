@@ -11,8 +11,9 @@ class PagesController < ApplicationController
   end
 
   def how_pricing_works
-    @frontier_example = AiModel.listed.where(tier: "frontier").order(:current_input).first
-    @small_example = AiModel.listed.where(tier: "small").order(:current_input).first
+    @frontier_example = AiModel.listed.where(tier: "frontier")
+                              .select(&:current_input)
+                              .min_by(&:current_input)
   end
 
   private
