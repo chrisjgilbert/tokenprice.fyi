@@ -74,6 +74,43 @@ class AiModelTest < ActiveSupport::TestCase
     assert ai_models(:opus).matches?(nil)
   end
 
+  test "output_to_input_ratio expresses output as a multiple of input" do
+    # Opus: $25 out / $5 in = 5×
+    assert_in_delta 5.0, ai_models(:opus).output_to_input_ratio, 0.0001
+  end
+
+  test "output_to_input_ratio is nil without a price" do
+    assert_nil ai_models(:no_price).output_to_input_ratio
+  end
+
+  test "cached_input_discount is the fractional saving vs fresh input" do
+    # Opus: cached $0.50 vs input $5 = 90% off
+    assert_in_delta 0.9, ai_models(:opus).cached_input_discount, 0.0001
+  end
+
+  test "cached_input_discount is nil without a cached price" do
+    model = ai_models(:opus)
+    model.current_price.update!(cached_input_per_mtok: nil)
+    model.forget_price_cache!
+    assert_nil model.cached_input_discount
+  end
+
+  test "long_description folds editorial facets into the lede" do
+    model = ai_models(:opus)
+    model.update!(strengths: "Fast", best_for: "Agents", limitations: "Pricey")
+    desc = model.long_description
+    assert_includes desc, "Test model."
+    assert_includes desc, "Strengths: Fast."
+    assert_includes desc, "Best for: Agents."
+    assert_includes desc, "Limitations: Pricey."
+  end
+
+  test "long_description is nil when nothing is set" do
+    model = ai_models(:no_price)
+    model.update!(description: nil)
+    assert_nil model.long_description
+  end
+
   test "price helpers use the eager-loaded association without extra queries" do
     model = AiModel.includes(:price_points).find(ai_models(:deepseek_v4).id)
     assert_queries_count(0) do

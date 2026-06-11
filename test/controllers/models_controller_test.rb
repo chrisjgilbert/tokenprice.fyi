@@ -141,4 +141,25 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", minimum: 1
     assert_includes @response.body, "\"@type\":\"Product\""
   end
+
+  test "show renders the computed insights section" do
+    get model_url(ai_models(:deepseek_v4))
+    assert_response :success
+    assert_select "h2", text: "Where it sits"
+    assert_select "p", text: /Cheapest frontier model/
+  end
+
+  test "show renders editorial facets when present" do
+    ai_models(:opus).update!(
+      strengths: "Highly autonomous agentic work",
+      best_for: "Long-horizon coding",
+      limitations: "Premium pricing"
+    )
+    get model_url(ai_models(:opus))
+    assert_response :success
+    assert_select "dt", text: "Strengths"
+    assert_select "dd", text: "Highly autonomous agentic work"
+    assert_select "dt", text: "Best for"
+    assert_select "dt", text: "Limitations"
+  end
 end

@@ -327,10 +327,242 @@ catalog = [
 ]
 
 # ---------------------------------------------------------------------------
+# Editorial — qualitative "what it's for" copy, keyed by slug.
+#
+# Kept separate from the price-bearing catalog above because it changes on a
+# different cadence: a model's strengths and use-cases are stable even as its
+# price moves. The show page pairs this with always-computed price insights, so
+# nothing here needs to mention dollars — that stays accurate on its own.
+# ---------------------------------------------------------------------------
+editorial = {
+  "claude-fable-5" => {
+    strengths: "Top-end reasoning and long-horizon agentic autonomy — the most capable model in the catalogue.",
+    best_for: "The hardest research, coding and multi-step agent tasks where capability outweighs cost.",
+    limitations: "The most expensive option; overkill for routine or high-volume work."
+  },
+  "claude-opus-4-8" => {
+    strengths: "Highly autonomous on long agentic and knowledge work, with a 1M-token context at standard pricing.",
+    best_for: "Complex coding, deep research and agent workflows that run for many steps.",
+    limitations: "Premium Opus pricing — a Sonnet-tier model is usually enough for everyday tasks."
+  },
+  "claude-opus-4-7" => {
+    strengths: "Strong autonomous agentic, vision and memory performance at the same price as 4.8.",
+    best_for: "Teams already integrated on 4.7 that don't yet need the latest Opus.",
+    limitations: "Superseded by Opus 4.8, which improves quality at no extra cost."
+  },
+  "claude-opus-4-6" => {
+    strengths: "First Opus with a 1M-token window, at the post-cut Opus price.",
+    best_for: "Long-context Opus work where the newest releases aren't required.",
+    limitations: "Older Opus generation; later versions improve quality at the same price."
+  },
+  "claude-opus-4-5" => {
+    strengths: "Landmark release that cut Opus pricing 67%, with capable frontier reasoning.",
+    best_for: "Workloads happy on a 200K context that want proven Opus quality.",
+    limitations: "200K context and an older generation; surpassed by the 4.6+ line."
+  },
+  "claude-opus-4-1" => {
+    strengths: "Refined Opus 4 with incremental quality gains at the same price.",
+    best_for: "Legacy integrations pinned to the pre-cut Opus line.",
+    limitations: "Costs roughly 3× post-4.5 Opus for comparable results."
+  },
+  "claude-opus-4" => {
+    strengths: "The original Claude 4 flagship; strong general reasoning for its era.",
+    best_for: "Reproducing results from the original Claude 4 launch.",
+    limitations: "Expensive early pricing, fully superseded by cheaper, better Opus releases."
+  },
+  "claude-sonnet-4-6" => {
+    strengths: "The best speed-to-intelligence balance in the line, with a 1M-token context.",
+    best_for: "Production apps, coding assistants and agents that need quality without Opus prices.",
+    limitations: "Not as deep as Opus on the very hardest reasoning tasks."
+  },
+  "claude-sonnet-4-5" => {
+    strengths: "Capable mid-tier Sonnet at the durable Sonnet price.",
+    best_for: "General-purpose work where the newest Sonnet isn't essential.",
+    limitations: "Superseded by Sonnet 4.6 at identical pricing."
+  },
+  "claude-sonnet-4" => {
+    strengths: "Set the Sonnet price point that held across the whole 4.x line.",
+    best_for: "Legacy Sonnet integrations.",
+    limitations: "Older generation; newer Sonnets are better at the same price."
+  },
+  "claude-haiku-4-5" => {
+    strengths: "Fastest and cheapest Claude, with prompt-cache savings for repeated context.",
+    best_for: "High-volume classification, routing, extraction and latency-sensitive features.",
+    limitations: "Lighter reasoning than Sonnet or Opus; not for the hardest tasks."
+  },
+  "gpt-5-5-pro" => {
+    strengths: "OpenAI's highest-accuracy reasoning variant.",
+    best_for: "Mission-critical analysis where answer quality outweighs latency and cost.",
+    limitations: "Slowest and priciest GPT-5.5 tier; wasteful for simple prompts."
+  },
+  "gpt-5-5" => {
+    strengths: "Frontier multimodal model with a 1M-token context and native computer use.",
+    best_for: "Complex professional workloads spanning text, images and tool use.",
+    limitations: "Frontier pricing stepped up from GPT-5's commodity rates."
+  },
+  "gpt-5" => {
+    strengths: "Frontier-class quality at near-commodity pricing.",
+    best_for: "Cost-sensitive general workloads that still want a capable model.",
+    limitations: "Positioned below GPT-5.5 on capability."
+  },
+  "o3" => {
+    strengths: "Strong dedicated reasoning after an 80% price cut.",
+    best_for: "Math, logic and step-by-step problem solving.",
+    limitations: "Reasoning-focused; the GPT-5 line now covers most of its ground."
+  },
+  "gpt-4-1" => {
+    strengths: "Reliable 1M-context workhorse between the budget and premium tiers.",
+    best_for: "Long-document processing and general text tasks at moderate cost.",
+    limitations: "Previous generation; GPT-5 offers more for less."
+  },
+  "o4-mini" => {
+    strengths: "Affordable reasoning with multimodal support.",
+    best_for: "Budget reasoning tasks and high-volume problem solving.",
+    limitations: "Smaller reasoning model; less capable than the full o-series or GPT-5.5."
+  },
+  "gpt-4-1-mini" => {
+    strengths: "Fast and cheap with a full 1M-token context.",
+    best_for: "High-volume text processing and long-context summarisation on a budget.",
+    limitations: "Mini-class quality; not for complex reasoning."
+  },
+  "gpt-4-1-nano" => {
+    strengths: "OpenAI's cheapest model, tuned for raw throughput.",
+    best_for: "Classification, routing and high-throughput extraction.",
+    limitations: "Minimal reasoning ability; strictly for simple, well-scoped tasks."
+  },
+  "gemini-3-1-pro" => {
+    strengths: "Google's frontier model with very long context and competitive entry pricing.",
+    best_for: "Long-context analysis and multimodal work in the Google ecosystem.",
+    limitations: "Context-tiered pricing rises above 200K tokens, so cost scales with prompt size."
+  },
+  "gemini-3-pro" => {
+    strengths: "Capable previous-generation Pro with the same context-tiered model.",
+    best_for: "Existing Gemini Pro integrations not yet moved to 3.1.",
+    limitations: "Superseded by Gemini 3.1 Pro."
+  },
+  "gemini-2-5-pro" => {
+    strengths: "First Gemini with native reasoning, at a low entry-tier price.",
+    best_for: "Reasoning tasks on a budget within the Gemini family.",
+    limitations: "Older generation; pricing scales up beyond a 200K context."
+  },
+  "gemini-3-5-flash" => {
+    strengths: "Fast Flash-tier model with improved quality.",
+    best_for: "High-volume tasks that still want Gemini quality and speed.",
+    limitations: "Much pricier than Gemini 3 Flash — the ultra-cheap Flash era is over."
+  },
+  "gemini-3-flash" => {
+    strengths: "Cheap, fast Flash model built for scale.",
+    best_for: "High-throughput, latency-sensitive workloads on a tight budget.",
+    limitations: "Superseded by 3.5 Flash; lighter reasoning than Pro."
+  },
+  "gemini-2-5-flash" => {
+    strengths: "First Flash with reasoning, at flat (non-tiered) pricing.",
+    best_for: "Budget reasoning at high volume.",
+    limitations: "Older Flash generation; surpassed by Gemini 3 Flash."
+  },
+  "grok-4-3" => {
+    strengths: "Aggressively priced frontier flagship with a 1M-token context.",
+    best_for: "Cost-conscious frontier workloads and real-time, X-integrated use.",
+    limitations: "Ecosystem and tooling less mature than the largest labs."
+  },
+  "grok-4-20" => {
+    strengths: "Huge 2M-token context, later aligned to Grok 4.3 pricing.",
+    best_for: "Very long-context tasks that exceed a 1M window.",
+    limitations: "Superseded by Grok 4.3."
+  },
+  "grok-4" => {
+    strengths: "Former xAI flagship.",
+    best_for: "Reference only — traffic now redirects to Grok 4.3.",
+    limitations: "Retired May 2026; no longer served directly."
+  },
+  "grok-build-0-1" => {
+    strengths: "Coding-specialist model priced below Grok 4.3 for code generation.",
+    best_for: "Code generation and developer-tool integrations.",
+    limitations: "Narrowly tuned for coding; not a general-purpose chat model."
+  },
+  "grok-4-1-fast" => {
+    strengths: "Fast, low-cost variant with a 2M-token context.",
+    best_for: "High-volume, long-context tasks where speed and price lead.",
+    limitations: "Retired May 2026; traffic redirected to Grok 4.3."
+  },
+  "deepseek-v4-pro" => {
+    strengths: "Open-weight frontier quality at one of the lowest prices anywhere, with deep cached-input discounts.",
+    best_for: "Cost-sensitive frontier workloads and self-hosting on open weights.",
+    limitations: "Smaller ecosystem and tooling than the major US labs."
+  },
+  "deepseek-v4-flash" => {
+    strengths: "Ultra-cheap frontier-class MoE (284B total / 13B active).",
+    best_for: "High-volume tasks needing near-frontier quality at minimal cost.",
+    limitations: "Lighter than V4 Pro; trades some quality for price."
+  },
+  "deepseek-r1" => {
+    strengths: "Landmark open reasoning model that reset industry price expectations.",
+    best_for: "Reasoning experiments and reference work on open weights.",
+    limitations: "Now routes to V4 Flash thinking mode; scheduled for deprecation July 2026."
+  },
+  "deepseek-v3" => {
+    strengths: "Capable general-purpose open chat model at very low cost.",
+    best_for: "Everyday chat and text tasks on a tight budget.",
+    limitations: "Older generation; the V4 line is stronger and similarly priced."
+  },
+  "llama-4-maverick" => {
+    strengths: "Open-weight MoE flagship (17B active / 400B+ total) you can self-host or buy hosted.",
+    best_for: "Teams that want open weights with frontier-adjacent quality.",
+    limitations: "Hosted pricing varies widely by provider; the figure shown is representative."
+  },
+  "llama-4-scout" => {
+    strengths: "Smaller open MoE supporting up to a 10M-token context on some hosts.",
+    best_for: "Extreme long-context tasks and budget self-hosting.",
+    limitations: "Lighter than Maverick; hosted pricing and context limits vary by provider."
+  },
+  "mistral-medium-3-5" => {
+    strengths: "One set of weights folding chat, reasoning and code with a per-request reasoning toggle.",
+    best_for: "Mixed workloads that want reasoning on demand without switching models.",
+    limitations: "Mid-tier capability; not aimed at the absolute frontier."
+  },
+  "mistral-large-3" => {
+    strengths: "Apache-2.0 open-weight frontier MoE (675B total / 41B active) at a steep discount to Large 2.",
+    best_for: "Open-weight frontier deployments and permissive-license self-hosting.",
+    limitations: "Trails the very top closed models on the hardest tasks."
+  },
+  "mistral-small-4" => {
+    strengths: "Fast, cheap model for high-volume and latency-sensitive work.",
+    best_for: "Scaled text processing, routing and simple assistants.",
+    limitations: "Small-tier quality; not for complex reasoning."
+  },
+  "qwen-3-7-max" => {
+    strengths: "Alibaba's latest flagship with a 1M-token context.",
+    best_for: "Long-context and multilingual work, especially Chinese-language tasks.",
+    limitations: "Western tooling and integrations less mature."
+  },
+  "qwen3-max" => {
+    strengths: "Capable previous Qwen flagship, cut 50% in China's price war.",
+    best_for: "Budget multilingual and long-context tasks.",
+    limitations: "Superseded by Qwen 3.7 Max."
+  },
+  "kimi-k2-6" => {
+    strengths: "Open-weight frontier model with large agent-swarm support at a low direct-API rate.",
+    best_for: "Agentic, multi-tool workflows on open weights at low cost.",
+    limitations: "Hosted providers may charge well above the direct rate."
+  },
+  "kimi-k2-5" => {
+    strengths: "Multimodal model with Agent Swarm support.",
+    best_for: "Multimodal agent workflows not yet moved to K2.6.",
+    limitations: "Superseded by Kimi K2.6."
+  },
+  "kimi-k2" => {
+    strengths: "Moonshot's first open-weight frontier model (1T total / 32B active MoE).",
+    best_for: "Reference only.",
+    limitations: "End-of-life May 25, 2026."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # Persist
 # ---------------------------------------------------------------------------
 catalog.each do |row|
   model = AiModel.find_or_initialize_by(slug: row[:name].parameterize)
+  copy = editorial.fetch(row[:name].parameterize, {})
   model.update!(
     provider:          providers.fetch(row[:provider]),
     name:              row[:name],
@@ -339,7 +571,10 @@ catalog.each do |row|
     context_window:    row[:context_window],
     max_output_tokens: row[:max_output_tokens],
     released_on:       row[:released_on],
-    description:       row[:description]
+    description:       row[:description],
+    strengths:         copy[:strengths],
+    best_for:          copy[:best_for],
+    limitations:       copy[:limitations]
   )
 
   wanted_dates = row[:prices].map { |p| Date.parse(p[:on]) }

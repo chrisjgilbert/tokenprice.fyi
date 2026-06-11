@@ -58,6 +58,7 @@ class ModelsController < ApplicationController
   def show
     @model = AiModel.includes(:provider, :price_points).find_by!(slug: params[:id])
     @price_points = @model.price_points.chronological.to_a
+    @insights = ModelInsights.new(@model)
     @related = AiModel.listed.where(provider: @model.provider)
                       .where.not(id: @model.id)
                       .includes(:price_points, :provider).by_release.limit(4)
