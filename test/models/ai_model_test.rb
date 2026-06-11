@@ -33,6 +33,14 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not model.valid?
   end
 
+  test "listed excludes models with no price points" do
+    listed = AiModel.listed
+    assert_includes listed, ai_models(:opus)
+    assert_includes listed, ai_models(:deepseek_v4)
+    assert_not_includes listed, ai_models(:no_price)
+    assert_not_includes listed, ai_models(:retired_instant)
+  end
+
   test "matches? finds substrings of name, provider and slug" do
     model = ai_models(:opus)
     assert model.matches?("opus")

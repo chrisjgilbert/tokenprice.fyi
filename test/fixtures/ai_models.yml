@@ -20,6 +20,15 @@ retired_instant:
   status: retired
   description: Retired test model — must never appear in listings.
 
+no_price:
+  provider: anthropic
+  name: Claude No Price
+  slug: claude-no-price
+  tier: mid
+  status: active
+  source: openrouter
+  description: Active model with no price points — should be excluded from listings.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
