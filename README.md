@@ -25,8 +25,16 @@ series of snapshots rather than a single number.
 
 ```
 Provider ──< AiModel ──< PricePoint
-                            └ effective_on, input/output/cached $ per 1M tokens, source, note
+  └ country, country_code      └ effective_on, input/output/cached $ per 1M tokens, source, note
 ```
+
+Each `Provider` records the country its lab is headquartered in (`country` name +
+`country_code`, an ISO 3166-1 alpha-2 code like `US`/`CN`/`FR`). The **Map** page
+(`/map`) uses that code to shade a server-rendered SVG world map by how many providers
+each country hosts — playing up the geopolitics of who builds the frontier. The map
+geometry is a static, equirectangular-projected dataset vendored at
+`lib/data/world_map.json` (derived from Natural Earth 110m); `WorldMapHelper` loads it
+and `Provider#flag_emoji` derives the flag from the country code.
 
 - `AiModel#current_price` — the most recent snapshot.
 - `AiModel#launch_price` — the earliest snapshot.

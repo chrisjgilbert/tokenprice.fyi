@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_203418) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_000000) do
   create_table "ai_models", force: :cascade do |t|
     t.integer "context_window"
     t.datetime "created_at", null: false
@@ -60,11 +60,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_203418) do
 
   create_table "providers", force: :cascade do |t|
     t.string "accent"
+    t.string "country"
+    t.string "country_code"
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.string "website"
+    t.index ["country_code"], name: "index_providers_on_country_code"
     t.index ["slug"], name: "index_providers_on_slug", unique: true
   end
 
