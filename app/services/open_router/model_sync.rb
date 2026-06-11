@@ -54,24 +54,48 @@ module OpenRouter
     # Country headquarters for OpenRouter namespaces not already covered by
     # seeds. Used to place newly-discovered providers on the map. Seeded
     # providers (those in PROVIDER_SLUGS) get their country from db/seeds.rb,
-    # so they are intentionally absent here.
+    # so they are intentionally absent here. Community / individual fine-tuners
+    # (e.g. gryphe, thedrummer, undi95, sao10k) are omitted — they appear in
+    # the "not yet placed on the map" section until set via the admin UI.
     PROVIDER_COUNTRIES = {
-      "cohere"       => { country: "Canada",          country_code: "CA" },
-      "ai21"         => { country: "Israel",          country_code: "IL" },
-      "nvidia"       => { country: "United States",  country_code: "US" },
-      "amazon"       => { country: "United States",  country_code: "US" },
-      "microsoft"    => { country: "United States",  country_code: "US" },
-      "perplexity"   => { country: "United States",  country_code: "US" },
-      "databricks"   => { country: "United States",  country_code: "US" },
-      "inflection"   => { country: "United States",  country_code: "US" },
-      "01-ai"        => { country: "China",           country_code: "CN" },
-      "zhipu"        => { country: "China",           country_code: "CN" },
-      "minimax"      => { country: "China",           country_code: "CN" },
-      "together"     => { country: "United States",  country_code: "US" },
-      "fireworks"    => { country: "United States",  country_code: "US" },
-      "sambanova"    => { country: "United States",  country_code: "US" },
-      "aleph-alpha"  => { country: "Germany",         country_code: "DE" },
-      "nousresearch" => { country: "United States",  country_code: "US" },
+      # — United States —
+      "allenai"         => { country: "United States",        country_code: "US" },
+      "amazon"          => { country: "United States",        country_code: "US" },
+      "arcee-ai"        => { country: "United States",        country_code: "US" },
+      "databricks"      => { country: "United States",        country_code: "US" },
+      "essentialai"     => { country: "United States",        country_code: "US" },
+      "fireworks"       => { country: "United States",        country_code: "US" },
+      "ibm"             => { country: "United States",        country_code: "US" },
+      "inflection"      => { country: "United States",        country_code: "US" },
+      "liquid"          => { country: "United States",        country_code: "US" },
+      "microsoft"       => { country: "United States",        country_code: "US" },
+      "nousresearch"    => { country: "United States",        country_code: "US" },
+      "nvidia"          => { country: "United States",        country_code: "US" },
+      "openrouter"      => { country: "United States",        country_code: "US" },
+      "perplexity"      => { country: "United States",        country_code: "US" },
+      "sambanova"       => { country: "United States",        country_code: "US" },
+      "together"        => { country: "United States",        country_code: "US" },
+      "writer"          => { country: "United States",        country_code: "US" },
+      # — China —
+      "01-ai"           => { country: "China",                country_code: "CN" },
+      "baidu"           => { country: "China",                country_code: "CN" },
+      "bytedance"       => { country: "China",                country_code: "CN" },
+      "bytedance-seed"  => { country: "China",                country_code: "CN" },
+      "inclusionai"     => { country: "China",                country_code: "CN" },
+      "kwaipilot"       => { country: "China",                country_code: "CN" },
+      "minimax"         => { country: "China",                country_code: "CN" },
+      "stepfun"         => { country: "China",                country_code: "CN" },
+      "tencent"         => { country: "China",                country_code: "CN" },
+      "xiaomi"          => { country: "China",                country_code: "CN" },
+      "zhipu"           => { country: "China",                country_code: "CN" },
+      # — Rest of world —
+      "ai21"            => { country: "Israel",               country_code: "IL" },
+      "aionlabs"        => { country: "Israel",               country_code: "IL" },
+      "aleph-alpha"     => { country: "Germany",              country_code: "DE" },
+      "cohere"          => { country: "Canada",               country_code: "CA" },
+      "inception"       => { country: "United Arab Emirates", country_code: "AE" },
+      "rekaai"          => { country: "Singapore",            country_code: "SG" },
+      "upstage"         => { country: "South Korea",          country_code: "KR" },
     }.freeze
 
     Result = Struct.new(:created, :enriched, :repriced, :skipped, keyword_init: true) do
