@@ -1,0 +1,66 @@
+<% content_for :title, "Which model should you actually use? — tokenprice.fyi" %>
+<% content_for :description, "A task-by-task guide to picking an LLM tier: classification, extraction, RAG, summarisation, and agentic coding — and which price dimension actually dominates each." %>
+
+<% content_for :head do %>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Which model should you actually use?",
+      "datePublished": "2026-06-11",
+      "author": { "@type": "Person", "name": "Chris Gilbert" },
+      "publisher": { "@type": "Organization", "name": "tokenprice.fyi" },
+      "mainEntityOfPage": "<%= which_model_url %>"
+    }
+  </script>
+<% end %>
+
+<style>
+  .why-article { max-width: 680px; margin: 0 auto; padding: 24px 0 48px; }
+  .why-article .why-meta { font-family: var(--font-mono); font-size: 13px; color: var(--color-slate-400); margin-bottom: 14px; }
+  .why-article h1 { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; color: var(--color-slate-900); margin-bottom: 28px; }
+  .why-article h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--color-slate-900); margin: 34px 0 12px; }
+  .why-article p { font-size: 16.5px; line-height: 1.7; color: var(--color-slate-700); margin-bottom: 20px; }
+  .why-article strong { color: var(--color-slate-900); }
+  .why-article a { color: var(--color-slate-900); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-slate-300); }
+  .why-article a:hover { text-decoration-color: var(--color-slate-900); }
+  .why-article .num { font-family: var(--font-mono); }
+  .why-article .verdict { font-family: var(--font-mono); font-size: 13px; color: var(--color-slate-500); margin: -6px 0 10px; }
+  @media (max-width: 640px) {
+    .why-article h1 { font-size: 30px; }
+  }
+</style>
+
+<article class="why-article">
+  <p class="why-meta">June 2026 · Chris Gilbert</p>
+  <h1>Which model should you actually use?</h1>
+
+  <p>The most expensive habit in LLM engineering is using a frontier model for everything. It's an understandable habit — <%= link_to '"the good one" never gets you blamed', why_path %> — but the price spread between tiers is enormous: within Anthropic's own lineup, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension, and across providers the gap between the priciest frontier model and the cheapest small one is more than <span class="num">300×</span>. A tier mismatch isn't a rounding error. It's the whole bill.</p>
+
+  <p>The right rule is boring: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> No eval yet? Run the rule in reverse: prototype on a frontier model to find your quality ceiling, then walk down tiers until something breaks. Your eval is the arbiter, not this page and not a leaderboard. But you need somewhere to start, so here is my starting guess for the five most common task shapes — what tier is usually enough, and which price dimension actually dominates the cost, because it's often not the one on the sticker.</p>
+
+  <h2>Classification and routing</h2>
+  <p class="verdict">tier: small · cost driver: input price</p>
+  <p>Labelling tickets, moderating content, routing requests — a paragraph or a page in, a token or two out. This is the task small models were built for: providers themselves position their smallest models for classification and routing. (A huge label taxonomy or subtle multi-label calls can push you up a tier — that's what the eval is for.) Because output is near-zero, <strong>input price is the entire bill</strong> — and small-tier input starts around <span class="num">$0.10</span> per million tokens. Running a frontier model here is paying a surgeon to take your temperature.</p>
+
+  <h2>Data extraction to JSON</h2>
+  <p class="verdict">tier: small–mid · cost driver: input price</p>
+  <p>Pulling structured fields out of messy text. Small models handle typical schemas; step up to mid when the source is adversarial or a missed field is expensive. Deep nesting is a different problem — it trips up <em>every</em> tier, so simplify the schema before you upgrade the model. The metric that matters here is <strong>cost per accepted document, not cost per request</strong>: a cheap model that fails twice and needs human review isn't cheap. Output is short and mechanical, so input price dominates again — and extraction is the classic candidate for <strong>batch pricing</strong>, which halves the bill at most providers if you can wait minutes instead of seconds.</p>
+
+  <h2>RAG answering</h2>
+  <p class="verdict">tier: mid · cost driver: input price, then cached input</p>
+  <p>Answering questions over retrieved documents. The retrieval does the hard part; the model mostly needs to read carefully and decline to invent. Mid-tier models are reliably good enough, and the economics are lopsided: you're feeding in thousands of tokens of context to get a paragraph back, so <strong>you're buying input tokens, overwhelmingly</strong>. If your system prompt and document set repeat across requests, cached-input pricing — typically <span class="num">4–10×</span> cheaper than regular input — changes which model wins.</p>
+
+  <h2>Long-document summarisation</h2>
+  <p class="verdict">tier: small–mid · cost driver: input price</p>
+  <p>The most input-heavy shape there is: a hundred pages in, one out — so tier choice gets multiplied by every page you feed it. Cheap long-context models have made routine summarisation a small-tier task; pay for mid or above when missing a clause in the middle of page sixty actually costs you something — "lost in the middle" is reduced, not solved. And because summarisation is rarely latency-sensitive, it's the other natural batch-pricing candidate.</p>
+
+  <h2>Agentic coding</h2>
+  <p class="verdict">tier: frontier · cost driver: cached input, then output</p>
+  <p>The exception, and it's a big one. Multi-step agents that read a codebase, plan, edit, and re-check compound their errors — a model that's 95% as good per step is far less than 95% as good after thirty steps. This is the task that earns frontier prices. (For the main loop, anyway — the emerging pattern is a frontier orchestrator delegating search and exploration to small-tier subagents.) The underappreciated part: agents re-send the same growing context on every step, so the overwhelming majority of what you buy is cache reads, and <strong>cached-input price matters more than headline input price</strong>. Two frontier models with the same sticker can differ sharply once caching enters the math — check the cached column on <%= link_to "the table", root_path %>, not just the first one.</p>
+
+  <h2>The honest caveats</h2>
+  <p>These are dated judgments, not benchmarks — I'll say "good enough for typical schemas," never "scores 87.2," and when the market moves (a mid model gets frontier-grade at coding, say) these verdicts get revised, visibly. The tier floor is also only half the decision: a "small" verdict still leaves more than a <span class="num">10×</span> spread between the cheapest and priciest small models, which is what <%= link_to "the table", root_path %> is for.</p>
+
+  <p>And the other half — <em>"fine, mid tier for RAG, but what does that cost at my volume?"</em> — is the question this site exists to answer next. I'm building a <strong>cost calculator</strong>: pick a task shape like the ones above, set your volume, and get a ranked monthly bill across every model we track, at live prices, shareable as a link. Until then: start cheap, write an eval, and only pay frontier prices where the task actually earns them.</p>
+</article>
