@@ -24,7 +24,7 @@ class AiModel < ApplicationRecord
 
   before_validation :set_slug, on: :create
 
-  scope :listed, -> { where.not(status: "retired") }
+  scope :listed, -> { where.not(status: "retired").where(id: PricePoint.select(:ai_model_id)) }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
