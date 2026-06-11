@@ -106,11 +106,31 @@ function linNice(max) {
   return { top, ticks }
 }
 
+// ── Log nice ticks (decade-based) ────────────────────────────────────────────
+function logNice(min, max) {
+  if (!(min > 0)) min = 1
+  if (!(max >= min)) max = min
+  const lo = Math.pow(10, Math.floor(Math.log10(min)))
+  let hi = Math.pow(10, Math.ceil(Math.log10(max)))
+  if (hi <= lo) hi = lo * 10
+  const decades = Math.round(Math.log10(hi / lo))
+  const subs = decades <= 2 ? [1, 2, 5] : decades === 3 ? [1, 3] : [1]
+  const ticks = []
+  for (let d = lo; d < hi * 0.999; d *= 10) {
+    for (const s of subs) {
+      const v = d * s
+      if (v < hi) ticks.push(+v.toPrecision(12))
+    }
+  }
+  ticks.push(hi)
+  return { lo, hi, ticks }
+}
+
 function fmtMoney(v) {
   if (v === 0) return "0"
   if (v >= 10) return String(Math.round(v))
   if (v >= 1) return (v % 1 ? v.toFixed(1) : String(v))
-  return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")
+  return parseFloat(v.toPrecision(2)).toString()
 }
 
 function monthTicks(tMin, tMax) {
@@ -145,6 +165,7 @@ export default class extends Controller {
     "eventsPopover",
     "eventsPopoverList",
     "timeRange",
+    "scaleSeg",
     "avgToggle"
   ]
 
@@ -161,6 +182,7 @@ export default class extends Controller {
     this.showAvg = true
     this.activePreset = null
     this.timeRange = "all"
+    this.scale = "log"
     this._paletteIdx = 0
 
     this._boundOutside = this._onOutsideClick.bind(this)
@@ -320,6 +342,17 @@ export default class extends Controller {
     if (this.hasTimeRangeTarget) {
       this.timeRangeTarget.querySelectorAll("button").forEach(b => {
         b.classList.toggle("on", b.dataset.range === this.timeRange)
+      })
+    }
+    this._render(true)
+  }
+
+  setScale(event) {
+    const btn = event.currentTarget
+    this.scale = btn.dataset.scale
+    if (this.hasScaleSegTarget) {
+      this.scaleSegTarget.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("on", b.dataset.scale === this.scale)
       })
     }
     this._render(true)
@@ -523,10 +556,11 @@ export default class extends Controller {
     this._built = built
 
     // ── Domains (driven by model data only) ──
-    let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
+    let tMin = Infinity, tMax = -Infinity, vMin = Infinity, vMax = -Infinity
     built.forEach(s => s.pts.forEach(p => {
       tMin = Math.min(tMin, p.t)
       tMax = Math.max(tMax, p.t)
+      vMin = Math.min(vMin, p.v)
       vMax = Math.max(vMax, p.v)
     }))
     tMax = Math.max(tMax, nowUTC)
@@ -572,14 +606,23 @@ export default class extends Controller {
     tMin -= tPad
     tMax += tPad
 
-    // Linear $ axis anchored at 0
-    const { top: yTop, ticks: yTicks } = linNice(vMax)
-
+    // $ axis: log spreads out series spanning orders of magnitude;
+    // linear is anchored at 0
     const x = (t) => padL + ((t - tMin) / (tMax - tMin)) * iW
-    const y = (v) => padT + iH - (v / yTop) * iH
+    let y, yTicks
+    if (this.scale === "log") {
+      const { lo, hi, ticks } = logNice(vMin, vMax)
+      const llo = Math.log10(lo), lhi = Math.log10(hi)
+      y = (v) => padT + iH - ((Math.log10(v) - llo) / (lhi - llo)) * iH
+      yTicks = ticks
+    } else {
+      const { top: yTop, ticks } = linNice(vMax)
+      y = (v) => padT + iH - (v / yTop) * iH
+      yTicks = ticks
+    }
 
     // Store geometry for hover
-    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, evtMin, evtMax, W, H, yTop }
+    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, evtMin, evtMax, W, H }
 
     let g = ""
 
