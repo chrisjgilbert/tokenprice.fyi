@@ -36,7 +36,7 @@
     <% if @leader %>
       <div class="map-stat">
         <span class="map-stat-val"><%= @by_code[@leader[:code]][:providers].first.flag_emoji %> <span class="num"><%= number_to_percentage(100.0 * @leader[:provider_count] / [@located_providers, 1].max, precision: 0) %></span></span>
-        <span class="map-stat-label"><%= @leader[:name] %> providers</span>
+        <span class="map-stat-label"><%= @leader[:name] %> share</span>
       </div>
     <% end %>
   </div>
