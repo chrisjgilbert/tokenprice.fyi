@@ -6,15 +6,17 @@ const PALETTE = [
   "#7c3aed","#0891b2","#c2683f","#1c5bd6","#db5a18"
 ]
 
+const METRIC_LABEL = { blended: "I/O avg", input: "Input", output: "Output" }
+
 // ── Presets ──────────────────────────────────────────────────────────────────
 const PRESETS = {
-  "anthropic-vs-openai": {
-    label: "Anthropic vs OpenAI",
-    filter: m => (m.provider === "anthropic" || m.provider === "openai") && m.tier === "frontier"
-  },
   "frontier": {
     label: "All frontier",
     filter: m => m.tier === "frontier"
+  },
+  "anthropic-vs-openai": {
+    label: "Anthropic vs OpenAI",
+    filter: m => (m.provider === "anthropic" || m.provider === "openai") && m.tier === "frontier"
   },
   "budget": {
     label: "Budget tier",
@@ -35,12 +37,27 @@ function svgEl(tag, attrs = {}) {
 }
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
+const DAY = 86400000
 function parseDate(s) { return new Date(s + "T00:00:00Z") }
+function parseDateUTC(iso) {
+  const [y, m, d] = iso.split("-").map(Number)
+  return Date.UTC(y, m - 1, d)
+}
 function fmtMonthYear(d) {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
 }
+function fmtAxisDate(t) {
+  const d = new Date(t)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  return months[d.getUTCMonth()] + " '" + String(d.getUTCFullYear()).slice(2)
+}
 function fmtDateFull(d) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+}
+function fmtDateFullFromISO(iso) {
+  const [y, m, d] = iso.split("-").map(Number)
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  return months[m - 1] + " " + d + ", " + y
 }
 
 // ── Price formatter ──────────────────────────────────────────────────────────
@@ -51,36 +68,47 @@ function fmtPrice(v) {
   return "$" + v.toFixed(2)
 }
 
-// ── Log tick generation ───────────────────────────────────────────────────────
-function logTicks(minV, maxV) {
-  const ticks = []
-  const magnitudes = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
-  const multipliers = [1, 2, 5]
-  for (const mag of magnitudes) {
-    for (const mul of multipliers) {
-      const v = mul * Math.pow(10, mag)
-      if (v >= minV * 0.5 && v <= maxV * 2) ticks.push(v)
-    }
-  }
-  return [...new Set(ticks)].sort((a, b) => a - b)
+// ── Linear nice ticks (from 0) ──────────────────────────────────────────────
+function niceStep(range, count) {
+  const raw = range / count
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)))
+  const n = raw / mag
+  let s
+  if (n < 1.5) s = 1
+  else if (n < 3) s = 2
+  else if (n < 7) s = 5
+  else s = 10
+  return s * mag
 }
 
-// ── Linear tick generation ────────────────────────────────────────────────────
-function linearTicks(minV, maxV, count = 6) {
-  const range = maxV - minV
-  if (range < 1e-12) {
-    if (minV === 0) return [0, 0.5, 1]
-    return [minV * 0.5, minV, minV * 1.5]
-  }
-  const rawStep = range / (count - 1)
-  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)))
-  const step = Math.ceil(rawStep / mag) * mag
-  const start = Math.floor(minV / step) * step
+function linNice(max) {
+  if (!(max > 0)) max = 1
+  const step = niceStep(max, 5)
+  const top = Math.ceil((max * 1.06) / step) * step
   const ticks = []
-  for (let v = start; v <= maxV + step * 0.01; v += step) {
-    if (v >= minV * 0.5) ticks.push(parseFloat(v.toPrecision(6)))
+  for (let v = 0; v <= top + 1e-9; v += step) ticks.push(+v.toFixed(6))
+  return { top, ticks }
+}
+
+function fmtMoney(v) {
+  if (v === 0) return "0"
+  if (v >= 10) return String(Math.round(v))
+  if (v >= 1) return (v % 1 ? v.toFixed(1) : String(v))
+  return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")
+}
+
+function monthTicks(tMin, tMax) {
+  const out = []
+  const months = (tMax - tMin) / (DAY * 30.4)
+  const stepM = months <= 8 ? 2 : months <= 16 ? 3 : months <= 28 ? 4 : 6
+  let d = new Date(tMin)
+  d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))
+  while (d.getTime() < tMax) {
+    const t = d.getTime()
+    if (t >= tMin) out.push(t)
+    d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + stepM, 1))
   }
-  return ticks
+  return out
 }
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -93,13 +121,13 @@ export default class extends Controller {
     "svg",
     "emptyState",
     "tooltip",
+    "eventTooltip",
     "legend",
     "eventsToggle",
     "eventsPopoverWrap",
     "eventsPopoverBtn",
     "eventsPopover",
-    "eventsPopoverList",
-    "scaleSeg"
+    "eventsPopoverList"
   ]
 
   static values = {
@@ -111,30 +139,26 @@ export default class extends Controller {
   connect() {
     this.selected = new Map()   // slug → color
     this.metric = "blended"
-    this.scale = "log"
     this.showEvents = true
     this.activePreset = null
     this._paletteIdx = 0
-    this._flashTimeout = null
 
     this._boundOutside = this._onOutsideClick.bind(this)
     document.addEventListener("click", this._boundOutside, true)
 
     this._buildModelList()
     this._buildEventsPopover()
-    this._applyPreset("anthropic-vs-openai")
+    this._applyPreset("frontier")
   }
 
   disconnect() {
     document.removeEventListener("click", this._boundOutside, true)
-    clearTimeout(this._flashTimeout)
   }
 
   // ── Preset selection ─────────────────────────────────────────────────────────
   selectPreset(event) {
     const btn = event.currentTarget
-    const presetKey = btn.dataset.preset
-    this._applyPreset(presetKey)
+    this._applyPreset(btn.dataset.preset)
   }
 
   _applyPreset(key) {
@@ -146,7 +170,6 @@ export default class extends Controller {
     this._paletteIdx = 0
 
     const matching = this.modelsValue.filter(preset.filter)
-    // Limit to palette size
     matching.slice(0, PALETTE.length).forEach(m => {
       this.selected.set(m.slug, PALETTE[this._paletteIdx++ % PALETTE.length])
     })
@@ -154,7 +177,7 @@ export default class extends Controller {
     this._syncPresetButtons()
     this._syncModelList()
     this._syncSelCount()
-    this._render()
+    this._render(true)
   }
 
   _syncPresetButtons() {
@@ -186,11 +209,11 @@ export default class extends Controller {
         const row = document.createElement("button")
         row.className = "trends-model-row"
         row.dataset.slug = m.slug
+        row.dataset.on = "false"
         row.setAttribute("data-action", "click->trends-chart#toggleModel")
 
         const swatch = document.createElement("span")
         swatch.className = "trends-swatch"
-        swatch.dataset.swatchSlug = m.slug
 
         const name = document.createElement("span")
         name.className = "trends-model-name"
@@ -220,22 +243,17 @@ export default class extends Controller {
       const slug = row.dataset.slug
       const color = this.selected.get(slug)
       const swatch = row.querySelector(".trends-swatch")
-      if (color) {
+      const on = this.selected.has(slug)
+      row.dataset.on = on ? "true" : "false"
+      if (on) {
         swatch.style.background = color
-        swatch.style.boxShadow = "none"
-        row.style.opacity = "1"
+        swatch.style.borderColor = "transparent"
+        swatch.style.border = "none"
       } else {
         swatch.style.background = "transparent"
-        swatch.style.boxShadow = `0 0 0 2px ${this._swatchRingColor(slug)}`
-        row.style.opacity = "0.7"
+        swatch.style.border = "2px solid var(--color-slate-300)"
       }
     })
-  }
-
-  _swatchRingColor(slug) {
-    // Reuse a stable ring color per model position
-    const idx = this.modelsValue.findIndex(m => m.slug === slug)
-    return PALETTE[idx % PALETTE.length]
   }
 
   toggleModel(event) {
@@ -245,48 +263,35 @@ export default class extends Controller {
     if (this.selected.has(slug)) {
       this.selected.delete(slug)
     } else {
-      if (this.selected.size >= PALETTE.length) return // palette exhausted
+      if (this.selected.size >= PALETTE.length) return
       const usedColors = new Set(this.selected.values())
       const color = PALETTE.find(c => !usedColors.has(c)) || PALETTE[0]
       this.selected.set(slug, color)
     }
 
-    // Selecting a model manually clears the active preset
     this.activePreset = null
     this._syncPresetButtons()
     this._syncModelList()
     this._syncSelCount()
-    this._render()
+    this._render(true)
   }
 
   _syncSelCount() {
     if (!this.hasSelCountTarget) return
     const n = this.selected.size
     const span = this.selCountTarget.querySelector(".trends-sel-n")
-    if (span) span.textContent = n
+    if (span) span.textContent = n ? n : "0"
+    this.selCountTarget.style.display = n ? "" : "none"
   }
 
   // ── Toolbar actions ──────────────────────────────────────────────────────────
   setMetric(event) {
     const btn = event.currentTarget
-    const metric = btn.dataset.metric
-    this.metric = metric
+    this.metric = btn.dataset.metric
     btn.closest(".tp-seg").querySelectorAll("button").forEach(b => {
-      b.classList.toggle("on", b.dataset.metric === metric)
+      b.classList.toggle("on", b.dataset.metric === this.metric)
     })
-    this._render()
-  }
-
-  setScale(event) {
-    const btn = event.currentTarget
-    const scale = btn.dataset.scale
-    this.scale = scale
-    if (this.hasScaleSegTarget) {
-      this.scaleSegTarget.querySelectorAll("button").forEach(b => {
-        b.classList.toggle("on", b.dataset.scale === scale)
-      })
-    }
-    this._render()
+    this._render(true)
   }
 
   toggleEvents(event) {
@@ -294,7 +299,8 @@ export default class extends Controller {
     const btn = event.currentTarget
     btn.classList.toggle("on", this.showEvents)
     btn.setAttribute("aria-checked", this.showEvents ? "true" : "false")
-    this._render()
+    this._render(false)
+    this._renderLegend()
   }
 
   toggleEventsPopover(event) {
@@ -319,34 +325,54 @@ export default class extends Controller {
     const marketEvents = this.eventsValue
       .filter(e => e.kind === "market")
       .slice()
-      .sort((a, b) => b.date.localeCompare(a.date)) // newest first
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    this._marketEvents = marketEvents
 
     const frag = document.createDocumentFragment()
-    marketEvents.forEach(ev => {
+    marketEvents.forEach((ev, i) => {
       const row = document.createElement("div")
       row.className = "trends-event-row"
       row.dataset.eventDate = ev.date
-      row.addEventListener("click", () => this._flashEvent(ev.date))
 
-      const date = document.createElement("div")
-      date.className = "trends-event-date"
-      date.textContent = fmtDateFull(parseDate(ev.date))
+      const num = document.createElement("span")
+      num.className = "trends-event-num"
+      num.textContent = i + 1
 
-      const title = document.createElement("div")
+      const body = document.createElement("span")
+
+      const title = document.createElement("span")
       title.className = "trends-event-title"
       title.textContent = ev.title
 
-      if (ev.note) {
-        const note = document.createElement("div")
-        note.className = "trends-event-note"
-        note.textContent = ev.note
-        row.appendChild(date)
-        row.appendChild(title)
-        row.appendChild(note)
-      } else {
-        row.appendChild(date)
-        row.appendChild(title)
-      }
+      const note = document.createElement("span")
+      note.className = "trends-event-note"
+      note.textContent = ev.note || ""
+
+      const date = document.createElement("span")
+      date.className = "trends-event-date"
+      date.textContent = fmtDateFullFromISO(ev.date)
+
+      body.appendChild(title)
+      body.appendChild(note)
+      body.appendChild(date)
+
+      row.appendChild(num)
+      row.appendChild(body)
+
+      row.addEventListener("click", () => {
+        this.eventsPopoverTarget?.classList.remove("open")
+        if (!this.showEvents) {
+          this.showEvents = true
+          if (this.hasEventsToggleTarget) {
+            this.eventsToggleTarget.classList.add("on")
+            this.eventsToggleTarget.setAttribute("aria-checked", "true")
+          }
+          this._render(false)
+          this._renderLegend()
+        }
+        this._flashEvent(ev.date)
+      })
 
       frag.appendChild(row)
     })
@@ -355,29 +381,36 @@ export default class extends Controller {
   }
 
   _flashEvent(dateStr) {
-    // Close popover
-    this.eventsPopoverTarget?.classList.remove("open")
-
-    // Find and flash the event line in the SVG
     if (!this.hasSvgTarget) return
-    const lines = this.svgTarget.querySelectorAll(`[data-event-date="${dateStr}"]`)
-    clearTimeout(this._flashTimeout)
-    lines.forEach(el => {
-      el.style.transition = "none"
-      el.style.opacity = "1"
-      el.style.strokeWidth = "3"
-    })
-    this._flashTimeout = setTimeout(() => {
-      lines.forEach(el => {
-        el.style.transition = "stroke-width 0.4s, opacity 0.4s"
-        el.style.strokeWidth = ""
-        el.style.opacity = ""
-      })
-    }, 600)
+    const svg = this.svgTarget
+
+    let idx = -1
+    if (this._marketEvents) {
+      this._marketEvents.forEach((e, i) => { if (e.date === dateStr) idx = i })
+    }
+    if (idx < 0) return
+
+    const line = svg.querySelector(`line.tc-event[data-evt="${idx}"]`)
+    const mark = svg.querySelector(`.tc-evt-badge[data-evt="${idx}"] .tc-evt-mark`)
+
+    if (line) {
+      line.animate(
+        [{ strokeWidth: 1.4, opacity: .5 }, { strokeWidth: 4, opacity: 1 }, { strokeWidth: 1.4, opacity: .5 }],
+        { duration: 1000, easing: "cubic-bezier(.22,.61,.36,1)", iterations: 2 }
+      )
+    }
+    if (mark) {
+      mark.style.transformBox = "fill-box"
+      mark.style.transformOrigin = "center"
+      mark.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(1.7)" }, { transform: "scale(1)" }],
+        { duration: 1000, easing: "cubic-bezier(.22,.61,.36,1)", iterations: 2 }
+      )
+    }
   }
 
   // ── Chart rendering ──────────────────────────────────────────────────────────
-  _render() {
+  _render(animate) {
     if (!this.hasSvgTarget || !this.hasChartAreaTarget) return
 
     const selectedSlugs = [...this.selected.keys()]
@@ -392,529 +425,327 @@ export default class extends Controller {
     this.emptyStateTarget?.classList.remove("visible")
     this.svgTarget.classList.remove("hidden")
 
-    const models = this.modelsValue.filter(m => this.selected.has(m.slug))
-    const events = this.showEvents ? this.eventsValue : []
+    const svg = this.svgTarget
+    const W = 880, H = 380, padL = 54, padR = 22, padT = 38, padB = 64
+    const iW = W - padL - padR, iH = H - padT - padB
 
-    // ── Chart dimensions ────────────────────────────────────────────────────
-    const VW = 880, VH = 380
-    const PAD = { top: 22, right: 28, bottom: 46, left: 62 }
-    const plotW = VW - PAD.left - PAD.right
-    const plotH = VH - PAD.top - PAD.bottom
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`)
 
-    // ── Build series data ───────────────────────────────────────────────────
+    const now = Date.now()
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
+    const nowUTC = today.getTime()
 
-    const series = models.map(m => {
-      const color = this.selected.get(m.slug)
-      const pts = m.history
-        .slice()
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map(pp => ({
-          date: parseDate(pp.date),
-          value: this._metricValue(pp)
-        }))
-        .filter(pt => pt.value != null && pt.value > 0)
+    // Build series
+    const built = this.modelsValue
+      .filter(m => this.selected.has(m.slug))
+      .map(m => {
+        const color = this.selected.get(m.slug)
+        const pts = m.history
+          .slice()
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .map(pp => ({
+            t: parseDateUTC(pp.date),
+            v: this._metricValue(pp)
+          }))
+          .filter(p => p.v != null && p.v > 0)
+        return { model: m, color, pts }
+      })
+      .filter(s => s.pts.length)
 
-      // Extend to today
-      if (pts.length > 0) {
-        const last = pts[pts.length - 1]
-        if (last.date < today) {
-          pts.push({ date: today, value: last.value, isNow: true })
-        } else {
-          pts[pts.length - 1].isNow = true
-        }
-      }
-
-      return { model: m, color, pts }
-    }).filter(s => s.pts.length > 0)
-
-    if (series.length === 0) {
-      this.emptyStateTarget?.classList.add("visible")
-      this.svgTarget.classList.add("hidden")
+    if (!built.length) {
+      svg.innerHTML = ""
       return
     }
 
-    // ── X domain ───────────────────────────────────────────────────────────
-    let xMin = series.reduce((acc, s) => {
-      const d = s.pts[0]?.date
-      return d && d < acc ? d : acc
-    }, today)
-    const xMax = today
+    // Store for hover
+    this._built = built
+    this._marketEvents = this._marketEvents || this.eventsValue.filter(e => e.kind === "market").sort((a, b) => a.date.localeCompare(b.date))
+    const marketEvents = this._marketEvents
 
-    // Pad left by 30 days
-    xMin = new Date(xMin.getTime() - 30 * 86400000)
-
-    const xRange = xMax - xMin
-
-    function xPos(date) {
-      return PAD.left + ((date - xMin) / xRange) * plotW
-    }
-
-    // ── Y domain ───────────────────────────────────────────────────────────
-    const allValues = series.flatMap(s => s.pts.map(p => p.value)).filter(v => v > 0)
-    let yMin = Math.min(...allValues)
-    let yMax = Math.max(...allValues)
-
-    // Padding
-    if (this.scale === "log") {
-      yMin = yMin / 2
-      yMax = yMax * 2
-    } else {
-      const pad = (yMax - yMin) * 0.1 || yMax * 0.1
-      yMin = Math.max(0, yMin - pad)
-      yMax = yMax + pad
-    }
-
-    const yPos = (v) => {
-      if (this.scale === "log") {
-        const lMin = Math.log10(yMin)
-        const lMax = Math.log10(yMax)
-        return PAD.top + (1 - (Math.log10(v) - lMin) / (lMax - lMin)) * plotH
-      } else {
-        return PAD.top + (1 - (v - yMin) / (yMax - yMin)) * plotH
-      }
-    }
-
-    // ── Build SVG ──────────────────────────────────────────────────────────
-    const svg = this.svgTarget
-    svg.innerHTML = ""
-    svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`)
-
-    // Defs (clip path)
-    const defs = svgEl("defs")
-    const clip = svgEl("clipPath", { id: "plot-clip" })
-    clip.appendChild(svgEl("rect", {
-      x: PAD.left, y: PAD.top,
-      width: plotW, height: plotH
+    // ── Domains ──
+    let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
+    built.forEach(s => s.pts.forEach(p => {
+      tMin = Math.min(tMin, p.t)
+      tMax = Math.max(tMax, p.t)
+      vMax = Math.max(vMax, p.v)
     }))
-    defs.appendChild(clip)
-    svg.appendChild(defs)
-
-    // Plot area group
-    const plotG = svgEl("g", { "clip-path": "url(#plot-clip)" })
-    svg.appendChild(plotG)
-
-    // ── Grid lines & Y axis ───────────────────────────────────────────────
-    const yTicks = this.scale === "log"
-      ? logTicks(yMin, yMax)
-      : linearTicks(yMin, yMax)
-
-    const axisG = svgEl("g")
-    svg.appendChild(axisG) // unclipped so labels show
-
-    yTicks.forEach(tick => {
-      const y = yPos(tick)
-      if (y < PAD.top - 2 || y > PAD.top + plotH + 2) return
-
-      // Grid line (clipped)
-      const gl = svgEl("line", {
-        x1: PAD.left, x2: PAD.left + plotW,
-        y1: y, y2: y,
-        stroke: "var(--color-slate-100)",
-        "stroke-width": "1"
-      })
-      plotG.appendChild(gl)
-
-      // Label
-      const label = svgEl("text", {
-        x: PAD.left - 6,
-        y: y + 4,
-        "text-anchor": "end",
-        fill: "var(--color-slate-400)",
-        "font-family": "JetBrains Mono, monospace",
-        "font-size": "10",
-        "font-weight": "600"
-      })
-      label.textContent = "$" + this._tickLabel(tick)
-      axisG.appendChild(label)
-    })
-
-    // ── X axis ticks ─────────────────────────────────────────────────────
-    const xTicks = this._monthTicks(xMin, xMax)
-    xTicks.forEach(d => {
-      const x = xPos(d)
-      if (x < PAD.left || x > PAD.left + plotW) return
-
-      const gl = svgEl("line", {
-        x1: x, x2: x,
-        y1: PAD.top, y2: PAD.top + plotH,
-        stroke: "var(--color-slate-100)",
-        "stroke-width": "1"
-      })
-      plotG.appendChild(gl)
-
-      const label = svgEl("text", {
-        x: x,
-        y: PAD.top + plotH + 16,
-        "text-anchor": "middle",
-        fill: "var(--color-slate-400)",
-        "font-family": "JetBrains Mono, monospace",
-        "font-size": "9.5"
-      })
-      label.textContent = d.toLocaleDateString("en-US", { month: "short", year: "2-digit", timeZone: "UTC" })
-      axisG.appendChild(label)
-    })
-
-    // ── Axis border ───────────────────────────────────────────────────────
-    axisG.appendChild(svgEl("line", {
-      x1: PAD.left, x2: PAD.left + plotW,
-      y1: PAD.top + plotH, y2: PAD.top + plotH,
-      stroke: "var(--color-slate-200)", "stroke-width": "1"
-    }))
-    axisG.appendChild(svgEl("line", {
-      x1: PAD.left, x2: PAD.left,
-      y1: PAD.top, y2: PAD.top + plotH,
-      stroke: "var(--color-slate-200)", "stroke-width": "1"
-    }))
-
-    // ── Event overlays ────────────────────────────────────────────────────
-    const eventsG = svgEl("g", { "clip-path": "url(#plot-clip)" })
+    tMax = Math.max(tMax, nowUTC)
     if (this.showEvents) {
-      events.forEach(ev => {
-        const d = parseDate(ev.date)
-        if (d < xMin || d > xMax) return
-        const x = xPos(d)
-        const isMarket = ev.kind === "market"
-        const color = isMarket ? "#e11d48" : "#94a3b8"
-
-        const line = svgEl("line", {
-          x1: x, x2: x,
-          y1: PAD.top, y2: PAD.top + plotH,
-          stroke: color,
-          "stroke-width": "1.5",
-          "stroke-dasharray": "4 3",
-          opacity: isMarket ? "0.7" : "0.45",
-          "data-event-date": ev.date,
-          style: "cursor:pointer"
-        })
-        eventsG.appendChild(line)
-
-        // Flag dot at top for market events
-        if (isMarket) {
-          const dot = svgEl("circle", {
-            cx: x, cy: PAD.top + 4,
-            r: "4",
-            fill: color,
-            opacity: "0.8",
-            "data-event-date": ev.date
-          })
-          eventsG.appendChild(dot)
-        }
-
-        // Invisible wide hit target for hover tooltip
-        const hit = svgEl("line", {
-          x1: x, x2: x,
-          y1: PAD.top, y2: PAD.top + plotH,
-          stroke: "transparent",
-          "stroke-width": "14",
-          style: "cursor:pointer",
-          "data-event-date": ev.date,
-          "data-event-title": ev.title,
-          "data-event-kind": ev.kind,
-          "data-event-note": ev.note || ""
-        })
-        hit.addEventListener("mouseenter", (e) => this._showEventTooltip(e, ev))
-        hit.addEventListener("mouseleave", () => this._hideTooltip())
-        eventsG.appendChild(hit)
+      marketEvents.forEach(e => {
+        const t = parseDateUTC(e.date)
+        tMin = Math.min(tMin, t)
+        tMax = Math.max(tMax, t)
       })
     }
-    svg.appendChild(eventsG)
+    const tPad = (tMax - tMin) * 0.03
+    tMin -= tPad
+    tMax += tPad
 
-    // ── Series lines + dots ───────────────────────────────────────────────
-    const linesG = svgEl("g", { "clip-path": "url(#plot-clip)" })
+    // Linear $ axis anchored at 0
+    const { top: yTop, ticks: yTicks } = linNice(vMax)
 
-    series.forEach(({ model: m, color, pts }) => {
-      if (pts.length === 0) return
+    const x = (t) => padL + ((t - tMin) / (tMax - tMin)) * iW
+    const y = (v) => padT + iH - (v / yTop) * iH
 
-      // Build stepwise path
-      let d = ""
-      pts.forEach((pt, i) => {
-        const x = xPos(pt.date)
-        const y = yPos(pt.value)
+    // Store geometry for hover
+    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, W, H, yTop }
+
+    let g = ""
+
+    // ── Y gridlines + labels ──
+    yTicks.forEach(tk => {
+      const gy = y(tk)
+      g += `<line class="tc-grid" x1="${padL}" y1="${gy.toFixed(1)}" x2="${W - padR}" y2="${gy.toFixed(1)}"/>`
+      g += `<text class="tc-axis" x="${(padL - 9)}" y="${(gy + 3.5).toFixed(1)}" text-anchor="end">$${fmtMoney(tk)}</text>`
+    })
+
+    // ── X axis month ticks ──
+    monthTicks(tMin, tMax).forEach(t => {
+      const gx = x(t)
+      g += `<line class="tc-grid tc-grid-v" x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + iH}"/>`
+      g += `<text class="tc-axis" x="${gx.toFixed(1)}" y="${padT + iH + 20}" text-anchor="middle">${fmtAxisDate(t)}</text>`
+    })
+
+    // ── Event dashed guide lines ──
+    if (this.showEvents) {
+      marketEvents.forEach((e, i) => {
+        const ex = x(parseDateUTC(e.date))
+        g += `<line class="tc-event" x1="${ex.toFixed(1)}" y1="${padT - 10}" x2="${ex.toFixed(1)}" y2="${padT + iH}" data-evt="${i}"/>`
+      })
+    }
+
+    // ── Lines (stepwise) ──
+    built.forEach(s => {
+      const segs = []
+      s.pts.forEach((p, i) => {
+        const px = x(p.t), py = y(p.v)
         if (i === 0) {
-          d += `M ${x} ${y}`
+          segs.push("M" + px.toFixed(1) + " " + py.toFixed(1))
         } else {
-          // Horizontal then vertical (step-after style, but reversed for price chart)
-          const prevX = xPos(pts[i - 1].date)
-          d += ` H ${x} V ${y}`
+          const prevY = y(s.pts[i - 1].v)
+          segs.push("L" + px.toFixed(1) + " " + prevY.toFixed(1))
+          segs.push("L" + px.toFixed(1) + " " + py.toFixed(1))
         }
       })
+      const last = s.pts[s.pts.length - 1]
+      segs.push("L" + x(nowUTC).toFixed(1) + " " + y(last.v).toFixed(1))
 
-      const path = svgEl("path", {
-        d,
-        fill: "none",
-        stroke: color,
-        "stroke-width": "2.5",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round"
+      g += `<path class="tc-line" d="${segs.join(" ")}" stroke="${s.color}" data-slug="${s.model.slug}"/>`
+
+      s.pts.forEach(p => {
+        g += `<circle class="tc-pt" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.2" fill="#fff" stroke="${s.color}" data-slug="${s.model.slug}"/>`
       })
 
-      // Draw-in animation
-      const len = this._approxPathLength(pts, xPos, yPos)
-      path.style.strokeDasharray = len
-      path.style.strokeDashoffset = len
-      path.style.transition = `stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1)`
-      linesG.appendChild(path)
-
-      // Trigger animation
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          path.style.strokeDashoffset = "0"
-        })
-      })
-
-      // White dots at real price points (not the "now" extension)
-      pts.forEach((pt, i) => {
-        if (i === pts.length - 1 && pt.isNow && pts.length > 1) {
-          // Terminal dot (filled with color)
-          const dot = svgEl("circle", {
-            cx: xPos(pt.date),
-            cy: yPos(pt.value),
-            r: "4",
-            fill: color,
-            stroke: "#fff",
-            "stroke-width": "2"
-          })
-          linesG.appendChild(dot)
-        } else if (!pt.isNow) {
-          // Real price point: white dot with color ring
-          const dot = svgEl("circle", {
-            cx: xPos(pt.date),
-            cy: yPos(pt.value),
-            r: "3.5",
-            fill: "#fff",
-            stroke: color,
-            "stroke-width": "2"
-          })
-          linesG.appendChild(dot)
-        }
-      })
+      g += `<circle class="tc-pt tc-pt-end" cx="${x(nowUTC).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4" fill="${s.color}" data-slug="${s.model.slug}"/>`
     })
 
-    svg.appendChild(linesG)
+    // Crosshair + focus dot (hidden initially)
+    g += `<line class="tc-cross" x1="0" y1="${padT}" x2="0" y2="${padT + iH}" style="opacity:0"/>`
+    g += `<circle class="tc-hoverdot" r="5.5" style="opacity:0"/>`
 
-    // ── Crosshair overlay ────────────────────────────────────────────────
-    const crosshairG = svgEl("g", { "pointer-events": "none" })
-    const crosshairLine = svgEl("line", {
-      y1: PAD.top, y2: PAD.top + plotH,
-      stroke: "var(--color-slate-300)",
-      "stroke-width": "1",
-      "stroke-dasharray": "4 3",
-      opacity: "0",
-      style: "transition: opacity .1s"
-    })
-    crosshairG.appendChild(crosshairLine)
-    svg.appendChild(crosshairG)
+    svg.innerHTML = g
 
-    // ── Mouse interaction ─────────────────────────────────────────────────
-    const overlay = svgEl("rect", {
-      x: PAD.left, y: PAD.top,
-      width: plotW, height: plotH,
-      fill: "transparent",
-      style: "cursor:crosshair"
-    })
-
-    overlay.addEventListener("mousemove", (e) => {
-      const rect = svg.getBoundingClientRect()
-      const scaleX = VW / rect.width
-      const mx = (e.clientX - rect.left) * scaleX
-      const date = new Date(xMin.getTime() + ((mx - PAD.left) / plotW) * xRange)
-
-      crosshairLine.setAttribute("x1", mx)
-      crosshairLine.setAttribute("x2", mx)
-      crosshairLine.style.opacity = "1"
-
-      this._showCrosshairTooltip(e, date, series)
-    })
-
-    overlay.addEventListener("mouseleave", () => {
-      crosshairLine.style.opacity = "0"
-      this._hideTooltip()
-    })
-
+    // ── Mouse-capture overlay (under event markers) ──
+    const overlay = document.createElementNS(SVG_NS, "rect")
+    overlay.setAttribute("class", "tc-overlay")
+    overlay.setAttribute("x", padL)
+    overlay.setAttribute("y", padT)
+    overlay.setAttribute("width", iW)
+    overlay.setAttribute("height", iH)
+    overlay.setAttribute("fill", "transparent")
+    overlay.style.cursor = "crosshair"
     svg.appendChild(overlay)
 
-    // ── Legend ──────────────────────────────────────────────────────────
-    this._renderLegend(series)
+    // ── Event marker badges (numbered, on top) ──
+    if (this.showEvents) {
+      let layer = ""
+      marketEvents.forEach((e, i) => {
+        const ex = x(parseDateUTC(e.date))
+        layer += `<g class="tc-evt-badge" data-evt="${i}">` +
+          `<circle class="tc-evt-hit" cx="${ex.toFixed(1)}" cy="16" r="17" fill="transparent"/>` +
+          `<circle class="tc-evt-mark" cx="${ex.toFixed(1)}" cy="16" r="10"/>` +
+          `<text class="tc-evt-num" x="${ex.toFixed(1)}" y="16.5" text-anchor="middle" dominant-baseline="central">${i + 1}</text>` +
+          `</g>`
+      })
+      svg.insertAdjacentHTML("beforeend", layer)
+    }
+
+    // ── Animation ──
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (animate && !reduce) {
+      svg.querySelectorAll(".tc-line").forEach((ln, i) => {
+        const len = ln.getTotalLength()
+        ln.style.strokeDasharray = len
+        ln.style.strokeDashoffset = len
+        ln.animate(
+          [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+          { duration: 900, delay: i * 55, easing: "cubic-bezier(.22,.61,.36,1)", fill: "forwards" }
+        )
+      })
+      svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
+      })
+    }
+
+    this._bindHover()
+    this._renderLegend()
   }
 
   _metricValue(pp) {
     if (this.metric === "input") return pp.input
     if (this.metric === "output") return pp.output
-    // blended: (3 * input + output) / 4
     if (pp.input == null || pp.output == null) return null
     return (3 * pp.input + pp.output) / 4
   }
 
-  _tickLabel(v) {
-    if (v >= 1000) return (v / 1000).toFixed(0) + "k"
-    if (v >= 1) return v.toFixed(v % 1 === 0 ? 0 : 2)
-    if (v >= 0.01) return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")
-    return v.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")
+  // ── Line emphasis (dim/focus) ────────────────────────────────────────────────
+  _emphasize(slug) {
+    if (!this.hasSvgTarget) return
+    this.svgTarget.querySelectorAll(".tc-line, .tc-pt").forEach(el => {
+      const on = !slug || el.dataset.slug === slug
+      el.classList.toggle("tc-dim", !on)
+      el.classList.toggle("tc-focus", !!slug && on && el.classList.contains("tc-line"))
+    })
   }
 
-  _monthTicks(xMin, xMax) {
-    const ticks = []
-    const d = new Date(Date.UTC(xMin.getUTCFullYear(), xMin.getUTCMonth(), 1))
-    while (d <= xMax) {
-      ticks.push(new Date(d))
-      d.setUTCMonth(d.getUTCMonth() + 1)
-    }
-    // Thin out if too many
-    if (ticks.length > 20) {
-      return ticks.filter((_, i) => i % 3 === 0)
-    } else if (ticks.length > 10) {
-      return ticks.filter((_, i) => i % 2 === 0)
-    }
-    return ticks
-  }
+  // ── Hover binding ────────────────────────────────────────────────────────────
+  _bindHover() {
+    const svg = this.svgTarget
+    const gm = this._geom
+    const tip = this.hasTooltipTarget ? this.tooltipTarget : null
+    const etip = this.hasEventTooltipTarget ? this.eventTooltipTarget : null
+    const built = gm.built
+    const metricLabel = METRIC_LABEL[this.metric] || ""
+    const marketEvents = this._marketEvents || []
 
-  _approxPathLength(pts, xPos, yPos) {
-    let len = 0
-    for (let i = 1; i < pts.length; i++) {
-      const dx = xPos(pts[i].date) - xPos(pts[i - 1].date)
-      const dy = yPos(pts[i].value) - yPos(pts[i - 1].value)
-      // Stepwise path: horizontal + vertical
-      len += Math.abs(dx) + Math.abs(dy)
+    // ── Event marker hover ──
+    if (etip) {
+      svg.querySelectorAll(".tc-evt-badge").forEach(badge => {
+        const e = marketEvents[+badge.dataset.evt]
+        if (!e) return
+
+        const show = () => {
+          etip.innerHTML =
+            `<div class="et-kind et-market">Market event · #${+badge.dataset.evt + 1}</div>` +
+            `<div class="et-title">${e.title}</div>` +
+            `<div class="et-date">${fmtDateFullFromISO(e.date)}</div>` +
+            `<div class="et-note">${e.note || ""}</div>`
+          const r = svg.getBoundingClientRect()
+          const cx = (+badge.querySelector(".tc-evt-mark").getAttribute("cx") / gm.W) * r.width
+          etip.style.left = cx + "px"
+          etip.style.opacity = 1
+          etip.classList.toggle("flip", cx > r.width * 0.58)
+          badge.classList.add("on")
+        }
+        const hide = () => {
+          etip.style.opacity = 0
+          badge.classList.remove("on")
+        }
+        badge.addEventListener("mouseenter", show)
+        badge.addEventListener("mouseleave", hide)
+      })
     }
-    return Math.max(len, 10)
-  }
 
-  // ── Tooltip helpers ──────────────────────────────────────────────────────────
-  _showCrosshairTooltip(mouseEvent, date, series) {
-    if (!this.hasTooltipTarget) return
+    if (!tip) return
+    const overlay = svg.querySelector(".tc-overlay")
+    if (!overlay) return
 
-    const tip = this.tooltipTarget
-    const rows = series.map(({ model: m, color, pts }) => {
-      // Find the price at date (step-wise: last point before or at date)
-      const pp = pts.filter(p => p.date <= date).pop()
-      const val = pp ? pp.value : null
-      return { name: m.name, color, val }
+    const cross = svg.querySelector(".tc-cross")
+    const hoverdot = svg.querySelector(".tc-hoverdot")
+
+    const valAt = (s, t) => {
+      let v = s.pts[0].v
+      for (const p of s.pts) { if (p.t <= t) v = p.v }
+      return v
+    }
+
+    overlay.addEventListener("mousemove", (ev) => {
+      const r = svg.getBoundingClientRect()
+      const sx = gm.W / r.width, sy = gm.H / r.height
+      const px = (ev.clientX - r.left) * sx
+      const py = (ev.clientY - r.top) * sy
+      const t = gm.tMin + ((px - gm.padL) / gm.iW) * (gm.tMax - gm.tMin)
+
+      // Nearest line by vertical distance at cursor x
+      let best = null, bestD = Infinity
+      built.forEach(s => {
+        const ly = gm.y(valAt(s, t))
+        const d = Math.abs(ly - py)
+        if (d < bestD) { bestD = d; best = s }
+      })
+      if (!best) return
+
+      this._emphasize(best.model.slug)
+
+      const v = valAt(best, t)
+      const ly = gm.y(v)
+      cross.setAttribute("x1", px)
+      cross.setAttribute("x2", px)
+      cross.style.opacity = 1
+      hoverdot.setAttribute("cx", px)
+      hoverdot.setAttribute("cy", ly)
+      hoverdot.setAttribute("fill", best.color)
+      hoverdot.style.opacity = 1
+
+      tip.innerHTML =
+        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${best.model.name}</div>` +
+        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> /1M ${metricLabel}</small></div>` +
+        `<div class="ttc-date">as of ${fmtAxisDate(t)}</div>`
+      const tx = (px / gm.W) * r.width
+      tip.style.left = tx + "px"
+      tip.style.opacity = 1
+      tip.classList.toggle("flip", tx > r.width * 0.6)
     })
 
-    tip.textContent = ""
-    const dateDiv = document.createElement("div")
-    dateDiv.className = "trends-tooltip-date"
-    dateDiv.textContent = fmtDateFull(date)
-    tip.appendChild(dateDiv)
-
-    rows.forEach(r => {
-      const row = document.createElement("div")
-      row.className = "trends-tooltip-row"
-
-      const dot = document.createElement("span")
-      dot.className = "trends-tooltip-dot"
-      dot.style.background = r.color
-
-      const name = document.createElement("span")
-      name.className = "trends-tooltip-name"
-      name.textContent = r.name
-
-      const price = document.createElement("span")
-      price.className = "trends-tooltip-price"
-      price.textContent = fmtPrice(r.val) + "/M"
-
-      row.appendChild(dot)
-      row.appendChild(name)
-      row.appendChild(price)
-      tip.appendChild(row)
+    overlay.addEventListener("mouseleave", () => {
+      cross.style.opacity = 0
+      hoverdot.style.opacity = 0
+      tip.style.opacity = 0
+      this._emphasize(null)
     })
-    this._positionTooltip(mouseEvent)
-    tip.classList.add("visible")
   }
 
-  _showEventTooltip(mouseEvent, ev) {
-    if (!this.hasTooltipTarget) return
-    const tip = this.tooltipTarget
-    const kindLabel = ev.kind === "market" ? "Market event" : "Model launch"
-    tip.textContent = ""
-
-    const dateDiv = document.createElement("div")
-    dateDiv.className = "trends-tooltip-date"
-    dateDiv.style.color = ev.kind === "market" ? "#fb7185" : "rgba(255,255,255,.5)"
-    dateDiv.textContent = kindLabel + " · " + fmtDateFull(parseDate(ev.date))
-    tip.appendChild(dateDiv)
-
-    const titleDiv = document.createElement("div")
-    Object.assign(titleDiv.style, { fontWeight: "600", color: "#fff", fontSize: "12.5px", marginBottom: ev.note ? "4px" : "0" })
-    titleDiv.textContent = ev.title
-    tip.appendChild(titleDiv)
-
-    if (ev.note) {
-      const noteDiv = document.createElement("div")
-      Object.assign(noteDiv.style, { fontSize: "11.5px", color: "rgba(255,255,255,.65)", lineHeight: "1.45" })
-      noteDiv.textContent = ev.note
-      tip.appendChild(noteDiv)
-    }
-    this._positionTooltip(mouseEvent)
-    tip.classList.add("visible")
-  }
-
-  _positionTooltip(mouseEvent) {
-    if (!this.hasTooltipTarget || !this.hasChartAreaTarget) return
-    const tip = this.tooltipTarget
-    const area = this.chartAreaTarget.getBoundingClientRect()
-    const tipW = 230
-    const tipH = tip.offsetHeight || 80
-    let left = mouseEvent.clientX - area.left + 14
-    let top = mouseEvent.clientY - area.top - tipH / 2
-
-    if (left + tipW > area.width - 8) left = mouseEvent.clientX - area.left - tipW - 14
-    if (top < 4) top = 4
-    if (top + tipH > area.height - 4) top = area.height - tipH - 4
-
-    tip.style.left = left + "px"
-    tip.style.top = top + "px"
-  }
-
-  _hideTooltip() {
-    this.tooltipTarget?.classList.remove("visible")
+  _fmtTipPrice(v) {
+    if (v == null) return "—"
+    if (v === 0) return "0"
+    if (v < 1) return parseFloat(v.toFixed(4)).toString()
+    if (v < 10) return v.toFixed(2).replace(/0$/, "")
+    return v.toFixed(2).replace(/\.00$/, "")
   }
 
   // ── Legend ───────────────────────────────────────────────────────────────────
-  _renderLegend(series) {
+  _renderLegend() {
     if (!this.hasLegendTarget) return
+    const legend = this.legendTarget
+    legend.innerHTML = ""
 
-    const frag = document.createDocumentFragment()
-
-    series.forEach(({ model: m, color }) => {
+    const built = this._built || []
+    built.forEach(({ model: m, color }) => {
       const item = document.createElement("span")
       item.className = "trends-legend-item"
+      item.dataset.slug = m.slug
+
       const line = document.createElement("span")
       line.className = "trends-legend-line"
       line.style.background = color
       item.appendChild(line)
       item.appendChild(document.createTextNode(m.name))
-      frag.appendChild(item)
+
+      item.addEventListener("mouseover", () => this._emphasize(m.slug))
+      item.addEventListener("mouseout", () => this._emphasize(null))
+
+      legend.appendChild(item)
     })
 
     if (this.showEvents) {
-      const marketEvents = this.eventsValue.filter(e => e.kind === "market")
-      const launchEvents = this.eventsValue.filter(e => e.kind === "launch")
-      if (marketEvents.length) {
-        const item = document.createElement("span")
-        item.className = "trends-legend-item"
-        const dash = document.createElement("span")
-        dash.className = "trends-legend-dash"
-        dash.style.borderColor = "#e11d48"
-        item.appendChild(dash)
-        item.appendChild(document.createTextNode("Market event"))
-        frag.appendChild(item)
-      }
-      if (launchEvents.length) {
-        const item = document.createElement("span")
-        item.className = "trends-legend-item"
-        const dash = document.createElement("span")
-        dash.className = "trends-legend-dash"
-        dash.style.borderColor = "#94a3b8"
-        item.appendChild(dash)
-        item.appendChild(document.createTextNode("Model launch"))
-        frag.appendChild(item)
-      }
+      const evtItem = document.createElement("span")
+      evtItem.className = "trends-legend-evt"
+      const dash = document.createElement("span")
+      dash.className = "trends-legend-dash"
+      evtItem.appendChild(dash)
+      evtItem.appendChild(document.createTextNode("Numbered markers = market events"))
+      legend.appendChild(evtItem)
     }
-
-    this.legendTarget.textContent = ""
-    this.legendTarget.appendChild(frag)
   }
 }
