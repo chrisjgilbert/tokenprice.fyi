@@ -85,7 +85,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 8
+    assert_select "thead a[data-turbo-frame=models]", count: 9
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
