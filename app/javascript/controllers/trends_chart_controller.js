@@ -314,7 +314,9 @@ export default class extends Controller {
   }
 
   _closePopover() {
-    this._closePopover()
+    if (this.hasEventsPopoverTarget) {
+      this.eventsPopoverTarget.classList.remove("open")
+    }
     if (this.hasEventsPopoverBtnTarget) {
       this.eventsPopoverBtnTarget.setAttribute("aria-expanded", "false")
     }
@@ -372,6 +374,7 @@ export default class extends Controller {
       row.appendChild(body)
 
       row.addEventListener("click", () => {
+        if (row.classList.contains("out-of-range")) return
         this._closePopover()
         if (!this.showEvents) {
           this.showEvents = true
@@ -482,11 +485,12 @@ export default class extends Controller {
     tMax = Math.max(tMax, nowUTC)
 
     // Filter events to the visible model date range
+    const evtMin = tMin, evtMax = tMax
     const visibleEvents = []
     if (this.showEvents) {
       allMarketEvents.forEach((e, globalIdx) => {
         const t = parseDateUTC(e.date)
-        if (t >= tMin && t <= tMax) visibleEvents.push({ event: e, globalIdx })
+        if (t >= evtMin && t <= evtMax) visibleEvents.push({ event: e, globalIdx })
       })
     }
     const tPad = (tMax - tMin) * 0.03
@@ -500,7 +504,7 @@ export default class extends Controller {
     const y = (v) => padT + iH - (v / yTop) * iH
 
     // Store geometry for hover
-    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, W, H, yTop }
+    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, evtMin, evtMax, W, H, yTop }
 
     let g = ""
 
@@ -601,6 +605,18 @@ export default class extends Controller {
 
     this._bindHover()
     this._renderLegend()
+    this._syncPopoverRows()
+  }
+
+  _syncPopoverRows() {
+    if (!this.hasEventsPopoverListTarget) return
+    const geom = this._geom
+    if (!geom) return
+    this.eventsPopoverListTarget.querySelectorAll(".trends-event-row").forEach(row => {
+      const t = parseDateUTC(row.dataset.eventDate)
+      const inRange = this.showEvents && t >= geom.evtMin && t <= geom.evtMax
+      row.classList.toggle("out-of-range", !inRange)
+    })
   }
 
   _metricValue(pp) {
