@@ -67,6 +67,7 @@ module OpenRouter
       @logger.info("OpenRouter sync: fetched #{catalog.size} models")
 
       retire_latest_aliases
+      retire_speed_variants
 
       catalog.each do |row|
         outcome =
@@ -90,6 +91,7 @@ module OpenRouter
       pricing = parse_pricing(row["pricing"])
       return :skipped unless pricing && text_output?(row)
       return :skipped if latest_alias?(row)
+      return :skipped if speed_variant?(row)
 
       provider = resolve_provider(row)
       model    = find_or_build_model(row, provider)
@@ -258,6 +260,24 @@ module OpenRouter
 
       retired = AiModel.where(id: ids).update_all(status: "retired")
       @logger.info("OpenRouter sync: retired #{retired} 'Latest' alias(es)")
+    end
+
+    # Speed variants (e.g. "anthropic/claude-opus-4.8:fast") are the same
+    # model billed at a premium for faster output. They duplicate a
+    # versioned entry with inflated pricing and confuse comparisons.
+    def speed_variant?(row)
+      row["id"].to_s.match?(/:fast\b/i)
+    end
+
+    def retire_speed_variants
+      ids = AiModel.from_openrouter.where.not(status: "retired")
+        .pluck(:id, :openrouter_id)
+        .select { |_, oid| oid.to_s.match?(/:fast\b/i) }
+        .map(&:first)
+      return if ids.empty?
+
+      retired = AiModel.where(id: ids).update_all(status: "retired")
+      @logger.info("OpenRouter sync: retired #{retired} ':fast' speed variant(s)")
     end
 
     def curated_duplicate?(provider, row)

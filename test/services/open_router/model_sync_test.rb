@@ -208,6 +208,45 @@ module OpenRouter
       assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
     end
 
+    test "retires previously-imported ':fast' speed variant models" do
+      fast_opus = AiModel.create!(
+        name: "Claude Opus 4.6 (Fast)", slug: "claude-opus-4-6-fast",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "anthropic/claude-opus-4.6:fast",
+        status: "active", tier: "mid"
+      )
+      fast_sonnet = AiModel.create!(
+        name: "Claude Sonnet 4.6 (Fast)", slug: "claude-sonnet-4-6-fast",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "anthropic/claude-sonnet-4.6:fast",
+        status: "active", tier: "mid"
+      )
+
+      sync([])
+
+      assert_equal "retired", fast_opus.reload.status
+      assert_equal "retired", fast_sonnet.reload.status
+    end
+
+    test "skips ':fast' speed variant models during import" do
+      rows = [
+        or_model(id: "anthropic/claude-opus-4.8:fast", name: "Anthropic: Claude Opus 4.8 (Fast)",
+                 prompt: "0.00001", completion: "0.00005"),
+        or_model(id: "anthropic/claude-opus-4.7:fast", name: "Anthropic: Claude Opus 4.7 (Fast)",
+                 prompt: "0.00003", completion: "0.00015"),
+        or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                 prompt: "0.0000001", completion: "0.0000004")
+      ]
+
+      result = assert_difference("AiModel.count", 1) { sync(rows) }
+
+      assert_equal 1, result.created
+      assert_equal 2, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.8:fast")
+      assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.7:fast")
+      assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
+    end
+
     test "one malformed row does not abort the whole sync" do
       rows = [
         { "id" => "broken/row" }, # no pricing -> skipped, not fatal
