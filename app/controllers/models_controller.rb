@@ -22,15 +22,20 @@ class ModelsController < ApplicationController
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
     @sort = params[:sort].presence_in(SORTS.keys) || "blended"
-    @dir  = params[:dir] == "desc" ? "desc" : "asc"
+    @dir  = params[:dir].presence_in(%w[asc desc]) || (@sort == "blended" ? "desc" : "asc")
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
 
     models = scope.to_a
-    # Queries with no alphanumerics ("!!!", emoji) can't match any term and
-    # would vacuously match everything — skip them rather than pretend to filter.
-    models.select! { |m| m.matches?(@query) } if @query.match?(/[a-z0-9]/i)
+    if @query.match?(/[a-z0-9]/i)
+      if @query.include?(",")
+        segments = @query.split(",").map(&:strip).select { |s| s.match?(/[a-z0-9]/i) }
+        models.select! { |m| segments.any? { |seg| m.matches?(seg) } } if segments.any?
+      else
+        models.select! { |m| m.matches?(@query) }
+      end
+    end
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"
     @models = models
