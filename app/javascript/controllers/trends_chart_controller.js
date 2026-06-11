@@ -9,7 +9,7 @@ const PALETTE = [
   "#4338ca","#0284c7","#15803d","#b91c1c","#7e22ce"
 ]
 
-const AVG_COLOR = "#94a3b8"
+const AVG_COLOR = "#64748b"
 
 const TIME_RANGES = {
   "3m":  { label: "3M",  days: 91 },
@@ -688,8 +688,12 @@ export default class extends Controller {
           { duration: 900, delay: i * 55, easing: "cubic-bezier(.22,.61,.36,1)", fill: "forwards" }
         )
       })
+      // fill:"backwards" (not forwards) so the animation only owns opacity
+      // during the delay/run, then hands it back to the CSS rule — otherwise
+      // a persisted forward-fill would override .tc-dim and the avg line
+      // could never be dimmed by _emphasize.
       svg.querySelectorAll(".tc-avg-line").forEach(ln => {
-        ln.animate([{ opacity: 0 }, { opacity: 0.92 }], { duration: 600, delay: 400, fill: "forwards" })
+        ln.animate([{ opacity: 0 }, { opacity: 0.92 }], { duration: 600, delay: 400, fill: "backwards" })
       })
       svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
