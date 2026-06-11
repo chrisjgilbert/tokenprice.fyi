@@ -183,10 +183,18 @@ module OpenRouter
         status: "active", tier: "mid"
       )
 
+      id_only = AiModel.create!(
+        name: "Claude Opus 4.8", slug: "claude-opus-48-latest",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "anthropic/claude-opus-4.8:latest",
+        status: "active", tier: "mid"
+      )
+
       sync([])
 
       assert_equal "retired", trailing.reload.status
       assert_equal "retired", parenthesized.reload.status
+      assert_equal "retired", id_only.reload.status
     end
 
     test "skips 'Latest' alias models that duplicate versioned entries" do
@@ -206,6 +214,16 @@ module OpenRouter
       assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.8:latest")
       assert_nil AiModel.find_by(openrouter_id: "openai/gpt-4o:latest")
       assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
+    end
+
+    test "skips ':latest' alias even when the display name omits 'latest'" do
+      rows = [
+        or_model(id: "anthropic/claude-opus:latest", name: "Anthropic: Claude Opus 4.8",
+                 prompt: "0.000005", completion: "0.000025")
+      ]
+
+      result = assert_difference("AiModel.count", 0) { sync(rows) }
+      assert_equal 1, result.skipped
     end
 
     test "retires previously-imported ':fast' speed variant models" do
