@@ -44,6 +44,7 @@
           <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
           <%= nav_link "Map", map_path, active: current_page?(map_path) %>
           <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
+          <%= nav_link "Learn", how_pricing_works_path, active: current_page?(how_pricing_works_path) %>
         </div>
         <span class="tp-nav-spacer"></span>
         <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
