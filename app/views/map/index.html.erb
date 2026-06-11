@@ -1,19 +1,20 @@
-<% content_for :title, "The geopolitics of AI — where models come from — tokenprice.fyi" %>
-<% content_for :description, "A world map of who builds frontier AI: which countries host the labs behind every tracked model, and how many providers each commands." %>
+<% content_for :title, "Where your models come from — tokenprice.fyi" %>
+<% content_for :description, "A map of the labs behind every tracked LLM: which countries they call home, what they charge, and how the pricing compares." %>
 
 <div class="map-page">
   <%# ── Header ─────────────────────────────────────────────────────────── %>
   <div class="map-header">
     <div class="map-eyebrow">
       <span class="map-eyebrow-dot"></span>
-      Where the models come from
+      Provider origins
     </div>
-    <h1 class="map-h1">The geopolitics of <span class="accent">AI pricing</span></h1>
+    <h1 class="map-h1">Where your models <span class="accent">come from</span></h1>
     <p class="map-subtitle">
-      Every model on this site is built somewhere. Mapped by the headquarters of the lab
-      behind it, the frontier is a contest between a handful of states<% if @leader %> —
-      led by <strong><%= @leader[:providers].first.flag_emoji %> <%= @leader[:name] %></strong>,
-      with <%= pluralize(@leader[:provider_count], "lab") %> shipping
+      Every model on this site is built by a lab headquartered somewhere.
+      This is the map — <%= pluralize(@located_providers, "provider") %> across
+      <%= pluralize(@countries.size, "country") %>, and what they charge<% if @leader %>.
+      <strong><%= @leader[:providers].first.flag_emoji %> <%= @leader[:name] %></strong>
+      leads with <%= pluralize(@leader[:provider_count], "lab") %> shipping
       <%= pluralize(@leader[:model_count], "tracked model") %><% end %>.
     </p>
   </div>
@@ -22,20 +23,20 @@
   <div class="map-stats">
     <div class="map-stat">
       <span class="map-stat-val num"><%= @countries.size %></span>
-      <span class="map-stat-label">Countries with labs</span>
+      <span class="map-stat-label">Countries</span>
     </div>
     <div class="map-stat">
       <span class="map-stat-val num"><%= @located_providers %></span>
-      <span class="map-stat-label">Providers mapped</span>
+      <span class="map-stat-label">Providers</span>
     </div>
     <div class="map-stat">
       <span class="map-stat-val num"><%= @total_models %></span>
-      <span class="map-stat-label">Models in play</span>
+      <span class="map-stat-label">Models tracked</span>
     </div>
     <% if @leader %>
       <div class="map-stat">
         <span class="map-stat-val"><%= @by_code[@leader[:code]][:providers].first.flag_emoji %> <span class="num"><%= number_to_percentage(100.0 * @leader[:provider_count] / [@located_providers, 1].max, precision: 0) %></span></span>
-        <span class="map-stat-label">Share held by <%= @leader[:name] %></span>
+        <span class="map-stat-label"><%= @leader[:name] %> providers</span>
       </div>
     <% end %>
   </div>
@@ -47,7 +48,7 @@
       viewBox="<%= world_map_viewbox %>"
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label="World map of AI providers by country"
+      aria-label="World map showing where LLM providers are headquartered"
     >
       <%# Base layer: every country, shaded by provider count. Countries with a
           lab are real links into the filtered price table (work without JS);
@@ -103,7 +104,7 @@
   </div>
 
   <%# ── Country ranking ────────────────────────────────────────────────── %>
-  <p class="tp-section-label map-rank-label">The contenders</p>
+  <p class="tp-section-label map-rank-label">By country</p>
   <div class="map-countries">
     <% @countries.each_with_index do |c, i| %>
       <div class="tp-card map-country-card">
