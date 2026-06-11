@@ -63,7 +63,7 @@ export default class extends Controller {
       </div>
       <div class="map-tip-rows">
         <div class="map-tip-k">Frontier</div><div class="map-tip-v">${c.frontier}</div>
-        <div class="map-tip-k">Avg I/O /1M</div><div class="map-tip-v">${this.esc(c.avg)}</div>
+        <div class="map-tip-k">Median I/O /1M</div><div class="map-tip-v">${this.esc(c.median)}</div>
         ${cheapest}
       </div>
       <div class="map-tip-cta">Click to filter the price table →</div>

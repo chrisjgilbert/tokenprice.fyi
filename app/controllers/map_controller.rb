@@ -39,7 +39,7 @@ class MapController < ApplicationController
       models:         models,
       model_count:    models.size,
       frontier_count: models.count { |m| m.tier == "frontier" },
-      avg_blended:    blendeds.any? ? blendeds.sum / blendeds.size : nil,
+      median_blended: median(blendeds),
       cheapest:       cheapest
     }
   end
@@ -53,12 +53,22 @@ class MapController < ApplicationController
       providers: c[:provider_count],
       models:   c[:model_count],
       frontier: c[:frontier_count],
-      avg:      c[:avg_blended] ? helpers.usd_plain(c[:avg_blended]) : "—",
+      median:   c[:median_blended] ? helpers.usd_plain(c[:median_blended]) : "—",
       cheapest: c[:cheapest] && {
         name: c[:cheapest].name,
         io:   "#{helpers.usd_plain(c[:cheapest].current_input)} / #{helpers.usd_plain(c[:cheapest].current_output)}"
       }
     }
+  end
+
+  # Median blended price — more representative than the mean, which a country
+  # with many cheap small models would drag down.
+  def median(values)
+    return nil if values.empty?
+
+    sorted = values.sort
+    mid = sorted.size / 2
+    sorted.size.odd? ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
   end
 
   # Mirror AiModel.listed in memory so the eager-loaded associations aren't
