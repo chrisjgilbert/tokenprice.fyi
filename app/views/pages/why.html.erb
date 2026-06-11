@@ -1,0 +1,64 @@
+<% content_for :title, "Nobody knows what a token costs — tokenprice.fyi" %>
+<% content_for :description, "LLM API pricing is quoted in a dozen dialects and reprices itself constantly — and nobody keeps a record. Why tokenprice.fyi exists." %>
+
+<% content_for :head do %>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Nobody knows what a token costs",
+      "datePublished": "2026-06-11",
+      "author": { "@type": "Person", "name": "Chris Gilbert" },
+      "publisher": { "@type": "Organization", "name": "tokenprice.fyi" },
+      "mainEntityOfPage": "<%= why_url %>"
+    }
+  </script>
+<% end %>
+
+<style>
+  .why-article { max-width: 680px; margin: 0 auto; padding: 24px 0 48px; }
+  .why-article .why-meta { font-family: var(--font-mono); font-size: 13px; color: var(--color-slate-400); margin-bottom: 14px; }
+  .why-article h1 { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; color: var(--color-slate-900); margin-bottom: 28px; }
+  .why-article p { font-size: 16.5px; line-height: 1.7; color: var(--color-slate-700); margin-bottom: 20px; }
+  .why-article strong { color: var(--color-slate-900); }
+  .why-article a { color: var(--color-slate-900); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-slate-300); }
+  .why-article a:hover { text-decoration-color: var(--color-slate-900); }
+  .why-article ol { margin: 0 0 20px 22px; list-style: decimal; }
+  .why-article ol li { font-size: 16.5px; line-height: 1.7; color: var(--color-slate-700); margin-bottom: 12px; }
+  .why-article .num { font-family: var(--font-mono); }
+  @media (max-width: 640px) {
+    .why-article h1 { font-size: 30px; }
+  }
+</style>
+
+<article class="why-article">
+  <p class="why-meta">June 2026 · Chris Gilbert</p>
+  <h1>Nobody knows what a token costs</h1>
+
+  <p>Here's a question that should take ten seconds to answer: what does it cost to call an LLM API?</p>
+
+  <p>Try it. Pick two providers and find a number you can compare. One quotes per million tokens, another's docs still have per-thousand tables floating around. Cached input is priced separately — sometimes per read, sometimes with a write cost too. Batch calls are half price, if you find the footnote. Thinking models bill their reasoning as output tokens, so the price on the page isn't the price on the invoice. By the time you've built the spreadsheet, you've spent an afternoon on a question that should be a glance.</p>
+
+  <p>That's the first problem: <strong>LLM pricing is quoted in a dozen dialects.</strong> Every provider publishes numbers, but never the same shape of numbers. Comparison — the one thing a price is for — is left as an exercise for the reader.</p>
+
+  <p>The second problem is worse, and it's the one that made me build this site: <strong>prices move constantly, and nobody keeps a record.</strong></p>
+
+  <p>This market reprices itself like almost nothing else in software. In May, DeepSeek made a 75% discount on its frontier model permanent overnight — <span class="num">$1.74</span> per million input tokens became <span class="num">$0.435</span>. In 2024, Alibaba cut Qwen prices by up to 97% in a single day, and Baidu responded by making models free within hours. GPT-4 launched at <span class="num">$30</span> per million input tokens three years ago; today, comparable capability costs well under a dollar. Double-digit cuts happen several times a year, and a new model resets the curve every few months.</p>
+
+  <p>And every time, the old price vanishes. Providers' pricing pages show <em>now</em>. The history — the part that tells you whether a provider habitually cuts prices after launch, whether the model you committed to in February is cheaper in June, whether you should wait — simply isn't written down anywhere.</p>
+
+  <p>That's strange, because price <em>trajectory</em> is the decision-relevant data. The model you pick today, you'll be paying for at usage that compounds for months. "What does it cost right now?" is half the question. The other half is "which way is it moving, and how fast?" — and in a market where the answer changes quarterly, choosing a model from a snapshot is like buying a stock from a screenshot.</p>
+
+  <p>So <%= link_to "tokenprice.fyi", root_path %> does two boring, useful things:</p>
+
+  <ol>
+    <li><strong>Normalize.</strong> Every model, every provider, <%= link_to "one table", root_path %>, one unit — dollars per million tokens, input, output and cached, with a single blended figure you can sort by.</li>
+    <li><strong>Remember.</strong> Prices here are an append-only history, not a number that gets overwritten. Every price point is dated and carries its source. When DeepSeek cuts 75%, the launch price doesn't disappear — it becomes the start of a line on <%= link_to "a chart", trends_path %>, next to the market events that explain it.</li>
+  </ol>
+
+  <p>A note on accuracy, because it's the whole product: Anthropic figures are curated by hand and authoritative; other providers are best-effort from public pricing pages and a daily sync — sourced on every data point, and occasionally lagging. When something's wrong, it gets fixed and noted, not silently overwritten. I'm not affiliated with any provider, which is rather the point.</p>
+
+  <p>The site won't tell you which model is smartest — plenty of people benchmark. It tells you what the market is charging, what it charged before, and how fast that's been changing. In a market that reprices itself this often, the record is the product.</p>
+
+  <p>If a price looks stale or wrong, the source is right there on the price point — check it, and tell me.</p>
+</article>
