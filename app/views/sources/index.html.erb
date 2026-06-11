@@ -1,0 +1,259 @@
+<% content_for :title, "Data sources & methodology — tokenprice.fyi" %>
+<% content_for :description, "Where every price on tokenprice.fyi comes from: provider pricing pages, Wayback Machine verification, a daily OpenRouter sync — every price point dated and sourced." %>
+
+<% content_for :head do %>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: "Data sources & methodology",
+        url: sources_url,
+        description: "Where the pricing data on tokenprice.fyi comes from, how it is verified, and who deserves credit for it.",
+        isPartOf: { "@type": "WebSite", name: "tokenprice.fyi", url: root_url }
+      }) %>
+<% end %>
+
+<div class="sources-page">
+  <%# ── Header ─────────────────────────────────────────────────────────── %>
+  <div class="sources-header">
+    <h1 class="sources-h1">Where the numbers come from</h1>
+    <p class="sources-subtitle">
+      Every price on this site is dated and carries its source. This page is the
+      full ledger — which pages were read, how they were verified, and who
+      deserves credit for the record.
+    </p>
+  </div>
+
+  <%# ── Methodology ────────────────────────────────────────────────────── %>
+  <section class="sources-prose" aria-labelledby="sources-methodology">
+    <h2 id="sources-methodology">Methodology</h2>
+    <p>
+      Prices here are an <strong>append-only history</strong>, not a number that gets
+      overwritten. When a provider cuts a price, the old figure doesn't disappear —
+      a new dated price point is appended next to it, and every point records the
+      source it was read from. That source string is stored on the row itself and
+      shown on each model's snapshot table.
+    </p>
+    <p>
+      <strong>Anthropic figures I curate by hand and will stand behind.</strong> Other
+      providers are best-effort: read from their public pricing pages, cross-checked
+      by a daily OpenRouter sync, and occasionally lagging. When something's wrong it
+      gets fixed and noted, not silently overwritten.
+    </p>
+    <p>
+      Historical points get a second pass. Each one is checked against
+      <strong>Wayback Machine captures</strong> of the provider's pricing page from around
+      its effective date — so the price recorded for March 2024 is the price an
+      archived copy of the page actually showed in March 2024, not a number
+      remembered later. Points that can only be dated approximately say so in
+      their notes rather than pretending to precision.
+    </p>
+  </section>
+
+  <%# ── Stat row ───────────────────────────────────────────────────────── %>
+  <div class="sources-stats">
+    <div class="sources-stat">
+      <span class="sources-stat-val num"><%= @price_point_count %></span>
+      <span class="sources-stat-label">Price points</span>
+    </div>
+    <div class="sources-stat">
+      <span class="sources-stat-val num"><%= @source_count %></span>
+      <span class="sources-stat-label">Distinct sources</span>
+    </div>
+    <div class="sources-stat">
+      <span class="sources-stat-val num"><%= @provider_count %></span>
+      <span class="sources-stat-label">Providers covered</span>
+    </div>
+  </div>
+
+  <%# ── Attribution tables (live from the database) ────────────────────── %>
+  <% @groups.each do |group| %>
+    <section class="sources-group" aria-label="<%= group[:title] %>">
+      <h2 class="sources-group-title"><%= group[:title] %></h2>
+      <p class="sources-group-blurb"><%= group[:blurb] %></p>
+
+      <div class="tp-card sources-table-wrap">
+        <table class="sources-table">
+          <thead>
+            <tr>
+              <th scope="col">Source</th>
+              <th scope="col">Providers</th>
+              <th scope="col" class="numeric">Models</th>
+              <th scope="col" class="numeric">Price points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% group[:sources].each do |entry| %>
+              <tr>
+                <td class="sources-cell-source"><%= source_link(entry[:source]) %></td>
+                <td class="sources-cell-providers"><%= entry[:providers].join(", ") %></td>
+                <td class="numeric num"><%= entry[:models] %></td>
+                <td class="numeric num"><%= entry[:price_points] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
+  <%# ── Acknowledgements ───────────────────────────────────────────────── %>
+  <section class="sources-prose" aria-labelledby="sources-acknowledgements">
+    <h2 id="sources-acknowledgements">Acknowledgements</h2>
+    <p>This record stands on work other people do, and they should be credited for it:</p>
+    <ul class="sources-ack-list">
+      <li>
+        <strong>The providers' own pricing pages</strong> — the first-party source
+        for nearly every figure on this site. Each one is linked above, and on
+        every price point it backs.
+      </li>
+      <li>
+        <strong>The Internet Archive's <%= link_to "Wayback Machine", "https://web.archive.org", class: "sources-link" %></strong>
+        — historical prices are verified against its captures of provider pricing
+        pages. Without the Archive there would be no checkable record of what
+        these pages said in 2023.
+      </li>
+      <li>
+        <strong><%= link_to "OpenRouter", "https://openrouter.ai", class: "sources-link" %></strong>
+        — a daily sync against its catalogue keeps current prices fresh across
+        the long tail of models, and flags moves worth verifying first-party.
+      </li>
+      <li>
+        <strong>The <%= link_to "LiteLLM", "https://github.com/BerriAI/litellm", class: "sources-link" %> community pricing dataset</strong>
+        — its version history is a map of <em>when</em> prices changed, used to
+        discover historical changes worth backfilling. Discovery only: every
+        change it surfaces is verified against an archived first-party page
+        before it's recorded here.
+      </li>
+    </ul>
+    <p>
+      If a price looks stale or wrong, the source is right there on the price
+      point — check it, and tell me.
+    </p>
+  </section>
+</div>
+
+<style>
+/* ── Sources page ───────────────────────────────────────────────────── */
+.sources-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 36px 0 60px;
+}
+.sources-header { margin-bottom: 28px; }
+.sources-h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.033em;
+  line-height: 1.05;
+  color: var(--color-slate-900);
+}
+.sources-subtitle {
+  margin-top: 14px;
+  max-width: 40em;
+  color: var(--color-slate-500);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* ── Prose sections ─────────────────────────────────────────────────── */
+.sources-prose { margin-bottom: 36px; }
+.sources-prose h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-slate-900);
+  margin-bottom: 14px;
+}
+.sources-prose p {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--color-slate-700);
+  margin-bottom: 14px;
+}
+.sources-prose strong { color: var(--color-slate-900); }
+.sources-ack-list { margin: 0 0 14px 20px; list-style: disc; }
+.sources-ack-list li {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--color-slate-700);
+  margin-bottom: 12px;
+}
+.sources-link {
+  color: var(--color-slate-900);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-slate-300);
+}
+.sources-link:hover { text-decoration-color: var(--color-slate-900); }
+
+/* ── Stat row ───────────────────────────────────────────────────────── */
+.sources-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin-bottom: 36px;
+  padding: 18px 22px;
+  background: #fff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.sources-stat { display: flex; flex-direction: column; gap: 2px; }
+.sources-stat-val {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-slate-900);
+}
+.sources-stat-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+}
+
+/* ── Attribution tables ─────────────────────────────────────────────── */
+.sources-group { margin-bottom: 36px; }
+.sources-group-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-slate-900);
+  margin-bottom: 8px;
+}
+.sources-group-blurb {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--color-slate-500);
+  margin-bottom: 14px;
+  max-width: 44em;
+}
+.sources-table-wrap { overflow-x: auto; }
+.sources-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sources-table thead th {
+  background: var(--color-slate-50);
+  border-bottom: 1px solid var(--color-slate-200);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+  padding: 11px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+.sources-table tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-slate-100);
+  color: var(--color-slate-700);
+  vertical-align: top;
+}
+.sources-table tbody tr:last-child td { border-bottom: none; }
+.sources-table th.numeric, .sources-table td.numeric { text-align: right; }
+.sources-cell-source { font-family: var(--font-mono); font-size: 13px; word-break: break-all; }
+.sources-cell-providers { color: var(--color-slate-500); }
+
+@media (max-width: 640px) {
+  .sources-stats { gap: 20px; }
+}
+</style>

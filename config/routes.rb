@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   get "trends",  to: "trends#index",     as: :trends
   get "map",     to: "map#index",        as: :map
   get "why",     to: "pages#why",        as: :why
+  get "sources", to: "sources#index",    as: :sources
   get "which-model", to: "pages#which_model", as: :which_model
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
