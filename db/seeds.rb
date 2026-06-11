@@ -15,19 +15,19 @@
 # Providers
 # ---------------------------------------------------------------------------
 providers = {
-  anthropic: { name: "Anthropic", website: "https://www.anthropic.com", accent: "#D97757" },
-  openai:    { name: "OpenAI",    website: "https://openai.com",        accent: "#10A37F" },
-  google:    { name: "Google",    website: "https://ai.google.dev",     accent: "#4285F4" },
-  xai:       { name: "xAI",        website: "https://x.ai",              accent: "#1F2937" },
-  deepseek:  { name: "DeepSeek",  website: "https://www.deepseek.com",  accent: "#4D6BFE" },
-  meta:      { name: "Meta",      website: "https://www.llama.com",     accent: "#0866FF" },
-  mistral:   { name: "Mistral",   website: "https://mistral.ai",        accent: "#FA520F" },
-  alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED" },
-  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E" }
+  anthropic: { name: "Anthropic", website: "https://www.anthropic.com", accent: "#D97757", country: "United States", country_code: "US" },
+  openai:    { name: "OpenAI",    website: "https://openai.com",        accent: "#10A37F", country: "United States", country_code: "US" },
+  google:    { name: "Google",    website: "https://ai.google.dev",     accent: "#4285F4", country: "United States", country_code: "US" },
+  xai:       { name: "xAI",        website: "https://x.ai",              accent: "#1F2937", country: "United States", country_code: "US" },
+  deepseek:  { name: "DeepSeek",  website: "https://www.deepseek.com",  accent: "#4D6BFE", country: "China", country_code: "CN" },
+  meta:      { name: "Meta",      website: "https://www.llama.com",     accent: "#0866FF", country: "United States", country_code: "US" },
+  mistral:   { name: "Mistral",   website: "https://mistral.ai",        accent: "#FA520F", country: "France", country_code: "FR" },
+  alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED", country: "China", country_code: "CN" },
+  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
-  end.tap { |p| p.update!(attrs.slice(:website, :accent)) }
+  end.tap { |p| p.update!(attrs.slice(:website, :accent, :country, :country_code)) }
 end
 
 # ---------------------------------------------------------------------------

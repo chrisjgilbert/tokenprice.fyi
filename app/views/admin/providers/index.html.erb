@@ -9,6 +9,7 @@
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th scope="col" class="px-4 py-3 font-medium">Provider</th>
+        <th scope="col" class="px-4 py-3 font-medium">Country</th>
         <th scope="col" class="px-4 py-3 font-medium">Website</th>
         <th scope="col" class="px-4 py-3 font-medium text-right">Models</th>
         <th scope="col" class="px-4 py-3 font-medium text-right">Actions</th>
@@ -23,6 +24,13 @@
               <%= link_to provider.name, edit_admin_provider_path(provider), class: "font-medium hover:text-indigo-600" %>
             </span>
           </th>
+          <td class="px-4 py-3 text-slate-500">
+            <% if provider.country.present? || provider.country_code.present? %>
+              <%= provider.flag_emoji %> <%= provider.country.presence || provider.country_code %>
+            <% else %>
+              <span class="text-slate-300">—</span>
+            <% end %>
+          </td>
           <td class="px-4 py-3 text-slate-500"><%= provider.website %></td>
           <td class="px-4 py-3 text-right text-slate-500"><%= @model_counts[provider.id] || 0 %></td>
           <td class="px-4 py-3 text-right whitespace-nowrap">
