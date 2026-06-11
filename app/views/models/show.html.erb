@@ -71,11 +71,27 @@
   </div>
   <%= price_history_chart(@price_points) %>
 
-  <% if @model.blended_change_since_launch %>
-    <p class="mt-4 text-sm text-slate-600">
-      Since launch, the blended price has moved
-      <%= price_change_badge(@model.blended_change_since_launch) %>.
-    </p>
+  <% if @model.price_changed? %>
+    <div class="mt-5 border-t border-slate-100 pt-4">
+      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Blended price change
+        <span class="ml-1 font-normal normal-case tracking-normal text-slate-400">(3:1 I/O mix)</span>
+      </p>
+      <dl class="flex flex-wrap gap-x-8 gap-y-3">
+        <% @model.blended_changes.each do |label, pct| %>
+          <div>
+            <dt class="mb-1 text-xs text-slate-400"><%= label %></dt>
+            <dd>
+              <% if pct %>
+                <%= price_change_badge(pct) %>
+              <% else %>
+                <span class="tp-muted-dash">—</span>
+              <% end %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
   <% end %>
 </section>
 

@@ -1,6 +1,7 @@
 class ModelsController < ApplicationController
   SORTS = {
     "blended"  => ->(m) { m.blended_per_mtok || Float::INFINITY },
+    "change"   => ->(m) { m.blended_change_since_launch || 0 },
     "input"    => ->(m) { m.current_input  || Float::INFINITY },
     "output"   => ->(m) { m.current_output || Float::INFINITY },
     "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },

@@ -23,6 +23,48 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not ai_models(:opus).price_changed?
   end
 
+  test "price_as_of returns the snapshot in effect on a date" do
+    ds = ai_models(:deepseek_v4)
+    # deepseek_launch is 2026-02-01, deepseek_cut is 2026-05-31.
+    assert_nil ds.price_as_of(Date.new(2026, 1, 1))
+    assert_equal price_points(:deepseek_launch), ds.price_as_of(Date.new(2026, 2, 1))
+    assert_equal price_points(:deepseek_launch), ds.price_as_of(Date.new(2026, 5, 30))
+    assert_equal price_points(:deepseek_cut),    ds.price_as_of(Date.new(2026, 6, 1))
+  end
+
+  test "blended_change_over since launch matches blended_change_since_launch" do
+    ds = ai_models(:deepseek_v4)
+    assert_in_delta(-75.0, ds.blended_change_over(:launch), 0.1)
+    assert_in_delta ds.blended_change_since_launch, ds.blended_change_over(:launch), 0.0001
+  end
+
+  test "blended_change_over trailing window captures a move within it" do
+    travel_to Date.new(2026, 6, 11) do
+      ds = ai_models(:deepseek_v4)
+      # The 75% cut (2026-05-31) falls inside all of these windows.
+      assert_in_delta(-75.0, ds.blended_change_over(30.days), 0.1)
+      assert_in_delta(-75.0, ds.blended_change_over(90.days), 0.1)
+      assert_in_delta(-75.0, ds.blended_change_over(1.year), 0.1)
+    end
+  end
+
+  test "blended_change_over is nil when the price is flat across the window" do
+    travel_to Date.new(2026, 6, 11) do
+      # A window starting after the cut sees only the post-cut price — no move.
+      assert_nil ai_models(:deepseek_v4).blended_change_over(2.days)
+      # Single-snapshot model never has a move to report.
+      assert_nil ai_models(:opus).blended_change_over(30.days)
+    end
+  end
+
+  test "blended_changes returns a percentage for every window in order" do
+    travel_to Date.new(2026, 6, 11) do
+      labels = ai_models(:deepseek_v4).blended_changes.map(&:first)
+      assert_equal [ "30d", "90d", "1y", "Since launch" ], labels
+      assert ai_models(:deepseek_v4).blended_changes.all? { |_, pct| pct.present? }
+    end
+  end
+
   test "slug is auto-generated from name on create" do
     model = ai_models(:opus).provider.ai_models.create!(name: "Claude Test 9", tier: "mid")
     assert_equal "claude-test-9", model.slug
