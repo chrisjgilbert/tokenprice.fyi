@@ -1,6 +1,6 @@
 module ApplicationHelper
   # Format a USD-per-million-tokens figure.
-  # Sub-dollar: up to 3 decimals. Dollar-plus: 2 decimals. Drop trailing zeros.
+  # Sub-dollar: up to 4 decimals. Dollar-plus: 2 decimals. Drop trailing zeros.
   def usd(value)
     return content_tag(:span, "—", class: "tp-muted-dash") if value.nil?
 
