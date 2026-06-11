@@ -32,6 +32,11 @@ module OpenRouter
     # Defensive cap on the free-text description we copy from an untrusted API.
     DESCRIPTION_LIMIT = 2_000
 
+    # Patterns for OpenRouter variant models that duplicate a versioned entry.
+    LATEST_NAME_RE = /\blatest\b/i
+    LATEST_ID_RE   = /:latest\b/i
+    FAST_ID_RE     = /:fast\b/i
+
     # OpenRouter id namespaces mapped onto the providers we already curate, so
     # synced models attach to them instead of spawning duplicate providers.
     PROVIDER_SLUGS = {
@@ -248,13 +253,13 @@ module OpenRouter
     # floating pointers to whatever the current versioned model happens to
     # be. They duplicate a versioned entry and confuse the pricing table.
     def latest_alias?(row)
-      model_name(row).match?(/\blatest\b/i)
+      model_name(row).match?(LATEST_NAME_RE) || row["id"].to_s.match?(LATEST_ID_RE)
     end
 
     def retire_latest_aliases
       ids = AiModel.from_openrouter.where.not(status: "retired")
-        .pluck(:id, :name)
-        .select { |_, name| name.match?(/\blatest\b/i) }
+        .pluck(:id, :name, :openrouter_id)
+        .select { |_, name, oid| name.match?(LATEST_NAME_RE) || oid.to_s.match?(LATEST_ID_RE) }
         .map(&:first)
       return if ids.empty?
 
@@ -266,13 +271,13 @@ module OpenRouter
     # model billed at a premium for faster output. They duplicate a
     # versioned entry with inflated pricing and confuse comparisons.
     def speed_variant?(row)
-      row["id"].to_s.match?(/:fast\b/i)
+      row["id"].to_s.match?(FAST_ID_RE)
     end
 
     def retire_speed_variants
       ids = AiModel.from_openrouter.where.not(status: "retired")
         .pluck(:id, :openrouter_id)
-        .select { |_, oid| oid.to_s.match?(/:fast\b/i) }
+        .select { |_, oid| oid.to_s.match?(FAST_ID_RE) }
         .map(&:first)
       return if ids.empty?
 
