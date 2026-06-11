@@ -32,10 +32,13 @@
   <body class="min-h-screen bg-slate-50 text-slate-900">
     <nav class="tp-nav">
       <div class="tp-nav-inner">
-        <%= link_to root_path, class: "tp-brand" do %>
-          <%= brand_mark(28) %>
-          <span>tokenprice<span class="fyi">.fyi</span></span>
-        <% end %>
+        <div class="tp-brand-group">
+          <%= link_to root_path, class: "tp-brand" do %>
+            <%= brand_mark(28) %>
+            <span>tokenprice<span class="fyi">.fyi</span></span>
+          <% end %>
+          <span class="tp-beta" title="Beta — data is still being sense-checked and verified, so figures may change.">beta</span>
+        </div>
         <div class="tp-nav-links">
           <%= nav_link "Models", root_path, active: current_page?(root_path) %>
           <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
@@ -59,6 +62,7 @@
         <% end %>
         <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
         <span>Representative data · USD per 1M tokens</span>
+        <span class="tp-foot-beta">Beta — data is still being sense-checked and verified, so figures may change.</span>
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
