@@ -153,9 +153,6 @@ class ModelInsights
   end
 
   def usd_short(value)
-    return "$0" if value.nil? || value.zero?
-
-    formatted = value < 1 ? format("%.4f", value).sub(/0+$/, "").sub(/\.$/, "") : format("%.2f", value)
-    "$#{formatted}"
+    "$#{PriceFormat.usd_amount(value)}"
   end
 end
