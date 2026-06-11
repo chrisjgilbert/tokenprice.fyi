@@ -16,6 +16,13 @@ class Admin::ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert Provider.exists?(slug: "cohere")
   end
 
+  test "persists the headquarters country" do
+    post admin_providers_path, params: { provider: { name: "Cohere", country: "Canada", country_code: "ca" } }
+    cohere = Provider.find_by!(slug: "cohere")
+    assert_equal "Canada", cohere.country
+    assert_equal "CA", cohere.country_code
+  end
+
   test "won't delete a provider that still has models" do
     assert_no_difference "Provider.count" do
       delete admin_provider_path(providers(:anthropic))

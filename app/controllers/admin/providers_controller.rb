@@ -46,7 +46,7 @@ module Admin
     end
 
     def provider_params
-      params.require(:provider).permit(:name, :slug, :website, :accent)
+      params.require(:provider).permit(:name, :slug, :website, :accent, :country, :country_code)
     end
   end
 end

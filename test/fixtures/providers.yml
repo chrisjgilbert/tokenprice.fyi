@@ -3,9 +3,13 @@ anthropic:
   slug: anthropic
   website: https://www.anthropic.com
   accent: "#D97757"
+  country: United States
+  country_code: US
 
 deepseek:
   name: DeepSeek
   slug: deepseek
   website: https://www.deepseek.com
   accent: "#4D6BFE"
+  country: China
+  country_code: CN
