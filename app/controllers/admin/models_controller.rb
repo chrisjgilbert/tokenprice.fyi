@@ -44,7 +44,8 @@ module Admin
     def model_params
       params.require(:ai_model).permit(
         :provider_id, :name, :slug, :tier, :status,
-        :context_window, :max_output_tokens, :released_on, :description
+        :context_window, :max_output_tokens, :released_on, :description,
+        :strengths, :limitations, :best_for
       )
     end
   end
