@@ -291,6 +291,7 @@
   .filters-divider {
     height: 1px;
     background: var(--color-slate-100);
+    border: none;
     margin: 0;
   }
   .filters-bottom {
@@ -431,7 +432,7 @@
       <div class="tp-search">
         <%= icon(:search, size: 18) %>
         <label for="q" class="sr-only">Search models or providers</label>
-        <%= search_field_tag :q, @query, placeholder: "Search models or providers (comma for multiple)…", autocomplete: "off",
+        <%= search_field_tag :q, @query, placeholder: "anthropic, openai, gpt-4o, …", autocomplete: "off",
               data: { action: "input->filters#search" } %>
       </div>
 
