@@ -3,8 +3,20 @@ import { Controller } from "@hotwired/stimulus"
 // ── Palette ─────────────────────────────────────────────────────────────────
 const PALETTE = [
   "#4f46e5","#0ea5e9","#059669","#f59e0b","#e11d48",
-  "#7c3aed","#0891b2","#c2683f","#1c5bd6","#db5a18"
+  "#7c3aed","#0891b2","#c2683f","#1c5bd6","#db5a18",
+  "#16a34a","#dc2626","#9333ea","#0d9488","#ca8a04",
+  "#be185d","#2563eb","#65a30d","#c026d3","#ea580c",
+  "#4338ca","#0284c7","#15803d","#b91c1c","#7e22ce"
 ]
+
+const AVG_COLOR = "#94a3b8"
+
+const TIME_RANGES = {
+  "3m":  { label: "3M",  days: 91 },
+  "6m":  { label: "6M",  days: 182 },
+  "1y":  { label: "1Y",  days: 365 },
+  "all": { label: "All", days: null }
+}
 
 const METRIC_LABEL = { blended: "I/O avg", input: "Input", output: "Output" }
 
@@ -131,7 +143,9 @@ export default class extends Controller {
     "eventsPopoverWrap",
     "eventsPopoverBtn",
     "eventsPopover",
-    "eventsPopoverList"
+    "eventsPopoverList",
+    "timeRange",
+    "avgToggle"
   ]
 
   static values = {
@@ -144,7 +158,9 @@ export default class extends Controller {
     this.selected = new Map()   // slug → color
     this.metric = "blended"
     this.showEvents = true
+    this.showAvg = true
     this.activePreset = null
+    this.timeRange = "all"
     this._paletteIdx = 0
 
     this._boundOutside = this._onOutsideClick.bind(this)
@@ -296,6 +312,26 @@ export default class extends Controller {
       b.classList.toggle("on", b.dataset.metric === this.metric)
     })
     this._render(true)
+  }
+
+  setTimeRange(event) {
+    const btn = event.currentTarget
+    this.timeRange = btn.dataset.range
+    if (this.hasTimeRangeTarget) {
+      this.timeRangeTarget.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("on", b.dataset.range === this.timeRange)
+      })
+    }
+    this._render(true)
+  }
+
+  toggleAvg(event) {
+    this.showAvg = !this.showAvg
+    const btn = event.currentTarget
+    btn.classList.toggle("on", this.showAvg)
+    btn.setAttribute("aria-checked", this.showAvg ? "true" : "false")
+    this._render(false)
+    this._renderLegend()
   }
 
   toggleEvents(event) {
@@ -470,6 +506,25 @@ export default class extends Controller {
     this._built = built
     const allMarketEvents = this._allMarketEvents || this.eventsValue.filter(e => e.kind === "market").sort((a, b) => a.date.localeCompare(b.date))
 
+    // ── Time range filtering ──
+    const rangeConf = TIME_RANGES[this.timeRange]
+    let rangeCutoff = 0
+    if (rangeConf && rangeConf.days) {
+      rangeCutoff = nowUTC - rangeConf.days * DAY
+    }
+
+    if (rangeCutoff > 0) {
+      built.forEach(s => {
+        // Keep the last point before cutoff so the line starts at the left edge
+        let lastBefore = null
+        s.pts.forEach(p => { if (p.t < rangeCutoff) lastBefore = p })
+        s.pts = s.pts.filter(p => p.t >= rangeCutoff)
+        if (lastBefore && (s.pts.length === 0 || s.pts[0].t > rangeCutoff)) {
+          s.pts.unshift({ t: rangeCutoff, v: lastBefore.v })
+        }
+      })
+    }
+
     // ── Domains (driven by model data only) ──
     let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
     built.forEach(s => s.pts.forEach(p => {
@@ -478,6 +533,36 @@ export default class extends Controller {
       vMax = Math.max(vMax, p.v)
     }))
     tMax = Math.max(tMax, nowUTC)
+
+    // ── Build average series ──
+    let avgSeries = null
+    if (this.showAvg && built.length >= 2) {
+      const allTimes = new Set()
+      built.forEach(s => s.pts.forEach(p => allTimes.add(p.t)))
+      allTimes.add(nowUTC)
+      const sortedTimes = [...allTimes].sort((a, b) => a - b)
+
+      const valAtTime = (s, t) => {
+        let v = null
+        for (const p of s.pts) { if (p.t <= t) v = p.v }
+        return v
+      }
+
+      const avgPts = []
+      for (const t of sortedTimes) {
+        let sum = 0, count = 0
+        for (const s of built) {
+          const v = valAtTime(s, t)
+          if (v != null) { sum += v; count++ }
+        }
+        if (count > 0) {
+          const avg = sum / count
+          avgPts.push({ t, v: avg })
+          vMax = Math.max(vMax, avg)
+        }
+      }
+      if (avgPts.length >= 2) avgSeries = avgPts
+    }
 
     // Filter events to the visible model date range
     const evtMin = tMin, evtMax = tMax
@@ -550,6 +635,22 @@ export default class extends Controller {
       g += `<circle class="tc-pt tc-pt-end" cx="${x(nowUTC).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4" fill="${s.color}" data-slug="${s.model.slug}"/>`
     })
 
+    // ── Average line ──
+    if (avgSeries) {
+      const avgSegs = []
+      avgSeries.forEach((p, i) => {
+        const px = x(p.t), py = y(p.v)
+        if (i === 0) {
+          avgSegs.push("M" + px.toFixed(1) + " " + py.toFixed(1))
+        } else {
+          const prevY = y(avgSeries[i - 1].v)
+          avgSegs.push("L" + px.toFixed(1) + " " + prevY.toFixed(1))
+          avgSegs.push("L" + px.toFixed(1) + " " + py.toFixed(1))
+        }
+      })
+      g += `<path class="tc-line tc-avg-line" d="${avgSegs.join(" ")}" stroke="${AVG_COLOR}" data-slug="__avg__"/>`
+    }
+
     // Crosshair + focus dot (hidden initially)
     g += `<line class="tc-cross" x1="0" y1="${padT}" x2="0" y2="${padT + iH}" style="opacity:0"/>`
     g += `<circle class="tc-hoverdot" r="5.5" style="opacity:0"/>`
@@ -583,7 +684,7 @@ export default class extends Controller {
     // ── Animation ──
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches
     if (animate && !reduce) {
-      svg.querySelectorAll(".tc-line").forEach((ln, i) => {
+      svg.querySelectorAll(".tc-line:not(.tc-avg-line)").forEach((ln, i) => {
         const len = ln.getTotalLength()
         ln.style.strokeDasharray = len
         ln.style.strokeDashoffset = len
@@ -592,11 +693,15 @@ export default class extends Controller {
           { duration: 900, delay: i * 55, easing: "cubic-bezier(.22,.61,.36,1)", fill: "forwards" }
         )
       })
+      svg.querySelectorAll(".tc-avg-line").forEach(ln => {
+        ln.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 600, delay: 400, fill: "backwards" })
+      })
       svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
       })
     }
 
+    this._avgSeries = avgSeries
     this._bindHover()
     this._renderLegend()
     this._syncPopoverRows()
@@ -758,6 +863,17 @@ export default class extends Controller {
 
       legend.appendChild(item)
     })
+
+    if (this.showAvg && this._avgSeries) {
+      const avgItem = document.createElement("span")
+      avgItem.className = "trends-legend-item trends-legend-avg"
+      const avgLine = document.createElement("span")
+      avgLine.className = "trends-legend-line trends-legend-line-dashed"
+      avgLine.style.background = AVG_COLOR
+      avgItem.appendChild(avgLine)
+      avgItem.appendChild(document.createTextNode("Average"))
+      legend.appendChild(avgItem)
+    }
 
     if (this.showEvents) {
       const evtItem = document.createElement("span")
