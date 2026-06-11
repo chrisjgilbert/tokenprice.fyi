@@ -55,7 +55,7 @@ The current product partially serves moment 2 and ignores moments 1 and 3. The v
 | Classification / routing / moderation | tiny in, tiny out, huge volume | small |
 | Data extraction to JSON | medium in, small out | small–mid |
 | RAG answering over docs | large in (cacheable), small out | mid |
-| Long-document summarisation | very large in, medium out | mid |
+| Long-document summarisation | very large in, medium out | small–mid (revised Jun 2026: cheap long-context models cover routine summaries; mid+ for high-stakes documents) |
 | Customer-facing chat | medium in/out, quality-sensitive | mid–frontier |
 | Code generation / agentic coding | large in (cacheable), large out | frontier |
 | Multi-step agents / tool use | huge in via loops, caching critical | frontier + cache pricing |
