@@ -689,7 +689,7 @@ export default class extends Controller {
         )
       })
       svg.querySelectorAll(".tc-avg-line").forEach(ln => {
-        ln.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 600, delay: 400, fill: "forwards" })
+        ln.animate([{ opacity: 0 }, { opacity: 0.92 }], { duration: 600, delay: 400, fill: "forwards" })
       })
       svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
@@ -724,7 +724,6 @@ export default class extends Controller {
   _emphasize(slug) {
     if (!this.hasSvgTarget) return
     this.svgTarget.querySelectorAll(".tc-line, .tc-pt").forEach(el => {
-      if (el.dataset.slug === "__avg__") return
       const on = !slug || el.dataset.slug === slug
       el.classList.toggle("tc-dim", !on)
       el.classList.toggle("tc-focus", !!slug && on && el.classList.contains("tc-line"))
@@ -740,6 +739,17 @@ export default class extends Controller {
     const built = gm.built
     const metricLabel = METRIC_LABEL[this.metric] || ""
     const marketEvents = this._allMarketEvents || []
+
+    // Hover candidates: each model line plus the average line (if shown), in a
+    // uniform shape so the crosshair/tooltip treats them identically.
+    const hoverSeries = built.map(s => ({
+      slug: s.model.slug, name: s.model.name, color: s.color, pts: s.pts, avg: false
+    }))
+    if (this._avgSeries) {
+      hoverSeries.push({
+        slug: "__avg__", name: "Average", color: AVG_COLOR, pts: this._avgSeries, avg: true
+      })
+    }
 
     // ── Event marker hover ──
     if (etip) {
@@ -791,14 +801,14 @@ export default class extends Controller {
 
       // Nearest line by vertical distance at cursor x
       let best = null, bestD = Infinity
-      built.forEach(s => {
+      hoverSeries.forEach(s => {
         const ly = gm.y(valAt(s, t))
         const d = Math.abs(ly - py)
         if (d < bestD) { bestD = d; best = s }
       })
       if (!best) return
 
-      this._emphasize(best.model.slug)
+      this._emphasize(best.slug)
 
       const v = valAt(best, t)
       const ly = gm.y(v)
@@ -810,9 +820,10 @@ export default class extends Controller {
       hoverdot.setAttribute("fill", best.color)
       hoverdot.style.opacity = 1
 
+      const subLabel = best.avg ? "/1M " + metricLabel + " · avg" : "/1M " + metricLabel
       tip.innerHTML =
-        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${esc(best.model.name)}</div>` +
-        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> /1M ${esc(metricLabel)}</small></div>` +
+        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${esc(best.name)}</div>` +
+        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> ${esc(subLabel)}</small></div>` +
         `<div class="ttc-date">as of ${fmtAxisDate(t)}</div>`
       const tx = (px / gm.W) * r.width
       tip.style.left = tx + "px"
