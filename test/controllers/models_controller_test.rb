@@ -18,6 +18,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index can be sorted by change since launch and renders delta badges" do
+    get root_url(sort: "change", dir: "asc")
+    assert_response :success
+    assert_select "th.sort-active", text: /since launch/i
+    # DeepSeek V4 Pro's 75% cut renders as a delta pill in the new column.
+    assert_select ".tp-delta", minimum: 1
+  end
+
   test "index can be filtered to a single provider" do
     get root_url(providers: [ "anthropic" ])
     assert_response :success
