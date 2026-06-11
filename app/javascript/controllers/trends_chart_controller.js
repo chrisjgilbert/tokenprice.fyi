@@ -10,6 +10,10 @@ const METRIC_LABEL = { blended: "I/O avg", input: "Input", output: "Output" }
 
 // ── Presets ──────────────────────────────────────────────────────────────────
 const PRESETS = {
+  "all": {
+    label: "All time",
+    filter: () => true
+  },
   "frontier": {
     label: "All frontier",
     filter: m => m.tier === "frontier"
@@ -148,7 +152,7 @@ export default class extends Controller {
 
     this._buildModelList()
     this._buildEventsPopover()
-    this._applyPreset("frontier")
+    this._applyPreset("all")
   }
 
   disconnect() {
