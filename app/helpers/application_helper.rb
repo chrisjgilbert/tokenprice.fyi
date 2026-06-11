@@ -1,14 +1,14 @@
 module ApplicationHelper
-  # Format a USD-per-million-tokens figure.
-  # Sub-dollar: up to 3 decimals. Dollar-plus: 2 decimals. Drop trailing zeros.
+  # Format a USD-per-million-tokens figure. The numeric rule lives in PriceFormat
+  # so the insight services format identically; this layer adds HTML/em-dash.
   def usd(value)
     return content_tag(:span, "—", class: "tp-muted-dash") if value.nil?
 
-    "$#{usd_amount(value)}"
+    "$#{PriceFormat.usd_amount(value)}"
   end
 
   def usd_plain(value)
-    value.nil? ? "—" : "$#{usd_amount(value)}"
+    value.nil? ? "—" : "$#{PriceFormat.usd_amount(value)}"
   end
 
   # I/O shorthand: "$3 / $15" — the primary at-a-glance price
@@ -187,18 +187,5 @@ module ApplicationHelper
   def fmt_date_full(date)
     return "—" if date.nil?
     date.strftime("%b %-d, %Y")
-  end
-
-  private
-
-  def usd_amount(value)
-    value = value.to_f
-    if value.zero?
-      "0"
-    elsif value < 1
-      format("%.4f", value).sub(/0+$/, "").sub(/\.$/, "")
-    else
-      format("%.2f", value)
-    end
   end
 end

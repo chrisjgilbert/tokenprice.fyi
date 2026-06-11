@@ -363,7 +363,7 @@ editorial = {
   "claude-opus-4-1" => {
     strengths: "Refined Opus 4 with incremental quality gains at the same price.",
     best_for: "Legacy integrations pinned to the pre-cut Opus line.",
-    limitations: "Costs roughly 3× post-4.5 Opus for comparable results."
+    limitations: "An older, pricier Opus generation fully superseded by the post-4.5 line."
   },
   "claude-opus-4" => {
     strengths: "The original Claude 4 flagship; strong general reasoning for its era.",
@@ -406,8 +406,8 @@ editorial = {
     limitations: "Positioned below GPT-5.5 on capability."
   },
   "o3" => {
-    strengths: "Strong dedicated reasoning after an 80% price cut.",
-    best_for: "Math, logic and step-by-step problem solving.",
+    strengths: "Strong dedicated step-by-step reasoning.",
+    best_for: "Math, logic and multi-step problem solving.",
     limitations: "Reasoning-focused; the GPT-5 line now covers most of its ground."
   },
   "gpt-4-1" => {
@@ -471,7 +471,7 @@ editorial = {
     limitations: "Superseded by Grok 4.3."
   },
   "grok-4" => {
-    strengths: "Former xAI flagship.",
+    strengths: "A former xAI flagship with strong general reasoning for its generation.",
     best_for: "Reference only — traffic now redirects to Grok 4.3.",
     limitations: "Retired May 2026; no longer served directly."
   },
@@ -521,7 +521,7 @@ editorial = {
     limitations: "Mid-tier capability; not aimed at the absolute frontier."
   },
   "mistral-large-3" => {
-    strengths: "Apache-2.0 open-weight frontier MoE (675B total / 41B active) at a steep discount to Large 2.",
+    strengths: "Apache-2.0 open-weight frontier MoE (675B total / 41B active).",
     best_for: "Open-weight frontier deployments and permissive-license self-hosting.",
     limitations: "Trails the very top closed models on the hardest tasks."
   },
@@ -536,7 +536,7 @@ editorial = {
     limitations: "Western tooling and integrations less mature."
   },
   "qwen3-max" => {
-    strengths: "Capable previous Qwen flagship, cut 50% in China's price war.",
+    strengths: "Capable previous Qwen flagship with long-context, multilingual strengths.",
     best_for: "Budget multilingual and long-context tasks.",
     limitations: "Superseded by Qwen 3.7 Max."
   },
@@ -560,6 +560,12 @@ editorial = {
 # ---------------------------------------------------------------------------
 # Persist
 # ---------------------------------------------------------------------------
+# Fail loudly if an editorial entry's slug doesn't match a catalog model — a
+# renamed model or typo'd key would otherwise silently drop its copy via the
+# fetch default below.
+orphaned_editorial = editorial.keys - catalog.map { |row| row[:name].parameterize }
+raise "Editorial copy references unknown model slug(s): #{orphaned_editorial.join(', ')}" if orphaned_editorial.any?
+
 catalog.each do |row|
   model = AiModel.find_or_initialize_by(slug: row[:name].parameterize)
   copy = editorial.fetch(row[:name].parameterize, {})
