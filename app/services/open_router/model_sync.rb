@@ -51,18 +51,11 @@ module OpenRouter
       "moonshotai" => "moonshot-ai"
     }.freeze
 
-    # Country headquarters for known OpenRouter namespaces. Used when a new
-    # provider is created so it appears on the map immediately.
+    # Country headquarters for OpenRouter namespaces not already covered by
+    # seeds. Used to place newly-discovered providers on the map. Seeded
+    # providers (those in PROVIDER_SLUGS) get their country from db/seeds.rb,
+    # so they are intentionally absent here.
     PROVIDER_COUNTRIES = {
-      "anthropic"    => { country: "United States",  country_code: "US" },
-      "openai"       => { country: "United States",  country_code: "US" },
-      "google"       => { country: "United States",  country_code: "US" },
-      "x-ai"         => { country: "United States",  country_code: "US" },
-      "deepseek"     => { country: "China",           country_code: "CN" },
-      "meta-llama"   => { country: "United States",  country_code: "US" },
-      "mistralai"    => { country: "France",          country_code: "FR" },
-      "qwen"         => { country: "China",           country_code: "CN" },
-      "moonshotai"   => { country: "China",           country_code: "CN" },
       "cohere"       => { country: "Canada",          country_code: "CA" },
       "ai21"         => { country: "Israel",          country_code: "IL" },
       "nvidia"       => { country: "United States",  country_code: "US" },
@@ -212,14 +205,18 @@ module OpenRouter
       slug      = PROVIDER_SLUGS[namespace] || namespace.parameterize
       geo       = PROVIDER_COUNTRIES[namespace]
 
-      Provider.find_or_create_by!(slug: slug) do |p|
+      provider = Provider.find_or_create_by!(slug: slug) do |p|
         p.name    = provider_name(namespace, row)
         p.website = "https://openrouter.ai/#{namespace}"
-        if geo
-          p.country      = geo[:country]
-          p.country_code = geo[:country_code]
-        end
+        p.country      = geo[:country]      if geo
+        p.country_code = geo[:country_code] if geo
       end
+
+      if geo && provider.country_code.blank?
+        provider.update!(country: geo[:country], country_code: geo[:country_code])
+      end
+
+      provider
     end
 
     def find_or_build_model(row, provider)
