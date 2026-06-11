@@ -331,7 +331,6 @@ export default class extends Controller {
     btn.classList.toggle("on", this.showAvg)
     btn.setAttribute("aria-checked", this.showAvg ? "true" : "false")
     this._render(false)
-    this._renderLegend()
   }
 
   toggleEvents(event) {
@@ -340,7 +339,6 @@ export default class extends Controller {
     btn.classList.toggle("on", this.showEvents)
     btn.setAttribute("aria-checked", this.showEvents ? "true" : "false")
     this._render(false)
-    this._renderLegend()
   }
 
   toggleEventsPopover(event) {
@@ -502,8 +500,6 @@ export default class extends Controller {
       return
     }
 
-    // Store for hover
-    this._built = built
     const allMarketEvents = this._allMarketEvents || this.eventsValue.filter(e => e.kind === "market").sort((a, b) => a.date.localeCompare(b.date))
 
     // ── Time range filtering ──
@@ -515,7 +511,6 @@ export default class extends Controller {
 
     if (rangeCutoff > 0) {
       built.forEach(s => {
-        // Keep the last point before cutoff so the line starts at the left edge
         let lastBefore = null
         s.pts.forEach(p => { if (p.t < rangeCutoff) lastBefore = p })
         s.pts = s.pts.filter(p => p.t >= rangeCutoff)
@@ -524,6 +519,8 @@ export default class extends Controller {
         }
       })
     }
+
+    this._built = built
 
     // ── Domains (driven by model data only) ──
     let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
@@ -556,9 +553,7 @@ export default class extends Controller {
           if (v != null) { sum += v; count++ }
         }
         if (count > 0) {
-          const avg = sum / count
-          avgPts.push({ t, v: avg })
-          vMax = Math.max(vMax, avg)
+          avgPts.push({ t, v: sum / count })
         }
       }
       if (avgPts.length >= 2) avgSeries = avgPts
@@ -694,7 +689,7 @@ export default class extends Controller {
         )
       })
       svg.querySelectorAll(".tc-avg-line").forEach(ln => {
-        ln.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 600, delay: 400, fill: "backwards" })
+        ln.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 600, delay: 400, fill: "forwards" })
       })
       svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
@@ -729,6 +724,7 @@ export default class extends Controller {
   _emphasize(slug) {
     if (!this.hasSvgTarget) return
     this.svgTarget.querySelectorAll(".tc-line, .tc-pt").forEach(el => {
+      if (el.dataset.slug === "__avg__") return
       const on = !slug || el.dataset.slug === slug
       el.classList.toggle("tc-dim", !on)
       el.classList.toggle("tc-focus", !!slug && on && el.classList.contains("tc-line"))
@@ -872,6 +868,8 @@ export default class extends Controller {
       avgLine.style.background = AVG_COLOR
       avgItem.appendChild(avgLine)
       avgItem.appendChild(document.createTextNode("Average"))
+      avgItem.addEventListener("mouseover", () => this._emphasize("__avg__"))
+      avgItem.addEventListener("mouseout", () => this._emphasize(null))
       legend.appendChild(avgItem)
     }
 
