@@ -67,6 +67,32 @@ class AiModel < ApplicationRecord
   def current_output = current_price&.output_per_mtok
   def current_cached_input = current_price&.cached_input_per_mtok
 
+  # How many times more expensive output tokens are than input (5.0 == 5×).
+  # nil when either side is missing or input is free.
+  def output_to_input_ratio
+    return nil if current_input.nil? || current_output.nil? || current_input.zero?
+
+    (current_output / current_input).to_f
+  end
+
+  # Fractional saving of cached vs fresh input (0.9 == 90% cheaper).
+  # nil when the model has no cached price to compare.
+  def cached_input_discount
+    return nil if current_input.nil? || current_cached_input.nil? || current_input.zero?
+
+    1 - (current_cached_input / current_input).to_f
+  end
+
+  # A fuller descriptive paragraph for meta tags and structured data, folding
+  # the editorial facets into the lede when they're present.
+  def long_description
+    segments = [ description.presence ]
+    segments << "Strengths: #{strengths}." if strengths.present?
+    segments << "Best for: #{best_for}." if best_for.present?
+    segments << "Limitations: #{limitations}." if limitations.present?
+    segments.compact.join(" ").presence
+  end
+
   # Single sortable number for ranking models against each other.
   def blended_per_mtok(price = current_price)
     return nil unless price
