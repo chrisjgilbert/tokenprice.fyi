@@ -26,19 +26,22 @@ module ApplicationHelper
     end
   end
 
-  # Price change badge (delta pill)
+  # Price change badge (delta pill). Direction is shown visually by the arrow
+  # and colour; an sr-only word carries the same meaning to screen readers, and
+  # the arrow SVG is marked decorative.
   def price_change_badge(percent)
     return if percent.nil?
 
     up = percent.positive?
     css = up ? "tp-delta tp-delta-up" : "tp-delta tp-delta-down"
     arrow_svg = if up
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>'
     else
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>'
     end
     content_tag(:span, class: css) do
-      raw(arrow_svg) + " #{number_to_percentage(percent.abs, precision: 1)}"
+      content_tag(:span, (up ? "increased " : "decreased "), class: "sr-only") +
+        raw(arrow_svg) + " #{number_to_percentage(percent.abs, precision: 1)}"
     end
   end
 

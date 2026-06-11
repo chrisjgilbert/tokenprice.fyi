@@ -845,9 +845,12 @@ export default class extends Controller {
 
     const pct = ((last - first) / first) * 100
     const up = pct > 0
+    const mag = Math.abs(pct).toFixed(1)
     const badge = document.createElement("span")
     badge.className = "trends-legend-delta " + (up ? "up" : "down")
-    badge.textContent = (up ? "+" : "−") + Math.abs(pct).toFixed(1) + "%"
+    badge.textContent = (up ? "+" : "−") + mag + "%"
+    // Direction is colour-coded; spell it out for assistive tech.
+    badge.setAttribute("aria-label", (up ? "up " : "down ") + mag + " percent over the visible range")
     return badge
   }
 

@@ -57,6 +57,26 @@ class AiModelTest < ActiveSupport::TestCase
     end
   end
 
+  test "blended_change_over resolves each window to its own reference and signs both ways" do
+    travel_to Date.new(2026, 6, 11) do
+      model = providers(:anthropic).ai_models.create!(name: "Window Probe", tier: "mid")
+      # Equal in/out keeps blended == the raw figure. Launched long ago at 10,
+      # hiked to 20 (Apr), trimmed to 15 (Jun) — the current price.
+      model.price_points.create!(effective_on: Date.new(2025, 1, 1),  input_per_mtok: 10, output_per_mtok: 10)
+      model.price_points.create!(effective_on: Date.new(2026, 4, 12), input_per_mtok: 20, output_per_mtok: 20)
+      model.price_points.create!(effective_on: Date.new(2026, 6, 1),  input_per_mtok: 15, output_per_mtok: 15)
+      model.forget_price_cache!
+
+      # 30d → reference is the Apr hike (20): 20→15 = −25% (distinguishes the window).
+      assert_in_delta(-25.0, model.blended_change_over(30.days), 0.1)
+      # 90d and launch reach back past the hike to the original 10: 10→15 = +50% (positive delta).
+      assert_in_delta(50.0,  model.blended_change_over(90.days), 0.1)
+      assert_in_delta(50.0,  model.blended_change_over(:launch), 0.1)
+      # A window older than the model clamps to launch, matching :launch exactly.
+      assert_equal model.blended_change_over(:launch), model.blended_change_over(10.years)
+    end
+  end
+
   test "blended_changes returns a percentage for every window in order" do
     travel_to Date.new(2026, 6, 11) do
       labels = ai_models(:deepseek_v4).blended_changes.map(&:first)
