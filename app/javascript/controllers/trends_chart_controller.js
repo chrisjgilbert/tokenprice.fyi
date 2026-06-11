@@ -765,7 +765,7 @@ export default class extends Controller {
       const dash = document.createElement("span")
       dash.className = "trends-legend-dash"
       evtItem.appendChild(dash)
-      evtItem.appendChild(document.createTextNode("Numbered markers = market events"))
+      evtItem.appendChild(document.createTextNode("Markers = market events"))
       legend.appendChild(evtItem)
     }
   }
