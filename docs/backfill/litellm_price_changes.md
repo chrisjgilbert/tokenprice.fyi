@@ -12,7 +12,87 @@ moves are host repricing, not vendor announcements.
 ## Candidate missed price changes
 
 <!-- BEGIN CANDIDATES -->
-_To be filled in by hand after reviewing the change log below._
+_Hand-curated 2026-06-11 from the change log below, cross-checked by web search.
+Changes already in db/seeds.rb showed up at the right windows where LiteLLM
+tracked the model (gemini-1.5-flash 2024-08 cut, o3 2025-06 cut, deepseek-v3
+2025-02 post-promo step) — good sanity check; gpt-4o's 2024-08 cut and
+deepseek's 2025-09 cut appeared late (LiteLLM lag), and qwen3-max joined the
+catalog only in 2026-02, after its seeded changes. Verdicts: **CONFIRMED** = first-party
+or contemporaneous source found; **PLAUSIBLE** = consistent data, needs Wayback
+or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
+
+### Missed changes (recommend adding to db/seeds.rb after final verification)
+
+1. **claude-3-5-haiku — CONFIRMED.** Launched at **$1 / $5** (Anthropic raised it
+   from the originally announced Haiku pricing, citing capability —
+   anthropic.com/news/3-5-models-and-computer-use), then cut 20% to **$0.80 / $4**
+   on **2024-12-03** (simonwillison.net/2024/Dec/5/claude-35-haiku-price-drops-by-20/).
+   The seed records a single $0.80/$4 point dated 2024-10-22 — wrong launch price
+   *and* a missed change. LiteLLM itself lagged (registered the cut only in
+   the 2025-02-20 → 2025-03-02 window); the cached 0.1 → 0.8 → 0.08 wiggle is a
+   LiteLLM typo and its correction.
+2. **o1-mini — CONFIRMED (date approximate).** $3 / $12 at launch → **$1.10 / $4.40**,
+   in the 2025-01-24 → 2025-02-02 window — i.e. alongside the o3-mini launch
+   (2025-01-31), whose price it matches. Current OpenAI docs list o1-mini at
+   $1.10/$4.40 (platform.openai.com/docs/models/o1-mini), so the cut is real;
+   pin the exact date via Wayback before seeding. Seed has only the launch point.
+3. **mistral-large-2 — CONFIRMED.** Launched 2024-07-24 at **$3 / $9**; cut to
+   **$2 / $6** on **2024-09-17** with the "AI in abundance" release
+   (mistral.ai/news/september-24-release/). The seed records $2/$6 as the launch
+   price — exactly the suspicion in HISTORICAL_BACKFILL.md. Note LiteLLM still
+   says 3/9 today (never updated 2407) — discovery, not truth, cuts both ways.
+4. **grok-2 — CONFIRMED.** The API public beta (`grok-beta`, ~Nov 2024) charged
+   **$5 / $15**; grok-2-1212 dropped it to **$2 / $10** on **2024-12-12**
+   (xAI announcement: x.com/xai/status/1868045132760842734). The seed's single
+   $2/$10 point is dated 2024-08-13 — the Grok 2 announcement, months before API
+   pricing existed. Recommend: $5/$15 at API beta launch, $2/$10 from 2024-12-12.
+5. **deepseek-r1 — CONFIRMED.** The deepseek-reasoner endpoint was repriced to
+   **$0.28 / $0.42 (cached $0.028)** on **2025-09-29** when V3.2-Exp unified
+   chat/reasoner pricing (api-docs.deepseek.com, VentureBeat 2025-09-29). The
+   seed records this cut under deepseek-v3 only; R1 still shows $0.55/$2.19.
+   (Coverage also mentions an interim ~Aug 2025 V3.1 reasoner reprice to
+   ~$0.56/$1.68 that LiteLLM never carried — verify separately.)
+6. **mistral-large — PLAUSIBLE.** $8 / $24 → **$4 / $12** in the
+   2024-05-23 → 2024-05-31 window. No first-party announcement found (web
+   sources only document the later $3/$9 → $2/$6 Large 2 cut); later aggregators
+   do list Large v1 at $4/$12. Wayback mistral.ai/technology/#pricing around
+   late May 2024 to confirm.
+7. **deepseek-v3 launch promo — PLAUSIBLE (deliberate omission?).** V3 launched
+   2024-12-26 at promotional **$0.14 / $0.28** until 2025-02-08; the seed starts
+   at the post-promo $0.27/$1.10 (noted as such). For chart honesty consider a
+   launch point — the promo price is what stunned the market in Dec 2024.
+
+### Worth a second look (discrepancies, not dated changes)
+
+- **gemini-1-5-pro launch tier:** LiteLLM carried **$3.50 / $10.50** (the ≤128K
+  tier) through mid-2024; the seed's launch point is $7/$21 (the >128K tier).
+  Per the seed's own lowest-tier policy the launch point may be tier-inconsistent.
+- **kimi-k2-5 / kimi-k2-6:** LiteLLM (sourced from platform.kimi.ai pricing docs)
+  says $0.60/**$3.00** and **$0.95/$4.00** vs the seed's $0.60/$2.50 for both.
+  The K2.6 note already acknowledges the higher rate; check which is the direct rate.
+- **llama-3-1-405b:** Together rate $3.50/$3.50 vs seed's $3/$3 — within the
+  representative-rate ±20% policy, no action.
+- **qwen3-max:** LiteLLM moved to context-tiered pricing (lowest tier $1.20/$6,
+  2026-02) — different basis from the seed's flat $0.46/$1.84; not comparable.
+
+### Likely noise (ignore)
+
+- **gpt-5-5-pro 60/360 → 30/180** within launch week: launch price was $30/$180
+  (openai.com/index/introducing-gpt-5-5/, pricepertoken.com) — LiteLLM entry error.
+- **gpt-4 3/60 → 30/60** (Sept 2023): data-entry typo in LiteLLM's first weeks.
+- **llama-3-70b 0.59/0.79 → 0.30/0.40 → back** (Jul–Aug 2025): OpenRouter blip,
+  reverted within two weeks.
+- **llama-4-maverick / llama-4-scout "changes"** (Aug 2025): the mapping switched
+  representative host (Together → DeepInfra entry appearing), not a repricing.
+- **Cached-input appearing in Aug–Oct 2024** (claude-3-x, gpt-4o, o1-*): that's
+  prompt caching launching as a feature, not a price change. Later Gemini cached
+  moves (2.5 Pro/Flash, 2.0 Flash) converge on values the seed already records.
+- **gemini-1-0-pro / gemini-1-5-pro 0/0 rows** (early 2024): free-preview
+  placeholders before billing existed; the 1.0 Pro 0.35/1.05 figure also never
+  matched Google's $0.50/$1.50 list — LiteLLM's early Gemini data is unreliable.
+- **gpt-4o 5/15 → 2.5/10 in Nov 2024** and **deepseek-v3 0.27/1.10 → 0.28/0.42 in
+  Jan 2026**: LiteLLM catching up late to cuts the seed already records with
+  correct dates (2024-08-06, 2025-09-29).
 <!-- END CANDIDATES -->
 
 ## Change log by model
