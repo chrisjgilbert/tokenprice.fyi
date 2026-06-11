@@ -9,7 +9,7 @@ const PALETTE = [
   "#4338ca","#0284c7","#15803d","#b91c1c","#7e22ce"
 ]
 
-const AVG_COLOR = "#94a3b8"
+const AVG_COLOR = "#64748b"
 
 const TIME_RANGES = {
   "3m":  { label: "3M",  days: 91 },
@@ -106,11 +106,31 @@ function linNice(max) {
   return { top, ticks }
 }
 
+// ── Log nice ticks (decade-based) ────────────────────────────────────────────
+function logNice(min, max) {
+  if (!(min > 0)) min = 1
+  if (!(max >= min)) max = min
+  const lo = Math.pow(10, Math.floor(Math.log10(min)))
+  let hi = Math.pow(10, Math.ceil(Math.log10(max)))
+  if (hi <= lo) hi = lo * 10
+  const decades = Math.round(Math.log10(hi / lo))
+  const subs = decades <= 2 ? [1, 2, 5] : decades === 3 ? [1, 3] : [1]
+  const ticks = []
+  for (let d = lo; d < hi * 0.999; d *= 10) {
+    for (const s of subs) {
+      const v = d * s
+      if (v < hi) ticks.push(+v.toPrecision(12))
+    }
+  }
+  ticks.push(hi)
+  return { lo, hi, ticks }
+}
+
 function fmtMoney(v) {
   if (v === 0) return "0"
   if (v >= 10) return String(Math.round(v))
   if (v >= 1) return (v % 1 ? v.toFixed(1) : String(v))
-  return v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")
+  return parseFloat(v.toPrecision(2)).toString()
 }
 
 function monthTicks(tMin, tMax) {
@@ -145,6 +165,7 @@ export default class extends Controller {
     "eventsPopover",
     "eventsPopoverList",
     "timeRange",
+    "scaleSeg",
     "avgToggle"
   ]
 
@@ -161,6 +182,7 @@ export default class extends Controller {
     this.showAvg = true
     this.activePreset = null
     this.timeRange = "all"
+    this.scale = "log"
     this._paletteIdx = 0
 
     this._boundOutside = this._onOutsideClick.bind(this)
@@ -320,6 +342,17 @@ export default class extends Controller {
     if (this.hasTimeRangeTarget) {
       this.timeRangeTarget.querySelectorAll("button").forEach(b => {
         b.classList.toggle("on", b.dataset.range === this.timeRange)
+      })
+    }
+    this._render(true)
+  }
+
+  setScale(event) {
+    const btn = event.currentTarget
+    this.scale = btn.dataset.scale
+    if (this.hasScaleSegTarget) {
+      this.scaleSegTarget.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("on", b.dataset.scale === this.scale)
       })
     }
     this._render(true)
@@ -523,10 +556,11 @@ export default class extends Controller {
     this._built = built
 
     // ── Domains (driven by model data only) ──
-    let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
+    let tMin = Infinity, tMax = -Infinity, vMin = Infinity, vMax = -Infinity
     built.forEach(s => s.pts.forEach(p => {
       tMin = Math.min(tMin, p.t)
       tMax = Math.max(tMax, p.t)
+      vMin = Math.min(vMin, p.v)
       vMax = Math.max(vMax, p.v)
     }))
     tMax = Math.max(tMax, nowUTC)
@@ -572,14 +606,23 @@ export default class extends Controller {
     tMin -= tPad
     tMax += tPad
 
-    // Linear $ axis anchored at 0
-    const { top: yTop, ticks: yTicks } = linNice(vMax)
-
+    // $ axis: log spreads out series spanning orders of magnitude;
+    // linear is anchored at 0
     const x = (t) => padL + ((t - tMin) / (tMax - tMin)) * iW
-    const y = (v) => padT + iH - (v / yTop) * iH
+    let y, yTicks
+    if (this.scale === "log") {
+      const { lo, hi, ticks } = logNice(vMin, vMax)
+      const llo = Math.log10(lo), lhi = Math.log10(hi)
+      y = (v) => padT + iH - ((Math.log10(v) - llo) / (lhi - llo)) * iH
+      yTicks = ticks
+    } else {
+      const { top: yTop, ticks } = linNice(vMax)
+      y = (v) => padT + iH - (v / yTop) * iH
+      yTicks = ticks
+    }
 
     // Store geometry for hover
-    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, evtMin, evtMax, W, H, yTop }
+    this._geom = { x, y, padL, padT, iW, iH, nowUTC, built, tMin, tMax, evtMin, evtMax, W, H }
 
     let g = ""
 
@@ -688,8 +731,12 @@ export default class extends Controller {
           { duration: 900, delay: i * 55, easing: "cubic-bezier(.22,.61,.36,1)", fill: "forwards" }
         )
       })
+      // fill:"backwards" (not forwards) so the animation only owns opacity
+      // during the delay/run, then hands it back to the CSS rule — otherwise
+      // a persisted forward-fill would override .tc-dim and the avg line
+      // could never be dimmed by _emphasize.
       svg.querySelectorAll(".tc-avg-line").forEach(ln => {
-        ln.animate([{ opacity: 0 }, { opacity: 0.6 }], { duration: 600, delay: 400, fill: "forwards" })
+        ln.animate([{ opacity: 0 }, { opacity: 0.92 }], { duration: 600, delay: 400, fill: "backwards" })
       })
       svg.querySelectorAll(".tc-pt, .tc-event, .tc-evt-badge").forEach(el => {
         el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, delay: 520, fill: "backwards" })
@@ -724,7 +771,6 @@ export default class extends Controller {
   _emphasize(slug) {
     if (!this.hasSvgTarget) return
     this.svgTarget.querySelectorAll(".tc-line, .tc-pt").forEach(el => {
-      if (el.dataset.slug === "__avg__") return
       const on = !slug || el.dataset.slug === slug
       el.classList.toggle("tc-dim", !on)
       el.classList.toggle("tc-focus", !!slug && on && el.classList.contains("tc-line"))
@@ -740,6 +786,17 @@ export default class extends Controller {
     const built = gm.built
     const metricLabel = METRIC_LABEL[this.metric] || ""
     const marketEvents = this._allMarketEvents || []
+
+    // Hover candidates: each model line plus the average line (if shown), in a
+    // uniform shape so the crosshair/tooltip treats them identically.
+    const hoverSeries = built.map(s => ({
+      slug: s.model.slug, name: s.model.name, color: s.color, pts: s.pts, avg: false
+    }))
+    if (this._avgSeries) {
+      hoverSeries.push({
+        slug: "__avg__", name: "Average", color: AVG_COLOR, pts: this._avgSeries, avg: true
+      })
+    }
 
     // ── Event marker hover ──
     if (etip) {
@@ -791,14 +848,14 @@ export default class extends Controller {
 
       // Nearest line by vertical distance at cursor x
       let best = null, bestD = Infinity
-      built.forEach(s => {
+      hoverSeries.forEach(s => {
         const ly = gm.y(valAt(s, t))
         const d = Math.abs(ly - py)
         if (d < bestD) { bestD = d; best = s }
       })
       if (!best) return
 
-      this._emphasize(best.model.slug)
+      this._emphasize(best.slug)
 
       const v = valAt(best, t)
       const ly = gm.y(v)
@@ -810,9 +867,10 @@ export default class extends Controller {
       hoverdot.setAttribute("fill", best.color)
       hoverdot.style.opacity = 1
 
+      const subLabel = best.avg ? "/1M " + metricLabel + " · avg" : "/1M " + metricLabel
       tip.innerHTML =
-        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${esc(best.model.name)}</div>` +
-        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> /1M ${esc(metricLabel)}</small></div>` +
+        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${esc(best.name)}</div>` +
+        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> ${esc(subLabel)}</small></div>` +
         `<div class="ttc-date">as of ${fmtAxisDate(t)}</div>`
       const tx = (px / gm.W) * r.width
       tip.style.left = tx + "px"
@@ -890,6 +948,12 @@ export default class extends Controller {
       avgLine.style.background = AVG_COLOR
       avgItem.appendChild(avgLine)
       avgItem.appendChild(document.createTextNode("Average"))
+
+      // % change of the average across the visible window (same badge the
+      // per-model legend rows use).
+      const avgDelta = this._changeBadge(this._avgSeries)
+      if (avgDelta) avgItem.appendChild(avgDelta)
+
       avgItem.addEventListener("mouseover", () => this._emphasize("__avg__"))
       avgItem.addEventListener("mouseout", () => this._emphasize(null))
       legend.appendChild(avgItem)
