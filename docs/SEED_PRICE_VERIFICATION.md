@@ -29,6 +29,17 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### Anthropic — `https://www.anthropic.com/pricing`
 
+> 2023 captures may show per-1K or per-character rates, or link out to a
+> pricing PDF (`www-cdn.anthropic.com/.../pricing.pdf`) — normalize to per-MTok.
+
+- [ ] **Snapshot ~2023-08-20** — <https://web.archive.org/web/20230820/https://www.anthropic.com/pricing>
+  - [ ] Claude 2: $11.02 in / $32.68 out (effective 2023-07-11)
+  - [ ] Claude Instant: $1.63 / $5.51 (effective 2023-08-09; seed dates it to the Instant 1.2 release)
+- [ ] **Snapshot ~2023-12-01** — <https://web.archive.org/web/20231201/https://www.anthropic.com/pricing>
+  - [ ] Claude 2.1: $8 / $24 (effective 2023-11-21)
+  - [ ] Claude Instant repriced: $0.80 / $2.40 (effective 2023-11-21 — date approximate, seeded as "alongside Claude 2.1"; if the capture disagrees, correct `on:`)
+- [ ] **Snapshot ~2025-03-01** — <https://web.archive.org/web/20250301/https://www.anthropic.com/pricing>
+  - [ ] Claude 3.7 Sonnet: $3 / $15 / $0.30 cached (effective 2025-02-24)
 - [ ] **Snapshot ~2025-06-01** — <https://web.archive.org/web/20250601/https://www.anthropic.com/pricing>
   - [ ] Claude Opus 4: $15 in / $75 out / $1.50 cached (effective 2025-05-22)
   - [ ] Claude Sonnet 4: $3 / $15 / $0.30 (effective 2025-05-22)
@@ -50,6 +61,17 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### OpenAI — `https://openai.com/api/pricing/`
 
+> Pre-Sep-2023 points live on the older `https://openai.com/pricing` page
+> (the `/api/pricing/` URL is newer), quoted per-1K tokens — multiply by 1,000.
+
+- [ ] **Snapshot ~2023-04-01** — <https://web.archive.org/web/20230401/https://openai.com/pricing>
+  - [ ] GPT-3.5 Turbo launch: $2 / $2 (effective 2023-03-01; page shows $0.002/1K flat)
+- [ ] **Snapshot ~2023-07-01** — <https://web.archive.org/web/20230701/https://openai.com/pricing>
+  - [ ] GPT-3.5 Turbo after input cut: $1.50 / $2 (effective 2023-06-13; page shows $0.0015/$0.002 per 1K)
+- [ ] **Snapshot ~2023-11-20** — <https://web.archive.org/web/20231120/https://openai.com/pricing>
+  - [ ] GPT-3.5 Turbo 1106: $1 / $2 (effective 2023-11-06; page shows $0.001/$0.002 per 1K)
+- [ ] **Snapshot ~2024-02-10** — <https://web.archive.org/web/20240210/https://openai.com/pricing>
+  - [ ] GPT-3.5 Turbo 0125: $0.50 / $1.50 (effective 2024-01-25; page shows $0.0005/$0.0015 per 1K)
 - [ ] **Snapshot ~2025-04-20** — <https://web.archive.org/web/20250420/https://openai.com/api/pricing/>
   - [ ] GPT-4.1: $2 / $8 / $0.50 (effective 2025-04-14)
   - [ ] GPT-4.1 Mini: $0.40 / $1.60 / $0.10 (effective 2025-04-14)
@@ -58,6 +80,7 @@ snapshot at a time — each snapshot verifies several rows at once.
   - [ ] o4-mini: $1.10 / $4.40 / $0.275 (effective 2025-04-16)
 - [ ] **Snapshot ~2025-06-15** — <https://web.archive.org/web/20250615/https://openai.com/api/pricing/>
   - [ ] o3 after 80% cut: $2 / $8 / $0.50 (effective 2025-06-10)
+  - [ ] o3-pro: $20 / $80, no cached rate seeded (effective 2025-06-10, launched alongside the o3 cut)
 - [ ] **Snapshot ~2025-08-10** — <https://web.archive.org/web/20250810/https://openai.com/api/pricing/>
   - [ ] GPT-5: $0.625 / $5 / $0.0625 (effective 2025-08-07)
 - [ ] **Snapshot ~2026-04-28** — <https://web.archive.org/web/20260428/https://openai.com/api/pricing/>
@@ -82,6 +105,8 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### xAI — `https://docs.x.ai` (models/pricing page)
 
+- [ ] **Snapshot ~2025-04-20** — <https://web.archive.org/web/20250420/https://docs.x.ai>
+  - [ ] Grok 3: $3 / $15 (effective 2025-04-09 — grok-3-beta API availability date; model previewed Feb 2025)
 - [ ] **Snapshot ~2025-07-15** — <https://web.archive.org/web/20250715/https://docs.x.ai>
   - [ ] Grok 4: $3 / $15 / $0.75 (effective 2025-07-09)
 - [ ] **Snapshot ~2025-11-25** — <https://web.archive.org/web/20251125/https://docs.x.ai>
@@ -95,6 +120,8 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### DeepSeek — `https://api-docs.deepseek.com` (pricing page)
 
+- [ ] **Snapshot ~2024-05-20** — <https://web.archive.org/web/20240520/https://api-docs.deepseek.com> (try also `platform.deepseek.com` — the docs domain may postdate V2)
+  - [ ] DeepSeek V2: $0.14 / $0.28 (effective 2024-05-06; seeded from the widely reported 1/2 RMB per MTok converted to USD — **flagged unverified in the seed**, this capture is the confirmation)
 - [ ] **Snapshot ~2025-02-01** — <https://web.archive.org/web/20250201/https://api-docs.deepseek.com>
   - [ ] DeepSeek R1: $0.55 / $2.19 / $0.14 (effective 2025-01-20)
 - [ ] **Snapshot ~2025-02-15** — <https://web.archive.org/web/20250215/https://api-docs.deepseek.com>
@@ -109,12 +136,35 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### Mistral — `https://mistral.ai/pricing`
 
+> Early captures live at `docs.mistral.ai/platform/pricing` and quote EUR —
+> the seed records the USD list rates that appeared in early 2024.
+
+- [ ] **Snapshot ~2024-03-10** — <https://web.archive.org/web/20240310/https://docs.mistral.ai/platform/pricing/>
+  - [ ] Mixtral 8x7B: $0.70 / $0.70 (effective 2023-12-11; **flagged unverified in the seed** — the Dec 2023 launch was EUR-priced (~€0.60/€1.80 as `mistral-small`), so if this capture's USD rate differs, correct the values or split into EUR-launch + USD-reprice points)
+  - [ ] Mistral 7B: $0.25 / $0.25 (effective 2023-12-11; **flagged unverified in the seed** — launched as `mistral-tiny` at ~€0.14/€0.42; same treatment as above)
+- [ ] **Snapshot ~2024-08-01** — <https://web.archive.org/web/20240801/https://mistral.ai/technology/#pricing>
+  - [ ] Mistral Large 2 launch: $3 / $9 (effective 2024-07-24)
+- [ ] **Snapshot ~2024-09-25** — <https://web.archive.org/web/20240925/https://mistral.ai/technology/#pricing>
+  - [ ] Mistral Large 2 after cut: $2 / $6 (effective 2024-09-17 — the "AI in abundance" release; cross-check <https://web.archive.org/web/20240925/https://mistral.ai/news/september-24-release/>)
 - [ ] **Snapshot ~2025-12-05** — <https://web.archive.org/web/20251205/https://mistral.ai/pricing>
   - [ ] Mistral Large 3: $0.50 / $1.50 (effective 2025-12-02)
 - [ ] **Snapshot ~2026-03-20** — <https://web.archive.org/web/20260320/https://mistral.ai/pricing>
   - [ ] Mistral Small 4: $0.15 / $0.60 (effective 2026-03-16)
 - [ ] **Snapshot ~2026-05-05** — <https://web.archive.org/web/20260505/https://mistral.ai/pricing>
   - [ ] Mistral Medium 3.5: $1.50 / $7.50 (effective 2026-04-29)
+
+### Cohere — `https://cohere.com/pricing`
+
+> Seeded as "Command R Plus" (slug `command-r-plus`) because the `+` in the
+> marketing name "Command R+" parameterizes away and would collide with
+> Command R's slug.
+
+- [ ] **Snapshot ~2024-04-15** — <https://web.archive.org/web/20240415/https://cohere.com/pricing>
+  - [ ] Command R+ launch: $3 / $15 (effective 2024-04-04)
+  - [ ] Command R launch: $0.50 / $1.50 (effective 2024-03-11)
+- [ ] **Snapshot ~2024-09-10** — <https://web.archive.org/web/20240910/https://cohere.com/pricing>
+  - [ ] Command R+ (08-2024 refresh): $2.50 / $10 (effective 2024-08-30; cross-check <https://web.archive.org/web/20240910/https://docs.cohere.com/changelog/command-gets-refreshed>)
+  - [ ] Command R (08-2024 refresh): $0.15 / $0.60 (effective 2024-08-30)
 
 ### Alibaba — `https://www.alibabacloud.com/help/en/model-studio/model-pricing`
 
@@ -136,6 +186,8 @@ snapshot at a time — each snapshot verifies several rows at once.
 
 ### Meta (open-weight, aggregator-sourced) — `https://pricepertoken.com`
 
+- [ ] **Snapshot ~2024-12-15** — <https://web.archive.org/web/20241215/https://pricepertoken.com>
+  - [ ] Llama 3.3 70B: $0.59 / $0.79 (effective 2024-12-06; representative hosted rate (Groq) — Together was $0.88 flat, DeepInfra ~$0.35 flat, so ±20% applies)
 - [ ] **Snapshot ~2025-04-15** — <https://web.archive.org/web/20250415/https://pricepertoken.com>
   - [ ] Llama 4 Maverick: $0.15 / $0.60 (effective 2025-04-05; "representative hosted rate")
   - [ ] Llama 4 Scout: $0.08 / $0.30 (effective 2025-04-05; DeepInfra rate)
@@ -192,4 +244,7 @@ Record mismatches here as you go, then fold them back into `db/seeds.rb`.
 
 | Model | Seed says | Snapshot shows | Capture date | Action |
 |---|---|---|---|---|
-| | | | | |
+| Mistral Large 2 | (was) $2/$6 at launch 2024-07-24 | Web sources (artificialanalysis.ai, docsbot.ai, mistral.ai/news/september-24-release) confirm $3/$9 at the 2024-07-24 launch, cut to $2/$6 in the 2024-09-17 "AI in abundance" release | n/a (Wayback blocked from this environment; confirmed via WebSearch, June 2026) | **Fixed** — seed now has two points: 2024-07-24 $3/$9 and 2024-09-17 $2/$6. Wayback double-check still welcome (Pass A Mistral snapshots above). |
+| DeepSeek V2 | $0.14/$0.28 (2024-05-06) | Not yet confirmed — figure is the widely reported 1/2 RMB per MTok converted | — | Seeded with note "unverified — confirm via Wayback"; see Pass A DeepSeek ~2024-05-20 snapshot. |
+| Mixtral 8x7B / Mistral 7B | $0.70/$0.70 and $0.25/$0.25 (2023-12-11) | USD rates confirmed for early-mid 2024 (helicone.ai, llmpricecheck.com list open-mixtral-8x7b $0.7/$0.7), but the Dec 2023 launch was EUR-priced — effective date of the USD rate unconfirmed | — | Seeded with note "unverified — confirm via Wayback"; may need an EUR-launch vs USD-reprice split. |
+| Claude Instant reprice | $0.80/$2.40 effective 2023-11-21 | Repricing confirmed (current Anthropic docs list $0.80/$2.40) but the exact effective date is assumed to coincide with Claude 2.1 | — | Seeded with "date approximate" note; confirm via the ~2023-12-01 Anthropic snapshot. |
