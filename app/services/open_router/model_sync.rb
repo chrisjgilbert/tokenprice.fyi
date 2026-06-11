@@ -30,7 +30,7 @@ module OpenRouter
     DEFAULT_TIER = "mid".freeze
 
     # Defensive cap on the free-text description we copy from an untrusted API.
-    DESCRIPTION_LIMIT = 2_000
+    DESCRIPTION_LIMIT = 10_000
 
     # Patterns for OpenRouter variant models that duplicate a versioned entry.
     LATEST_NAME_RE = /\blatest\b/i
