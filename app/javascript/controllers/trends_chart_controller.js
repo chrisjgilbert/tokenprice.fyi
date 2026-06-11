@@ -338,7 +338,7 @@ export default class extends Controller {
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
 
-    this._marketEvents = marketEvents
+    this._allMarketEvents = marketEvents
 
     const frag = document.createDocumentFragment()
     marketEvents.forEach((ev, i) => {
@@ -396,8 +396,8 @@ export default class extends Controller {
     const svg = this.svgTarget
 
     let idx = -1
-    if (this._marketEvents) {
-      this._marketEvents.forEach((e, i) => { if (e.date === dateStr) idx = i })
+    if (this._allMarketEvents) {
+      this._allMarketEvents.forEach((e, i) => { if (e.date === dateStr) idx = i })
     }
     if (idx < 0) return
 
@@ -470,10 +470,9 @@ export default class extends Controller {
 
     // Store for hover
     this._built = built
-    this._marketEvents = this._marketEvents || this.eventsValue.filter(e => e.kind === "market").sort((a, b) => a.date.localeCompare(b.date))
-    const marketEvents = this._marketEvents
+    const allMarketEvents = this._allMarketEvents || this.eventsValue.filter(e => e.kind === "market").sort((a, b) => a.date.localeCompare(b.date))
 
-    // ── Domains ──
+    // ── Domains (driven by model data only) ──
     let tMin = Infinity, tMax = -Infinity, vMax = -Infinity
     built.forEach(s => s.pts.forEach(p => {
       tMin = Math.min(tMin, p.t)
@@ -481,11 +480,13 @@ export default class extends Controller {
       vMax = Math.max(vMax, p.v)
     }))
     tMax = Math.max(tMax, nowUTC)
+
+    // Filter events to the visible model date range
+    const visibleEvents = []
     if (this.showEvents) {
-      marketEvents.forEach(e => {
+      allMarketEvents.forEach((e, globalIdx) => {
         const t = parseDateUTC(e.date)
-        tMin = Math.min(tMin, t)
-        tMax = Math.max(tMax, t)
+        if (t >= tMin && t <= tMax) visibleEvents.push({ event: e, globalIdx })
       })
     }
     const tPad = (tMax - tMin) * 0.03
@@ -519,9 +520,9 @@ export default class extends Controller {
 
     // ── Event dashed guide lines ──
     if (this.showEvents) {
-      marketEvents.forEach((e, i) => {
+      visibleEvents.forEach(({ event: e, globalIdx }) => {
         const ex = x(parseDateUTC(e.date))
-        g += `<line class="tc-event" x1="${ex.toFixed(1)}" y1="${padT - 10}" x2="${ex.toFixed(1)}" y2="${padT + iH}" data-evt="${i}"/>`
+        g += `<line class="tc-event" x1="${ex.toFixed(1)}" y1="${padT - 10}" x2="${ex.toFixed(1)}" y2="${padT + iH}" data-evt="${globalIdx}"/>`
       })
     }
 
@@ -570,12 +571,12 @@ export default class extends Controller {
     // ── Event marker badges (numbered, on top) ──
     if (this.showEvents) {
       let layer = ""
-      marketEvents.forEach((e, i) => {
+      visibleEvents.forEach(({ event: e, globalIdx }) => {
         const ex = x(parseDateUTC(e.date))
-        layer += `<g class="tc-evt-badge" data-evt="${i}">` +
+        layer += `<g class="tc-evt-badge" data-evt="${globalIdx}">` +
           `<circle class="tc-evt-hit" cx="${ex.toFixed(1)}" cy="16" r="17" fill="transparent"/>` +
           `<circle class="tc-evt-mark" cx="${ex.toFixed(1)}" cy="16" r="10"/>` +
-          `<text class="tc-evt-num" x="${ex.toFixed(1)}" y="16.5" text-anchor="middle" dominant-baseline="central">${i + 1}</text>` +
+          `<text class="tc-evt-num" x="${ex.toFixed(1)}" y="16.5" text-anchor="middle" dominant-baseline="central">${globalIdx + 1}</text>` +
           `</g>`
       })
       svg.insertAdjacentHTML("beforeend", layer)
@@ -627,7 +628,7 @@ export default class extends Controller {
     const etip = this.hasEventTooltipTarget ? this.eventTooltipTarget : null
     const built = gm.built
     const metricLabel = METRIC_LABEL[this.metric] || ""
-    const marketEvents = this._marketEvents || []
+    const marketEvents = this._allMarketEvents || []
 
     // ── Event marker hover ──
     if (etip) {
