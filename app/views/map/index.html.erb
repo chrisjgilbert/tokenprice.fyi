@@ -61,9 +61,10 @@
                data-action="mouseover->map#show mousemove->map#move mouseout->map#hide focus->map#show blur->map#hide"
                tabindex="0" role="link"
                aria-label="<%= entry[:name] %>: <%= pluralize(entry[:provider_count], "provider") %>, <%= pluralize(entry[:model_count], "model") %>. View in the price table.">
-              <path d="<%= c["d"] %>" fill="<%= country_fill(entry[:provider_count], @max_providers) %>" class="map-country on">
-                <title><%= entry[:name] %> — <%= pluralize(entry[:provider_count], "provider") %>, <%= pluralize(entry[:model_count], "model") %></title>
-              </path>
+              <%# No <title>: the <a aria-label> names the link for assistive tech,
+                  and the Stimulus hover card carries the detail — a native <title>
+                  here would double up with it. %>
+              <path d="<%= c["d"] %>" fill="<%= country_fill(entry[:provider_count], @max_providers) %>" class="map-country on"></path>
             </a>
           <% else %>
             <path d="<%= c["d"] %>" fill="<%= country_fill(0, @max_providers) %>" class="map-country"></path>
@@ -220,7 +221,6 @@
 .map-card {
   padding: 14px 14px 8px;
   background: linear-gradient(180deg, #fbfcff, #f4f6fc);
-  overflow: hidden;
   position: relative;
 }
 .map-svg { width: 100%; height: auto; display: block; }

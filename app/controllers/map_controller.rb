@@ -55,8 +55,7 @@ class MapController < ApplicationController
       frontier: c[:frontier_count],
       median:   c[:median_blended] ? helpers.usd_plain(c[:median_blended]) : "—",
       cheapest: c[:cheapest] && {
-        name: c[:cheapest].name,
-        io:   "#{helpers.usd_plain(c[:cheapest].current_input)} / #{helpers.usd_plain(c[:cheapest].current_output)}"
+        io: "#{helpers.usd_plain(c[:cheapest].current_input)} / #{helpers.usd_plain(c[:cheapest].current_output)}"
       }
     }
   end
