@@ -6,4 +6,10 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /LLM costs are decided in the dark/
   end
+
+  test "renders the which-model page" do
+    get which_model_url
+    assert_response :success
+    assert_select "h1"
+  end
 end

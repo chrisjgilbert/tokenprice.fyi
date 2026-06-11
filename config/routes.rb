@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   get "compare", to: "comparisons#show", as: :compare
   get "trends",  to: "trends#index",     as: :trends
   get "why",     to: "pages#why",        as: :why
+  get "which-model", to: "pages#which_model", as: :which_model
 
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
 
