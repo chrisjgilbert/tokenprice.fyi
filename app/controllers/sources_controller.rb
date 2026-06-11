@@ -1,14 +1,13 @@
 class SourcesController < ApplicationController
   # Every PricePoint stores a bare source string ("anthropic.com/pricing",
-  # "openrouter.ai", "scmp.com"). The attribution table buckets them by the
-  # leading domain: anything not recognised below is treated as first-party —
-  # a provider's own pricing page or announcement — which is the common case.
-  THIRD_PARTY_DOMAINS = %w[
-    openrouter.ai
-    pricepertoken.com
-    scmp.com
-    engadget.com
-    codersera.com
+  # "openrouter.ai", "scmp.com"). The attribution table buckets each one by its
+  # leading domain. First-party means the provider's own pricing page or
+  # announcement, recognised via the providers' website hosts (plus the few
+  # first-party domains that don't match, like Alibaba's cloud docs). Anything
+  # unrecognised lands in third-party — on an attribution page, mislabelling a
+  # press source as a provider's own page is the worse failure.
+  FIRST_PARTY_EXTRA_DOMAINS = %w[
+    alibabacloud.com
   ].freeze
 
   COMMUNITY_DOMAINS = %w[
@@ -48,8 +47,9 @@ class SourcesController < ApplicationController
       }
     end
 
+    first_party = first_party_domains
     @groups = GROUPS.filter_map do |group|
-      entries = sources.select { |s| bucket_for(s[:source]) == group[:key] }
+      entries = sources.select { |s| bucket_for(s[:source], first_party) == group[:key] }
                        .sort_by { |s| [ -s[:price_points], s[:source] ] }
       group.merge(sources: entries) if entries.any?
     end
@@ -61,11 +61,26 @@ class SourcesController < ApplicationController
 
   private
 
-  def bucket_for(source)
-    domain = source[%r{\A[^/]+}].to_s.downcase
-    return :community   if COMMUNITY_DOMAINS.include?(domain)
-    return :third_party if THIRD_PARTY_DOMAINS.include?(domain)
+  # The hosts of the providers' own websites ("www.anthropic.com" → "anthropic.com"),
+  # so "docs.x.ai" or "api-docs.deepseek.com" count as first-party by suffix.
+  def first_party_domains
+    hosts = Provider.pluck(:website).filter_map do |website|
+      URI.parse(website.to_s).host&.downcase&.delete_prefix("www.")
+    rescue URI::InvalidURIError
+      nil
+    end
+    hosts + FIRST_PARTY_EXTRA_DOMAINS
+  end
 
-    :first_party
+  def bucket_for(source, first_party)
+    domain = source[%r{\A[^/]+}].to_s.downcase
+    return :community   if domain_under?(domain, COMMUNITY_DOMAINS)
+    return :first_party if domain_under?(domain, first_party)
+
+    :third_party
+  end
+
+  def domain_under?(domain, domains)
+    domains.any? { |d| domain == d || domain.end_with?(".#{d}") }
   end
 end
