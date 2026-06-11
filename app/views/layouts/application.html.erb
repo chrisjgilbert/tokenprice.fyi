@@ -40,8 +40,6 @@
           <%= nav_link "Models", root_path, active: current_page?(root_path) %>
           <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
           <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
-          <%= nav_link "Which model?", which_model_path, active: current_page?(which_model_path) %>
-          <%= nav_link "Why", why_path, active: current_page?(why_path) %>
         </div>
         <span class="tp-nav-spacer"></span>
         <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
