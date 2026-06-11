@@ -16,23 +16,48 @@ class MapController < ApplicationController
     @max_providers     = @countries.map { |c| c[:provider_count] }.max || 0
     @leader            = @countries.first
     @unlocated         = providers.reject { |p| p.country_code.present? }
+
+    # Compact payload the Stimulus controller reads to render the hover card.
+    @countries_json = @countries.to_h { |c| [ c[:code], hover_card(c) ] }.to_json
   end
 
   private
 
   def build_country(code, provs)
-    models = provs.flat_map { |p| listed_models(p) }
+    models   = provs.flat_map { |p| listed_models(p) }
+    blendeds = models.filter_map(&:blended_per_mtok)
     cheapest = models.select { |m| m.blended_per_mtok }.min_by(&:blended_per_mtok)
 
     {
       code:           code,
       name:           provs.map(&:country).compact.first || code,
+      flag:           provs.first.flag_emoji,
       providers:      provs,
+      slugs:          provs.map(&:slug),
+      href:           root_path(providers: provs.map(&:slug)),
       provider_count: provs.size,
       models:         models,
       model_count:    models.size,
       frontier_count: models.count { |m| m.tier == "frontier" },
+      avg_blended:    blendeds.any? ? blendeds.sum / blendeds.size : nil,
       cheapest:       cheapest
+    }
+  end
+
+  # The hover-card fields, pre-formatted so the JS just slots them in.
+  def hover_card(c)
+    {
+      name:     c[:name],
+      flag:     c[:flag],
+      href:     c[:href],
+      providers: c[:provider_count],
+      models:   c[:model_count],
+      frontier: c[:frontier_count],
+      avg:      c[:avg_blended] ? helpers.usd_plain(c[:avg_blended]) : "—",
+      cheapest: c[:cheapest] && {
+        name: c[:cheapest].name,
+        io:   "#{helpers.usd_plain(c[:cheapest].current_input)} / #{helpers.usd_plain(c[:cheapest].current_output)}"
+      }
     }
   end
 

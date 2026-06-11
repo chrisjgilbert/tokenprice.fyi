@@ -41,7 +41,7 @@
   </div>
 
   <%# ── Map card ───────────────────────────────────────────────────────── %>
-  <div class="tp-card map-card">
+  <div class="tp-card map-card" data-controller="map" data-map-countries-value="<%= html_escape(@countries_json) %>">
     <svg
       class="map-svg"
       viewBox="<%= world_map_viewbox %>"
@@ -49,20 +49,30 @@
       role="img"
       aria-label="World map of AI providers by country"
     >
-      <%# Base layer: every country, shaded by provider count %>
+      <%# Base layer: every country, shaded by provider count. Countries with a
+          lab are real links into the filtered price table (work without JS);
+          Stimulus layers the hover card on top. %>
       <g class="map-land">
         <% world_map["countries"].each do |code, c| %>
           <% entry = @by_code[code] %>
-          <% count = entry ? entry[:provider_count] : 0 %>
-          <path
-            d="<%= c["d"] %>"
-            fill="<%= country_fill(count, @max_providers) %>"
-            class="map-country<%= ' on' if entry %>"
-          ><% if entry %><title><%= entry[:name] %> — <%= pluralize(entry[:provider_count], "provider") %>, <%= pluralize(entry[:model_count], "model") %></title><% end %></path>
+          <% if entry %>
+            <a href="<%= entry[:href] %>" data-turbo="false"
+               data-code="<%= code %>"
+               data-action="mouseover->map#show mousemove->map#move mouseout->map#hide focus->map#show blur->map#hide"
+               tabindex="0" role="link"
+               aria-label="<%= entry[:name] %>: <%= pluralize(entry[:provider_count], "provider") %>, <%= pluralize(entry[:model_count], "model") %>. View in the price table.">
+              <path d="<%= c["d"] %>" fill="<%= country_fill(entry[:provider_count], @max_providers) %>" class="map-country on">
+                <title><%= entry[:name] %> — <%= pluralize(entry[:provider_count], "provider") %>, <%= pluralize(entry[:model_count], "model") %></title>
+              </path>
+            </a>
+          <% else %>
+            <path d="<%= c["d"] %>" fill="<%= country_fill(0, @max_providers) %>" class="map-country"></path>
+          <% end %>
         <% end %>
       </g>
 
-      <%# Marker layer: provider counts at country centroids %>
+      <%# Marker layer: provider counts at country centroids (decorative — lets
+          hover/click fall through to the country link beneath). %>
       <g class="map-markers">
         <% @countries.each do |entry| %>
           <% c = world_map["countries"][entry[:code]] %>
@@ -74,6 +84,9 @@
         <% end %>
       </g>
     </svg>
+
+    <%# Hover/focus card, populated by the map Stimulus controller %>
+    <div class="map-tip" data-map-target="tooltip" aria-hidden="true"></div>
 
     <div class="map-legend">
       <span class="map-legend-label">Providers per country</span>
@@ -119,8 +132,12 @@
             <span class="map-cc-metric-val num"><%= c[:frontier_count] %></span>
             <span class="map-cc-metric-label">frontier</span>
           </div>
+          <div class="map-cc-metric">
+            <span class="map-cc-metric-val num"><%= usd(c[:avg_blended]) %></span>
+            <span class="map-cc-metric-label">avg I/O /1M</span>
+          </div>
           <% if c[:cheapest] %>
-            <div class="map-cc-metric map-cc-metric-cheap">
+            <div class="map-cc-metric">
               <span class="map-cc-metric-val"><%= link_to io_price(c[:cheapest], light: true), model_path(c[:cheapest]), style: "color:inherit;text-decoration:none" %></span>
               <span class="map-cc-metric-label">cheapest I/O</span>
             </div>
@@ -135,6 +152,11 @@
             <% end %>
           <% end %>
         </div>
+
+        <%= link_to c[:href], class: "map-cc-view", data: { turbo: false } do %>
+          View <%= pluralize(c[:model_count], "model") %> in the price table
+          <span aria-hidden="true">→</span>
+        <% end %>
       </div>
     <% end %>
   </div>
@@ -199,6 +221,7 @@
   padding: 14px 14px 8px;
   background: linear-gradient(180deg, #fbfcff, #f4f6fc);
   overflow: hidden;
+  position: relative;
 }
 .map-svg { width: 100%; height: auto; display: block; }
 .map-country {
@@ -210,7 +233,11 @@
   stroke: rgba(255,255,255,.95);
   stroke-width: 0.7;
 }
-.map-country.on:hover { fill: var(--color-indigo-700) !important; }
+.map-land a { cursor: pointer; outline: none; }
+.map-land a .map-country.on:hover,
+.map-land a:focus-visible .map-country.on { fill: var(--color-indigo-700) !important; }
+.map-land a:focus-visible .map-country.on { stroke: var(--color-indigo-900); stroke-width: 1.4; }
+.map-markers { pointer-events: none; }
 .map-marker circle {
   fill: #fff;
   stroke: var(--color-indigo-600);
@@ -277,11 +304,11 @@
 }
 
 .map-cc-meta {
-  display: flex; gap: 18px; padding-bottom: 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--color-slate-100); margin-bottom: 12px;
 }
 .map-cc-metric { display: flex; flex-direction: column; }
-.map-cc-metric-cheap { margin-left: auto; text-align: right; }
 .map-cc-metric-val {
   font-size: 15px; font-weight: 700; color: var(--color-slate-900);
   letter-spacing: -0.02em;
@@ -301,6 +328,36 @@
 .map-cc-prov:hover {
   border-color: var(--color-indigo-300); color: var(--color-indigo-700);
   background: var(--color-indigo-50);
+}
+
+.map-cc-view {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  font-size: 13px; font-weight: 600; color: var(--color-indigo-600);
+}
+.map-cc-view:hover { color: var(--color-indigo-700); gap: 9px; }
+.map-cc-view span { transition: transform .14s var(--ease-default); }
+
+/* ── Hover/focus card ────────────────────────────────────────────────── */
+.map-tip {
+  position: absolute; z-index: 8; top: 0; left: 0;
+  min-width: 190px; max-width: 250px;
+  background: #fff; border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: 13px 15px; pointer-events: none;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .13s var(--ease-default), transform .13s var(--ease-default);
+}
+.map-tip.visible { opacity: 1; transform: none; }
+.map-tip-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.map-tip-flag { font-size: 22px; line-height: 1; }
+.map-tip-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-slate-900); }
+.map-tip-sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-slate-400); margin-top: 1px; }
+.map-tip-rows { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.map-tip-k { font-size: 12px; color: var(--color-slate-500); }
+.map-tip-v { font-size: 12px; font-weight: 600; color: var(--color-slate-900); text-align: right; font-family: var(--font-mono); }
+.map-tip-cta {
+  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--color-slate-100);
+  font-size: 11.5px; font-weight: 600; color: var(--color-indigo-600);
 }
 
 .map-unlocated {

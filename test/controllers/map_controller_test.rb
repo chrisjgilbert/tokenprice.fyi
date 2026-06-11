@@ -14,6 +14,22 @@ class MapControllerTest < ActionDispatch::IntegrationTest
     assert_match "🇺🇸", response.body
   end
 
+  test "each country shows an average price" do
+    get map_url
+    assert_response :success
+    assert_select ".map-cc-metric-label", text: "avg I/O /1M", minimum: 2
+    # the hover payload the Stimulus controller reads carries it too
+    assert_select "[data-map-countries-value]"
+  end
+
+  test "countries deep-link into the filtered price table" do
+    get map_url
+    assert_response :success
+    # Anthropic is the US fixture provider — the US shape links to it.
+    assert_select "a[data-code=?][href*=?]", "US", "providers%5B%5D=anthropic"
+    assert_select "a.map-cc-view[href*=?]", "providers%5B%5D="
+  end
+
   test "lists providers without a country separately" do
     Provider.create!(name: "Stateless Labs")
     get map_url
