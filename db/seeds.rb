@@ -104,6 +104,36 @@ catalog = [
     description: "Fastest and most cost-effective Claude model. Pricing held flat since launch — no newer Haiku has been released.",
     prices: [ { on: "2025-10-15", in: 1, out: 5, cached: 0.10, src: "anthropic.com/pricing" } ]
   },
+  {
+    provider: :anthropic, name: "Claude 3.5 Sonnet", tier: "mid", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-06-20",
+    description: "Major quality leap — beat Claude 3 Opus at one-fifth the price. Updated Oct 2024 with computer use support.",
+    prices: [ { on: "2024-06-20", in: 3, out: 15, src: "anthropic.com/pricing" } ]
+  },
+  {
+    provider: :anthropic, name: "Claude 3.5 Haiku", tier: "small", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-10-22",
+    description: "Upgraded Haiku — significantly more capable than Claude 3 Haiku but priced higher at $0.80/$4.",
+    prices: [ { on: "2024-10-22", in: 0.80, out: 4, src: "anthropic.com/pricing" } ]
+  },
+  {
+    provider: :anthropic, name: "Claude 3 Opus", tier: "frontier", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
+    description: "Original Claude 3 flagship. $15/$75 price point held through Opus 4/4.1 until the 67% cut with Opus 4.5.",
+    prices: [ { on: "2024-03-04", in: 15, out: 75, src: "anthropic.com/pricing" } ]
+  },
+  {
+    provider: :anthropic, name: "Claude 3 Sonnet", tier: "mid", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
+    description: "Claude 3 mid-tier — established the $3/$15 price point that Sonnet has maintained across every subsequent generation.",
+    prices: [ { on: "2024-03-04", in: 3, out: 15, src: "anthropic.com/pricing" } ]
+  },
+  {
+    provider: :anthropic, name: "Claude 3 Haiku", tier: "small", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
+    description: "Ultra-cheap Claude at $0.25/$1.25 — staked out the fast-and-cheap tier against GPT-3.5 Turbo.",
+    prices: [ { on: "2024-03-04", in: 0.25, out: 1.25, src: "anthropic.com/pricing" } ]
+  },
 
   # ---- OpenAI -----------------------------------------------------------
   {
@@ -121,8 +151,8 @@ catalog = [
   {
     provider: :openai, name: "GPT-5", tier: "frontier", status: "legacy",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-08-07",
-    description: "Launched at commodity pricing ($0.625/$5) so low TechCrunch said it may spark a price war. Superseded by GPT-5.5.",
-    prices: [ { on: "2025-08-07", in: 0.625, out: 5, cached: 0.0625, src: "openai.com/api/pricing" } ]
+    description: "Launched at commodity pricing ($1.25/$10) so low TechCrunch said it may spark a price war. Superseded by GPT-5.5.",
+    prices: [ { on: "2025-08-07", in: 1.25, out: 10, cached: 0.125, src: "openai.com/api/pricing" } ]
   },
   {
     provider: :openai, name: "o3", tier: "frontier", status: "active",
@@ -156,6 +186,63 @@ catalog = [
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-14",
     description: "Cheapest OpenAI model — designed for classification, routing, and high-throughput extraction.",
     prices: [ { on: "2025-04-14", in: 0.10, out: 0.40, cached: 0.025, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "o3-mini", tier: "small", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2025-01-31",
+    description: "Efficient reasoning model. Replaced by o4-mini at the same price point.",
+    prices: [ { on: "2025-01-31", in: 1.10, out: 4.40, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "GPT-4.5", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2025-02-27",
+    description: "Brief ultra-premium experiment at $75/$150 — the most expensive API model ever offered. Quickly superseded.",
+    prices: [ { on: "2025-02-27", in: 75, out: 150, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "o1", tier: "frontier", status: "retired",
+    context_window: 200_000, max_output_tokens: nil, released_on: "2024-12-17",
+    description: "Full o1 release. Chain-of-thought tokens billed as output make effective costs 2–5× the list price.",
+    prices: [ { on: "2024-12-17", in: 15, out: 60, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "o1-mini", tier: "small", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-09-12",
+    description: "Budget reasoning model at one-fifth of o1's price.",
+    prices: [ { on: "2024-09-12", in: 3, out: 12, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "o1-preview", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-09-12",
+    description: "First reasoning model — introduced chain-of-thought billing where thinking tokens are charged as output.",
+    prices: [ { on: "2024-09-12", in: 15, out: 60, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "GPT-4o mini", tier: "small", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-18",
+    description: "Replaced GPT-3.5 Turbo at 60% lower cost with far better quality — ended the 3.5 era.",
+    prices: [ { on: "2024-07-18", in: 0.15, out: 0.60, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "GPT-4o", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-05-13",
+    description: "Halved GPT-4 Turbo pricing with multimodal support. Received a 50% input price cut in August 2024.",
+    prices: [
+      { on: "2024-05-13", in: 5, out: 15, src: "openai.com/api/pricing", note: "Launch pricing" },
+      { on: "2024-08-06", in: 2.50, out: 10, src: "openai.com/api/pricing", note: "50% input price cut" }
+    ]
+  },
+  {
+    provider: :openai, name: "GPT-4 Turbo", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2023-11-06",
+    description: "3× cheaper than GPT-4 with 128K context. Preview Nov 2023, GA April 2024.",
+    prices: [ { on: "2023-11-06", in: 10, out: 30, src: "openai.com/api/pricing" } ]
+  },
+  {
+    provider: :openai, name: "GPT-4", tier: "frontier", status: "retired",
+    context_window: 8_192, max_output_tokens: nil, released_on: "2023-03-14",
+    description: "Set the frontier pricing baseline at $30/$60 — 10× more than GPT-3.5 Turbo. 32K variant was $60/$120.",
+    prices: [ { on: "2023-03-14", in: 30, out: 60, src: "openai.com/api/pricing", note: "8K context; 32K variant was $60/$120" } ]
   },
 
   # ---- Google -----------------------------------------------------------
@@ -195,6 +282,36 @@ catalog = [
     description: "First Flash model with thinking. Flat pricing (no context tiers). Superseded by Gemini 3 Flash.",
     prices: [ { on: "2025-06-17", in: 0.30, out: 2.50, cached: 0.03, src: "ai.google.dev/gemini-api/docs/pricing" } ]
   },
+  {
+    provider: :google, name: "Gemini 2.0 Flash", tier: "mid", status: "retired",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-12-11",
+    description: "Experimental then GA — very competitive at $0.10/$0.40, cheaper than GPT-4o mini.",
+    prices: [ { on: "2024-12-11", in: 0.10, out: 0.40, src: "ai.google.dev/gemini-api/docs/pricing" } ]
+  },
+  {
+    provider: :google, name: "Gemini 1.5 Pro", tier: "frontier", status: "retired",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-02-15",
+    description: "Introduced the 1M-token context window. Launched at $7/$21; repriced twice to reach $1.25/$5 by late 2024.",
+    prices: [
+      { on: "2024-02-15", in: 7, out: 21, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing" },
+      { on: "2024-10-01", in: 1.25, out: 5, src: "ai.google.dev/gemini-api/docs/pricing", note: "Price cut to $1.25/$5 for ≤128K context tier" }
+    ]
+  },
+  {
+    provider: :google, name: "Gemini 1.5 Flash", tier: "mid", status: "retired",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-05-14",
+    description: "Budget model with 1M context. Launched at $0.35/$1.05 at Google I/O; slashed 78% in August 2024 to undercut GPT-4o mini.",
+    prices: [
+      { on: "2024-05-14", in: 0.35, out: 1.05, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch pricing at Google I/O" },
+      { on: "2024-08-12", in: 0.075, out: 0.30, src: "ai.google.dev/gemini-api/docs/pricing", note: "78% input price cut" }
+    ]
+  },
+  {
+    provider: :google, name: "Gemini 1.0 Pro", tier: "frontier", status: "retired",
+    context_window: 32_000, max_output_tokens: nil, released_on: "2023-12-06",
+    description: "Initial Gemini launch — competitive with GPT-3.5 Turbo at $0.50/$1.50.",
+    prices: [ { on: "2023-12-06", in: 0.50, out: 1.50, src: "ai.google.dev/gemini-api/docs/pricing" } ]
+  },
 
   # ---- xAI --------------------------------------------------------------
   {
@@ -226,6 +343,18 @@ catalog = [
     context_window: 2_000_000, max_output_tokens: 64_000, released_on: "2025-11-19",
     description: "Low-cost, fast Grok variant with 2M context. Retired May 15, 2026; traffic redirected to Grok 4.3.",
     prices: [ { on: "2025-11-19", in: 0.20, out: 0.50, cached: 0.05, src: "docs.x.ai" } ]
+  },
+  {
+    provider: :xai, name: "Grok 3 Mini", tier: "small", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2025-06-10",
+    description: "Budget Grok at $0.30/$0.50 — undercut o1-mini by 10× on input. Superseded by Grok 4.1 Fast.",
+    prices: [ { on: "2025-06-10", in: 0.30, out: 0.50, src: "docs.x.ai", note: "API availability date; model previewed Feb 2025" } ]
+  },
+  {
+    provider: :xai, name: "Grok 2", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-08-13",
+    description: "xAI's first API model at $2/$10 — established the Grok pricing baseline.",
+    prices: [ { on: "2024-08-13", in: 2, out: 10, src: "docs.x.ai" } ]
   },
 
   # ---- DeepSeek ---------------------------------------------------------
@@ -274,6 +403,19 @@ catalog = [
     prices: [ { on: "2025-04-05", in: 0.08, out: 0.30, src: "pricepertoken.com", note: "Representative hosted rate (DeepInfra); varies by provider" } ]
   },
   {
+    provider: :meta, name: "Llama 3.1 405B", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-23",
+    description: "Largest open-weight model at launch — GPT-4-class quality that anchored hosted pricing expectations lower.",
+    prices: [ { on: "2024-07-23", in: 3, out: 3, src: "pricepertoken.com", note: "Representative hosted rate (Together AI); varies by provider" } ]
+  },
+  {
+    provider: :meta, name: "Llama 3 70B", tier: "mid", status: "retired",
+    context_window: 8_192, max_output_tokens: nil, released_on: "2024-04-18",
+    description: "Meta's first widely hosted open-weight model — pushed hosted LLM pricing below $1/MTok.",
+    prices: [ { on: "2024-04-18", in: 0.59, out: 0.79, src: "pricepertoken.com", note: "Representative hosted rate (Together/Fireworks); varies by provider" } ]
+  },
+
+  {
     provider: :mistral, name: "Mistral Medium 3.5", tier: "mid", status: "active",
     context_window: 128_000, max_output_tokens: nil, released_on: "2026-04-29",
     description: "Consolidated model folding Medium 3.1, Magistral reasoning, and Devstral 2 into one set of weights with a per-request reasoning toggle.",
@@ -290,6 +432,18 @@ catalog = [
     context_window: 262_000, max_output_tokens: nil, released_on: "2026-03-16",
     description: "Fast, cost-effective model for high-volume and latency-sensitive workloads.",
     prices: [ { on: "2026-03-16", in: 0.15, out: 0.60, src: "mistral.ai/pricing" } ]
+  },
+  {
+    provider: :mistral, name: "Mistral Large 2", tier: "frontier", status: "retired",
+    context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-24",
+    description: "Significant price cut from Large v1 ($8/$24 → $2/$6). Superseded by Large 3 at 75% lower cost.",
+    prices: [ { on: "2024-07-24", in: 2, out: 6, src: "mistral.ai/pricing" } ]
+  },
+  {
+    provider: :mistral, name: "Mistral Large", tier: "frontier", status: "retired",
+    context_window: 32_000, max_output_tokens: nil, released_on: "2024-02-26",
+    description: "Mistral's initial flagship at $8/$24 — quickly superseded by Large 2 at 75% lower pricing.",
+    prices: [ { on: "2024-02-26", in: 8, out: 24, src: "mistral.ai/pricing" } ]
   },
   {
     provider: :alibaba, name: "Qwen 3.7 Max", tier: "frontier", status: "active",
@@ -605,6 +759,10 @@ end
 # Market Events — curated industry milestones for Trends overlays
 # ---------------------------------------------------------------------------
 market_events = [
+  { title: "GPT-4 sets the frontier price", event_date: "2023-03-14",
+    note: "GPT-4 launches at $30/$60 per MTok — 10× the cost of GPT-3.5 Turbo, establishing the first frontier pricing baseline." },
+  { title: "GPT-4 Turbo: 3× cheaper", event_date: "2023-11-06",
+    note: "GPT-4 Turbo launches at $10/$30 with 128K context, cutting the frontier price by two-thirds and kicking off a year of rapid cuts." },
   { title: "Mixtral 8x7B goes open-weight", event_date: "2023-12-11",
     note: "Mistral releases Mixtral 8x7B under Apache 2.0 — GPT-3.5-class quality anyone can host, setting a price floor under proprietary small models." },
   { title: "OpenAI cuts GPT-3.5 Turbo 50%", event_date: "2024-01-25",
@@ -629,7 +787,9 @@ market_events = [
     note: "Gemini 1.5 Flash drops 78% on input / 71% on output to $0.075/$0.30 per 1M, undercutting GPT-4o mini by half." },
   { title: "Anthropic ships prompt caching", event_date: "2024-08-14",
     note: "Cached input tokens cost 90% less on Claude, making long-system-prompt and RAG workloads dramatically cheaper." },
-  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-09-24",
+  { title: "o1 creates reasoning price tier", event_date: "2024-09-12",
+    note: "OpenAI's o1-preview launches at $15/$60 — a new pricing category where chain-of-thought tokens make effective costs 2–5× the list price." },
+  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-10-01",
     note: "Google cuts Gemini 1.5 Pro to $1.25/$5.00 per 1M on prompts under 128K — the flagship tier joins the price war." },
   { title: "OpenAI caching: auto 50% off", event_date: "2024-10-01",
     note: "DevDay brings automatic prompt caching — a no-code 50% discount on recently seen input tokens across GPT-4o and o1 models." },
@@ -637,12 +797,14 @@ market_events = [
     note: "DeepSeek releases a GPT-4o-class open model priced around $0.27/$1.10 per 1M, previewing the shock R1 would deliver a month later." },
   { title: "The DeepSeek moment", event_date: "2025-01-20",
     note: "DeepSeek R1 ships near-frontier reasoning at ~1/20th the price. Markets jolt; pricing pressure spikes industry-wide." },
+  { title: "GPT-4.5: ultra-premium experiment", event_date: "2025-02-27",
+    note: "OpenAI tests $75/$150 pricing with GPT-4.5 — the most expensive API model ever offered. Quickly superseded by cheaper, better models." },
   { title: "Long-context goes cheap", event_date: "2025-04-14",
     note: "GPT-4.1 lands a 1M-token window at mid-tier pricing, matching Gemini on context economics." },
   { title: "o3 price cut 80%", event_date: "2025-06-10",
     note: "OpenAI slashes o3 by 80% ($10→$2/1M input), making frontier reasoning mainstream-affordable." },
   { title: "GPT-5 sparks price war", event_date: "2025-08-07",
-    note: "GPT-5 launches at commodity pricing ($0.625/$5) — TechCrunch calls it a price-war trigger." },
+    note: "GPT-5 launches at commodity pricing ($1.25/$10) — TechCrunch calls it a price-war trigger." },
   { title: "Qwen3 Max halved in price war", event_date: "2025-11-14",
     note: "Alibaba cuts Qwen3 Max roughly 50% as China's AI price war reignites, pressuring domestic and global rivals alike." },
   { title: "Opus gets 67% cheaper", event_date: "2025-11-24",
