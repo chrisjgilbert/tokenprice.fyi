@@ -352,12 +352,6 @@ export default class extends Controller {
       row.className = "trends-event-row"
       row.dataset.eventDate = ev.date
 
-      const num = document.createElement("span")
-      num.className = "trends-event-num"
-      num.textContent = i + 1
-
-      const body = document.createElement("span")
-
       const title = document.createElement("span")
       title.className = "trends-event-title"
       title.textContent = ev.title
@@ -370,12 +364,9 @@ export default class extends Controller {
       date.className = "trends-event-date"
       date.textContent = fmtDateFullFromISO(ev.date)
 
-      body.appendChild(title)
-      body.appendChild(note)
-      body.appendChild(date)
-
-      row.appendChild(num)
-      row.appendChild(body)
+      row.appendChild(title)
+      row.appendChild(note)
+      row.appendChild(date)
 
       row.addEventListener("click", () => {
         if (row.classList.contains("out-of-range")) return
@@ -576,15 +567,14 @@ export default class extends Controller {
     overlay.style.cursor = "crosshair"
     svg.appendChild(overlay)
 
-    // ── Event marker badges (numbered, on top) ──
+    // ── Event marker badges (on top) ──
     if (this.showEvents) {
       let layer = ""
       visibleEvents.forEach(({ event: e, globalIdx }) => {
         const ex = x(parseDateUTC(e.date))
         layer += `<g class="tc-evt-badge" data-evt="${globalIdx}">` +
           `<circle class="tc-evt-hit" cx="${ex.toFixed(1)}" cy="16" r="17" fill="transparent"/>` +
-          `<circle class="tc-evt-mark" cx="${ex.toFixed(1)}" cy="16" r="10"/>` +
-          `<text class="tc-evt-num" x="${ex.toFixed(1)}" y="16.5" text-anchor="middle" dominant-baseline="central">${globalIdx + 1}</text>` +
+          `<circle class="tc-evt-mark" cx="${ex.toFixed(1)}" cy="16" r="5"/>` +
           `</g>`
       })
       svg.insertAdjacentHTML("beforeend", layer)
@@ -658,7 +648,7 @@ export default class extends Controller {
 
         const show = () => {
           etip.innerHTML =
-            `<div class="et-kind et-market">Market event · #${+badge.dataset.evt + 1}</div>` +
+            `<div class="et-kind et-market">Market event</div>` +
             `<div class="et-title">${esc(e.title)}</div>` +
             `<div class="et-date">${fmtDateFullFromISO(e.date)}</div>` +
             `<div class="et-note">${esc(e.note || "")}</div>`
