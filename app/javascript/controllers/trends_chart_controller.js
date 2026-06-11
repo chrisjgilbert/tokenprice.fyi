@@ -836,6 +836,24 @@ export default class extends Controller {
     return v.toFixed(2).replace(/\.?0+$/, "")
   }
 
+  // % change badge from the first to the last visible point of a series.
+  // Returns null when there's no meaningful move to show.
+  _changeBadge(pts) {
+    if (!pts || pts.length < 2) return null
+    const first = pts[0].v, last = pts[pts.length - 1].v
+    if (!(first > 0) || first === last) return null
+
+    const pct = ((last - first) / first) * 100
+    const up = pct > 0
+    const mag = Math.abs(pct).toFixed(1)
+    const badge = document.createElement("span")
+    badge.className = "trends-legend-delta " + (up ? "up" : "down")
+    badge.textContent = (up ? "+" : "−") + mag + "%"
+    // Direction is colour-coded; spell it out for assistive tech.
+    badge.setAttribute("aria-label", (up ? "up " : "down ") + mag + " percent over the visible range")
+    return badge
+  }
+
   // ── Legend ───────────────────────────────────────────────────────────────────
   _renderLegend() {
     if (!this.hasLegendTarget) return
@@ -843,7 +861,7 @@ export default class extends Controller {
     legend.innerHTML = ""
 
     const built = this._built || []
-    built.forEach(({ model: m, color }) => {
+    built.forEach(({ model: m, color, pts }) => {
       const item = document.createElement("span")
       item.className = "trends-legend-item"
       item.dataset.slug = m.slug
@@ -853,6 +871,10 @@ export default class extends Controller {
       line.style.background = color
       item.appendChild(line)
       item.appendChild(document.createTextNode(m.name))
+
+      // % change across the visible window (respects the time-range selector).
+      const delta = this._changeBadge(pts)
+      if (delta) item.appendChild(delta)
 
       item.addEventListener("mouseover", () => this._emphasize(m.slug))
       item.addEventListener("mouseout", () => this._emphasize(null))

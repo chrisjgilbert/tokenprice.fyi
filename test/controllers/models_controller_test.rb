@@ -18,6 +18,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index can be sorted by change since launch and renders delta badges" do
+    get root_url(sort: "change", dir: "asc")
+    assert_response :success
+    assert_select "th.sort-active", text: /since launch/i
+    # DeepSeek V4 Pro's 75% cut renders as a delta pill in the new column.
+    assert_select ".tp-delta", minimum: 1
+  end
+
   test "index can be filtered to a single provider" do
     get root_url(providers: [ "anthropic" ])
     assert_response :success
@@ -85,7 +93,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 8
+    assert_select "thead a[data-turbo-frame=models]", count: 9
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
