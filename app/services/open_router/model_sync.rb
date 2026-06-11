@@ -95,7 +95,7 @@ module OpenRouter
       "cohere"          => { country: "Canada",               country_code: "CA" },
       "inception"       => { country: "United Arab Emirates", country_code: "AE" },
       "rekaai"          => { country: "Singapore",            country_code: "SG" },
-      "upstage"         => { country: "South Korea",          country_code: "KR" },
+      "upstage"         => { country: "South Korea",          country_code: "KR" }
     }.freeze
 
     Result = Struct.new(:created, :enriched, :repriced, :skipped, keyword_init: true) do
