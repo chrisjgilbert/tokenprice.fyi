@@ -29,9 +29,15 @@ namespace :backfill do
     # fallbacks for eras before/after the alias existed. Google ids use the
     # "gemini/" prefix (AI Studio pricing) — the bare ids are Vertex.
     #
-    # Seed models with no usable LiteLLM id (verified against HEAD, 2026-06-11):
+    # Retired models get deleted from LiteLLM's HEAD, so ids must be checked
+    # against historical snapshots too, not just the current file — the dead
+    # models are the whole point of the backfill.
+    #
+    # Seed models with no usable LiteLLM id (HEAD + historical spot-checks,
+    # 2026-06-11):
     #   deepseek-v4-pro, deepseek-v4-flash — direct-API ids never added (only a
     #     third-party tensormesh host entry exists)
+    #   deepseek-v2        — predates LiteLLM carrying DeepSeek at all
     #   qwen-3-7-max       — Qwen 3.7 Max not in the catalog
     #   grok-build-0-1     — not in the catalog
     #   mistral-medium-3-5 — no distinct id; mistral-medium-latest drifts across
@@ -63,9 +69,15 @@ namespace :backfill do
       "claude-3-5-sonnet-latest"   => "claude-3-5-sonnet",
       "claude-3-5-haiku-20241022"  => "claude-3-5-haiku",
       "claude-3-5-haiku-latest"    => "claude-3-5-haiku",
+      "claude-3-7-sonnet-20250219" => "claude-3-7-sonnet",
+      "claude-3-7-sonnet-latest"   => "claude-3-7-sonnet",
       "claude-3-opus-20240229"     => "claude-3-opus",
       "claude-3-sonnet-20240229"   => "claude-3-sonnet",
       "claude-3-haiku-20240307"    => "claude-3-haiku",
+      "claude-2.1"                 => "claude-2-1",
+      "claude-2"                   => "claude-2",
+      "claude-instant-1.2"         => "claude-instant",
+      "claude-instant-1"           => "claude-instant",
 
       # ---- OpenAI ---------------------------------------------------------
       "gpt-5.5-pro"        => "gpt-5-5-pro",
@@ -78,6 +90,7 @@ namespace :backfill do
       "gpt-4.1-nano"       => "gpt-4-1-nano",
       "o3-mini"            => "o3-mini",
       "gpt-4.5-preview"    => "gpt-4-5",
+      "o3-pro"             => "o3-pro",
       "o1"                 => "o1",
       "o1-mini"            => "o1-mini",
       "o1-preview"         => "o1-preview",
@@ -86,6 +99,9 @@ namespace :backfill do
       "gpt-4-turbo"        => "gpt-4-turbo",
       "gpt-4-1106-preview" => "gpt-4-turbo",
       "gpt-4"              => "gpt-4",
+      "gpt-3.5-turbo"      => "gpt-3-5-turbo",
+      "gpt-3.5-turbo-0125" => "gpt-3-5-turbo",
+      "gpt-3.5-turbo-1106" => "gpt-3-5-turbo",
 
       # ---- Google (AI Studio "gemini/" ids, not Vertex) --------------------
       "gemini/gemini-3.1-pro-preview" => "gemini-3-1-pro",
@@ -110,6 +126,8 @@ namespace :backfill do
       "xai/grok-4-1-fast"             => "grok-4-1-fast",
       "xai/grok-3-mini"               => "grok-3-mini",
       "xai/grok-3-mini-beta"          => "grok-3-mini",
+      "xai/grok-3"                    => "grok-3",
+      "xai/grok-3-beta"               => "grok-3",
       "xai/grok-2-1212"               => "grok-2",
       "xai/grok-2"                    => "grok-2",
       "xai/grok-beta"                 => "grok-2",
@@ -126,6 +144,7 @@ namespace :backfill do
       "deepinfra/meta-llama/Llama-4-Scout-17B-16E-Instruct"           => "llama-4-scout",
       "together_ai/meta-llama/Llama-4-Scout-17B-16E-Instruct"         => "llama-4-scout",
       "together_ai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"     => "llama-3-1-405b",
+      "groq/llama-3.3-70b-versatile"                                  => "llama-3-3-70b",
       "openrouter/meta-llama/llama-3-70b-instruct"                    => "llama-3-70b",
 
       # ---- Mistral ----------------------------------------------------------
@@ -133,6 +152,15 @@ namespace :backfill do
       "mistral/mistral-large-2512" => "mistral-large-3",
       "mistral/mistral-large-2407" => "mistral-large-2",
       "mistral/mistral-large-2402" => "mistral-large",
+      "mistral/open-mixtral-8x7b"  => "mixtral-8x7b",
+      "mistral/open-mistral-7b"    => "mistral-7b",
+
+      # ---- Cohere (the -08-2024 ids lead so the August refresh registers as
+      # a change on the marketing line; the originals kept launch pricing) ----
+      "command-r-plus-08-2024"     => "command-r-plus",
+      "command-r-plus"             => "command-r-plus",
+      "command-r-08-2024"          => "command-r",
+      "command-r"                  => "command-r",
 
       # ---- Alibaba / Moonshot ----------------------------------------------
       "dashscope/qwen3-max"            => "qwen3-max",
@@ -161,6 +189,12 @@ namespace :backfill do
       "gpt-4-5" => "2025-02-27", "o1" => "2024-12-17", "o1-mini" => "2024-09-12",
       "o1-preview" => "2024-09-12", "gpt-4o-mini" => "2024-07-18",
       "gpt-4o" => "2024-05-13", "gpt-4-turbo" => "2023-11-06", "gpt-4" => "2023-03-14",
+      "gpt-3-5-turbo" => "2023-03-01", "o3-pro" => "2025-06-10",
+      "claude-3-7-sonnet" => "2025-02-24", "claude-2-1" => "2023-11-21",
+      "claude-2" => "2023-07-11", "claude-instant" => "2023-03-14",
+      "grok-3" => "2025-04-09", "command-r-plus" => "2024-04-04",
+      "command-r" => "2024-03-11", "llama-3-3-70b" => "2024-12-06",
+      "mixtral-8x7b" => "2023-12-11", "mistral-7b" => "2023-09-27",
       "gemini-3-1-pro" => "2026-02-19", "gemini-3-pro" => "2025-11-18",
       "gemini-2-5-pro" => "2025-06-17", "gemini-3-5-flash" => "2026-05-19",
       "gemini-3-flash" => "2025-12-17", "gemini-2-5-flash" => "2025-06-17",
@@ -181,7 +215,7 @@ namespace :backfill do
 
     git = ->(*args) do
       out, err, status = Open3.capture3("git", "-C", clone, *args)
-      [out, err, status.success?]
+      [ out, err, status.success? ]
     end
 
     # Sample the history: last commit per ISO week is plenty — prices don't flap.
@@ -190,7 +224,7 @@ namespace :backfill do
     commits = log.lines.map(&:split)
     samples = commits.each_with_object({}) do |(sha, date), weeks|
       d = Date.parse(date)
-      weeks[[d.cwyear, d.cweek]] = [sha, d] # chronological input — last in week wins
+      weeks[[ d.cwyear, d.cweek ]] = [ sha, d ] # chronological input — last in week wins
     end.values
     puts "#{commits.size} commits touching #{pricing_file}; sampling #{samples.size} weekly snapshots (#{samples.first.last} → #{samples.last.last})"
 
@@ -224,14 +258,14 @@ namespace :backfill do
       blob, err, ok = git.call("show", "#{sha}:#{pricing_file}")
       unless ok
         warn "\nWARN #{date}: blob fetch failed (#{err.lines.first&.strip}) — skipping"
-        skipped << [date, "fetch failed"]
+        skipped << [ date, "fetch failed" ]
         next
       end
       begin
         json = JSON.parse(blob)
       rescue JSON::ParserError => e
         warn "\nWARN #{date}: malformed JSON (#{e.message[0, 60]}) — skipping"
-        skipped << [date, "malformed JSON"]
+        skipped << [ date, "malformed JSON" ]
         next
       end
 
@@ -247,6 +281,13 @@ namespace :backfill do
       end
     end
     puts
+
+    # A blob-less clone fetches lazily over the network, so an offline run can
+    # "succeed" while skipping everything — refuse to replace a good artifact
+    # with a hollow one.
+    if skipped.size > samples.size / 10
+      abort "Refusing to write #{artifact}: #{skipped.size}/#{samples.size} snapshots skipped — the change log would be misleadingly empty"
+    end
 
     # Preserve the hand-curated analysis section across reruns.
     candidates_block = if File.exist?(artifact) && File.read(artifact) =~ /(<!-- BEGIN CANDIDATES -->.*<!-- END CANDIDATES -->)/m
@@ -278,11 +319,12 @@ namespace :backfill do
 
     PREAMBLE
     mapping.values.uniq.each do |slug|
-      next if rows[slug].empty?
+      slug_rows = rows.fetch(slug, []) # rows[slug] would insert via the default proc and mask missing models
+      next if slug_rows.empty?
       out << "### #{slug}\n\n"
       out << "| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |\n"
       out << "|---|---|---|---|---|---|\n"
-      out << rows[slug].join("\n") << "\n\n"
+      out << slug_rows.join("\n") << "\n\n"
     end
     missing = mapping.values.uniq - rows.keys
     out << "_Mapped but never seen in the sampled history: #{missing.map { |s| "`#{s}`" }.join(', ')}._\n" if missing.any?
