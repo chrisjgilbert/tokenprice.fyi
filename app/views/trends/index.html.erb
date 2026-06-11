@@ -50,7 +50,7 @@
       <div class="tp-card trends-sidebar-card">
         <div class="trends-card-inner">
           <span class="tp-field-label">
-            Models&nbsp;<span class="trends-sel-count" data-trends-chart-target="selCount">·&nbsp;<span class="trends-sel-n">0</span></span>
+            Models&nbsp;<span class="trends-sel-count" data-trends-chart-target="selCount" style="display:none">·&nbsp;<span class="trends-sel-n">0</span></span>
           </span>
           <div class="trends-model-list" data-trends-chart-target="modelList">
             <%# Populated by Stimulus from JSON %>
@@ -87,6 +87,8 @@
               class="tp-btn tp-btn-ghost tp-btn-sm"
               data-action="click->trends-chart#toggleEventsPopover"
               data-trends-chart-target="eventsPopoverBtn"
+              aria-haspopup="dialog"
+              aria-expanded="false"
             >
               <%= icon(:calendar) %>
               Market events
@@ -297,8 +299,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 22px;
-  border-bottom: 1px solid var(--color-slate-100);
+  padding: 14px 22px 8px;
   flex-wrap: wrap;
 }
 .trends-toolbar-left {
@@ -358,12 +359,21 @@
 }
 .trends-toggle.on .trends-toggle-knob { transform: translateX(15px); }
 
+/* Market events button override */
+.trends-toolbar .tp-btn-sm {
+  border-radius: var(--radius-md);
+}
+.trends-toolbar .tp-btn-ghost[aria-expanded="true"] {
+  border-color: var(--color-indigo-400);
+  background: var(--color-indigo-50);
+  color: var(--color-indigo-700);
+}
+
 /* Events popover */
 .trends-events-popover-wrap {
   position: relative;
 }
 .trends-events-popover {
-  display: none;
   position: absolute;
   top: calc(100% + 9px);
   right: 0;
@@ -375,8 +385,16 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px) scale(.99);
+  pointer-events: none;
+  transition: opacity .16s var(--ease-default), transform .16s var(--ease-default);
 }
-.trends-events-popover.open { display: block; }
+.trends-events-popover.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
 .trends-popover-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--color-slate-200);

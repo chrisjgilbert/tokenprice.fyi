@@ -38,26 +38,26 @@ function svgEl(tag, attrs = {}) {
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
 const DAY = 86400000
-function parseDate(s) { return new Date(s + "T00:00:00Z") }
 function parseDateUTC(iso) {
   const [y, m, d] = iso.split("-").map(Number)
   return Date.UTC(y, m - 1, d)
-}
-function fmtMonthYear(d) {
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })
 }
 function fmtAxisDate(t) {
   const d = new Date(t)
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   return months[d.getUTCMonth()] + " '" + String(d.getUTCFullYear()).slice(2)
 }
-function fmtDateFull(d) {
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
-}
 function fmtDateFullFromISO(iso) {
   const [y, m, d] = iso.split("-").map(Number)
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   return months[m - 1] + " " + d + ", " + y
+}
+
+// ── HTML escape ──────────────────────────────────────────────────────────────
+function esc(s) {
+  const el = document.createElement("span")
+  el.textContent = s
+  return el.innerHTML
 }
 
 // ── Price formatter ──────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ export default class extends Controller {
         price.className = "trends-model-price"
         const lastPp = m.history[m.history.length - 1]
         if (lastPp) {
-          price.textContent = fmtPrice(lastPp.input) + " / " + fmtPrice(lastPp.output)
+          price.innerHTML = fmtPrice(lastPp.input) + '<span style="color:var(--color-slate-300)">/</span>' + fmtPrice(lastPp.output)
         }
 
         row.appendChild(swatch)
@@ -306,13 +306,24 @@ export default class extends Controller {
   toggleEventsPopover(event) {
     event.stopPropagation()
     if (!this.hasEventsPopoverTarget) return
-    this.eventsPopoverTarget.classList.toggle("open")
+    const open = !this.eventsPopoverTarget.classList.contains("open")
+    this.eventsPopoverTarget.classList.toggle("open", open)
+    if (this.hasEventsPopoverBtnTarget) {
+      this.eventsPopoverBtnTarget.setAttribute("aria-expanded", open ? "true" : "false")
+    }
+  }
+
+  _closePopover() {
+    this._closePopover()
+    if (this.hasEventsPopoverBtnTarget) {
+      this.eventsPopoverBtnTarget.setAttribute("aria-expanded", "false")
+    }
   }
 
   _onOutsideClick(event) {
     if (!this.hasEventsPopoverWrapTarget) return
     if (!this.eventsPopoverWrapTarget.contains(event.target)) {
-      this.eventsPopoverTarget?.classList.remove("open")
+      this._closePopover()
     }
   }
 
@@ -361,7 +372,7 @@ export default class extends Controller {
       row.appendChild(body)
 
       row.addEventListener("click", () => {
-        this.eventsPopoverTarget?.classList.remove("open")
+        this._closePopover()
         if (!this.showEvents) {
           this.showEvents = true
           if (this.hasEventsToggleTarget) {
@@ -431,7 +442,6 @@ export default class extends Controller {
 
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`)
 
-    const now = Date.now()
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
     const nowUTC = today.getTime()
@@ -628,9 +638,9 @@ export default class extends Controller {
         const show = () => {
           etip.innerHTML =
             `<div class="et-kind et-market">Market event · #${+badge.dataset.evt + 1}</div>` +
-            `<div class="et-title">${e.title}</div>` +
+            `<div class="et-title">${esc(e.title)}</div>` +
             `<div class="et-date">${fmtDateFullFromISO(e.date)}</div>` +
-            `<div class="et-note">${e.note || ""}</div>`
+            `<div class="et-note">${esc(e.note || "")}</div>`
           const r = svg.getBoundingClientRect()
           const cx = (+badge.querySelector(".tc-evt-mark").getAttribute("cx") / gm.W) * r.width
           etip.style.left = cx + "px"
@@ -689,8 +699,8 @@ export default class extends Controller {
       hoverdot.style.opacity = 1
 
       tip.innerHTML =
-        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${best.model.name}</div>` +
-        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> /1M ${metricLabel}</small></div>` +
+        `<div class="ttc-name"><span class="ttc-dot" style="background:${best.color}"></span>${esc(best.model.name)}</div>` +
+        `<div class="ttc-price num">$${this._fmtTipPrice(v)}<small> /1M ${esc(metricLabel)}</small></div>` +
         `<div class="ttc-date">as of ${fmtAxisDate(t)}</div>`
       const tx = (px / gm.W) * r.width
       tip.style.left = tx + "px"
@@ -710,8 +720,8 @@ export default class extends Controller {
     if (v == null) return "—"
     if (v === 0) return "0"
     if (v < 1) return parseFloat(v.toFixed(4)).toString()
-    if (v < 10) return v.toFixed(2).replace(/0$/, "")
-    return v.toFixed(2).replace(/\.00$/, "")
+    if (v < 10) return v.toFixed(2).replace(/\.?0+$/, "")
+    return v.toFixed(2).replace(/\.?0+$/, "")
   }
 
   // ── Legend ───────────────────────────────────────────────────────────────────
