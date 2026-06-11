@@ -108,6 +108,8 @@ function linNice(max) {
 
 // ── Log nice ticks (decade-based) ────────────────────────────────────────────
 function logNice(min, max) {
+  if (!(min > 0)) min = 1
+  if (!(max >= min)) max = min
   const lo = Math.pow(10, Math.floor(Math.log10(min)))
   let hi = Math.pow(10, Math.ceil(Math.log10(max)))
   if (hi <= lo) hi = lo * 10
