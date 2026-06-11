@@ -169,6 +169,38 @@ module OpenRouter
       assert_equal "openrouter.ai", deepseek.current_price.source
     end
 
+    test "retires previously-imported 'Latest' alias models" do
+      existing = AiModel.create!(
+        name: "Claude Opus Latest", slug: "claude-opus-latest",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "anthropic/claude-opus:latest",
+        status: "active", tier: "mid"
+      )
+
+      sync([])
+
+      assert_equal "retired", existing.reload.status
+    end
+
+    test "skips 'Latest' alias models that duplicate versioned entries" do
+      rows = [
+        or_model(id: "anthropic/claude-opus-4.8:latest", name: "Anthropic: Claude Opus Latest",
+                 prompt: "0.000005", completion: "0.000025"),
+        or_model(id: "openai/gpt-4o:latest", name: "OpenAI: GPT-4o Latest",
+                 prompt: "0.0000025", completion: "0.00001"),
+        or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                 prompt: "0.0000001", completion: "0.0000004")
+      ]
+
+      result = assert_difference("AiModel.count", 1) { sync(rows) }
+
+      assert_equal 1, result.created
+      assert_equal 2, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "anthropic/claude-opus-4.8:latest")
+      assert_nil AiModel.find_by(openrouter_id: "openai/gpt-4o:latest")
+      assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
+    end
+
     test "one malformed row does not abort the whole sync" do
       rows = [
         { "id" => "broken/row" }, # no pricing -> skipped, not fatal
