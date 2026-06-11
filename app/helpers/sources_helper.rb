@@ -6,7 +6,7 @@ module SourcesHelper
 
   def source_link(source)
     if source.match?(SOURCE_DOMAIN)
-      link_to source, "https://#{source}", class: "sources-link", rel: "noopener"
+      link_to source, "https://#{source}", class: "sources-link"
     else
       content_tag(:span, source)
     end

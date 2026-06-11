@@ -15,10 +15,37 @@ class SourcesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", "https://api-docs.deepseek.com"
     assert_select "a[href=?]", "https://deepseek.ai/blog"
 
-    # The anthropic.com/pricing row covers one model / one price point from Anthropic.
-    assert_select "tr" do
-      assert_select "td", text: "Anthropic"
+    assert_select "td", text: "Anthropic"
+  end
+
+  test "buckets recognised first-party and unknown domains into the right groups" do
+    # An unknown domain must land under "Aggregators & press", never first-party.
+    ai_models(:opus).price_points.create!(
+      effective_on: "2026-01-01", input_per_mtok: 1, output_per_mtok: 2,
+      source: "openrouter.ai/x-ai/grok-4.20"
+    )
+    get sources_url
+
+    assert_select "section[aria-label='Aggregators & press']" do
+      assert_select "a[href=?]", "https://openrouter.ai/x-ai/grok-4.20"
     end
+    # Provider-website subdomains stay first-party (api-docs.deepseek.com → deepseek.com).
+    assert_select "section[aria-label='Provider pricing pages']" do
+      assert_select "a[href=?]", "https://api-docs.deepseek.com"
+    end
+    # No community-dataset sources are seeded, so the group is omitted entirely.
+    assert_select "section[aria-label='Community datasets']", count: 0
+  end
+
+  test "renders a source that is not a domain as plain text, not a link" do
+    ai_models(:opus).price_points.create!(
+      effective_on: "2026-01-02", input_per_mtok: 1, output_per_mtok: 2,
+      source: "manual estimate"
+    )
+    get sources_url
+
+    assert_select "td", text: "manual estimate"
+    assert_select "a", text: "manual estimate", count: 0
   end
 
   test "credits the acknowledged upstream sources" do
