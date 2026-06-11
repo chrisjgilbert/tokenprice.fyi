@@ -15,11 +15,13 @@ class Provider < ApplicationRecord
   def to_param = slug
 
   # 🇺🇸 — the flag emoji for the headquarters country, built from the ISO
-  # alpha-2 code via Unicode regional-indicator symbols.
+  # alpha-2 code via Unicode regional-indicator symbols. Guards on the format
+  # so an out-of-band bad value can't map to arbitrary codepoints.
   def flag_emoji
-    return if country_code.blank?
+    code = country_code.to_s.upcase
+    return unless code.match?(/\A[A-Z]{2}\z/)
 
-    country_code.upcase.each_char.map { |c| (0x1F1E6 + (c.ord - "A".ord)).chr(Encoding::UTF_8) }.join
+    code.each_char.map { |c| (0x1F1E6 + (c.ord - "A".ord)).chr(Encoding::UTF_8) }.join
   end
 
   private

@@ -17,7 +17,7 @@ export default class extends Controller {
 
     this.tooltipTarget.innerHTML = this.card(c)
     this.tooltipTarget.classList.add("visible")
-    this.position(event)
+    this.position(event, link)
   }
 
   move(event) {
@@ -28,14 +28,24 @@ export default class extends Controller {
     this.tooltipTarget.classList.remove("visible")
   }
 
-  // Keep the card next to the pointer, flipping left near the right edge and
-  // clamping so it never spills out of the map card.
-  position(event) {
+  // Anchor the card to the pointer; on keyboard focus (no pointer coords) fall
+  // back to the focused country's own centre so it doesn't jump to the middle
+  // of the map. Clamp so it never spills out of the map card.
+  position(event, link = null) {
     const card = this.element.getBoundingClientRect()
     const tip = this.tooltipTarget
     const pad = 14
-    const x = (event.clientX ?? card.left + card.width / 2) - card.left
-    const y = (event.clientY ?? card.top + card.height / 2) - card.top
+
+    let anchorX = event.clientX
+    let anchorY = event.clientY
+    if (anchorX == null) {
+      const box = (link || event.target.closest("[data-code]") || event.target).getBoundingClientRect()
+      anchorX = box.left + box.width / 2
+      anchorY = box.top + box.height / 2
+    }
+
+    const x = anchorX - card.left
+    const y = anchorY - card.top
 
     let left = x + pad
     if (left + tip.offsetWidth > card.width) left = x - tip.offsetWidth - pad
@@ -49,6 +59,12 @@ export default class extends Controller {
   }
 
   card(c) {
+    // Counts are server-provided integers; coerce defensively so they can never
+    // smuggle markup into innerHTML even if the payload shape ever changes.
+    const providers = Number(c.providers)
+    const models = Number(c.models)
+    const frontier = Number(c.frontier)
+
     const cheapest = c.cheapest
       ? `<div class="map-tip-k">Cheapest</div><div class="map-tip-v">${this.esc(c.cheapest.io)}</div>`
       : ""
@@ -58,11 +74,11 @@ export default class extends Controller {
         <span class="map-tip-flag">${this.esc(c.flag || "")}</span>
         <div>
           <div class="map-tip-name">${this.esc(c.name)}</div>
-          <div class="map-tip-sub">${c.providers} provider${c.providers === 1 ? "" : "s"} · ${c.models} model${c.models === 1 ? "" : "s"}</div>
+          <div class="map-tip-sub">${providers} provider${providers === 1 ? "" : "s"} · ${models} model${models === 1 ? "" : "s"}</div>
         </div>
       </div>
       <div class="map-tip-rows">
-        <div class="map-tip-k">Frontier</div><div class="map-tip-v">${c.frontier}</div>
+        <div class="map-tip-k">Frontier</div><div class="map-tip-v">${frontier}</div>
         <div class="map-tip-k">Median I/O /1M</div><div class="map-tip-v">${this.esc(c.median)}</div>
         ${cheapest}
       </div>
