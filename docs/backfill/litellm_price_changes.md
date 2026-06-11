@@ -21,7 +21,21 @@ catalog only in 2026-02, after its seeded changes. Verdicts: **CONFIRMED** = fir
 or contemporaneous source found; **PLAUSIBLE** = consistent data, needs Wayback
 or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 
-### Missed changes (recommend adding to db/seeds.rb after final verification)
+_Second pass, 2026-06-11: after review, the mapping was extended with the
+retired-model ids LiteLLM has since deleted from HEAD (gpt-3.5-turbo,
+claude-2/2.1/instant, claude-3-7-sonnet, command-r/-plus incl. the -08-2024
+refresh ids, grok-3, o3-pro, open-mixtral-8x7b, open-mistral-7b,
+groq/llama-3.3-70b). Their change logs corroborate the seeded backbone data
+(claude-2 → $8/$24 in the 2023-11 window; the Cohere refresh cuts a week after
+the 2024-08-30 changelog; command-r/r-plus and grok-3 at seeded values) and
+surfaced no new candidates. One alias artifact to ignore: the `gpt-3.5-turbo`
+row showing 1.5/2 → 0.5/1.5 in Sep 2025 is LiteLLM belatedly repointing the
+bare alias at 0125 pricing — the real cut dates (2023-11-06, 2024-01-25) are
+already seeded. Items 1–5 below have been folded into db/seeds.rb (commit
+"Apply review corrections to the historical seed data"); they remain here as
+the audit trail. Items 6–7 stay open pending Wayback._
+
+### Missed changes (items 1–5 now seeded; 6–7 open)
 
 1. **claude-3-5-haiku — CONFIRMED.** Launched at **$1 / $5** (Anthropic raised it
    from the originally announced Haiku pricing, citing capability —
@@ -74,6 +88,13 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
   representative-rate ±20% policy, no action.
 - **qwen3-max:** LiteLLM moved to context-tiered pricing (lowest tier $1.20/$6,
   2026-02) — different basis from the seed's flat $0.46/$1.84; not comparable.
+- **Gemini cached-input dates** (re-filed from "likely noise" after review):
+  LiteLLM shows gemini-2-5-pro cached at 0.3125 from 2025-07 dropping to 0.125
+  only in Jan 2026, and gemini-2-5-flash 0.075 → 0.03 in Nov 2025, while the
+  seed records 0.125 / 0.03 as **launch** (2025-06-17) values. The *values*
+  converge but the dates don't — either the seed's launch cached figures are
+  anachronistic or LiteLLM lagged 4–6 months. Check a ~2025-07 Wayback capture
+  of the Gemini pricing page.
 
 ### Likely noise (ignore)
 
@@ -85,8 +106,8 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 - **llama-4-maverick / llama-4-scout "changes"** (Aug 2025): the mapping switched
   representative host (Together → DeepInfra entry appearing), not a repricing.
 - **Cached-input appearing in Aug–Oct 2024** (claude-3-x, gpt-4o, o1-*): that's
-  prompt caching launching as a feature, not a price change. Later Gemini cached
-  moves (2.5 Pro/Flash, 2.0 Flash) converge on values the seed already records.
+  prompt caching launching as a feature, not a price change. (Later Gemini
+  cached moves are *not* noise — see "Worth a second look" above.)
 - **gemini-1-0-pro / gemini-1-5-pro 0/0 rows** (early 2024): free-preview
   placeholders before billing existed; the 1.0 Pro 0.35/1.05 figure also never
   matched Google's $0.50/$1.50 list — LiteLLM's early Gemini data is unreliable.
@@ -178,6 +199,12 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 | 2025-02-20 → 2025-03-02 | change | 1 → 0.8 | 5 → 4 | 0.1 → 0.8 | `claude-3-5-haiku-20241022` |
 | 2025-04-05 → 2025-04-12 | change | 0.8 | 4 | 0.8 → 0.08 | `claude-3-5-haiku-20241022` |
 
+### claude-3-7-sonnet
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2025-03-02 | first seen | 3 | 15 | 0.3 | `claude-3-7-sonnet-20250219` |
+
 ### claude-3-opus
 
 | Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
@@ -197,6 +224,26 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 |---|---|---|---|---|---|
 | 2024-03-17 | first seen | 0.25 | 1.25 | — | `claude-3-haiku-20240307` |
 | 2024-08-21 → 2024-08-31 | change | 0.25 | 1.25 | — → 0.03 | `claude-3-haiku-20240307` |
+
+### claude-2-1
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2023-11-23 | first seen | 8 | 24 | — | `claude-2.1` |
+
+### claude-2
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2023-09-07 | first seen | 11.02 | 32.68 | — | `claude-2` |
+| 2023-11-18 → 2023-11-23 | change | 11.02 → 8 | 32.68 → 24 | — | `claude-2` |
+
+### claude-instant
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2023-09-07 | first seen | 1.63 | 5.51 | — | `claude-instant-1.2` |
+| 2023-11-18 → 2023-11-23 | change | 1.63 → 0.163 | 5.51 → 0.551 | — | `claude-instant-1.2` |
 
 ### gpt-5-5-pro
 
@@ -260,6 +307,12 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 |---|---|---|---|---|---|
 | 2025-03-02 | first seen | 75 | 150 | 37.5 | `gpt-4.5-preview` |
 
+### o3-pro
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2025-06-14 | first seen | 20 | 80 | — | `o3-pro` |
+
 ### o1
 
 | Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
@@ -308,6 +361,13 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 |---|---|---|---|---|---|
 | 2023-09-07 | first seen | 3 | 60 | — | `gpt-4` |
 | 2023-09-16 → 2023-09-24 | change | 3 → 30 | 60 | — | `gpt-4` |
+
+### gpt-3-5-turbo
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2023-09-07 | first seen | 1.5 | 2 | — | `gpt-3.5-turbo` |
+| 2025-09-19 → 2025-09-28 | change | 1.5 → 0.5 | 2 → 1.5 | — | `gpt-3.5-turbo` |
 
 ### gemini-3-1-pro
 
@@ -409,6 +469,13 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 | 2025-06-06 | first seen | 0.3 | 0.5 | — | `xai/grok-3-mini-beta` |
 | 2026-01-23 → 2026-02-01 | change | 0.3 | 0.5 | — → 0.075 | `xai/grok-3-mini` |
 
+### grok-3
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2025-04-12 | first seen | 3 | 15 | — | `xai/grok-3-beta` |
+| 2026-01-23 → 2026-02-01 | change | 3 | 15 | — → 0.75 | `xai/grok-3` |
+
 ### grok-2
 
 | Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
@@ -452,6 +519,12 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 |---|---|---|---|---|---|
 | 2024-12-07 | first seen | 3.5 | 3.5 | — | `together_ai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo` |
 
+### llama-3-3-70b
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2024-12-07 | first seen | 0.59 | 0.79 | — | `groq/llama-3.3-70b-versatile` |
+
 ### llama-3-70b
 
 | Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
@@ -479,6 +552,33 @@ or first-party confirmation before seeding; **LIKELY NOISE** = ignore._
 |---|---|---|---|---|---|
 | 2024-03-23 | first seen | 8 | 24 | — | `mistral/mistral-large-2402` |
 | 2024-05-23 → 2024-05-31 | change | 8 → 4 | 24 → 12 | — | `mistral/mistral-large-2402` |
+
+### mixtral-8x7b
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2024-04-19 | first seen | 2 | 6 | — | `mistral/open-mixtral-8x7b` |
+| 2024-05-23 → 2024-05-31 | change | 2 → 0.7 | 6 → 0.7 | — | `mistral/open-mixtral-8x7b` |
+
+### mistral-7b
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2024-05-31 | first seen | 0.25 | 0.25 | — | `mistral/open-mistral-7b` |
+
+### command-r-plus
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2024-04-06 | first seen | 3 | 15 | — | `command-r-plus` |
+| 2024-09-06 → 2024-09-15 | change | 3 → 2.5 | 15 → 10 | — | `command-r-plus-08-2024` |
+
+### command-r
+
+| Window | Event | In $/MTok | Out $/MTok | Cached $/MTok | LiteLLM id |
+|---|---|---|---|---|---|
+| 2024-03-17 | first seen | 0.5 | 1.5 | — | `command-r` |
+| 2024-09-06 → 2024-09-15 | change | 0.5 → 0.15 | 1.5 → 0.6 | — | `command-r-08-2024` |
 
 ### qwen3-max
 
