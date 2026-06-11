@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get "map",     to: "map#index",        as: :map
   get "why",     to: "pages#why",        as: :why
   get "which-model", to: "pages#which_model", as: :which_model
+  get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
 

@@ -2,12 +2,18 @@ class PagesController < ApplicationController
   # The thought pieces are drafts for now: kept in the codebase for
   # iteration, previewable when signed in as admin, invisible (404)
   # to the public.
-  before_action :require_admin_preview
+  before_action :require_admin_preview, only: %i[why which_model]
 
   def why
   end
 
   def which_model
+  end
+
+  def how_pricing_works
+    @frontier_example = AiModel.listed.where(tier: "frontier")
+                              .select(&:current_input)
+                              .min_by(&:current_input)
   end
 
   private
