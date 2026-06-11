@@ -298,7 +298,7 @@ catalog = [
     ]
   },
   {
-    provider: :google, name: "Gemini 1.5 Flash", tier: "small", status: "retired",
+    provider: :google, name: "Gemini 1.5 Flash", tier: "mid", status: "retired",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-05-24",
     description: "Budget model with 1M context. Launched at $0.35/$1.05; slashed 78% in August 2024 to undercut GPT-4o mini.",
     prices: [
@@ -347,13 +347,13 @@ catalog = [
   {
     provider: :xai, name: "Grok 3 Mini", tier: "small", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-02-17",
-    description: "Very competitive budget pricing at $0.30/$0.50.",
+    description: "Budget Grok at $0.30/$0.50 — undercut o1-mini by 10× on input. Superseded by Grok 4.1 Fast.",
     prices: [ { on: "2025-02-17", in: 0.30, out: 0.50, src: "docs.x.ai" } ]
   },
   {
     provider: :xai, name: "Grok 2", tier: "frontier", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-08-13",
-    description: "xAI's API launch model.",
+    description: "xAI's first API model at $2/$10 — established the Grok pricing baseline.",
     prices: [ { on: "2024-08-13", in: 2, out: 10, src: "docs.x.ai" } ]
   },
 
@@ -411,9 +411,10 @@ catalog = [
   {
     provider: :meta, name: "Llama 3 70B", tier: "mid", status: "retired",
     context_window: 8_192, max_output_tokens: nil, released_on: "2024-04-18",
-    description: "Meta's first widely hosted open-weight model.",
+    description: "Meta's first widely hosted open-weight model — pushed hosted LLM pricing below $1/MTok.",
     prices: [ { on: "2024-04-18", in: 0.59, out: 0.79, src: "pricepertoken.com", note: "Representative hosted rate (Together/Fireworks); varies by provider" } ]
   },
+
   {
     provider: :mistral, name: "Mistral Medium 3.5", tier: "mid", status: "active",
     context_window: 128_000, max_output_tokens: nil, released_on: "2026-04-29",
@@ -545,10 +546,10 @@ market_events = [
     note: "Gemini 1.5 Flash drops 78% on input / 71% on output to $0.075/$0.30 per 1M, undercutting GPT-4o mini by half." },
   { title: "Anthropic ships prompt caching", event_date: "2024-08-14",
     note: "Cached input tokens cost 90% less on Claude, making long-system-prompt and RAG workloads dramatically cheaper." },
-  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-09-24",
-    note: "Google cuts Gemini 1.5 Pro to $1.25/$5.00 per 1M on prompts under 128K — the flagship tier joins the price war." },
   { title: "o1 creates reasoning price tier", event_date: "2024-09-12",
     note: "OpenAI's o1-preview launches at $15/$60 — a new pricing category where chain-of-thought tokens make effective costs 2–5× the list price." },
+  { title: "Gemini 1.5 Pro cut 64%", event_date: "2024-09-24",
+    note: "Google cuts Gemini 1.5 Pro to $1.25/$5.00 per 1M on prompts under 128K — the flagship tier joins the price war." },
   { title: "OpenAI caching: auto 50% off", event_date: "2024-10-01",
     note: "DevDay brings automatic prompt caching — a no-code 50% discount on recently seen input tokens across GPT-4o and o1 models." },
   { title: "DeepSeek V3: frontier for cents", event_date: "2024-12-26",
