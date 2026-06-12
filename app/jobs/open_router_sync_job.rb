@@ -5,6 +5,8 @@ class OpenRouterSyncJob < ApplicationJob
   queue_as :default
 
   def perform
-    OpenRouter::ModelSync.call
+    result  = OpenRouter::ModelSync.call
+    payload = OpenRouter::SyncDigest.new(result).to_slack_payload
+    SlackNotifier.post(payload) if payload
   end
 end
