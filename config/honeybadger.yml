@@ -1,33 +1,9 @@
 ---
 # For more options, see https://docs.honeybadger.io/lib/ruby/gem-reference/configuration
 
-api_key: "<%= ENV['HONEYBADGER_API_KEY'] %>"
-
-# The environment your app is running in.
-env: "<%= Rails.env %>"
-
-# The absolute path to your project folder.
-root: "<%= Rails.root.to_s %>"
-
-# Honeybadger won't report errors in these environments.
-development_environments:
-  - test
-  - development
-  - cucumber
-
-# The current Git revision of your project. Defaults to the last commit hash.
-# revision: null
-
-# Enable verbose debug logging (useful for troubleshooting).
-debug: false
+# api_key is read automatically from the HONEYBADGER_API_KEY environment variable.
 
 # Enable Honeybadger Insights to ship structured events (HTTP requests,
 # SQL queries, Solid Queue jobs, outgoing Net::HTTP calls).
 insights:
   enabled: true
-
-exceptions:
-  ignore:
-    - ActionController::RoutingError
-    - ActionController::UnknownFormat
-    - ActiveRecord::RecordNotFound
