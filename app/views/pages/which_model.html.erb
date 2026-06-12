@@ -26,14 +26,62 @@
   .why-article a:hover { text-decoration-color: var(--color-slate-900); }
   .why-article .num { font-family: var(--font-mono); }
   .why-article .verdict { font-family: var(--font-mono); font-size: 13px; color: var(--color-slate-500); margin: -6px 0 10px; }
+
+  /* Plain-language cheat-sheet for people choosing from a dropdown */
+  .wm-tldr {
+    background: var(--color-slate-50);
+    border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-md);
+    padding: 22px 24px 8px;
+    margin: 0 0 32px;
+  }
+  .wm-tldr-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--color-slate-400); margin-bottom: 14px;
+  }
+  .wm-tldr-intro { font-size: 14.5px; line-height: 1.6; color: var(--color-slate-600); margin: 0 0 18px; }
+  .wm-tier { display: flex; gap: 12px; align-items: baseline; margin-bottom: 14px; }
+  .wm-tier-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; transform: translateY(2px); }
+  .wm-tier-small   .wm-tier-dot { background: #059669; }
+  .wm-tier-mid     .wm-tier-dot { background: #d97706; }
+  .wm-tier-frontier .wm-tier-dot { background: #e11d48; }
+  .wm-tier-name { font-weight: 600; color: var(--color-slate-900); font-size: 15px; min-width: 78px; flex: none; }
+  .wm-tier-body { font-size: 14.5px; line-height: 1.55; color: var(--color-slate-600); margin: 0; }
+  .wm-tier-body strong { color: var(--color-slate-900); }
+  .wm-tldr-foot { font-size: 13.5px; line-height: 1.6; color: var(--color-slate-500); border-top: 1px solid var(--color-slate-200); padding: 14px 0 12px; margin-top: 6px; }
+
   @media (max-width: 640px) {
     .why-article h1 { font-size: 30px; }
+    .wm-tier { flex-wrap: wrap; gap: 4px 10px; }
+    .wm-tier-name { min-width: 0; }
   }
 </style>
 
 <article class="why-article">
   <p class="why-meta">June 2026 · Chris Gilbert</p>
   <h1>Which model should you actually use?</h1>
+
+  <div class="wm-tldr">
+    <p class="wm-tldr-label">The short version</p>
+    <p class="wm-tldr-intro">Staring at a model dropdown in Claude Code, Codex, Cursor or a chat app? You don't need token maths to make a good pick — almost every lineup is really just three tiers, and the names change but the trade-off doesn't:</p>
+    <div class="wm-tier wm-tier-small">
+      <span class="wm-tier-dot"></span>
+      <span class="wm-tier-name">Small</span>
+      <p class="wm-tier-body"><strong>Fast and cheap.</strong> Haiku, GPT-mini, Flash. Great for quick edits, search, simple Q&amp;A and high-volume routine work. The default you should reach for more often than you do.</p>
+    </div>
+    <div class="wm-tier wm-tier-mid">
+      <span class="wm-tier-dot"></span>
+      <span class="wm-tier-name">Mid</span>
+      <p class="wm-tier-body"><strong>The all-rounder.</strong> Sonnet, GPT standard, Gemini Pro. The sweet spot for everyday coding, writing and answering questions over documents — good enough for most things without frontier prices.</p>
+    </div>
+    <div class="wm-tier wm-tier-frontier">
+      <span class="wm-tier-dot"></span>
+      <span class="wm-tier-name">Frontier</span>
+      <p class="wm-tier-body"><strong>The smart, slow, pricey one.</strong> Fable, Opus, GPT's reasoning models. Worth it for hard, multi-step work — agentic coding, tricky debugging, deep analysis — where being a bit better each step compounds. Overkill — often <span class="num">10×</span> the cost of a small model — for the everyday stuff.</p>
+    </div>
+    <p class="wm-tldr-foot">Rule of thumb: <strong>start one tier lower than feels comfortable, and only move up when the cheaper model actually lets you down.</strong> The rest of this page is the longer version — task by task — and <%= link_to "the price table", root_path %> shows what each tier costs.</p>
+  </div>
 
   <p>The most expensive habit in LLM engineering is using a frontier model for everything. It's an understandable habit — <%= link_to '"the good one" never gets you blamed', why_path %> — but the price spread between tiers is enormous: within Anthropic's own lineup, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension, and across providers the gap between the priciest frontier model and the cheapest small one is more than <span class="num">300×</span>. A tier mismatch isn't a rounding error. It's the whole bill.</p>
 

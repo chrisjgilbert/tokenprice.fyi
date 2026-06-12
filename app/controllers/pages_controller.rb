@@ -1,8 +1,8 @@
 class PagesController < ApplicationController
-  # The thought pieces are drafts for now: kept in the codebase for
+  # The "why" thought piece is still a draft: kept in the codebase for
   # iteration, previewable when signed in as admin, invisible (404)
   # to the public.
-  before_action :require_admin_preview, only: %i[why which_model]
+  before_action :require_admin_preview, only: %i[why]
 
   def why
   end
