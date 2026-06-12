@@ -1,15 +1,32 @@
 ---
 api_key: "<%= ENV['HONEYBADGER_API_KEY'] %>"
 
-# Report errors in all environments (set to false to disable in dev/test)
 report_data: true
 
 exceptions:
-  # Ignore common Rails noise that isn't actionable
   ignore:
     - ActionController::RoutingError
     - ActionController::UnknownFormat
     - ActiveRecord::RecordNotFound
+
+# Enable Insights to ship structured events (requests, queries, jobs, outgoing HTTP)
+insights:
+  enabled: true
+
+# Capture events for each subsystem (metrics off by default to keep costs low)
+rails:
+  insights:
+    events: true
+    metrics: false
+
+solid_queue:
+  insights:
+    events: true
+    metrics: false
+
+net_http:
+  insights:
+    events: true
 
 logging:
   level: warn
