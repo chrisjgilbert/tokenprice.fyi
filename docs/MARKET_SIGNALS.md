@@ -91,12 +91,41 @@ one-line change.
 
 ### Job 4 — `NewsScanJob` (broader news search)
 
-Daily. Backbone is the **Hacker News Algolia API** (free, no key, JSON):
-query provider and model-family names — derived from our own `providers` /
-`ai_models` tables so the queries track the catalogue — with a points
-threshold to cut noise. Optionally add Google News RSS queries later for
-breadth. Candidates flow through the same `news_items` dedupe + classifier +
-digest path as job 2.
+Daily. Backbone is the **Hacker News Algolia API** (hn.algolia.com) — the
+free public search API over the full HN corpus. No key, no signup, generous
+rate limits (we'd make a few dozen requests a day), and a JSON shape that
+maps straight onto `news_items`:
+
+```
+GET https://hn.algolia.com/api/v1/search_by_date
+      ?query=deepseek
+      &tags=story
+      &numericFilters=points>50,created_at_i>{last run}
+```
+
+Each hit carries `title`, `url` (the linked article — our dedupe key),
+`points`, `num_comments`, `created_at`, and `objectID` (→ the HN discussion
+link). Query terms are the provider and model-family names from our own
+`providers` / `ai_models` tables, so the search tracks the catalogue; the
+`created_at_i` floor means each run only sees the window since the last.
+
+**Why HN specifically:** the `points` threshold is a free noteworthiness
+filter — community upvotes separate "AI story worth knowing about" from the
+firehose before the Haiku classifier ever runs, which no keyword heuristic
+replicates. Coverage skews developer/tech, which is the right skew for LLM
+API pricing. There's precedent in this repo: HN is how Claude Instant's
+quiet 2023 reprice was noticed (see `db/seeds.rb`).
+
+**Known limits:** hits are headline + URL only (the classifier judges on
+title + source domain; fetch the article's first ~500 chars only if that
+proves too thin), only what HN notices is visible (job 2's first-party feeds
+cover the rest — the two jobs are complementary, not redundant), and
+`created_at` is when it hit HN, not the event date — another reason drafts
+carry a `source_url` to verify before publishing. Optionally add Google News
+RSS queries later for breadth.
+
+Candidates flow through the same `news_items` dedupe + classifier + digest
+path as job 2.
 
 ### `news_items` table
 
