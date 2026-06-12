@@ -33,12 +33,14 @@ Rails.application.configure do
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
-  # Log to STDOUT with the current request id as a default log tag.
-  config.log_tags = [ :request_id ]
-  config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
+  # Tag log lines with the request id as a named field (Hash form required by SemanticLogger).
+  config.log_tags = { request_id: :request_id }
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+
+  # Forward logs to Honeybadger Insights via rails_semantic_logger.
+  config.semantic_logger.add_appender(appender: :honeybadger_insights)
 
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"

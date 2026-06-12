@@ -1,0 +1,9 @@
+---
+# For more options, see https://docs.honeybadger.io/lib/ruby/gem-reference/configuration
+
+# api_key is read automatically from the HONEYBADGER_API_KEY environment variable.
+
+# Enable Honeybadger Insights to ship structured events (HTTP requests,
+# SQL queries, Solid Queue jobs, outgoing Net::HTTP calls).
+insights:
+  enabled: true
