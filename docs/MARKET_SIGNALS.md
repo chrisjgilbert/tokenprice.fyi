@@ -24,16 +24,18 @@ Decisions already made:
   SMTP provider to set up; one webhook URL in Kamal secrets, one HTTP POST,
   Block Kit formatting for the digest). Email via SMTP stays on the table as
   a later addition if Slack proves too ephemeral for triage.
-- **Relevance filtering and event drafting: Claude from day one**, via the
-  official `anthropic` Ruby gem.
+- **LLM filtering and drafting from day one.** Relevance classification uses
+  an OpenAI mini-tier model (cheapest adequate option); event drafting uses
+  Claude Opus (judgment + house-style writing). Each via its official Ruby
+  gem.
 
 ## Architecture
 
 ```
 OpenRouterSyncJob ──(already runs daily)──────────────┐
                                                       ├─► SlackNotifier ─► #channel
-ReleaseWatchJob ──► news_items ─► Claude classifier ──┤
-NewsScanJob     ──► news_items ─► Claude classifier ──┤
+ReleaseWatchJob ──► news_items ─► mini classifier  ──┤
+NewsScanJob     ──► news_items ─► mini classifier  ──┤
                                         │             │
                                         ▼             │
                           EventCurationJob (Claude) ──┘
@@ -112,26 +114,35 @@ news_items
 This is working data, not curated data — safe to prune irrelevant rows older
 than a few months.
 
-## Claude, stage 1 — the relevance classifier
+## LLM stage 1 — the relevance classifier (OpenAI mini)
 
 Per candidate headline (title + source + first ~500 chars where available),
-one Messages API call answering: *is this pricing-relevant for an LLM token
-price tracker, and is it a model release, a price change, or other market
-news?*
+one API call answering: *is this pricing-relevant for an LLM token price
+tracker, and is it a model release, a price change, or other market news?*
 
-- **Gem:** `anthropic` (official Ruby SDK).
-- **Model:** `claude-haiku-4-5` — at $1/$5 per MTok and ~200 input + ~50
-  output tokens per headline, even 1,000 headlines/month costs well under $1.
-- **Structured output:** constrain the response with
-  `output_config: {format: {type: "json_schema", ...}}` to
+- **Gem:** `openai` (official Ruby SDK).
+- **Model:** the current cheapest OpenAI mini-tier model (GPT-5 mini at time
+  of writing — check the live rate on tokenprice.fyi itself before wiring it
+  in). At mini-tier pricing and ~200 input + ~50 output tokens per headline,
+  1,000 headlines/month costs pennies. (Claude Haiku would also be well under
+  $1/month at this volume — the saving is real but tiny; mini was chosen as
+  the cheapest adequate option.)
+- **Structured output:** constrain the response with a `json_schema` response
+  format to
   `{relevant: boolean, kind: "release"|"price"|"market"|"other", rationale: string}`
   so parsing never breaks on prose.
-- **Key:** `ANTHROPIC_API_KEY` via Kamal secrets / encrypted credentials.
+- **Key:** `OPENAI_API_KEY` via Kamal secrets / encrypted credentials.
 - **Failure mode:** if the API errors, mark the item unclassified and include
   it in the digest anyway (flagged) — never silently drop a candidate. The
   classifier is a noise filter, not a gatekeeper of record.
 
-## Claude, stage 2 — the curation pipeline (`EventCurationJob`)
+Note this makes the pipeline two-vendor (OpenAI for filtering, Anthropic for
+drafting), i.e. two keys and two gems. If minimising dependencies later
+matters more than the per-headline price, consolidating both stages onto one
+provider is a one-class change — the classifier is deliberately a thin
+wrapper.
+
+## LLM stage 2 — the curation pipeline (`EventCurationJob`, Claude)
 
 Runs weekly (or on demand from the admin). Takes the week's relevant
 `news_items` plus sync-detected price moves and asks Claude to draft
