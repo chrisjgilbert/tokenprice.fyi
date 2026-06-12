@@ -69,4 +69,7 @@ gem "bcrypt", "~> 3.1"
 
 # Error monitoring and logging
 gem "honeybadger", "~> 5.0"
-gem "rails_semantic_logger", "~> 4.0"
+
+group :production do
+  gem "rails_semantic_logger", "~> 4.0"
+end
