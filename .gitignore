@@ -42,3 +42,6 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Kamal local secrets (contains real credentials)
+/.kamal/secrets.local
+/.kamal/secrets.*.local
