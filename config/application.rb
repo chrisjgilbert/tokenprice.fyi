@@ -16,6 +16,8 @@ module Tokenprice
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    config.semantic_logger.add_appender(appender: :honeybadger_insights)
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
