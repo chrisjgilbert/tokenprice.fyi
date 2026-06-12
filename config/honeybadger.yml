@@ -1,0 +1,15 @@
+---
+api_key: "<%= ENV['HONEYBADGER_API_KEY'] %>"
+
+# Report errors in all environments (set to false to disable in dev/test)
+report_data: true
+
+exceptions:
+  # Ignore common Rails noise that isn't actionable
+  ignore:
+    - ActionController::RoutingError
+    - ActionController::UnknownFormat
+    - ActiveRecord::RecordNotFound
+
+logging:
+  level: warn
