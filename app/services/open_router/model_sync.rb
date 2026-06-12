@@ -103,7 +103,19 @@ module OpenRouter
       "upstage"         => { country: "South Korea",          country_code: "KR" }
     }.freeze
 
-    Result = Struct.new(:created, :enriched, :repriced, :skipped, keyword_init: true) do
+    # Captures a newly-created model for the Slack digest.
+    CreatedRecord = Data.define(:model_name, :provider_name, :model_slug, :new_provider,
+                                :input_per_mtok, :output_per_mtok)
+
+    # Captures a repriced model with old/new pricing for the Slack digest.
+    RepricedRecord = Data.define(:model_name, :provider_name, :model_slug,
+                                 :old_input, :old_output, :old_cached,
+                                 :new_input, :new_output, :new_cached,
+                                 :pct_blended_change)
+
+    Result = Struct.new(:created, :enriched, :repriced, :skipped,
+                        :created_records, :repriced_records,
+                        keyword_init: true) do
       def to_s
         "OpenRouter sync: #{created} created, #{enriched} enriched, " \
           "#{repriced} repriced, #{skipped} skipped"
@@ -116,7 +128,8 @@ module OpenRouter
       @client = client
       @today  = today
       @logger = logger
-      @result = Result.new(created: 0, enriched: 0, repriced: 0, skipped: 0)
+      @result = Result.new(created: 0, enriched: 0, repriced: 0, skipped: 0,
+                           created_records: [], repriced_records: [])
     end
 
     def call
@@ -150,19 +163,46 @@ module OpenRouter
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
 
-      provider = resolve_provider(row)
-      model    = find_or_build_model(row, provider)
+      provider, new_provider = resolve_provider(row)
+      model                  = find_or_build_model(row, provider)
       return :skipped if model.nil? # duplicates a curated model — leave it be
 
       created = model.new_record?
       enrich(model, row)
       model.save!
 
-      repriced = record_price(model, pricing)
+      repriced_from = record_price(model, pricing)
 
-      if created    then :created
-      elsif repriced then :repriced
-      else :enriched
+      if created
+        @result.created_records << CreatedRecord.new(
+          model_name:      model.name,
+          provider_name:   provider.name,
+          model_slug:      model.slug,
+          new_provider:    new_provider,
+          input_per_mtok:  pricing[:input],
+          output_per_mtok: pricing[:output]
+        )
+        :created
+      elsif repriced_from   # Hash of old pricing — truthy only when repriced
+        old_blended = blended(repriced_from[:input], repriced_from[:output])
+        new_blended = blended(pricing[:input], pricing[:output])
+        pct = old_blended.nonzero? ? ((new_blended - old_blended) / old_blended * 100).round(1) : 0.0
+
+        @result.repriced_records << RepricedRecord.new(
+          model_name:    model.name,
+          provider_name: provider.name,
+          model_slug:    model.slug,
+          old_input:     repriced_from[:input],
+          old_output:    repriced_from[:output],
+          old_cached:    repriced_from[:cached],
+          new_input:     pricing[:input],
+          new_output:    pricing[:output],
+          new_cached:    pricing[:cached],
+          pct_blended_change: pct
+        )
+        :repriced
+      else
+        :enriched
       end
     end
 
@@ -201,9 +241,20 @@ module OpenRouter
 
     # Append a snapshot only when the price moved. If it moved twice in one day,
     # today's snapshot is updated in place (the [model, date] index is unique).
+    #
+    # Returns:
+    #   false  — price unchanged (no snapshot written)
+    #   nil    — first-ever price snapshot (no old pricing to compare)
+    #   Hash   — repriced; value is the old pricing { input:, output:, cached: }
     def record_price(model, pricing)
       current = model.current_price
       return false if current && same_price?(current, pricing)
+
+      old_pricing = current ? {
+        input:  current.input_per_mtok,
+        output: current.output_per_mtok,
+        cached: current.cached_input_per_mtok
+      } : nil
 
       point = model.price_points.find_or_initialize_by(effective_on: @today)
       point.assign_attributes(
@@ -215,7 +266,8 @@ module OpenRouter
       point.note ||= "Imported from OpenRouter"
       point.save!
       model.forget_price_cache!
-      true
+
+      old_pricing  # nil = first price, Hash = repriced
     end
 
     def same_price?(point, pricing)
@@ -229,23 +281,26 @@ module OpenRouter
 
     # --- providers & models ------------------------------------------------
 
+    # Returns [provider, new_provider_boolean].
     def resolve_provider(row)
-      namespace = namespace_of(row)
-      slug      = PROVIDER_SLUGS[namespace] || namespace.parameterize
-      geo       = PROVIDER_COUNTRIES[namespace]
+      namespace    = namespace_of(row)
+      slug         = PROVIDER_SLUGS[namespace] || namespace.parameterize
+      geo          = PROVIDER_COUNTRIES[namespace]
+      new_provider = false
 
       provider = Provider.find_or_create_by!(slug: slug) do |p|
-        p.name    = provider_name(namespace, row)
-        p.website = "https://openrouter.ai/#{namespace}"
-        p.country      = geo[:country]      if geo
-        p.country_code = geo[:country_code] if geo
+        new_provider       = true
+        p.name             = provider_name(namespace, row)
+        p.website          = "https://openrouter.ai/#{namespace}"
+        p.country          = geo[:country]      if geo
+        p.country_code     = geo[:country_code] if geo
       end
 
       if geo && provider.country_code.blank?
         provider.update!(country: geo[:country], country_code: geo[:country_code])
       end
 
-      provider
+      [ provider, new_provider ]
     end
 
     def find_or_build_model(row, provider)
@@ -375,6 +430,10 @@ module OpenRouter
         n += 1
       end
       slug
+    end
+
+    def blended(input, output)
+      ((3 * input + output) / 4.0).round(6)
     end
   end
 end
