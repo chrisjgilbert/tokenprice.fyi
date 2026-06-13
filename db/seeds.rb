@@ -34,15 +34,15 @@ end
 # ---------------------------------------------------------------------------
 # Models + dated price history
 #
-# Each model: tier (frontier|mid|small), status (active|legacy|retired), context
+# Each model: tier (frontier|mid|small), status (active|legacy|suspended|retired), context
 # window, max output, release date, and a `prices` array of dated snapshots.
 # ---------------------------------------------------------------------------
 catalog = [
   # ---- Anthropic --------------------------------------------------------
   {
-    provider: :anthropic, name: "Claude Fable 5", tier: "frontier", status: "active",
+    provider: :anthropic, name: "Claude Fable 5", tier: "frontier", status: "suspended",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-06-09",
-    description: "Anthropic's most powerful model — a new Mythos-class tier above Opus, aimed at the hardest reasoning and agentic work.",
+    description: "Anthropic's most powerful model — a new Mythos-class tier above Opus, aimed at the hardest reasoning and agentic work. Access is currently suspended.",
     prices: [ { on: "2026-06-09", in: 10, out: 50, cached: 1.0, src: "anthropic.com/pricing", note: "List price" } ]
   },
   {
@@ -619,7 +619,7 @@ editorial = {
   "claude-fable-5" => {
     strengths: "Top-end reasoning and long-horizon agentic autonomy — the most capable model in the catalogue.",
     best_for: "The hardest research, coding and multi-step agent tasks where capability outweighs cost.",
-    limitations: "The most expensive option; overkill for routine or high-volume work."
+    limitations: "Access is currently suspended; also the most expensive option and overkill for routine or high-volume work."
   },
   "claude-opus-4-8" => {
     strengths: "Highly autonomous on long agentic and knowledge work, with a 1M-token context at standard pricing.",

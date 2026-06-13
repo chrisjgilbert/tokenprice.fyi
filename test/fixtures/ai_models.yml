@@ -29,6 +29,17 @@ no_price:
   source: openrouter
   description: Active model with no price points — should be excluded from listings.
 
+suspended_fable:
+  provider: anthropic
+  name: Claude Fable 5
+  slug: claude-fable-5
+  tier: frontier
+  context_window: 1000000
+  max_output_tokens: 128000
+  released_on: 2026-06-09
+  status: suspended
+  description: Suspended test model — still listed but flagged as suspended.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro

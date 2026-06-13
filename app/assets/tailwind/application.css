@@ -298,9 +298,14 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   text-transform: lowercase;
 }
 .tp-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.tp-status-active  { color: var(--color-emerald-600); }
-.tp-status-preview { color: var(--color-amber-500); }
-.tp-status-legacy  { color: var(--color-slate-400); }
+.tp-status-active    { color: var(--color-emerald-600); }
+.tp-status-preview   { color: var(--color-amber-500); }
+.tp-status-legacy    { color: var(--color-slate-400); }
+.tp-status-suspended { color: var(--color-rose-600); }
+
+/* Suspended row — greyed out / desaturated, but still legible and clickable */
+table.tp-data tbody tr.tp-row-suspended { opacity: .55; filter: grayscale(0.6); }
+table.tp-data tbody tr.tp-row-suspended:hover { opacity: 1; filter: none; }
 
 /* Price change delta */
 .tp-delta {

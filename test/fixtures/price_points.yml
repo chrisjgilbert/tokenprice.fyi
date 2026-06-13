@@ -6,6 +6,14 @@ opus_launch:
   cached_input_per_mtok: 0.5
   source: anthropic.com/pricing
 
+suspended_fable_launch:
+  ai_model: suspended_fable
+  effective_on: 2026-06-09
+  input_per_mtok: 10
+  output_per_mtok: 50
+  cached_input_per_mtok: 1.0
+  source: anthropic.com/pricing
+
 deepseek_launch:
   ai_model: deepseek_v4
   effective_on: 2026-02-01

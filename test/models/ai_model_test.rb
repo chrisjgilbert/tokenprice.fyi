@@ -103,6 +103,14 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not_includes listed, ai_models(:retired_instant)
   end
 
+  test "suspended is a valid status that stays listed, unlike retired" do
+    fable = ai_models(:suspended_fable)
+    assert fable.suspended?
+    assert fable.valid?
+    # Suspended models are shown (flagged), not hidden like retired ones.
+    assert_includes AiModel.listed, fable
+  end
+
   test "matches? finds substrings of name, provider and slug" do
     model = ai_models(:opus)
     assert model.matches?("opus")

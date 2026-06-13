@@ -28,7 +28,11 @@ class AiModel < ApplicationRecord
   OPENROUTER_SOURCE = "openrouter"
 
   enum :tier, { frontier: "frontier", mid: "mid", small: "small" }, validate: true
-  enum :status, { active: "active", legacy: "legacy", retired: "retired" }, validate: true
+  # active   — current, generally available
+  # legacy   — superseded but still callable
+  # suspended— access pulled (temporarily or pending review); shown but flagged
+  # retired  — gone for good; hidden from listings
+  enum :status, { active: "active", legacy: "legacy", suspended: "suspended", retired: "retired" }, validate: true
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :slug, presence: true, uniqueness: true
