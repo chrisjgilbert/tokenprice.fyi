@@ -1,11 +1,17 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A small click-to-toggle dropdown menu (used by the nav "Learn" group).
-// Opens on the trigger, closes on outside click, Escape, or selecting an item.
-// Keeps aria-expanded in sync for assistive tech. On the mobile scroll-nav the
-// menu is flattened to inline links via CSS, so this controller is a no-op there.
+// A small click-to-toggle disclosure (used by the nav "Learn" group). Opens on
+// the trigger, closes on outside click, Escape, or selecting an item. Keeps
+// aria-expanded in sync for assistive tech. On the mobile scroll-nav the menu is
+// flattened to inline links via CSS, so this controller is a no-op there.
 export default class extends Controller {
   static targets = ["menu", "trigger"]
+
+  // Turbo can restore a cached snapshot with the menu left open; start closed.
+  connect() {
+    this.element.classList.remove("open")
+    this.triggerTarget.setAttribute("aria-expanded", "false")
+  }
 
   toggle(event) {
     event.preventDefault()
