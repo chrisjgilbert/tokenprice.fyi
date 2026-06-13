@@ -23,3 +23,8 @@ production:
     class: ReleaseWatchJob
     queue: default
     schedule: every 6 hours
+
+  news_scan:
+    class: NewsScanJob
+    queue: default
+    schedule: every day at 5am
