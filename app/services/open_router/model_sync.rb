@@ -433,7 +433,9 @@ module OpenRouter
     end
 
     def blended(input, output)
-      ((3 * input + output) / 4.0).round(6)
+      w_in  = AiModel::BLEND_INPUT_WEIGHT
+      w_out = AiModel::BLEND_OUTPUT_WEIGHT
+      ((w_in * input + w_out * output) / (w_in + w_out).to_f).round(6)
     end
   end
 end

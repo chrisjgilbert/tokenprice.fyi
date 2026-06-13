@@ -64,9 +64,8 @@ module OpenRouter
 
     def fmt(value)
       return "0" if value.nil? || value.zero?
-      f = value.to_f
-      # Two decimal places, strip trailing zeros
-      sprintf("%.2f", f).sub(/\.?0+$/, "")
+      # Four decimal places preserves sub-cent prices (e.g. $0.003 cached); strip trailing zeros.
+      sprintf("%.4f", value.to_f).sub(/\.?0+$/, "")
     end
   end
 end

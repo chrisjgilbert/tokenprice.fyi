@@ -16,7 +16,9 @@ class SlackNotifier
     end
 
     uri = URI.parse(url)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+    response = Net::HTTP.start(uri.host, uri.port,
+                               use_ssl: uri.scheme == "https",
+                               open_timeout: 5, read_timeout: 10) do |http|
       request = Net::HTTP::Post.new(uri.request_uri)
       request["Content-Type"] = "application/json"
       request.body = payload.to_json

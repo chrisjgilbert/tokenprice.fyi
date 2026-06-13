@@ -75,11 +75,11 @@ class SlackNotifierTest < ActiveSupport::TestCase
 
   # Build a fake Net::HTTP instance whose #start yields self and whose
   # #request returns `stub_response`. An optional block receives the request.
+  # open_timeout/read_timeout are not stubbed: stub_new intercepts Net::HTTP.new,
+  # so timeout kwargs passed to Net::HTTP.start never reach the fake via setters.
   def build_fake_http(stub_response, &on_request)
     fake = Object.new
-    fake.define_singleton_method(:use_ssl=)      { |_| }
-    fake.define_singleton_method(:open_timeout=) { |_| }
-    fake.define_singleton_method(:read_timeout=) { |_| }
+    fake.define_singleton_method(:use_ssl=) { |_| }
     fake.define_singleton_method(:start) { |&blk| blk ? blk.call(fake) : fake }
     fake.define_singleton_method(:request) do |req|
       on_request&.call(req)
