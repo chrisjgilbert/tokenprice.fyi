@@ -1,0 +1,28 @@
+# Provider news feeds polled by ReleaseWatchJob.
+# rss: standard RSS/Atom feed URL parsed with Ruby's bundled `rss` lib.
+# page_diff: fetch the page and extract <a> hrefs as article URLs (fragile — expect
+#            occasional selector maintenance).
+sources:
+  - name: openai
+    type: rss
+    url: "https://openai.com/news/rss"
+
+  - name: google_deepmind
+    type: rss
+    url: "https://blog.google/technology/ai/rss"
+
+  - name: mistral
+    type: rss
+    url: "https://mistral.ai/news/rss"
+
+  - name: meta_ai
+    type: rss
+    url: "https://ai.meta.com/blog/rss"
+
+  - name: anthropic
+    type: page_diff
+    url: "https://www.anthropic.com/news"
+
+  - name: deepseek
+    type: page_diff
+    url: "https://www.deepseek.com/news"

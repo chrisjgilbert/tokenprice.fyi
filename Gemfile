@@ -67,6 +67,9 @@ end
 # Anthropic SDK for LLM classification and curation
 gem "anthropic"
 
+# RSS/Atom feed parsing (Ruby default gem — explicit entry silences Ruby 3.x warning)
+gem "rss"
+
 # Hashing for the admin password (digest stored in encrypted credentials)
 gem "bcrypt", "~> 3.1"
 
