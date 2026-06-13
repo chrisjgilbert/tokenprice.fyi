@@ -82,6 +82,29 @@ class HnAlgoliaFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  test "request path contains numericFilters with since epoch and min_points" do
+    captured_path = nil
+    response = Net::HTTPOK.new("1.1", "200", "OK")
+    response.define_singleton_method(:body) { '{"hits":[]}' }
+
+    fake = Object.new
+    fake.define_singleton_method(:use_ssl=)      { |_| }
+    fake.define_singleton_method(:open_timeout=) { |_| }
+    fake.define_singleton_method(:read_timeout=) { |_| }
+    fake.define_singleton_method(:start) { |&blk| blk ? blk.call(fake) : fake }
+    fake.define_singleton_method(:get)   { |path, _hdrs = {}| captured_path = path; response }
+
+    since_i = Time.utc(2026, 1, 1).to_i
+    Net::HTTP.stub_new(fake) do
+      HnAlgoliaFetcher.fetch(query: "anthropic", since: since_i, min_points: 25)
+    end
+
+    assert_not_nil captured_path
+    # URI.parse encodes > as %3E — verify both the param name and the integer values survive
+    assert_match(/numericFilters=points%3E25,created_at_i%3E#{since_i}/, captured_path,
+                 "expected numericFilters with %3E-encoded > signs and correct integer values")
+  end
+
   test "skips hits with blank title" do
     body = { "hits" => [ { "objectID" => "1", "title" => "  ", "url" => "https://example.com", "created_at_i" => 1748736000 } ] }.to_json
     with_response(200, body) do
