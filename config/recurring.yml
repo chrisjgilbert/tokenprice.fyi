@@ -32,4 +32,4 @@ production:
   event_curation:
     class: EventCurationJob
     queue: default
-    schedule: every week
+    schedule: every day at 7am

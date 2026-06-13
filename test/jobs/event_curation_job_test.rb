@@ -19,7 +19,7 @@ class EventCurationJobTest < ActiveJob::TestCase
       source:       "hn",
       relevant:     true,
       rationale:    "New model with competitive pricing",
-      published_at: 3.days.ago
+      published_at: 1.day.ago
     )
     stub_client(ONE_DRAFT)
     @slack_original = SlackNotifier.method(:post)
@@ -95,6 +95,25 @@ class EventCurationJobTest < ActiveJob::TestCase
     end
   end
 
+  test "ignores news items published before the lookback window" do
+    @news_item.update!(published_at: 5.days.ago)
+    assert_no_difference "MarketEvent.count" do
+      EventCurationJob.perform_now
+    end
+  end
+
+  # --- dedup context ---------------------------------------------------------
+
+  test "feeds pending drafts into the prompt so Claude won't re-draft them" do
+    MarketEvent.create!(title: "Already-queued draft", event_date: Date.current,
+                        kind: "market", status: "draft", source: "curation")
+    EventCurationJob.perform_now
+
+    content = @create_kwargs[:messages].first[:content]
+    assert_match "Pending drafts already awaiting review", content
+    assert_match "Already-queued draft", content
+  end
+
   # --- Slack notification ----------------------------------------------------
 
   test "posts a Slack notification when drafts are created" do
@@ -124,8 +143,9 @@ class EventCurationJobTest < ActiveJob::TestCase
   def stub_client(response_data)
     fake_block    = Struct.new(:type, :input).new(:tool_use, response_data)
     fake_response = Struct.new(:content).new([ fake_block ])
+    captured      = (@create_kwargs ||= {})
     fake_messages = Object.new
-    fake_messages.define_singleton_method(:create) { |**_| fake_response }
+    fake_messages.define_singleton_method(:create) { |**kwargs| captured.replace(kwargs); fake_response }
     fake_client   = Object.new
     fake_client.define_singleton_method(:messages) { fake_messages }
 

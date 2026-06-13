@@ -1,16 +1,23 @@
 require "json"
 
-# Weekly job: takes the past week's relevant, unattached news_items plus
-# recent price-move context and asks Claude Opus to draft MarketEvent candidates.
-# Writes zero or more MarketEvent rows with status: "draft"; a human approves
-# or discards each draft in the admin review queue.
+# Daily job: takes the last couple of days' relevant, unattached news_items
+# plus recent price-move context and asks Claude Opus to draft MarketEvent
+# candidates. Writes zero or more MarketEvent rows with status: "draft"; a human
+# approves or discards each draft in the admin review queue.
 # Nothing automated publishes an event or creates a PricePoint.
+#
+# Running daily means the same un-drafted news could be re-presented on
+# consecutive days, so we (a) keep the lookback short and (b) feed pending
+# drafts into the "do not duplicate" context so Opus won't re-draft what is
+# already sitting in the review queue.
 class EventCurationJob < ApplicationJob
   queue_as :default
 
   MODEL      = "claude-opus-4-8"
   TOOL_NAME  = "submit_drafts"
   MAX_TOKENS = 2048
+  # A touch wider than the daily cadence so a single missed run doesn't drop news.
+  LOOKBACK   = 2.days
 
   SYSTEM_PROMPT = <<~PROMPT.freeze
     You are a market event curator for tokenprice.fyi, a site that tracks LLM API token prices.
@@ -31,8 +38,9 @@ class EventCurationJob < ApplicationJob
       • confidence: 0.0–1.0; only include drafts above 0.5.
 
     Rules:
-      • Drafting nothing is the correct outcome for a quiet week.
-      • Never duplicate an event already in the existing_events list.
+      • Drafting nothing is the correct outcome for a quiet period — most days produce zero drafts.
+      • Never duplicate an event already in the existing published events list.
+      • Never re-create something already in the pending drafts list — it is already awaiting review.
       • Dates and figures in a draft are claims to verify — always include source_url when known.
   PROMPT
 
@@ -65,20 +73,21 @@ class EventCurationJob < ApplicationJob
   def perform
     news_items = NewsItem.where(relevant: true)
                          .where(market_event_id: nil)
-                         .where("published_at >= ? OR published_at IS NULL", 1.week.ago)
+                         .where("published_at >= ? OR published_at IS NULL", LOOKBACK.ago)
                          .order(published_at: :desc)
                          .limit(50)
 
     return Rails.logger.info("EventCurationJob: no candidate news items, skipping") if news_items.empty?
 
     existing_events  = MarketEvent.published.recent_first.limit(30)
+    pending_drafts   = MarketEvent.drafts.recent_first.limit(30)
     recent_releases  = AiModel.where.not(released_on: nil)
                                .where("released_on >= ?", 6.months.ago)
                                .includes(:provider)
                                .order(released_on: :desc)
                                .limit(15)
 
-    content = build_prompt(news_items, existing_events, recent_releases)
+    content = build_prompt(news_items, existing_events, pending_drafts, recent_releases)
 
     response = client.messages.create(
       model:       MODEL,
@@ -131,10 +140,10 @@ class EventCurationJob < ApplicationJob
     @client ||= Anthropic::Client.new
   end
 
-  def build_prompt(news_items, existing_events, recent_releases)
+  def build_prompt(news_items, existing_events, pending_drafts, recent_releases)
     parts = []
 
-    parts << "## Candidate news items (past week, relevant, not yet attached to an event)\n\n"
+    parts << "## Candidate news items (recent, relevant, not yet attached to an event)\n\n"
     news_items.each do |item|
       date_str = item.published_at ? item.published_at.strftime("%Y-%m-%d") : "unknown date"
       parts << "[id: #{item.id}] \"#{item.title}\" (#{item.source}, #{date_str})\n"
@@ -144,6 +153,13 @@ class EventCurationJob < ApplicationJob
     parts << "\n## Existing published events (do NOT duplicate)\n\n"
     existing_events.each do |ev|
       parts << "#{ev.event_date.iso8601}: #{ev.title}\n"
+    end
+
+    if pending_drafts.any?
+      parts << "\n## Pending drafts already awaiting review (do NOT re-create)\n\n"
+      pending_drafts.each do |ev|
+        parts << "#{ev.event_date.iso8601}: #{ev.title}\n"
+      end
     end
 
     if recent_releases.any?
