@@ -64,6 +64,9 @@ group :test do
   gem "selenium-webdriver"
 end
 
+# Anthropic SDK for LLM classification and curation
+gem "anthropic"
+
 # Hashing for the admin password (digest stored in encrypted credentials)
 gem "bcrypt", "~> 3.1"
 
