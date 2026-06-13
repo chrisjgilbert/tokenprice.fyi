@@ -22,7 +22,7 @@ class NewsDigestJob < ApplicationJob
       if item.relevant.nil?
         "• #{link} (#{item.source}) — ⚠ unclassified"
       else
-        "• #{link} (#{item.source}) — #{item.kind} · #{item.rationale}"
+        "• #{link} (#{item.source}) — #{item.kind || "unknown"} · #{item.rationale || "—"}"
       end
     end
     count = items.size

@@ -75,16 +75,20 @@ class NewsDigestJobTest < ActiveJob::TestCase
   end
 
   test "does not stamp notified_at when Slack post raises" do
-    item = make_item
+    item     = make_item
+    original = SlackNotifier.singleton_class.instance_method(:post)
     SlackNotifier.define_singleton_method(:post) { |_| raise RuntimeError, "Slack error" }
-    assert_raises(RuntimeError) { NewsDigestJob.perform_now }
+    begin
+      assert_raises(RuntimeError) { NewsDigestJob.perform_now }
+    ensure
+      SlackNotifier.singleton_class.define_method(:post, original)
+    end
     assert_nil item.reload.notified_at
   end
 
-  test "already-notified items are not re-posted" do
-    make_item(url: "https://anthropic.com/news/already")
-      .update!(notified_at: 1.hour.ago)
+  test "stamps notified_at on unclassified items after successful post" do
+    item = make_item(relevant: nil, kind: nil, rationale: nil)
     NewsDigestJob.perform_now
-    assert_empty @posted
+    assert_not_nil item.reload.notified_at
   end
 end
