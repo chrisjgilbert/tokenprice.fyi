@@ -48,7 +48,7 @@
           <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
           <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
               on the mobile scroll-nav it flattens to inline links via CSS. %>
-          <% learn_active = current_page?(how_pricing_works_path) || current_page?(which_model_path) %>
+          <% learn_active = current_page?(how_pricing_works_path) || current_page?(which_model_path) || current_page?(why_path) %>
           <div class="tp-nav-group" data-controller="dropdown">
             <button type="button" class="tp-nav-link tp-nav-trigger<%= " active" if learn_active %>"
                     data-dropdown-target="trigger" data-action="dropdown#toggle"
@@ -59,6 +59,7 @@
             <div class="tp-nav-menu" data-dropdown-target="menu">
               <%= link_to "How pricing works", how_pricing_works_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(how_pricing_works_path)) } %>
               <%= link_to "Which model?", which_model_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(which_model_path)) } %>
+              <%= link_to "Why this exists", why_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(why_path)) } %>
             </div>
           </div>
         </div>
