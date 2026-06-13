@@ -32,14 +32,14 @@
 </style>
 
 <article class="why-article">
-  <p class="why-meta">June 2026 · tokenprice.fyi</p>
+  <p class="why-meta">June 2026</p>
   <h1>LLM costs are decided in the dark</h1>
 
   <p>Somewhere right now, a team is picking the model for their next feature — and price will barely figure in the decision. Not because it doesn't matter. Because nobody in the room can actually compute it.</p>
 
   <p>The cost of an LLM feature isn't on any pricing page. It's price × token volume × traffic shape × caching × batch discounts — per model — and every one of those variables is opaque before launch, fuzzy during the build, and tedious to re-derive once you're live. So teams don't compute it. They guess, or they skip the question entirely.</p>
 
-  <p>That produces two failure modes, and I've watched both happen. Teams <strong>over-pay</strong>: they default to a frontier model for a task a model twenty times cheaper would handle, because "the good one" is the safe choice when you can't quantify the trade. Or they <strong>under-build</strong>: they shelve a feature for fear of a bill they never actually estimated. Either way, the cost decision gets made in the dark — and then almost nobody revisits it, even though it's one of the few engineering decisions that compounds with every request.</p>
+  <p>That produces two failure modes, and both are common. Teams <strong>over-pay</strong>: they default to a frontier model for a task a model twenty times cheaper would handle, because "the good one" is the safe choice when you can't quantify the trade. Or they <strong>under-build</strong>: they shelve a feature for fear of a bill they never actually estimated. Either way, the cost decision gets made in the dark — and then almost nobody revisits it, even though it's one of the few engineering decisions that compounds with every request.</p>
 
   <p>Two things keep it dark.</p>
 
@@ -54,7 +54,7 @@
     <li><strong>Remember.</strong> Prices here are an append-only history, not a number that gets overwritten. Every price point is dated and carries its source. When DeepSeek cuts 75%, the launch price doesn't disappear — it becomes the start of a line on <%= link_to "a chart", trends_path %>, next to the market events that explain it. And trajectory changes decisions: whether a provider habitually cuts after launch, whether you should wait, whether the answer you settled on last quarter still holds.</li>
   </ol>
 
-  <p>A note on accuracy, because it's the whole product: Anthropic figures I curate by hand and will stand behind. Other providers are best-effort — public pricing pages plus a daily sync, sourced on every data point, and occasionally lagging. When something's wrong, it gets fixed and noted, not silently overwritten. I'm not affiliated with any provider, which is rather the point. And if a price looks stale or wrong, the source is right there on the price point — check it, and tell me.</p>
+  <p>A note on accuracy, because it's the whole product: Anthropic figures are curated by hand and stood behind. Other providers are best-effort — public pricing pages plus a daily sync, sourced on every data point, and occasionally lagging. When something's wrong, it gets fixed and noted, not silently overwritten. tokenprice.fyi isn't affiliated with any provider, which is rather the point. And if a price looks stale or wrong, the source is right there on the price point — check it, and flag it.</p>
 
   <p>This site won't tell you which model is smartest — plenty of people benchmark. And it can't yet tell you what <em>your workload</em> will cost, though that's the direction it's heading. What it does today is the prerequisite for any of that: what the market is charging, what it charged before, and how fast that's moving. You can't make a cost decision in the dark, and you can't turn the lights on without a record. This is the record.</p>
 </article>

@@ -59,7 +59,7 @@
 </style>
 
 <article class="why-article">
-  <p class="why-meta">June 2026 · tokenprice.fyi</p>
+  <p class="why-meta">June 2026</p>
   <h1>Which model should you actually use?</h1>
 
   <div class="wm-tldr">
@@ -85,7 +85,7 @@
 
   <p>The most expensive habit in LLM engineering is using a frontier model for everything. It's an understandable habit — <%= link_to '"the good one" never gets you blamed', why_path %> — but the price spread between tiers is enormous: within Anthropic's own lineup, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension, and across providers the gap between the priciest frontier model and the cheapest small one is more than <span class="num">300×</span>. A tier mismatch isn't a rounding error. It's the whole bill.</p>
 
-  <p>The right rule is boring: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> No eval yet? Run the rule in reverse: prototype on a frontier model to find your quality ceiling, then walk down tiers until something breaks. Your eval is the arbiter, not this page and not a leaderboard. But you need somewhere to start, so here is my starting guess for the five most common task shapes — what tier is usually enough, and which price dimension actually dominates the cost, because it's often not the one on the sticker.</p>
+  <p>The right rule is boring: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> No eval yet? Run the rule in reverse: prototype on a frontier model to find your quality ceiling, then walk down tiers until something breaks. Your eval is the arbiter, not this page and not a leaderboard. But you need somewhere to start, so here's a starting guess for the five most common task shapes — what tier is usually enough, and which price dimension actually dominates the cost, because it's often not the one on the sticker.</p>
 
   <h2>Classification and routing</h2>
   <p class="verdict">tier: small · cost driver: input price</p>
@@ -108,7 +108,7 @@
   <p>The exception, and it's a big one. Multi-step agents that read a codebase, plan, edit, and re-check compound their errors — a model that's 95% as good per step is far less than 95% as good after thirty steps. This is the task that earns frontier prices. (For the main loop, anyway — the emerging pattern is a frontier orchestrator delegating search and exploration to small-tier subagents.) The underappreciated part: agents re-send the same growing context on every step, so the overwhelming majority of what you buy is cache reads, and <strong>cached-input price matters more than headline input price</strong>. Two frontier models with the same sticker can differ sharply once caching enters the math — check the cached column on <%= link_to "the table", root_path %>, not just the first one.</p>
 
   <h2>The honest caveats</h2>
-  <p>These are dated judgments, not benchmarks — I'll say "good enough for typical schemas," never "scores 87.2," and when the market moves (a mid model gets frontier-grade at coding, say) these verdicts get revised, visibly. The tier floor is also only half the decision: a "small" verdict still leaves more than a <span class="num">10×</span> spread between the cheapest and priciest small models, which is what <%= link_to "the table", root_path %> is for.</p>
+  <p>These are dated judgments, not benchmarks — they say "good enough for typical schemas," never "scores 87.2," and when the market moves (a mid model gets frontier-grade at coding, say) these verdicts get revised, visibly. The tier floor is also only half the decision: a "small" verdict still leaves more than a <span class="num">10×</span> spread between the cheapest and priciest small models, which is what <%= link_to "the table", root_path %> is for.</p>
 
-  <p>And the other half — <em>"fine, mid tier for RAG, but what does that cost at my volume?"</em> — is the question this site exists to answer next. I'm building a <strong>cost calculator</strong>: pick a task shape like the ones above, set your volume, and get a ranked monthly bill across every model we track, at live prices, shareable as a link. Until then: start cheap, write an eval, and only pay frontier prices where the task actually earns them.</p>
+  <p>And the other half — <em>"fine, mid tier for RAG, but what does that cost at my volume?"</em> — is the question this site exists to answer next. A <strong>cost calculator</strong> is on the way: pick a task shape like the ones above, set your volume, and get a ranked monthly bill across every model tracked here, at live prices, shareable as a link. Until then: start cheap, write an eval, and only pay frontier prices where the task actually earns them.</p>
 </article>
