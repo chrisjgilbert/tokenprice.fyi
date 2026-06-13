@@ -6,10 +6,13 @@ require "json"
 # approves or discards each draft in the admin review queue.
 # Nothing automated publishes an event or creates a PricePoint.
 #
-# Running daily means the same un-drafted news could be re-presented on
-# consecutive days, so we (a) keep the lookback short and (b) feed pending
-# drafts into the "do not duplicate" context so Opus won't re-draft what is
-# already sitting in the review queue.
+# Running daily means the same news could be re-presented on consecutive days,
+# so dedup is layered:
+#   • Hard guard: every item fed to the curator is stamped curated_at, so a
+#     given news_item is only ever evaluated once — no re-feed, no duplicate.
+#   • Soft guard: existing published events AND pending drafts are listed in the
+#     prompt as "do NOT (re-)create", covering the case where a *different*
+#     news_item reports an event already drafted from an earlier item.
 class EventCurationJob < ApplicationJob
   queue_as :default
 
@@ -46,7 +49,7 @@ class EventCurationJob < ApplicationJob
 
   TOOL_DEFINITION = {
     name: TOOL_NAME,
-    description: "Submit zero or more MarketEvent draft candidates. Submit an empty array for a quiet week.",
+    description: "Submit zero or more MarketEvent draft candidates. Submit an empty array for a quiet day.",
     input_schema: {
       type: "object",
       required: [ "drafts" ],
@@ -71,13 +74,15 @@ class EventCurationJob < ApplicationJob
   }.freeze
 
   def perform
-    news_items = NewsItem.where(relevant: true)
-                         .where(market_event_id: nil)
+    news_items = NewsItem.awaiting_curation
                          .where("published_at >= ? OR published_at IS NULL", LOOKBACK.ago)
                          .order(published_at: :desc)
                          .limit(50)
+                         .to_a
 
     return Rails.logger.info("EventCurationJob: no candidate news items, skipping") if news_items.empty?
+
+    candidate_ids = news_items.map(&:id)
 
     existing_events  = MarketEvent.published.recent_first.limit(30)
     pending_drafts   = MarketEvent.drafts.recent_first.limit(30)
@@ -123,6 +128,10 @@ class EventCurationJob < ApplicationJob
     rescue Date::Error, ActiveRecord::RecordInvalid => e
       Rails.logger.warn("EventCurationJob: skipping malformed draft — #{e.message}")
     end
+
+    # Stamp every candidate we fed to the curator so it is never re-presented on
+    # a later run, whether or not it became a draft. This is the hard dedup guard.
+    NewsItem.where(id: candidate_ids).update_all(curated_at: Time.current)
 
     Rails.logger.info("EventCurationJob: created #{created} draft(s) from #{news_items.size} candidates")
 

@@ -102,6 +102,37 @@ class EventCurationJobTest < ActiveJob::TestCase
     end
   end
 
+  test "includes a news item at the inclusive edge of the lookback window" do
+    @news_item.update!(published_at: EventCurationJob::LOOKBACK.ago + 1.hour)
+    assert_difference "MarketEvent.count", 1 do
+      EventCurationJob.perform_now
+    end
+  end
+
+  test "includes news items with no published_at" do
+    @news_item.update!(published_at: nil)
+    assert_difference "MarketEvent.count", 1 do
+      EventCurationJob.perform_now
+    end
+  end
+
+  # --- hard dedup guard (curated_at) -----------------------------------------
+
+  test "stamps curated_at on every fed candidate" do
+    EventCurationJob.perform_now
+    assert_not_nil @news_item.reload.curated_at
+  end
+
+  test "does not re-feed an item once curated, so no duplicate draft on the next run" do
+    EventCurationJob.perform_now
+    assert_equal 1, MarketEvent.count
+
+    # Second run: the (now curated) item is the only candidate and must be skipped.
+    assert_no_difference "MarketEvent.count" do
+      EventCurationJob.perform_now
+    end
+  end
+
   # --- dedup context ---------------------------------------------------------
 
   test "feeds pending drafts into the prompt so Claude won't re-draft them" do

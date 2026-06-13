@@ -29,6 +29,33 @@ class NewsItemTest < ActiveSupport::TestCase
     refute_includes NewsItem.pending_digest, item
   end
 
+  # awaiting_curation scope ——————————————————————————————————————————————
+
+  test "awaiting_curation includes relevant, unattached, uncurated items" do
+    item = NewsItem.create!(url: "https://example.com/cur1", title: "Curatable",
+                            source: "hn", relevant: true)
+    assert_includes NewsItem.awaiting_curation, item
+  end
+
+  test "awaiting_curation excludes items already curated" do
+    item = NewsItem.create!(url: "https://example.com/cur2", title: "Already curated",
+                            source: "hn", relevant: true, curated_at: Time.current)
+    refute_includes NewsItem.awaiting_curation, item
+  end
+
+  test "awaiting_curation excludes items attached to an event" do
+    event = MarketEvent.create!(title: "Evt", event_date: Date.current, kind: "market", status: "draft")
+    item  = NewsItem.create!(url: "https://example.com/cur3", title: "Attached",
+                             source: "hn", relevant: true, market_event_id: event.id)
+    refute_includes NewsItem.awaiting_curation, item
+  end
+
+  test "awaiting_curation excludes irrelevant items" do
+    item = NewsItem.create!(url: "https://example.com/cur4", title: "Irrelevant",
+                            source: "hn", relevant: false)
+    refute_includes NewsItem.awaiting_curation, item
+  end
+
   # validations ——————————————————————————————————————————————————————————
 
   test "valid with url, title, and source" do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_110620) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_113000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -53,6 +53,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_110620) do
 
   create_table "news_items", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "curated_at"
     t.string "kind"
     t.integer "market_event_id"
     t.datetime "notified_at"
@@ -63,6 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_110620) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
+    t.index ["curated_at"], name: "index_news_items_on_curated_at"
     t.index ["notified_at"], name: "index_news_items_on_notified_at"
     t.index ["published_at"], name: "index_news_items_on_published_at"
     t.index ["url"], name: "index_news_items_on_url", unique: true
