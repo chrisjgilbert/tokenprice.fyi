@@ -46,8 +46,21 @@
           <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
           <%= nav_link "Map", map_path, active: current_page?(map_path) %>
           <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
-          <%= nav_link "Which model?", which_model_path, active: current_page?(which_model_path) %>
-          <%= nav_link "Learn", how_pricing_works_path, active: current_page?(how_pricing_works_path) %>
+          <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
+              on the mobile scroll-nav it flattens to inline links via CSS. %>
+          <% learn_active = current_page?(how_pricing_works_path) || current_page?(which_model_path) %>
+          <div class="tp-nav-group" data-controller="dropdown">
+            <button type="button" class="tp-nav-link tp-nav-trigger<%= " active" if learn_active %>"
+                    data-dropdown-target="trigger" data-action="dropdown#toggle"
+                    aria-haspopup="true" aria-expanded="false" aria-label="Learn menu">
+              Learn
+              <svg class="tp-nav-chevron" width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="tp-nav-menu" data-dropdown-target="menu">
+              <%= link_to "How pricing works", how_pricing_works_path, class: "tp-nav-menu-item", aria: { current: ("page" if current_page?(how_pricing_works_path)) } %>
+              <%= link_to "Which model?", which_model_path, class: "tp-nav-menu-item", aria: { current: ("page" if current_page?(which_model_path)) } %>
+            </div>
+          </div>
         </div>
         <span class="tp-nav-spacer"></span>
         <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
