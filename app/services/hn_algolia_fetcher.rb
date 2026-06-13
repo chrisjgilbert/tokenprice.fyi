@@ -33,24 +33,24 @@ class HnAlgoliaFetcher
   private
 
   def build_uri
-    params = URI.encode_www_form(
-      query:          @query,
-      tags:           "story",
-      numericFilters: "points>#{@min_points},created_at_i>#{@since}",
-      hitsPerPage:    50
-    )
-    URI.parse("#{BASE_URL}?#{params}")
+    # encode_www_form percent-encodes > and , which Algolia may reject in
+    # numericFilters; append it raw since @min_points/@since are safe integers.
+    encoded = URI.encode_www_form(query: @query, tags: "story", hitsPerPage: 50)
+    URI.parse("#{BASE_URL}?#{encoded}&numericFilters=points>#{@min_points},created_at_i>#{@since}")
   end
 
   def parse_hits(hits)
     hits.filter_map do |hit|
-      title = hit["title"].to_s.strip
-      next if title.blank?
-      url = hit["url"].presence || "https://news.ycombinator.com/item?id=#{hit["objectID"]}"
+      title        = hit["title"].to_s.strip
+      created_at_i = hit["created_at_i"]
+      next if title.blank? || created_at_i.nil?
+      object_id = hit["objectID"]
+      url = hit["url"].presence || (object_id && "https://news.ycombinator.com/item?id=#{object_id}")
+      next unless url
       { url:          url,
         title:        title,
         source:       "hn",
-        published_at: Time.at(hit["created_at_i"]).utc }
+        published_at: Time.at(created_at_i).utc }
     end
   end
 
@@ -60,7 +60,10 @@ class HnAlgoliaFetcher
                     open_timeout: TIMEOUT,
                     read_timeout: TIMEOUT) do |http|
       response = http.get(uri.request_uri, "User-Agent" => "tokenprice-news-scan/1.0")
-      return nil unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        Rails.logger.warn("HnAlgoliaFetcher(#{@query}): HTTP #{response.code}")
+        return nil
+      end
       response.body
     end
   rescue URI::InvalidURIError => e

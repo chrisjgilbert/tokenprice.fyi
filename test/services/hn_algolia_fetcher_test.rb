@@ -89,6 +89,27 @@ class HnAlgoliaFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  test "skips hit with nil created_at_i without raising" do
+    body = {
+      "hits" => [
+        { "objectID" => "1", "title" => "Has timestamp",   "url" => "https://example.com/a", "created_at_i" => 1748736000 },
+        { "objectID" => "2", "title" => "Missing timestamp", "url" => "https://example.com/b", "created_at_i" => nil }
+      ]
+    }.to_json
+    with_response(200, body) do
+      items = HnAlgoliaFetcher.fetch(query: "anthropic", since: 24.hours.ago)
+      assert_equal 1, items.size
+      assert_equal "https://example.com/a", items[0][:url]
+    end
+  end
+
+  test "skips hit when both url and objectID are nil" do
+    body = { "hits" => [ { "objectID" => nil, "title" => "No url or id", "url" => nil, "created_at_i" => 1748736000 } ] }.to_json
+    with_response(200, body) do
+      assert_equal [], HnAlgoliaFetcher.fetch(query: "anthropic", since: 24.hours.ago)
+    end
+  end
+
   # --- error handling --------------------------------------------------------
 
   test "returns empty array on non-2xx response" do

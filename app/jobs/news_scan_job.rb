@@ -5,8 +5,13 @@ class NewsScanJob < ApplicationJob
   MIN_POINTS = 25
 
   def perform
-    since     = Rails.cache.read(CACHE_KEY) || 24.hours.ago
-    queries   = Provider.pluck(:name)
+    queries = Provider.pluck(:name)
+    if queries.empty?
+      Rails.logger.info("NewsScanJob: no providers found, skipping")
+      return
+    end
+
+    since     = Rails.cache.read(CACHE_KEY) || 24.hours.ago.to_i
     seen_urls = Set.new
     new_count = 0
 
@@ -20,7 +25,7 @@ class NewsScanJob < ApplicationJob
       end
     end
 
-    Rails.cache.write(CACHE_KEY, Time.current)
+    Rails.cache.write(CACHE_KEY, Time.current.to_i)
     Rails.logger.info("NewsScanJob: processed #{new_count} new item(s) from #{queries.size} queries")
   end
 

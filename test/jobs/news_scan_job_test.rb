@@ -19,7 +19,9 @@ class NewsScanJobTest < ActiveJob::TestCase
 
   teardown do
     Rails.cache.delete(NewsScanJob::CACHE_KEY)
-    Provider.singleton_class.remove_method(:pluck) rescue nil
+    if Provider.singleton_class.instance_methods(false).include?(:pluck)
+      Provider.singleton_class.remove_method(:pluck)
+    end
     if @fetcher_original
       HnAlgoliaFetcher.singleton_class.define_method(:fetch, @fetcher_original)
     elsif HnAlgoliaFetcher.singleton_class.instance_methods(false).include?(:fetch)
@@ -67,36 +69,54 @@ class NewsScanJobTest < ActiveJob::TestCase
 
   # --- cache -----------------------------------------------------------------
 
-  test "writes current time to cache after successful run" do
+  test "writes current time as integer epoch to cache after successful run" do
     with_memory_cache do
       freeze_time do
         NewsScanJob.perform_now
-        assert_in_delta Time.current.to_i, Rails.cache.read(NewsScanJob::CACHE_KEY).to_i, 1
+        assert_equal Time.current.to_i, Rails.cache.read(NewsScanJob::CACHE_KEY)
       end
     end
   end
 
   test "passes cached last_run_at as since floor" do
     with_memory_cache do
-      last_run = 12.hours.ago
-      Rails.cache.write(NewsScanJob::CACHE_KEY, last_run)
+      last_run_i = 12.hours.ago.to_i
+      Rails.cache.write(NewsScanJob::CACHE_KEY, last_run_i)
 
       captured_since = nil
       HnAlgoliaFetcher.define_singleton_method(:fetch) { |query:, since:, **| captured_since = since; [] }
 
       NewsScanJob.perform_now
-      assert_in_delta last_run.to_i, captured_since.to_i, 1
+      assert_equal last_run_i, captured_since
     end
   end
 
-  test "defaults since to 24 hours ago when cache is empty" do
+  test "defaults since to 24 hours ago integer epoch when cache is empty" do
     captured_since = nil
     HnAlgoliaFetcher.define_singleton_method(:fetch) { |query:, since:, **| captured_since = since; [] }
 
     freeze_time do
       NewsScanJob.perform_now
-      assert_in_delta 24.hours.ago.to_i, captured_since.to_i, 1
+      assert_equal 24.hours.ago.to_i, captured_since
     end
+  end
+
+  test "does not write cache and creates no records when no providers exist" do
+    stub_providers([])
+    with_memory_cache do
+      assert_no_difference "NewsItem.count" do
+        NewsScanJob.perform_now
+      end
+      assert_nil Rails.cache.read(NewsScanJob::CACHE_KEY), "cache should not be written when providers list is empty"
+    end
+  end
+
+  test "passes MIN_POINTS to the fetcher" do
+    captured_min_points = nil
+    HnAlgoliaFetcher.define_singleton_method(:fetch) { |query:, since:, min_points:, **| captured_min_points = min_points; [] }
+
+    NewsScanJob.perform_now
+    assert_equal NewsScanJob::MIN_POINTS, captured_min_points
   end
 
   # --- classifier ------------------------------------------------------------
@@ -125,7 +145,7 @@ class NewsScanJobTest < ActiveJob::TestCase
   end
 
   def stub_fetcher(&block)
-    @fetcher_original = HnAlgoliaFetcher.singleton_class.instance_method(:fetch) rescue nil
+    @fetcher_original ||= (HnAlgoliaFetcher.singleton_class.instance_method(:fetch) rescue nil)
     call_number = 0
     HnAlgoliaFetcher.define_singleton_method(:fetch) do |query:, **|
       call_number += 1
