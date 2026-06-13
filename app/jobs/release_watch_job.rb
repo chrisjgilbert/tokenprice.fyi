@@ -4,10 +4,8 @@
 class ReleaseWatchJob < ApplicationJob
   queue_as :default
 
-  SOURCES_FILE = Rails.root.join("config/news_sources.yml")
-
   def perform
-    sources = YAML.load_file(SOURCES_FILE)["sources"]
+    sources = YAML.safe_load_file(sources_file)["sources"]
     new_count = 0
 
     sources.each do |source_config|
@@ -25,6 +23,8 @@ class ReleaseWatchJob < ApplicationJob
   end
 
   private
+
+  def sources_file = Rails.root.join("config/news_sources.yml")
 
   def create_news_item(attrs)
     NewsItem.create!(

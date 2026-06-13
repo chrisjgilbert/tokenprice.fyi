@@ -61,9 +61,11 @@ class NewsFeedFetcher
     seen     = Set.new
 
     body.scan(/<a[^>]+href=["']([^"']+)["'][^>]*>(.*?)<\/a>/im).filter_map do |href, anchor_text|
-      # Resolve relative URLs
-      url = URI.join(base_uri, href.strip).to_s rescue nil
-      next unless url
+      url = begin
+        URI.join(base_uri, href.strip).to_s
+      rescue URI::Error
+        next
+      end
       next if seen.include?(url)
       next unless url.start_with?("http")
       seen << url

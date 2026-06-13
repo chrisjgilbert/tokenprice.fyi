@@ -115,9 +115,9 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
   private
 
   def stub_sources(sources)
-    original = YAML.method(:load_file)
-    YAML.define_singleton_method(:load_file) do |path|
-      path.to_s.end_with?("news_sources.yml") ? { "sources" => sources } : original.call(path)
+    original = YAML.method(:safe_load_file)
+    YAML.define_singleton_method(:safe_load_file) do |path, **kwargs|
+      path.to_s.end_with?("news_sources.yml") ? { "sources" => sources } : original.call(path, **kwargs)
     end
     @yaml_original = original
   end
@@ -149,13 +149,15 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
 
   teardown do
     if @yaml_original
-      YAML.singleton_class.define_method(:load_file, @yaml_original)
+      YAML.singleton_class.define_method(:safe_load_file, @yaml_original)
     end
     if @fetcher_original
       NewsFeedFetcher.singleton_class.define_method(:fetch, @fetcher_original)
     end
     if @classifier_original
       NewsClassifier.singleton_class.define_method(:classify, @classifier_original)
+    elsif NewsClassifier.singleton_class.method_defined?(:classify)
+      NewsClassifier.singleton_class.remove_method(:classify)
     end
   end
 end
