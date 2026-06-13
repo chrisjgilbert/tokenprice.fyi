@@ -29,6 +29,11 @@ production:
     queue: default
     schedule: every day at 5am
 
+  news_digest:
+    class: NewsDigestJob
+    queue: default
+    schedule: every day at 6am
+
   event_curation:
     class: EventCurationJob
     queue: default

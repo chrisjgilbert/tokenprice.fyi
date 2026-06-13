@@ -7,10 +7,9 @@ module OpenRouter
   class SyncDigest
     BASE_URL = "https://tokenprice.fyi"
 
-    def initialize(result, date: Date.current, news_items: [])
-      @result     = result
-      @date       = date
-      @news_items = news_items
+    def initialize(result, date: Date.current)
+      @result = result
+      @date   = date
     end
 
     # Returns the Slack payload Hash, or nil if nothing changed.
@@ -18,7 +17,6 @@ module OpenRouter
       sections = []
       sections << price_moves_section if @result.repriced_records.any?
       sections << new_models_section  if @result.created_records.any?
-      sections << news_section        if @news_items.any?
       return nil if sections.empty?
 
       { text: "Token Price sync — #{@date.strftime('%-d %b %Y')}",
@@ -56,18 +54,6 @@ module OpenRouter
           "$#{fmt(r.input_per_mtok)}/$#{fmt(r.output_per_mtok)} per MTok · #{edit_link}"
       end
       mrkdwn_section("*🆕 New models (#{lines.size})*\n#{lines.join("\n")}")
-    end
-
-    def news_section
-      lines = @news_items.map do |item|
-        link = slack_link(item.url, item.title)
-        if item.relevant.nil?
-          "• #{link} (#{item.source}) — ⚠ unclassified"
-        else
-          "• #{link} (#{item.source}) — #{item.kind} · #{item.rationale}"
-        end
-      end
-      mrkdwn_section("*📰 News (#{lines.size})*\n#{lines.join("\n")}")
     end
 
     def mrkdwn_section(text)
