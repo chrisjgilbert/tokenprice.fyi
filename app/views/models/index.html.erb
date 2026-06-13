@@ -310,7 +310,63 @@
     color: var(--color-slate-500);
     font-weight: 500;
   }
+
+  /* ── Announcement banner ───────────────────────────── */
+  .tp-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    margin-bottom: 32px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(120deg, #14163a, #2a2f6e);
+    border: 1px solid rgba(99,102,241,.3);
+    box-shadow: 0 8px 24px -12px rgba(79,70,229,.4);
+    color: #fff;
+    text-decoration: none;
+    transition: transform .15s var(--ease-default), box-shadow .15s var(--ease-default);
+  }
+  .tp-banner:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px -12px rgba(79,70,229,.5);
+  }
+  .tp-banner-pill {
+    flex: none;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    background: rgba(165,180,252,.18);
+    color: #c7d2fe;
+    border: 1px solid rgba(165,180,252,.3);
+  }
+  .tp-banner-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: rgba(226,232,240,.95);
+    min-width: 0;
+  }
+  .tp-banner-arrow {
+    flex: none;
+    font-size: 15px;
+    color: #c7d2fe;
+    transition: transform .15s var(--ease-default);
+  }
+  .tp-banner:hover .tp-banner-arrow { transform: translateX(3px); }
 </style>
+
+<%# ── ANNOUNCEMENT BANNER ────────────────────────────────────────── %>
+<%= link_to "https://www.anthropic.com/news/fable-mythos-access",
+      class: "tp-banner", target: "_blank", rel: "noopener" do %>
+  <span class="tp-banner-pill">New</span>
+  <span class="tp-banner-text">Anthropic announces Fable Mythos access</span>
+  <span class="tp-banner-arrow">→</span>
+<% end %>
 
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
