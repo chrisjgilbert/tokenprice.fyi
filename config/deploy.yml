@@ -43,6 +43,8 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - HONEYBADGER_API_KEY
+    - ANTHROPIC_API_KEY
+    - SLACK_WEBHOOK_URL
   clear:
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: "true"
