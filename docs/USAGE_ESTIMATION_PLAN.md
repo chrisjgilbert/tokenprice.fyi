@@ -202,7 +202,7 @@ produce a `Workload`.
 | `volume` | requests per month | profile-appropriate |
 | `cache_hit` | 0–1 | profile default |
 | `batch` | 0–1 | 0 |
-| `models` | comma-separated slugs (shortlist; empty = top N by fit) | — |
+| `models` | comma-separated slugs (shortlist; empty = frontier headline set, see WP4) | — |
 
 The web-engineer owns parsing/clamping (cap volume, whitelist slugs against
 `AiModel.listed`, exactly like `ModelsController` does for `providers`/`sort`).
@@ -302,8 +302,13 @@ test` green, `bin/rubocop` clean, reviewer sign-off, coordinator integrated.
   - Parse the §2.5 param schema; clamp/whitelist like `ModelsController#index`.
   - Three input modes (`profile` default, `plain`, `power`) → all build a
     `Workload`; plain mode converts via ~4 chars/token with the assumption shown.
-  - Default the model shortlist to a sensible set when `models` is empty (e.g.
-    cheapest in each tier, or the profile's `min_tier` and up).
+  - **Default the model shortlist to the frontier headline set when `models` is
+    empty** — i.e. the listed frontier-tier models (`AiModel.listed.frontier`),
+    the same set the homepage's cheapest-frontier headline ranks — ordered by
+    `CostEstimator#monthly_cost` cheapest-first for the chosen workload. Cap at a
+    readable N (e.g. 6) so a bulk import can't bloat the table; the user can
+    always widen via the `models` param. (This default is deliberate, not
+    "sensible-ish": it anchors the calculator on the comparison users arrive for.)
   - Render a side-by-side monthly-bill table: per model `monthly_cost`,
     `cost_per_request`, the breakdown, and per-lever "with caching / with batch"
     figures (only for models exposing that lever).
@@ -316,9 +321,10 @@ test` green, `bin/rubocop` clean, reviewer sign-off, coordinator integrated.
   - Reuse `PriceFormat`/`usd` for all money. Match the existing visual system
     (Tailwind classes, `tp-*` conventions seen in `application_helper.rb`).
 - **Tests** (`test/controllers/calculators_controller_test.rb`, mirror
-  `comparisons_controller_test.rb`): renders with no params (defaults); a full
-  permalink reproduces a known bill; bad/oversized params are clamped not 500;
-  an unpriced model is skipped; the savings delta renders.
+  `comparisons_controller_test.rb`): renders with no params (defaults); with no
+  `models` param the shortlist is the frontier headline set, cheapest-first; a
+  full permalink reproduces a known bill; bad/oversized params are clamped not
+  500; an unpriced model is skipped; the savings delta renders.
 - **Acceptance:** a permalink pasted fresh renders the same shortlist & numbers;
   page passes with JS disabled.
 
