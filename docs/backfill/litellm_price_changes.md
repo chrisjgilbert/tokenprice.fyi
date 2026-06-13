@@ -35,7 +35,7 @@ already seeded. Items 1–5 below have been folded into db/seeds.rb (commit
 "Apply review corrections to the historical seed data"); they remain here as
 the audit trail. Items 6–7 stay open pending Wayback._
 
-### Missed changes (items 1–5 now seeded; 6–7 open)
+### Missed changes (items 1–7 now seeded)
 
 1. **claude-3-5-haiku — CONFIRMED.** Launched at **$1 / $5** (Anthropic raised it
    from the originally announced Haiku pricing, citing capability —
@@ -66,35 +66,42 @@ the audit trail. Items 6–7 stay open pending Wayback._
    seed records this cut under deepseek-v3 only; R1 still shows $0.55/$2.19.
    (Coverage also mentions an interim ~Aug 2025 V3.1 reasoner reprice to
    ~$0.56/$1.68 that LiteLLM never carried — verify separately.)
-6. **mistral-large — PLAUSIBLE.** $8 / $24 → **$4 / $12** in the
-   2024-05-23 → 2024-05-31 window. No first-party announcement found (web
-   sources only document the later $3/$9 → $2/$6 Large 2 cut); later aggregators
-   do list Large v1 at $4/$12. Wayback mistral.ai/technology/#pricing around
-   late May 2024 to confirm.
-7. **deepseek-v3 launch promo — PLAUSIBLE (deliberate omission?).** V3 launched
-   2024-12-26 at promotional **$0.14 / $0.28** until 2025-02-08; the seed starts
-   at the post-promo $0.27/$1.10 (noted as such). For chart honesty consider a
-   launch point — the promo price is what stunned the market in Dec 2024.
+6. **mistral-large — CONFIRMED & SEEDED.** $8 / $24 → **$4 / $12**. First-party
+   Wayback (mistral.ai/technology/#pricing, USD column) shows $8/$24 still live at
+   2024-04-25 and $4/$12 by 2024-05-05 — i.e. the cut landed in **late April /
+   early May 2024, earlier than LiteLLM's 2024-05-23 → 05-31 window**. Seeded as a
+   second mistral-large point dated 2024-05-05 (bracketed 04-25 → 05-05).
+7. **deepseek-v3 launch promo — CONFIRMED & SEEDED.** V3 launched 2024-12-26 at
+   promotional **$0.14 / $0.28** (cached $0.014). First-party Wayback
+   (api-docs.deepseek.com) shows it live 2024-12-28 → 2025-02-01, reverting to
+   $0.27/$1.10/$0.07 by 2025-02-17; the page footnote stated the promo ended
+   2025-02-08 16:00 UTC. Added as a 2024-12-26 launch point. (Also corrected the
+   post-promo cached rate: seed had $0.027, the page shows **$0.07**.)
 
 ### Worth a second look (discrepancies, not dated changes)
 
 - **gemini-1-5-pro launch tier:** LiteLLM carried **$3.50 / $10.50** (the ≤128K
   tier) through mid-2024; the seed's launch point is $7/$21 (the >128K tier).
   Per the seed's own lowest-tier policy the launch point may be tier-inconsistent.
-- **kimi-k2-5 / kimi-k2-6:** LiteLLM (sourced from platform.kimi.ai pricing docs)
-  says $0.60/**$3.00** and **$0.95/$4.00** vs the seed's $0.60/$2.50 for both.
-  The K2.6 note already acknowledges the higher rate; check which is the direct rate.
+- **kimi-k2-5 / kimi-k2-6 — RESOLVED.** Wayback captures of platform.moonshot.ai
+  (the direct API) confirm LiteLLM, not the seed: K2.5 = **$0.60 / $3.00 / $0.10**
+  (capture 2026-04-02) and K2.6 = **$0.95 / $4.00 / $0.16** (capture 2026-04-27).
+  The seed's $0.60/$2.50 (and its claim that $0.95/$4.00 was a hosted markup) was
+  wrong on the direct rate; both rows corrected.
 - **llama-3-1-405b:** Together rate $3.50/$3.50 vs seed's $3/$3 — within the
   representative-rate ±20% policy, no action.
-- **qwen3-max:** LiteLLM moved to context-tiered pricing (lowest tier $1.20/$6,
-  2026-02) — different basis from the seed's flat $0.46/$1.84; not comparable.
-- **Gemini cached-input dates** (re-filed from "likely noise" after review):
-  LiteLLM shows gemini-2-5-pro cached at 0.3125 from 2025-07 dropping to 0.125
-  only in Jan 2026, and gemini-2-5-flash 0.075 → 0.03 in Nov 2025, while the
-  seed records 0.125 / 0.03 as **launch** (2025-06-17) values. The *values*
-  converge but the dates don't — either the seed's launch cached figures are
-  anachronistic or LiteLLM lagged 4–6 months. Check a ~2025-07 Wayback capture
-  of the Gemini pricing page.
+- **qwen3-max — partly resolved.** The seed tracks the Chinese-mainland base
+  (≤32K) tier; Wayback alibabacloud.com captures confirm $0.86/$3.44 (launch,
+  preserved as the qwen3-max-2025-09-23 snapshot) and $0.46/$1.84, and reveal a
+  **further undocumented cut to $0.36/$1.43** by 2026-06-01 (now seeded, date
+  approximate). LiteLLM's $1.20/$6 is the International/Singapore-region flat rate
+  — a different basis, still not directly comparable.
+- **Gemini cached-input dates — RESOLVED.** Wayback ai.google.dev captures confirm
+  the seed's launch cached figures were anachronistic: gemini-2-5-pro launched at
+  cached **$0.3125** (≤200K) and gemini-2-5-flash at **$0.075** (capture
+  2025-06-21), both cut to $0.125 / $0.03 in a tight window **2025-10-05 → 10-09**
+  (not Jan 2026 / Nov 2025 as LiteLLM lagged). Seed corrected: launch cached fixed
+  and a 2025-10-09 cut point added to each.
 
 ### Likely noise (ignore)
 

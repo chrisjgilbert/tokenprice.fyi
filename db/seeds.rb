@@ -156,7 +156,7 @@ catalog = [
     description: "Anthropic's original fast-and-cheap tier, predating Haiku. Repriced from $1.63/$5.51 to $0.80/$2.40 in late 2023.",
     prices: [
       { on: "2023-03-14", in: 1.63, out: 5.51, src: "anthropic.com/pricing", note: "Rate appears in Anthropic's April 2023 pricing PDF; dated to the Claude API launch" },
-      { on: "2023-11-21", in: 0.80, out: 2.40, src: "anthropic.com/pricing", note: "Repriced alongside Claude 2.1; date approximate — confirm via Wayback" }
+      { on: "2023-11-21", in: 0.80, out: 2.40, src: "anthropic.com/pricing", note: "Repriced alongside Claude 2.1; value confirmed via Wayback (old $1.63/$5.51 at 2023-11-17, new $0.80/$2.40 by 2024-01-16); exact date falls in that capture gap, consistent with the 2023-11-21 Claude 2.1 release" }
     ]
   },
   {
@@ -248,7 +248,7 @@ catalog = [
     description: "Budget reasoning model at one-fifth of o1's price. Cut to o3-mini's $1.10/$4.40 when that model launched.",
     prices: [
       { on: "2024-09-12", in: 3, out: 12, src: "openai.com/api/pricing", note: "Launch pricing" },
-      { on: "2025-01-31", in: 1.10, out: 4.40, src: "openai.com/api/pricing", note: "Repriced to match o3-mini at its launch; date approximate — confirm via Wayback" }
+      { on: "2025-01-31", in: 1.10, out: 4.40, src: "openai.com/api/pricing", note: "Repriced to match o3-mini at its launch; date corroborated by archived openai.com/api/pricing data model (updatedAt 2025-01-31T19:07:33Z)" }
     ]
   },
   {
@@ -313,7 +313,10 @@ catalog = [
     provider: :google, name: "Gemini 2.5 Pro", tier: "frontier", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-06-17",
     description: "First Gemini with native thinking/reasoning. Context-tiered: $1.25/$10 ≤200K, $2.50/$15 beyond.",
-    prices: [ { on: "2025-06-17", in: 1.25, out: 10, cached: 0.125, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier" } ]
+    prices: [
+      { on: "2025-06-17", in: 1.25, out: 10, cached: 0.3125, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier; launch cached rate confirmed via Wayback capture 2025-06-21 ($0.31/MTok displayed, $0.625 for >200K)" },
+      { on: "2025-10-09", in: 1.25, out: 10, cached: 0.125, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier; cached-input cut (in/out unchanged), bracketed by Wayback captures 2025-10-05 ($0.3125) → 2025-10-09 ($0.125)" }
+    ]
   },
   {
     provider: :google, name: "Gemini 3.5 Flash", tier: "mid", status: "active",
@@ -331,7 +334,10 @@ catalog = [
     provider: :google, name: "Gemini 2.5 Flash", tier: "mid", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-06-17",
     description: "First Flash model with thinking. Flat pricing (no context tiers). Superseded by Gemini 3 Flash.",
-    prices: [ { on: "2025-06-17", in: 0.30, out: 2.50, cached: 0.03, src: "ai.google.dev/gemini-api/docs/pricing" } ]
+    prices: [
+      { on: "2025-06-17", in: 0.30, out: 2.50, cached: 0.075, src: "ai.google.dev/gemini-api/docs/pricing", note: "Launch cached rate confirmed via Wayback capture 2025-06-21" },
+      { on: "2025-10-09", in: 0.30, out: 2.50, cached: 0.03, src: "ai.google.dev/gemini-api/docs/pricing", note: "Cached-input cut (in/out unchanged), bracketed by Wayback captures 2025-10-05 ($0.075) → 2025-10-09 ($0.03)" }
+    ]
   },
   {
     provider: :google, name: "Gemini 2.0 Flash", tier: "mid", status: "retired",
@@ -375,7 +381,10 @@ catalog = [
     provider: :xai, name: "Grok 4.20", tier: "frontier", status: "legacy",
     context_window: 2_000_000, max_output_tokens: 64_000, released_on: "2026-03-10",
     description: "Predecessor to Grok 4.3 with 2M context. Later aligned to Grok 4.3 pricing.",
-    prices: [ { on: "2026-03-10", in: 2, out: 6, cached: 0.20, src: "openrouter.ai/x-ai/grok-4.20" } ]
+    prices: [
+      { on: "2026-03-10", in: 2, out: 6, cached: 0.20, src: "openrouter.ai/x-ai/grok-4.20", note: "Launch pricing (OpenRouter; still $2/$6 at Wayback capture 2026-04-01)" },
+      { on: "2026-05-12", in: 1.25, out: 2.50, cached: 0.20, src: "docs.x.ai", note: "Realigned to Grok 4.3 pricing; present by Wayback docs.x.ai capture 2026-05-12 (realignment bracketed 2026-04-01 → 2026-05-12)" }
+    ]
   },
   {
     provider: :xai, name: "Grok 4", tier: "frontier", status: "retired",
@@ -412,7 +421,7 @@ catalog = [
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-08-13",
     description: "xAI's first API model. The public API beta (grok-beta) charged $5/$15; the $2/$10 Grok pricing baseline arrived that December.",
     prices: [
-      { on: "2024-10-21", in: 5, out: 15, src: "docs.x.ai", note: "Public API beta pricing (grok-beta); date approximate — confirm via Wayback" },
+      { on: "2024-10-21", in: 5, out: 15, src: "docs.x.ai", note: "Public API beta pricing (grok-beta); $5/$15 confirmed via Wayback docs.x.ai capture 2024-12-17 (coexisting with grok-2-1212); 2024-10-21 effective date remains approximate — no earlier price-table capture exists" },
       { on: "2024-12-12", in: 2, out: 10, src: "docs.x.ai", note: "Repriced with the grok-2-1212 release" }
     ]
   },
@@ -445,9 +454,10 @@ catalog = [
   {
     provider: :deepseek, name: "DeepSeek V3", tier: "mid", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-12-26",
-    description: "General-purpose chat model. Received a 50%+ output price cut with the V3.2-Exp update in September 2025.",
+    description: "General-purpose chat model. Launched on a promotional $0.14/$0.28 (Dec 2024–Feb 2025), then settled at $0.27/$1.10; received a 50%+ output price cut with the V3.2-Exp update in September 2025.",
     prices: [
-      { on: "2025-02-09", in: 0.27, out: 1.10, cached: 0.027, src: "api-docs.deepseek.com", note: "Post-promotional pricing" },
+      { on: "2024-12-26", in: 0.14, out: 0.28, cached: 0.014, src: "api-docs.deepseek.com", note: "Launch promotional pricing (discounted from list $0.27/$1.10); confirmed via Wayback capture 2024-12-28; page-stated promo end 2025-02-08 16:00 UTC" },
+      { on: "2025-02-09", in: 0.27, out: 1.10, cached: 0.07, src: "api-docs.deepseek.com", note: "Post-promotional pricing; cached-input $0.07 confirmed via Wayback capture 2025-02-17 (the seeded $0.027 was an error)" },
       { on: "2025-09-29", in: 0.28, out: 0.42, cached: 0.028, src: "api-docs.deepseek.com", note: "V3.2-Exp: 50%+ output price cut" }
     ]
   },
@@ -455,7 +465,7 @@ catalog = [
     provider: :deepseek, name: "DeepSeek V2", tier: "mid", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-05-06",
     description: "Open-weight MoE whose ~$0.14/MTok input price triggered China's May 2024 LLM price war — Alibaba and Baidu slashed rates within weeks.",
-    prices: [ { on: "2024-05-06", in: 0.14, out: 0.28, src: "api-docs.deepseek.com", note: "¥1/¥2 per MTok converted; corroborated by secondary sources — primary May 2024 capture still wanted" } ]
+    prices: [ { on: "2024-05-06", in: 0.14, out: 0.28, src: "api-docs.deepseek.com", note: "¥1/¥2 per MTok converted; confirmed first-party via Wayback platform.deepseek.com capture 2024-05-25 (deepseek-chat $0.14/$0.28)" } ]
   },
 
   # ---- Cohere -----------------------------------------------------------
@@ -525,8 +535,11 @@ catalog = [
   {
     provider: :mistral, name: "Mistral Small 4", tier: "small", status: "active",
     context_window: 262_000, max_output_tokens: nil, released_on: "2026-03-16",
-    description: "Fast, cost-effective model for high-volume and latency-sensitive workloads.",
-    prices: [ { on: "2026-03-16", in: 0.15, out: 0.60, src: "mistral.ai/pricing" } ]
+    description: "Fast, cost-effective model for high-volume and latency-sensitive workloads. Launched at $0.15/$0.60, later cut to $0.10/$0.30.",
+    prices: [
+      { on: "2026-03-16", in: 0.15, out: 0.60, src: "mistral.ai/pricing", note: "Launch pricing (corroborated by 2026 pricing trackers)" },
+      { on: "2026-06-03", in: 0.10, out: 0.30, src: "mistral.ai/pricing", note: "Price cut to $0.10/$0.30 confirmed on Wayback capture 2026-06-03; exact cut date unpinnable (launch-era mistral.ai/pricing captures are JS shells), bracketed [2026-03-16, 2026-06-03]" }
+    ]
   },
   {
     provider: :mistral, name: "Mistral Large 2", tier: "frontier", status: "retired",
@@ -540,8 +553,11 @@ catalog = [
   {
     provider: :mistral, name: "Mistral Large", tier: "frontier", status: "retired",
     context_window: 32_000, max_output_tokens: nil, released_on: "2024-02-26",
-    description: "Mistral's initial flagship at $8/$24 — quickly superseded by Large 2 at 75% lower pricing.",
-    prices: [ { on: "2024-02-26", in: 8, out: 24, src: "mistral.ai/pricing" } ]
+    description: "Mistral's initial flagship at $8/$24, cut to $4/$12 in early May 2024. Superseded by Large 2 that July.",
+    prices: [
+      { on: "2024-02-26", in: 8, out: 24, src: "mistral.ai/pricing", note: "Launch list price (USD)" },
+      { on: "2024-05-05", in: 4, out: 12, src: "mistral.ai/technology/#pricing", note: "50% cut; bracketed by Wayback captures 2024-04-25 ($8/$24) → 2024-05-05 ($4/$12), earlier than LiteLLM's late-May window" }
+    ]
   },
   {
     provider: :mistral, name: "Mixtral 8x7B", tier: "mid", status: "retired",
@@ -567,20 +583,21 @@ catalog = [
     description: "Alibaba's previous flagship. Received a 50% price cut in November 2025 as China's AI price war intensified.",
     prices: [
       { on: "2025-09-23", in: 0.86, out: 3.44, src: "alibabacloud.com/help/en/model-studio/model-pricing", note: "DashScope launch pricing" },
-      { on: "2025-11-14", in: 0.46, out: 1.84, src: "scmp.com", note: "50% price cut in China's AI price war" }
+      { on: "2025-11-14", in: 0.46, out: 1.84, src: "scmp.com", note: "50% price cut in China's AI price war" },
+      { on: "2026-06-01", in: 0.36, out: 1.43, src: "alibabacloud.com/help/en/model-studio/model-pricing", note: "Further cut to $0.359/$1.434 (Chinese-mainland base ≤32K tier); date approximate — bracketed [2026-01-16, 2026-06-01] by Wayback captures, undocumented elsewhere" }
     ]
   },
   {
     provider: :moonshot, name: "Kimi K2.6", tier: "frontier", status: "active",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-04-20",
-    description: "Moonshot AI's latest open-weight frontier model with 300-agent swarm support. Direct-API rate shown; some providers charge up to $0.95/$4.00.",
-    prices: [ { on: "2026-04-20", in: 0.60, out: 2.50, cached: 0.15, src: "platform.moonshot.ai", note: "Direct API rate; hosted providers may charge more" } ]
+    description: "Moonshot AI's latest open-weight frontier model with 300-agent swarm support.",
+    prices: [ { on: "2026-04-20", in: 0.95, out: 4.00, cached: 0.16, src: "platform.moonshot.ai", note: "Direct API rate confirmed via Wayback capture of platform.moonshot.ai 2026-04-27 (Cache Hit $0.16 / Input $0.95 / Output $4.00 per MTok)" } ]
   },
   {
     provider: :moonshot, name: "Kimi K2.5", tier: "frontier", status: "legacy",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-01-27",
     description: "Multimodal model with Agent Swarm technology. Superseded by K2.6.",
-    prices: [ { on: "2026-01-27", in: 0.60, out: 2.50, cached: 0.10, src: "platform.moonshot.ai", note: "Direct API rate" } ]
+    prices: [ { on: "2026-01-27", in: 0.60, out: 3.00, cached: 0.10, src: "platform.moonshot.ai", note: "Direct API rate confirmed via Wayback capture of platform.moonshot.ai 2026-04-02 (Cache Hit $0.10 / Input $0.60 / Output $3.00 per MTok)" } ]
   },
   {
     provider: :moonshot, name: "Kimi K2", tier: "frontier", status: "retired",
