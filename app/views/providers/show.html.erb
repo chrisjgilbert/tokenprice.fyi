@@ -28,7 +28,7 @@
     </thead>
     <tbody class="divide-y divide-slate-100">
       <% @models.each do |model| %>
-        <tr class="hover:bg-slate-50">
+        <tr class="hover:bg-slate-50 <%= 'opacity-60 grayscale hover:opacity-100 hover:grayscale-0' if model.suspended? %>">
           <td class="px-4 py-3">
             <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
             <%= status_badge(model.status) %>
