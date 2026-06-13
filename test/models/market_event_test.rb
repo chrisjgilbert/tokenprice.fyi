@@ -32,6 +32,19 @@ class MarketEventTest < ActiveSupport::TestCase
     assert MarketEvent.new(valid_attrs.merge(status: "draft")).valid?
   end
 
+  test "valid with a blank source_url" do
+    assert MarketEvent.new(valid_attrs.merge(source_url: nil)).valid?
+    assert MarketEvent.new(valid_attrs.merge(source_url: "")).valid?
+  end
+
+  test "valid with an https source_url" do
+    assert MarketEvent.new(valid_attrs.merge(source_url: "https://techcrunch.com/story")).valid?
+  end
+
+  test "invalid with a javascript: source_url" do
+    assert_not MarketEvent.new(valid_attrs.merge(source_url: "javascript:alert(1)")).valid?
+  end
+
   # --- scopes ----------------------------------------------------------------
 
   test "published scope returns only published events" do

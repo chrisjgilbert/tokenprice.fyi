@@ -83,7 +83,7 @@ class EventCurationJob < ApplicationJob
     response = client.messages.create(
       model:       MODEL,
       max_tokens:  MAX_TOKENS,
-      system_:     SYSTEM_PROMPT,
+      system:      SYSTEM_PROMPT,
       messages:    [ { role: "user", content: content } ],
       tools:       [ TOOL_DEFINITION ],
       tool_choice: { type: "tool", name: TOOL_NAME }

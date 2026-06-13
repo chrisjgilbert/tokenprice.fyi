@@ -29,10 +29,12 @@ class EventCurationJobTest < ActiveJob::TestCase
 
   teardown do
     SlackNotifier.singleton_class.define_method(:post, @slack_original)
-    if @anthropic_original
-      Anthropic::Client.singleton_class.define_method(:new, @anthropic_original)
-    elsif Anthropic::Client.singleton_class.instance_methods(false).include?(:new)
-      Anthropic::Client.singleton_class.remove_method(:new)
+    if @anthropic_stubbed
+      if @anthropic_original
+        Anthropic::Client.singleton_class.define_method(:new, @anthropic_original)
+      elsif Anthropic::Client.singleton_class.instance_methods(false).include?(:new)
+        Anthropic::Client.singleton_class.remove_method(:new)
+      end
     end
   end
 
@@ -127,7 +129,10 @@ class EventCurationJobTest < ActiveJob::TestCase
     fake_client   = Object.new
     fake_client.define_singleton_method(:messages) { fake_messages }
 
-    @anthropic_original ||= (Anthropic::Client.singleton_class.instance_method(:new) rescue nil)
+    unless @anthropic_stubbed
+      @anthropic_stubbed = true
+      @anthropic_original = Anthropic::Client.singleton_class.instance_method(:new) rescue nil
+    end
     Anthropic::Client.define_singleton_method(:new) { |**_| fake_client }
   end
 end

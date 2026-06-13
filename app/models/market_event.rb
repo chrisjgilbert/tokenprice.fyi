@@ -5,6 +5,8 @@ class MarketEvent < ApplicationRecord
   validates :event_date, presence: true
   validates :kind,       presence: true, inclusion: { in: %w[market] }
   validates :status,     presence: true, inclusion: { in: %w[draft published] }
+  validates :source_url, format: { with: /\Ahttps?:\/\//i, message: "must be an http(s) URL" },
+                         allow_blank: true
 
   scope :chronological, -> { order(event_date: :asc) }
   scope :recent_first,  -> { order(event_date: :desc) }

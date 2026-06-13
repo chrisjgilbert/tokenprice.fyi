@@ -72,6 +72,14 @@ class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Updated title", @published.reload.title
   end
 
+  test "PATCH update with invalid params re-renders form" do
+    patch admin_market_event_path(@published), params: {
+      market_event: { title: "", event_date: @published.event_date, kind: "market", status: "published" }
+    }
+    assert_response :unprocessable_entity
+    assert_equal "GPT-4 cuts 50%", @published.reload.title
+  end
+
   # --- publish ---------------------------------------------------------------
 
   test "PATCH publish flips status to published" do
@@ -96,11 +104,19 @@ class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
     assert_nil item.reload.market_event_id
   end
 
-  test "DELETE destroy marks linked news items as not relevant" do
+  test "DELETE destroy marks linked news items as not relevant for drafts" do
     item = NewsItem.create!(url: "https://example.com/y", title: "Test2",
                              source: "hn", market_event_id: @draft.id, relevant: true)
     delete admin_market_event_path(@draft)
     assert_equal false, item.reload.relevant
+  end
+
+  test "DELETE destroy does not mark linked news items irrelevant for published events" do
+    item = NewsItem.create!(url: "https://example.com/z", title: "Test3",
+                             source: "hn", market_event_id: @published.id, relevant: true)
+    delete admin_market_event_path(@published)
+    assert_nil item.reload.market_event_id
+    assert_equal true, item.reload.relevant
   end
 
   # --- auth guard ------------------------------------------------------------

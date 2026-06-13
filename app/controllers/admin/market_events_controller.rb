@@ -31,10 +31,15 @@ module Admin
     end
 
     def destroy
-      # Unlink news items so they can be re-proposed; mark them not re-draftable
-      @event.news_items.update_all(market_event_id: nil, relevant: false)
-      @event.destroy
-      redirect_to admin_market_events_path, notice: "Discarded event.", status: :see_other
+      MarketEvent.transaction do
+        if @event.status == "draft"
+          @event.news_items.update_all(market_event_id: nil, relevant: false)
+        else
+          @event.news_items.update_all(market_event_id: nil)
+        end
+        @event.destroy!
+      end
+      redirect_to admin_market_events_path, notice: "Deleted event.", status: :see_other
     end
 
     def publish
