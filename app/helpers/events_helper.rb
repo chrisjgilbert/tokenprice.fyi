@@ -1,7 +1,7 @@
 module EventsHelper
   Event = Data.define(:date, :title, :kind, :note, :model, :provider)
 
-  def build_all_events(models: AiModel.listed.includes(:provider, :price_points), market_events: MarketEvent.chronological)
+  def build_all_events(models: AiModel.listed.includes(:provider, :price_points), market_events: MarketEvent.listed)
     events = []
 
     market_events.each do |me|

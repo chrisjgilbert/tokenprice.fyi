@@ -28,3 +28,8 @@ production:
     class: NewsScanJob
     queue: default
     schedule: every day at 5am
+
+  event_curation:
+    class: EventCurationJob
+    queue: default
+    schedule: every week

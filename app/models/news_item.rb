@@ -1,4 +1,6 @@
 class NewsItem < ApplicationRecord
+  belongs_to :market_event, optional: true
+
   validates :url,    presence: true
   validates :title,  presence: true
   validates :source, presence: true
