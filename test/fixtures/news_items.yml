@@ -1,0 +1,39 @@
+anthropic_haiku_release:
+  url: "https://anthropic.com/news/claude-haiku-4-5"
+  title: "Introducing Claude Haiku 4.5"
+  source: "anthropic"
+  published_at: "2026-06-01 10:00:00"
+  kind: "release"
+  relevant: true
+  rationale: "New Claude model release"
+  notified_at: null
+
+notified_item:
+  url: "https://openai.com/blog/old-post"
+  title: "Old OpenAI post"
+  source: "openai"
+  published_at: "2026-05-01 10:00:00"
+  kind: "market"
+  relevant: true
+  rationale: "Old news"
+  notified_at: "2026-05-02 06:00:00"
+
+irrelevant_item:
+  url: "https://meta.ai/blog/irrelevant"
+  title: "Meta company update"
+  source: "meta_ai"
+  published_at: "2026-06-10 10:00:00"
+  kind: "other"
+  relevant: false
+  rationale: "Not pricing-related"
+  notified_at: null
+
+unclassified_item:
+  url: "https://deepseek.com/news/unknown"
+  title: "DeepSeek blog post"
+  source: "deepseek"
+  published_at: "2026-06-11 10:00:00"
+  kind: null
+  relevant: null
+  rationale: null
+  notified_at: null
