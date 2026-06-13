@@ -302,5 +302,91 @@ module OpenRouter
       assert_equal 1, result.created
       assert_equal 1, result.skipped
     end
+
+    # --- created_records / repriced_records population ----------------------
+
+    test "created model populates created_records with model and provider info" do
+      result = sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.000001", completion: "0.000005") ])
+
+      assert_equal 1, result.created_records.size
+      rec = result.created_records.first
+      assert_equal "Claude Haiku 4.5",  rec.model_name
+      assert_equal "Anthropic",         rec.provider_name
+      assert_equal "anthropic-claude-haiku-4-5", rec.model_slug
+      assert_equal 1.0,                 rec.input_per_mtok
+      assert_equal 5.0,                 rec.output_per_mtok
+      assert_equal false,               rec.new_provider
+    end
+
+    test "new_provider is true when the provider did not exist before" do
+      result = sync([ or_model(id: "brandnew/model-1", name: "BrandNew: Model 1",
+                               prompt: "0.000001", completion: "0.000004") ])
+
+      assert_equal 1, result.created_records.size
+      assert_equal true, result.created_records.first.new_provider
+    end
+
+    test "new_provider is false when provider already existed" do
+      # anthropic provider exists in fixtures
+      result = sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.000001", completion: "0.000005") ])
+
+      assert_equal false, result.created_records.first.new_provider
+    end
+
+    test "first-price models (created) do not populate repriced_records" do
+      result = sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.000001", completion: "0.000005") ])
+
+      assert_equal 0, result.repriced_records.size
+    end
+
+    test "repriced model populates repriced_records with correct old/new pricing" do
+      id = "anthropic/claude-haiku-4.5"
+      # First sync — creates the model and records first price.
+      sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005") ])
+
+      # Second sync with a new price.
+      result = sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.0000008", completion: "0.000005") ],
+                    today: Date.current + 1)
+
+      assert_equal 1, result.repriced_records.size
+      rec = result.repriced_records.first
+      assert_equal "Claude Haiku 4.5", rec.model_name
+      assert_equal "Anthropic",        rec.provider_name
+      assert_equal 1.0,                rec.old_input
+      assert_equal 5.0,                rec.old_output
+      assert_equal 0.8,                rec.new_input
+      assert_equal 5.0,                rec.new_output
+    end
+
+    test "pct_blended_change is calculated correctly for a price drop" do
+      id = "anthropic/claude-haiku-4.5"
+      # old: input=1, output=5  => blended = (3*1 + 5)/4 = 2.0
+      sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005") ])
+      # new: input=0.5, output=5 => blended = (3*0.5 + 5)/4 = 1.625
+      # pct = (1.625 - 2.0) / 2.0 * 100 = -18.75 → -18.8 (rounded to 1 dp)
+      result = sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.0000005", completion: "0.000005") ],
+                    today: Date.current + 1)
+
+      rec = result.repriced_records.first
+      assert_in_delta(-18.8, rec.pct_blended_change, 0.05)
+    end
+
+    test "unchanged price does not populate repriced_records" do
+      id = "anthropic/claude-haiku-4.5"
+      rows = [ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                        prompt: "0.000001", completion: "0.000005") ]
+      sync(rows)
+
+      result = sync(rows, today: Date.current + 1)
+      assert_equal 0, result.repriced_records.size
+      assert_equal 0, result.created_records.size
+    end
   end
 end

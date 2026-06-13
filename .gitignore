@@ -45,3 +45,6 @@
 # Kamal local secrets (contains real credentials)
 /.kamal/secrets.local
 /.kamal/secrets.*.local
+
+# Claude Code internal state (worktree tracking, local session data)
+/.claude/

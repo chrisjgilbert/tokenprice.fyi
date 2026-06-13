@@ -20,7 +20,7 @@ class TrendsController < ApplicationController
       }
     end.to_json
 
-    market_events_records = MarketEvent.chronological.to_a
+    market_events_records = MarketEvent.listed.to_a
 
     @events_json = market_events_records.map do |me|
       {

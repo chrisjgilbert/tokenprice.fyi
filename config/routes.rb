@@ -28,5 +28,8 @@ Rails.application.routes.draw do
     resources :models, except: :show do
       resources :price_points, only: %i[new create edit update destroy]
     end
+    resources :market_events, except: :show do
+      member { patch :publish }
+    end
   end
 end

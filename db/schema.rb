@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_113000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -41,10 +41,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_000001) do
     t.date "event_date", null: false
     t.string "kind", default: "market", null: false
     t.text "note"
+    t.string "source"
+    t.string "source_url"
+    t.string "status", default: "published", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["event_date"], name: "index_market_events_on_event_date"
     t.index ["kind"], name: "index_market_events_on_kind"
+    t.index ["status"], name: "index_market_events_on_status"
+  end
+
+  create_table "news_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "curated_at"
+    t.string "kind"
+    t.integer "market_event_id"
+    t.datetime "notified_at"
+    t.datetime "published_at"
+    t.string "rationale"
+    t.boolean "relevant"
+    t.string "source", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["curated_at"], name: "index_news_items_on_curated_at"
+    t.index ["notified_at"], name: "index_news_items_on_notified_at"
+    t.index ["published_at"], name: "index_news_items_on_published_at"
+    t.index ["url"], name: "index_news_items_on_url", unique: true
   end
 
   create_table "price_points", force: :cascade do |t|

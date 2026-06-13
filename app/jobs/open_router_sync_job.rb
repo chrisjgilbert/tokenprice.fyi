@@ -5,6 +5,13 @@ class OpenRouterSyncJob < ApplicationJob
   queue_as :default
 
   def perform
-    OpenRouter::ModelSync.call
+    result  = OpenRouter::ModelSync.call
+    pending = NewsItem.pending_digest.to_a
+    payload = OpenRouter::SyncDigest.new(result, news_items: pending).to_slack_payload
+
+    if payload
+      SlackNotifier.post(payload)
+      NewsItem.where(id: pending.map(&:id)).update_all(notified_at: Time.current) if pending.any?
+    end
   end
 end

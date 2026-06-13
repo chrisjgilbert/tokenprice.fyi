@@ -1,8 +1,16 @@
 class MarketEvent < ApplicationRecord
-  validates :title, presence: true
+  has_many :news_items, foreign_key: :market_event_id, dependent: :nullify
+
+  validates :title,      presence: true
   validates :event_date, presence: true
-  validates :kind, presence: true, inclusion: { in: %w[market] }
+  validates :kind,       presence: true, inclusion: { in: %w[market] }
+  validates :status,     presence: true, inclusion: { in: %w[draft published] }
+  validates :source_url, format: { with: /\Ahttps?:\/\//i, message: "must be an http(s) URL" },
+                         allow_blank: true
 
   scope :chronological, -> { order(event_date: :asc) }
-  scope :recent_first, -> { order(event_date: :desc) }
+  scope :recent_first,  -> { order(event_date: :desc) }
+  scope :published,     -> { where(status: "published") }
+  scope :drafts,        -> { where(status: "draft") }
+  scope :listed,        -> { published.chronological }
 end
