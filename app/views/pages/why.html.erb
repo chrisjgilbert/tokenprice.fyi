@@ -1,12 +1,12 @@
-<% content_for :title, "LLM costs are decided in the dark — tokenprice.fyi" %>
-<% content_for :description, "Teams pick models without knowing what their workload will cost, and almost nobody re-evaluates as the market reprices around them. Why tokenprice.fyi exists." %>
+<% content_for :title, "LLM costs are hard to estimate — tokenprice.fyi" %>
+<% content_for :description, "Models often get picked without a clear estimate of what the workload will cost, and prices are rarely re-evaluated as the market shifts. Why tokenprice.fyi exists." %>
 
 <% content_for :head do %>
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "LLM costs are decided in the dark",
+      "headline": "LLM costs are hard to estimate",
       "datePublished": "2026-06-11",
       "author": { "@type": "Organization", "name": "tokenprice.fyi" },
       "publisher": { "@type": "Organization", "name": "tokenprice.fyi" },
@@ -33,28 +33,28 @@
 
 <article class="why-article">
   <p class="why-meta">June 2026</p>
-  <h1>LLM costs are decided in the dark</h1>
+  <h1>LLM costs are hard to estimate</h1>
 
-  <p>Somewhere right now, a team is picking the model for their next feature — and price will barely figure in the decision. Not because it doesn't matter. Because nobody in the room can actually compute it.</p>
+  <p>When a team picks the model for a new feature, price often barely figures in the decision — not because it doesn't matter, but because it's hard to compute ahead of time.</p>
 
-  <p>The cost of an LLM feature isn't on any pricing page. It's price × token volume × traffic shape × caching × batch discounts — per model — and every one of those variables is opaque before launch, fuzzy during the build, and tedious to re-derive once you're live. So teams don't compute it. They guess, or they skip the question entirely.</p>
+  <p>The cost of an LLM feature isn't printed on any pricing page. It's price × token volume × traffic shape × caching × batch discounts — per model — and every one of those variables is opaque before launch, uncertain during the build, and tedious to re-derive once a feature is live. As a result, the figure tends to go unestimated: it's guessed at, or the question is skipped entirely.</p>
 
-  <p>That produces two failure modes, and both are common. Teams <strong>over-pay</strong>: they default to a frontier model for a task a model twenty times cheaper would handle, because "the good one" is the safe choice when you can't quantify the trade. Or they <strong>under-build</strong>: they shelve a feature for fear of a bill they never actually estimated. Either way, the cost decision gets made in the dark — and then almost nobody revisits it, even though it's one of the few engineering decisions that compounds with every request.</p>
+  <p>That tends to produce two outcomes, both common. One is <strong>over-paying</strong>: defaulting to a frontier model for a task a model twenty times cheaper would handle, because "the good one" looks like the safe choice when the trade-off can't be quantified. The other is <strong>under-building</strong>: shelving a feature over a bill that was never actually estimated. Either way the cost decision gets made without much information — and it's rarely revisited, even though it's one of the few engineering decisions that compounds with every request.</p>
 
-  <p>Two things keep it dark.</p>
+  <p>Two things make this hard.</p>
 
-  <p>The first is that <strong>sticker prices don't compare.</strong> Every provider quotes pricing in its own dialect: per million tokens here, per-thousand tables lingering in docs there. Cached input priced separately — sometimes reads, sometimes writes too. Batch at half price, if you find the footnote. Thinking models billing their reasoning as output tokens, so the number on the page isn't the number on the invoice. Even step one — "which of these two models is cheaper?" — means opening a spreadsheet.</p>
+  <p>The first is that <strong>sticker prices don't compare directly.</strong> Every provider quotes pricing in its own format: per million tokens here, per-thousand tables lingering in docs there. Cached input is priced separately — sometimes reads, sometimes writes too. Batch sits at half price, often in a footnote. Thinking models bill their reasoning as output tokens, so the number on the page isn't the number on the invoice. Even the first step — "which of these two models is cheaper?" — usually means opening a spreadsheet.</p>
 
-  <p>The second is that <strong>the answer keeps changing, and nobody keeps a record.</strong> This market reprices itself like almost nothing else in software. In May, DeepSeek made a 75% discount on its frontier model permanent overnight: <span class="num">$1.74</span> per million input tokens became <span class="num">$0.435</span>. In 2024, Alibaba cut Qwen prices by up to 97% in a single day, and Baidu made models free within hours. GPT-4 launched at <span class="num">$30</span> per million input tokens three years ago; comparable capability now costs well under a dollar. The model you committed to in February may have a cheaper equivalent by June — and the provider's pricing page, which only ever shows <em>now</em>, will never tell you.</p>
+  <p>The second is that <strong>the answer keeps changing, and the history isn't recorded anywhere.</strong> This market reprices itself more often than most of software does. In May, DeepSeek made a 75% discount on its frontier model permanent overnight: <span class="num">$1.74</span> per million input tokens became <span class="num">$0.435</span>. In 2024, Alibaba cut Qwen prices by up to 97% in a single day, and Baidu made models free within hours. GPT-4 launched at <span class="num">$30</span> per million input tokens three years ago; comparable capability now costs well under a dollar. A model committed to in February may have a cheaper equivalent by June — and the provider's pricing page, which only ever shows <em>now</em>, won't surface that.</p>
 
-  <p>So <%= link_to "tokenprice.fyi", root_path %> does two boring, useful things:</p>
+  <p>So <%= link_to "tokenprice.fyi", root_path %> does two straightforward things:</p>
 
   <ol>
-    <li><strong>Normalize.</strong> Every model, every provider, <%= link_to "one table", root_path %>, one unit — dollars per million tokens, input, output and cached, with a single blended figure you can sort by. The comparison step becomes a glance.</li>
-    <li><strong>Remember.</strong> Prices here are an append-only history, not a number that gets overwritten. Every price point is dated and carries its source. When DeepSeek cuts 75%, the launch price doesn't disappear — it becomes the start of a line on <%= link_to "a chart", trends_path %>, next to the market events that explain it. And trajectory changes decisions: whether a provider habitually cuts after launch, whether you should wait, whether the answer you settled on last quarter still holds.</li>
+    <li><strong>Normalise.</strong> Every model, every provider, <%= link_to "one table", root_path %>, one unit — dollars per million tokens, input, output and cached, with a single blended figure to sort by. The comparison step becomes a glance.</li>
+    <li><strong>Remember.</strong> Prices here are kept as an append-only history rather than a single number that gets overwritten. Every price point is dated and carries its source. When DeepSeek cuts 75%, the launch price doesn't disappear — it becomes the start of a line on <%= link_to "a chart", trends_path %>, next to the market events that explain it. Trajectory can inform decisions too: whether a provider tends to cut after launch, whether it's worth waiting, whether the answer settled on last quarter still holds.</li>
   </ol>
 
-  <p>A note on accuracy, because it's the whole product: Anthropic figures are curated by hand and stood behind. Other providers are best-effort — public pricing pages plus a daily sync, sourced on every data point, and occasionally lagging. When something's wrong, it gets fixed and noted, not silently overwritten. tokenprice.fyi isn't affiliated with any provider, which is rather the point. And if a price looks stale or wrong, the source is right there on the price point — check it, and flag it.</p>
+  <p>A note on accuracy, since it's central to the product: Anthropic figures are curated by hand. Other providers are best-effort — public pricing pages plus a daily sync, sourced on every data point, and occasionally lagging. When something is wrong, it gets fixed and noted rather than silently overwritten. tokenprice.fyi isn't affiliated with any provider, which is part of the point. If a price looks stale or wrong, the source sits right there on the price point — it can be checked, and flagged.</p>
 
-  <p>This site won't tell you which model is smartest — plenty of people benchmark. And it can't yet tell you what <em>your workload</em> will cost, though that's the direction it's heading. What it does today is the prerequisite for any of that: what the market is charging, what it charged before, and how fast that's moving. You can't make a cost decision in the dark, and you can't turn the lights on without a record. This is the record.</p>
+  <p>The site doesn't try to say which model is smartest — there are plenty of benchmarks for that. It also can't yet say what <em>a given workload</em> will cost, though that's the direction it's heading. What it does today is the prerequisite for any of that: what the market is charging, what it charged before, and how fast that's moving. A cost decision is hard to make without that information, and the information is hard to use without a record. This is the record.</p>
 </article>
