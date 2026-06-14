@@ -82,6 +82,55 @@ class SlackNotifierTest < ActiveSupport::TestCase
     end
   end
 
+  test "surfaces the Location header when the response is a redirect" do
+    stub_response = Net::HTTPFound.new("1.1", "302", "Found")
+    stub_response["location"] = "https://slack.com/signin"
+
+    fake_http = build_fake_http(stub_response)
+
+    error = nil
+    with_webhook_url("https://hooks.slack.com/services/test") do
+      Net::HTTP.stub_new(fake_http) do
+        error = assert_raises(RuntimeError) { SlackNotifier.post({ text: "hello" }) }
+      end
+    end
+
+    assert_match(/302/, error.message)
+    assert_match("https://slack.com/signin", error.message,
+                 "redirect target should be in the error to diagnose 3xx")
+  end
+
+  test "rejects a non-https webhook URL without making a request" do
+    http_called = false
+    fake_http = Object.new.tap do |o|
+      o.define_singleton_method(:method_missing) { |*| http_called = true }
+    end
+
+    error = nil
+    with_webhook_url("http://hooks.slack.com/services/test") do
+      Net::HTTP.stub_new(fake_http) do
+        error = assert_raises(RuntimeError) { SlackNotifier.post({ text: "hello" }) }
+      end
+    end
+
+    assert_match(/https/, error.message)
+    assert_equal false, http_called, "expected no HTTP call for a non-https URL"
+  end
+
+  test "ignores surrounding whitespace in the webhook URL" do
+    payload = { text: "hello" }
+    stub_response = Net::HTTPSuccess.new("1.1", "200", "OK")
+    stub_response.define_singleton_method(:body) { '{"ok": true}' }
+
+    fake_http = build_fake_http(stub_response)
+
+    with_webhook_url("  https://hooks.slack.com/services/test\n") do
+      Net::HTTP.stub_new(fake_http) do
+        assert_equal stub_response, SlackNotifier.post(payload)
+      end
+    end
+  end
+
   private
 
   # Build a fake Net::HTTP instance whose #start yields self and whose

@@ -9,16 +9,21 @@ require "json"
 #   SlackNotifier.post(text: "hello")
 class SlackNotifier
   def self.post(payload)
-    url = Rails.application.credentials.slack_webhook_url
+    url = Rails.application.credentials.slack_webhook_url.to_s.strip
 
-    unless url
+    if url.empty?
       Rails.logger.info("SlackNotifier: slack_webhook_url credential not set, skipping")
       return nil
     end
 
     uri = URI.parse(url)
+    unless uri.scheme == "https"
+      raise "SlackNotifier: webhook URL must be https, got #{uri.scheme.inspect} " \
+            "(a plaintext URL silently redirects and the POST is lost)"
+    end
+
     response = Net::HTTP.start(uri.host, uri.port,
-                               use_ssl: uri.scheme == "https",
+                               use_ssl: true,
                                open_timeout: 5, read_timeout: 10) do |http|
       request = Net::HTTP::Post.new(uri.request_uri)
       request["Content-Type"] = "application/json"
@@ -27,7 +32,15 @@ class SlackNotifier
     end
 
     unless response.is_a?(Net::HTTPSuccess)
-      raise "SlackNotifier: unexpected response #{response.code} — #{response.body}"
+      # A real Slack webhook returns 200 "ok"; a 3xx means we hit something that
+      # redirects (wrong URL/host). Surface the Location instead of reading the
+      # body, which on a redirect isn't available outside the request block.
+      detail = if response.is_a?(Net::HTTPRedirection)
+                 "redirect to #{response["location"]}"
+      else
+                 response.body
+      end
+      raise "SlackNotifier: unexpected response #{response.code} — #{detail}"
     end
 
     response
