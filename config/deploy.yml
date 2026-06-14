@@ -41,10 +41,9 @@ registry:
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
   secret:
+    # RAILS_MASTER_KEY decrypts credentials.yml.enc, where all runtime secrets
+    # (anthropic_api_key, honeybadger_api_key, slack_webhook_url) live.
     - RAILS_MASTER_KEY
-    - HONEYBADGER_API_KEY
-    - ANTHROPIC_API_KEY
-    - SLACK_WEBHOOK_URL
   clear:
     RAILS_ENV: production
     RAILS_LOG_TO_STDOUT: "true"

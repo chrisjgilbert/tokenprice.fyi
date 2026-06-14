@@ -16,26 +16,35 @@ unless Net::HTTP.respond_to?(:stub_new)
 end
 
 class SlackNotifierTest < ActiveSupport::TestCase
-  setup    { @original = ENV["SLACK_WEBHOOK_URL"] }
-  teardown { ENV["SLACK_WEBHOOK_URL"] = @original }
+  # Stub the slack_webhook_url credential for the duration of the block by
+  # defining a singleton method on the (memoized) credentials object, then
+  # removing it to restore the normal method_missing lookup. minitest/mock's
+  # #stub is not loaded in this suite, and credentials' method_missing would
+  # silently swallow it.
+  def with_webhook_url(url)
+    creds = Rails.application.credentials
+    creds.define_singleton_method(:slack_webhook_url) { url }
+    yield
+  ensure
+    creds.singleton_class.send(:remove_method, :slack_webhook_url)
+  end
 
   test "no-op when webhook URL is not set" do
-    ENV["SLACK_WEBHOOK_URL"] = nil
-
     # Ensure no HTTP call is attempted by monitoring Net::HTTP.new directly.
     http_called = false
-    Net::HTTP.stub_new(Object.new.tap { |o|
-      o.define_singleton_method(:method_missing) { |*| http_called = true }
-    }) do
-      result = SlackNotifier.post({ text: "hello" })
-      assert_nil result
+    with_webhook_url(nil) do
+      Net::HTTP.stub_new(Object.new.tap { |o|
+        o.define_singleton_method(:method_missing) { |*| http_called = true }
+      }) do
+        result = SlackNotifier.post({ text: "hello" })
+        assert_nil result
+      end
     end
 
     assert_equal false, http_called, "expected no HTTP call when URL is unset"
   end
 
   test "posts JSON payload to webhook URL" do
-    ENV["SLACK_WEBHOOK_URL"] = "https://hooks.slack.com/services/test"
     payload = { text: "hello" }
 
     captured_body   = nil
@@ -49,9 +58,11 @@ class SlackNotifierTest < ActiveSupport::TestCase
       captured_ct   = req["Content-Type"]
     end
 
-    Net::HTTP.stub_new(fake_http) do
-      result = SlackNotifier.post(payload)
-      assert_equal stub_response, result
+    with_webhook_url("https://hooks.slack.com/services/test") do
+      Net::HTTP.stub_new(fake_http) do
+        result = SlackNotifier.post(payload)
+        assert_equal stub_response, result
+      end
     end
 
     assert_equal payload.to_json, captured_body
@@ -59,15 +70,15 @@ class SlackNotifierTest < ActiveSupport::TestCase
   end
 
   test "raises on non-2xx response" do
-    ENV["SLACK_WEBHOOK_URL"] = "https://hooks.slack.com/services/test"
-
     stub_response = Net::HTTPServerError.new("1.1", "500", "Internal Server Error")
     stub_response.define_singleton_method(:body) { "error" }
 
     fake_http = build_fake_http(stub_response)
 
-    Net::HTTP.stub_new(fake_http) do
-      assert_raises(RuntimeError) { SlackNotifier.post({ text: "hello" }) }
+    with_webhook_url("https://hooks.slack.com/services/test") do
+      Net::HTTP.stub_new(fake_http) do
+        assert_raises(RuntimeError) { SlackNotifier.post({ text: "hello" }) }
+      end
     end
   end
 

@@ -2,16 +2,17 @@ require "net/http"
 require "json"
 
 # Thin wrapper around the Slack incoming-webhook API. Uses Net::HTTP directly
-# so we don't need an extra gem. The webhook URL is injected at runtime via
-# SLACK_WEBHOOK_URL — if it isn't set (dev/test), the call is a no-op.
+# so we don't need an extra gem. The webhook URL is read from encrypted
+# credentials (slack_webhook_url) — if it isn't set (dev/test), the call is a
+# no-op.
 #
 #   SlackNotifier.post(text: "hello")
 class SlackNotifier
   def self.post(payload)
-    url = ENV["SLACK_WEBHOOK_URL"]
+    url = Rails.application.credentials.slack_webhook_url
 
     unless url
-      Rails.logger.info("SlackNotifier: SLACK_WEBHOOK_URL not set, skipping")
+      Rails.logger.info("SlackNotifier: slack_webhook_url credential not set, skipping")
       return nil
     end
 

@@ -10,7 +10,19 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    # Inject a dummy Anthropic API key so AnthropicClient.build's guard passes
+    # in tests that construct the real client. Like admin_password_digest, this
+    # keeps tests from depending on the master key being present (it isn't on CI).
+    def stub_anthropic_key!(key = "sk-ant-test-key")
+      Rails.application.credentials.define_singleton_method(:anthropic_api_key) { key }
+    end
+
+    teardown do
+      creds = Rails.application.credentials
+      if creds.singleton_methods.include?(:anthropic_api_key)
+        creds.singleton_class.send(:remove_method, :anthropic_api_key)
+      end
+    end
   end
 end
 

@@ -153,6 +153,7 @@ class NewsClassifierTest < ActiveSupport::TestCase
   end
 
   test ".classify delegates to instance classify" do
+    stub_anthropic_key!
     input = { relevant: true, kind: "price", rationale: "Price cut." }
     response = stub_tool_response(input)
 

@@ -67,6 +67,6 @@ class NewsClassifier
   private
 
   def client
-    @client ||= Anthropic::Client.new
+    @client ||= AnthropicClient.build
   end
 end

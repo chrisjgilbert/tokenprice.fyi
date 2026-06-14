@@ -146,7 +146,7 @@ class EventCurationJob < ApplicationJob
   private
 
   def client
-    @client ||= Anthropic::Client.new
+    @client ||= AnthropicClient.build
   end
 
   def build_prompt(news_items, existing_events, pending_drafts, recent_releases)

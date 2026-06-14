@@ -21,6 +21,7 @@ class EventCurationJobTest < ActiveJob::TestCase
       rationale:    "New model with competitive pricing",
       published_at: 1.day.ago
     )
+    stub_anthropic_key!
     stub_client(ONE_DRAFT)
     @slack_original = SlackNotifier.method(:post)
     captured = @slack_payloads = []
