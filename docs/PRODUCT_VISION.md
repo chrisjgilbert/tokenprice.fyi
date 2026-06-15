@@ -2,13 +2,82 @@
 
 *Product review conducted June 2026. Grounded in the current codebase: Rails 8 server-rendered app, SQLite, ~50 curated models across 9+ providers, append-only price history, daily OpenRouter sync, admin-curated Anthropic data.*
 
+*Updated 15 June 2026 with the wedge & positioning decision below — the sharpened call on what to lead with, what to stop feeding, and how it earns. The review in §§1–8 stands as the underlying analysis; this section supersedes it where they differ.*
+
+---
+
+## Wedge & Positioning — decision update (15 June 2026)
+
+*Context: since the June review, the market-signals pipeline (news → Haiku classifier → Opus curation → Slack) and the historical backfill (~81 models, price history to 2023) have shipped. The question now is not "what to build" but "what is the wedge."*
+
+### The reframe: don't pivot away from history — demote it to plumbing
+
+The temptation is to read this as a choice between two products — "price history & market context" vs. "estimate cost & advise on models." It isn't. The history is the **moat**; the cost tool is the **wedge**. They are the same product seen from two ends.
+
+The sourced, append-only price history is the one asset nobody else has and nobody can quickly copy. But it's a **museum, not a job-to-be-done** — "how has Sonnet's price moved" is interesting, not needed, and has no distribution loop. So: keep building the record, but stop presenting it as the destination. Its job is to make the cost tool's numbers more **current and trustworthy** than any rival calculator's — a shared estimate that *recomputes at today's prices* is something no static competitor can match. **That is the history paying rent.**
+
+### The wedge: the cost calculator — framed as savings, with cost doing the "advice"
+
+Lead the whole product with **"what will this cost, and where am I overpaying."** Three reasons this is the wedge and history is not:
+
+- **It's a real job with search and share demand.** People Google "what will GPT-5 vs Claude cost for my feature" and paste the answer into planning docs. The savings delta — *"switch A→B, save $1,840/mo (−62%)"* — is the screenshot that travels in Slack. That is the only realistic zero-effort distribution loop this product has.
+- **It turns the core weakness into the edge.** $/Mtok is the wrong unit (see §2). Live, history-backed prices mean a shared estimate stays live while every competitor's calculator silently goes stale.
+- **It already half-gives the advice.** A calculator that ranks models *by what they'd cost you* is advice — no benchmark engine required.
+
+**Principle: lead the advice with cost, not quality.** Quality benchmarking is an arms race against funded sites (artificialanalysis, LMArena, OpenRouter's rankings), goes stale, is off-brand for a neutral tracker, and is a liability when wrong in public. Cost is the one axis we can be *authoritative* on. So the advisor's shape is: "here are the models that clear this task's tier floor *(a light, dated editorial judgment)*, ranked by **your** cost, savings spelled out — now run your own eval to choose among them." We are the cost authority + the shortlist + the eval nudge. We are **not** the quality oracle. (This sharpens §4: cost-fit, with quality as a tier *floor*, never a score.)
+
+### How the two visions combine
+
+A price has a past, a present, and a future, and all three serve one decision:
+
+- **Past (history — built):** "is this getting cheaper / should I wait?" → a *sentence inside the answer* ("Sonnet is down 3× since launch and this provider cuts hard post-release — waiting a quarter may pay"), not a page you visit.
+- **Present (table — built):** "what does it cost now?" → the raw material.
+- **Future (alerts — to build):** "tell me when my answer changes." → retention.
+
+History stops being a room you visit and becomes **evidence the advisor cites.**
+
+### The side-project lens: maintenance budget is the scarce resource
+
+This is a side project; the scarce resource is **owner attention, not money.** That governs both what gets built and what gets *stopped*:
+
+- **Favour build-once-compounds-forever surfaces:** the calculator, task-profile pages, the JSON API, README badges. SEO, embeds, and shareable permalinks distribute while you sleep.
+- **The market-signals pipeline is the opposite** — it needs feeding, breaks on feed/selector drift, burns API calls, and produces editorial with no viral loop. **Freeze it** as chart-overlay context; do not expand it; do not headline it. (This revises §1, which credited market-events as a *differentiator*: true of the **data**, but as a *product surface* it's a maintenance tax a side project can't justify leading with.)
+- **The map is adorable and has zero decision value — bury it** (keep the page; drop it from primary nav).
+
+### How it earns (ranked for this situation)
+
+1. **Free JSON API now → license the premium/historical slice later.** The moat is the dataset. A free tier seeds the citation flywheel (every embed is a backlink); a paid tier sells full-history CSV, higher rate limits, and an SLA to tool-builders, analysts, and finance/procurement teams. Cleanest, most aligned, never touches neutrality.
+2. **A thin Pro/Team tier once alerts exist:** more watches, saved/named workloads, team Slack alerts, private estimates. Recurring revenue off the retention surface.
+3. **Opportunistic consulting lead-gen:** "cut your AI bill" → a paid audit. Doesn't scale — which is fine for a side project, and it's the highest $/hour.
+4. **Affiliate / sponsorship — deferred, and only if walled off and disclosed** (Wirecutter-style; never touching rankings). Neutrality is the whole asset; don't spend it early.
+
+### Sequencing (side-project-sized)
+
+1. **`/calculator`** — the `CostEstimate` PORO + three input modes, **savings delta as the hero**, permalinks. The whole pivot in one surface (detailed in the PRD, Workstream A).
+2. **Turn the five task shapes already written in `/which-model`** (classification, extraction, RAG, summarisation, agentic coding) into five profile pages that deep-link into the calculator. The content exists; it becomes SEO landing pages + presets.
+3. **Free JSON API** — near-zero effort; starts the flywheel and the monetization seed.
+4. **Email alerts** — *now*, not before; this is the retention and Pro-tier foundation.
+5. **Demote:** bury the map; freeze the news pipeline at overlay-context only.
+
+### Positioning — the line to ship behind
+
+- **Front door (ship behind this) — pain-forward:** *"Stop overpaying for AI. See what your feature really costs — and the cheapest model that's good enough."*
+- **Tool-forward (alt):** *"What will your AI feature cost? The always-current LLM cost calculator and model picker."*
+- **Mission / about-page — authority-forward:** *"The live cost index for LLM APIs: estimate your workload, find the cheapest model that's good enough, get told when the answer changes."*
+
+Lead with the **pain-forward** line — it matches the save-money intent and it's what gets screenshotted; keep the authority line as the mission. (This narrows §8 to a single front-door promise.)
+
+### One caution
+
+"Save money" is a high-converting headline, but don't let it drag the product toward needing customers' **API keys or spend dashboards** — the heavy-trust product the PRD lists as a non-goal. Stay **estimate-based, not account-based**, until there's an audience. And don't delete the history to make the pivot legible: removing the one thing that's hard to copy would be the real mistake.
+
 ---
 
 ## 1. Strengths
 
 **The data model is the best thing about this product, and it's genuinely good.** Prices are an append-only dated history (`PricePoint`), not a mutable number. Every snapshot carries `source` and `note` provenance. Curated data is never clobbered by the automated sync. This is the architecture of a *record of record* — most competitors store "current price" and throw history away. If LLM pricing data ever matters as a dataset, this design is the moat-in-waiting.
 
-**Price history + market events is a real differentiator today.** Nobody else shows "DeepSeek cut prices 75% on this date, here's the chart, here's what else happened that week" in one view. The trends page with launch/market event overlays is the closest thing this product has to a unique artifact. Provider pricing pages show *now*; this shows *trajectory* — and in a market where prices moved double-digit percentages multiple times a year, trajectory is decision-relevant ("should I wait?", "does this provider habitually cut prices post-launch?").
+**Price history + market events is a real differentiator today.** Nobody else shows "DeepSeek cut prices 75% on this date, here's the chart, here's what else happened that week" in one view. The trends page with launch/market event overlays is the closest thing this product has to a unique artifact. Provider pricing pages show *now*; this shows *trajectory* — and in a market where prices moved double-digit percentages multiple times a year, trajectory is decision-relevant ("should I wait?", "does this provider habitually cut prices post-launch?"). *(Reclassified in the 15 June update: this holds for the **data**, but as a standalone **product surface** the market-events pipeline is a maintenance tax — keep it as decision-support context inside the cost tool, not a headline.)*
 
 **Normalization is quietly valuable.** Every provider quotes pricing differently (per 1K, per 1M, cached vs. not, tables buried in docs). One table, one unit ($/Mtok), one blended sortable number is exactly the "I just need to compare" job. The 3:1 blended metric is opinionated and documented — good — even if the fixed ratio is a weakness (see below).
 
@@ -115,7 +184,13 @@ This is the bet that moves the product from reference to advisor, and it's where
 
 ## 8. Positioning Statement
 
-> **tokenprice.fyi is the live price index for LLM APIs — every model, every provider, normalized, sourced, and tracked over time. Estimate what your workload will actually cost, find the cheapest model that's good enough, and get told the moment the market moves.**
+*See the decision update at the top for rationale. Three registers, one product — lead with the front door, keep the mission for the about page:*
+
+- **Front door (ship behind this) — pain-forward:**
+  > **Stop overpaying for AI. See what your feature really costs — and the cheapest model that's good enough.**
+- **Tool-forward (alt):** *What will your AI feature cost? The always-current LLM cost calculator and model picker.*
+- **Mission / about-page — authority-forward:**
+  > **tokenprice.fyi is the live cost index for LLM APIs — every model, every provider, normalized, sourced, and tracked over time. Estimate what your workload will actually cost, find the cheapest model that's good enough, and get told the moment the market moves.**
 
 ---
 
