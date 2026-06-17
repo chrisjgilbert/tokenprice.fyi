@@ -26,12 +26,14 @@ calls and priced against every model."
 
 V1 is ONE new surface — the COST tool — that CONSOLIDATES the strongest parts of
 `estimate.html` (Cost Studio) and the Import/Measure logic from `blueprint.html` into a
-single coherent page, and DROPS Blueprint's multi-step pipeline builder and the Ask chat.
-Think: "Cost Studio, plus two higher-fidelity ways to ground the numbers, minus the
-pipeline complexity."
+single coherent page. It keeps a lightweight STEP LIST (a workload is one or a few labelled
+call rows, defaulting to one) but DROPS Blueprint's VISUAL PIPELINE CANVAS (nodes/connectors,
+the roles taxonomy, drag-to-reorder, fan-out diagrams) and the Ask chat. Think: "Cost Studio
+that can hold a few steps as rows — not a workflow-diagram editor."
 
-The defining idea: THREE ways to ground a workload (trading friction for fidelity),
-feeding ONE optimizer output.
+The defining idea: THREE ways to ground a workload (trading friction for fidelity), feeding
+ONE optimizer output. A workload is a LIST OF STEP ROWS, default one — never a canvas; a
+single row is exactly a single-workload calculator.
 
 ## The page: `/cost` — "What does your AI feature really cost?"
 
@@ -47,13 +49,20 @@ as existing, with "Cost" added. Structure, top → bottom:
      tokens, fresh input tokens, output tokens, requests/month, cache-hit % slider,
      minimum-capability tier (Any / Small+ / Mid+ / Frontier), and a "compare against"
      baseline model selector. All pre-filled with sane defaults; the textarea fills them in.
+   - The profile is a STEP LIST, defaulting to ONE row. An unobtrusive "+ Add step" turns it
+     into a few labelled rows (each: label, optional per-step model, token sizes, a "× N calls"
+     fan-out field) for real multi-call features. It is a simple list of rows, NOT a visual
+     canvas; one row = a plain calculator.
    - An LLM may fill the profile from the text, but design for an instant heuristic
      fallback — never a blocking spinner that can dead-end.
 2) MEASURE A CALL (the "Prompt Cost Lab" — zero-setup real measurement)
    - A large textarea to paste a prompt, an example output, or a JSON/labelled agent trace;
      a "Measure" action; a "try a sample" link.
    - Result: the detected/selected model + the REAL measured token counts (system/reused,
-     fresh, output, cached) as editable chips that flow into the same workload profile.
+     fresh, output, cached) as editable chips that flow into the same workload profile. A
+     multi-call trace populates MULTIPLE STEP ROWS (one per distinct call, repeats collapsed
+     into a "× N" fan-out) — so measurement BUILDS the step list; the user never composes one
+     from a blank canvas.
    - Trust line: "Counted locally in your browser — we never see your prompt text."
 3) IMPORT USAGE (the V1 measure workhorse)
    - A paste box / file drop for a provider usage-export CSV; a small "how to export from
@@ -74,8 +83,11 @@ All three modes share the SAME result panel below; switching modes re-grounds th
   tier badge + context-fit flag + cost bar + $/mo + $/call + delta-vs-baseline pill;
   "cheapest good-enough" row highlighted; no-fit models flagged ("context too small");
   baseline row marked. (Reuse Cost Studio's board styling.)
-- WHERE THE MONEY GOES: input/output(/cache) split bar + a cache-savings line ("caching at
-  N% saves $…/mo"); for imported data, show each model's share of ACTUAL spend.
+- WHERE THE MONEY GOES: when the workload has multiple steps, a PER-STEP STACKED BAR (e.g.
+  "Answer $53 · Retrieve $5 · Review $5 · Classify $4") is the primary view — this is the
+  non-gimmick insight; for a single step, the input/output(/cache) split bar + a cache-savings
+  line ("caching at N% saves $…/mo"). For imported data, show each model's share of ACTUAL
+  spend. Per-step rows may carry a "cheaper model fits here, −$X" swap hint.
 - PRICED THROUGH HISTORY (the moat): the retrospective sparkline — "this workload, on the
   cheapest model that fit, over time — −X% since [date] · see what drove the drops →"
   (links to trends/timeline).
@@ -113,9 +125,10 @@ empty-state and error patterns.
 
 ## Explicitly OUT OF SCOPE for V1 (do NOT design)
 
-- Blueprint's multi-step pipeline builder (roles, per-step models, fan-out) — V1 is
-  single-workload only (its per-step "where the money goes" idea is honored by the simpler
-  input/output split above).
+- The VISUAL PIPELINE CANVAS (nodes/connectors, drag-to-reorder, the roles taxonomy, fan-out
+  diagrams). NOTE: a simple STEP LIST (add/remove labelled rows, default one, with a "× N calls"
+  field) IS in scope — V1 is "a calculator that can hold a few steps as rows," not a
+  single-workload-only tool, and not a diagram editor.
 - The Ask chat.
 - Any email inbox / alert-management UI, accounts/login, or settings — only the alert opt-in.
 - Redesigning index/model/provider/trends/timeline/insights — they stay; just link the Cost
