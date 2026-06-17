@@ -1,9 +1,11 @@
 # Design brief — V1 "Cost" tool (for Claude Design)
 
-*The brief to hand to Claude Design to produce the V1 design. Pairs with
-`PRODUCT_VISION.md` (17 June product definition + V1 scope) and `V1_BUILD_PLAN.md`
-(the Rails implementation plan). Everything here is deliberately scoped to the tight V1;
-anything in the vision's "Deferred to V2+" list is out of scope.*
+> **STATUS — superseded as the V1 brief (17 June, revised).** The locked V1 is lighter — the
+> price **index** + an **education** layer + a **single-workload estimator** + demand probes
+> (see `PRODUCT_VISION.md`, `V1_BUILD_PLAN.md`, and the design *iteration* prompt for the tight
+> V1 artifact). This brief now describes the heavier **measure-&-optimize tool — the *proper
+> product*** — to be built only after V1 shows signs. Keep it as that product's design
+> reference: the multi-input Cost tool, step list, and trace ingestion below all belong to it.
 
 ---
 

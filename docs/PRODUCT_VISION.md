@@ -4,19 +4,32 @@
 
 *Updated 15 June 2026 with the wedge & positioning decision below — the sharpened call on what to lead with, what to stop feeding, and how it earns. The review in §§1–8 stands as the underlying analysis; this section supersedes it where they differ.*
 
-*Updated 17 June 2026 with the **Product Definition & V1 Scope** below — now the authoritative section. It refines the wedge from "a calculator" to **estimate + measure → optimize** and scopes a tight, low-investment V1. Everything else stands as supporting analysis; this top section governs where they differ.*
+*Updated 17 June 2026 (revised) with the **Product Definition & V1 Scope** below — now the authoritative section. It defines this as **two products over one shared data backend**, scopes a tight V1 that **nails the price index (with an education layer) plus a lightweight estimator first**, and defers the trace-ingesting measure-&-optimize product until that proves useful. Everything else stands as supporting analysis; this top section governs where they differ.*
 
 ---
 
 ## Product Definition & V1 Scope (17 June 2026)
 
-*Authoritative product definition. It sharpens the 15 June decision: the wedge is no longer "a calculator" — it is **estimate + measure → optimize**, and the product is the **neutral cross-model cost-optimization layer**, not a price reference with a calculator bolted on. Anything below that conflicts is superseded.*
+*Authoritative product definition and the locked V1 scope. Two decisions drive it: (1) this is **two products over one shared data backend**, and (2) we **nail the index first** — with education and a lightweight estimator — and build the heavier measure-&-optimize product **only if that proves useful**. Supersedes the "cost calculator" wedge framing below where they differ.*
+
+### Two products, one codebase (for now)
+
+Two jobs, two audiences — but **two surfaces over a shared data API, on one domain**, not two brands/builds yet:
+
+1. **tokenprice.fyi — the price index.** *"Understand and compare LLM API pricing."* The reference data (table, model/provider pages, trends, timeline, market events), the **education layer** (below), and a **lightweight cost estimator**. This is the funnel and the moat. **Build this first.**
+2. **The cost product (later).** *"Know what *my* feature costs, and cut it."* The trace-/usage-ingesting measure-&-optimize tool — the neutral cross-model cost-optimization layer. The differentiated, monetizable product. **Build only once the index + estimator show signs.**
+
+**The seam:** the cost product reads price data through a defined interface (`PriceCatalog` / the public JSON API), never ad hoc. That one decision (a) keeps the surfaces cleanly separable, (b) *is* the "free API → licensed dataset" monetization, and (c) lets the product graduate to its own brand/domain later as a packaging change, not a rebuild — and keeps "(or other) data sources" possible, since it depends on the *interface*, not the table.
+
+**Split the brand only when signs justify it** — `tokenprice.fyi/cost` (or `cost.tokenprice.fyi`) for now; its own domain/name once the product earns it (you'll know the name by then).
 
 ### Identity
 
-> **tokenprice.fyi tells developers what their AI features cost and where they're overpaying — grounded in their real calls and priced against every model, today and through history.**
+> **The index:** understand and compare what every LLM API costs — current prices, full history, and a clear explanation of what drives the bill — then roughly price your own workload.
+>
+> **The product (later):** measure what your AI feature actually costs, grounded in your real calls, and cut it — neutrally, priced against every model.
 
-The job is *"know what my AI feature costs, and cut it."* We answer it **neutrally** — we sell no inference and take no referral fee — which is the one thing the gateways and FinOps tools structurally can't.
+Neutral throughout: we sell no inference and take no referral fee — the one thing the gateways and FinOps tools structurally can't. Lead with **cost** (authoritative via live + historical data), not quality benchmarks.
 
 ### The core insight (why this is defensible)
 
@@ -26,38 +39,43 @@ The job is *"know what my AI feature costs, and cut it."* We answer it **neutral
 - **Estimate and measure are one grounding ladder**, trading friction for fidelity: *describe in words* (low friction, rough) → *paste a real prompt/trace* (real tokens) → *import a usage CSV* (real spend). One optimizer engine consumes all three.
 - **Trust + de-scope rule: we never see prompts — token counts and costs only.** A privacy feature *and* what keeps the build side-project-sized (no trace store, no PII, no compliance load).
 
-### V1 — tight, low-investment, almost entirely from existing prototypes/data
+### V1 — nail the index + education + a lightweight estimator
 
-One surface — **the Cost tool**: three ways to ground a workload, one optimizer output. No new infrastructure, no accounts beyond an email capture, no SDK, no server-side LLM on the critical path.
+Tight and low-investment; the **index is the hero**, education makes it a destination, the estimator is a probe. Four legs:
 
-**In scope:**
-1. **Three grounding inputs** (tabs on one page):
-   - *Describe* — plain-English or sliders → workload profile (heuristic fill; optional LLM front door with graceful fallback, never required). The no-friction / SEO on-ramp.
-   - *Measure a call* — paste a prompt / output / agent trace → real token counts → cost on every model ("Prompt Cost Lab"). Zero setup.
-   - *Import usage* — paste/upload a provider usage-export CSV → actual spend → reprice across all models. The V1 "measure" workhorse.
-2. **One optimizer output** (shared across inputs): ranked cost across every model for *this* workload; "cheapest that's good enough" highlighted; **savings callout** ("switch A→B, save $X/mo, −Y%"); **where the money goes** (input/output/cache split); **retrospective** (this workload priced through history); **strategy hints** (caching, batch, routing, shorter output).
-3. **Save + shareable permalink** (state in the URL; local save) — the distribution artifact.
-4. **"Alert me when this changes"** — captures an email + the saved scenario. *Sending* is deferred; the opt-in itself is a primary V1 demand signal.
-5. The existing **model / provider / index pricing pages stay as the funnel** and link into the Cost tool; history stays as plumbing.
+1. **Reference data** — the existing table, model/provider pages, trends, timeline, polished. The authority surface that ranks and gets cited.
+2. **Education (a core pillar — see below)** — evergreen explainers of how LLM pricing works, each backed by live data and ending in the estimator.
+3. **A lightweight cost estimator** — *single-workload only*: describe / sliders → cost across every model → **cheapest-equivalent savings** → shareable permalink. Embedded on / linked from model pages so it rides existing traffic. Its differentiator is *cheapest-equivalent on always-current, history-backed prices*, not the arithmetic. Reads prices via the `PriceCatalog` seam. (No measure, no import, no step-list, no LLM on the critical path — those are the product, later.)
+4. **Two demand probes** (the real point of the estimator): a **"🔒 measure your *real* usage — paste a trace / connect your data — notify me"** stub, and **"alert me when this price changes."** No measurement and no sending built — *capture only*. These opt-in rates are the gate to building the product.
 
-**Cost-led honesty (non-negotiable):** every result states its assumptions; the cross-model "what-if" reprices the *same tokens* and is labelled a cost comparison, not a quality verdict ("validate the cheaper model with your own eval"); the "we never see your prompts" line is visible.
+**Cost-led honesty:** assumptions shown; the cross-model "what-if" reprices the same tokens and is a cost comparison, not a quality verdict ("validate with your eval").
 
-### Deferred to V2+ (do NOT build until V1 shows signs)
+### Education — a core index pillar
 
-- **Email alert *pipeline*** (ESP, double opt-in, watches table, dedupe/sending). V1 captures intent only.
-- **The "push harder" bet — code-level measurement:** a lightweight, local, aggregates-only **CLI / GitHub-App PR cost-check** ("this change adds ~$X/mo; the review step could use Haiku, −60%"), and/or ingesting existing **OpenTelemetry `gen_ai.*` / OpenLLMetry / Langfuse exports**. This is the potential *proper product* and the team wedge — validate it *after* V1. Build measurement by *consuming* telemetry, never a production proxy/APM.
-- **Blueprint** (multi-step pipeline modeller) and **Ask** chat — the power-mode; fold in later.
-- **Pro/Team tier + licensed historical dataset** — monetization, once there's an audience. Subscription + dataset, **never affiliate/sponsorship** (neutrality is the moat).
+What makes the index a destination, not a commodity table — and the bridge that warms users up for the estimator and the eventual product.
 
-### What "promising signs" means (the gate to investing more)
+- **Principle: evergreen concept prose + embedded live data + a CTA into the estimator, pre-filled for that concept.** Concepts rarely change (low maintenance); the numbers stay fresh via live widgets off the price data; every explainer funnels into the estimator → the demand probes.
+- **Starter set** (1, 6, 7 largely drafted in `/how-pricing-works`, `/which-model`, and the design's Learn cards): (1) how LLM API pricing works (input/output/cached units; why output > input); (2) prompt caching; (3) batch processing (~50%, when it applies); (4) reasoning / "thinking" tokens (billed as output); (5) **what an AI agent actually costs** (context accumulation over tool loops; caching dominates) — the bridge to the product; (6) what drives the cost of common features (RAG, chat, classification, summarization, coding agent); (7) cost-cutting strategies and what they save.
+- **Caveat:** keep it a small, evergreen, data-backed set — *not* a publishing cadence (that's the maintenance trap the news pipeline already is). The owner is uniquely placed to write it, because the same thinking produces the product's cost models.
 
-V1 earns a V2 push if, cheaply measured: people **complete** an estimate/measure (especially the higher-fidelity *paste* / *import* inputs, not just *describe*), **share** permalinks, and **opt into "alert me"** at a meaningful rate. Sharing and alert-opt-in are the two leading indicators that there's a real, returning product here — not just SEO drive-by traffic.
+### The proper product (deferred — do NOT build until the gate is met)
+
+The heavy, differentiated build — the second product, later:
+- **Ingest real usage** — paste a trace, import a usage CSV, later consume OpenTelemetry `gen_ai.*` / OpenLLMetry / Langfuse exports; tokenized/parsed **client-side** ("we never see your prompts").
+- **Measure & optimize** — the multi-step / agent-loop cost model (tools, max-tool-calls with growing cache-dominated context, reasoning effort), per-step "where the money goes," cheapest-equivalent swaps, batch flagged where latency allows.
+- **Save / watch / alert** — the email pipeline (V1 captures intent only), saved workloads, price-move alerts.
+- **A code-level path** — a lightweight, local, aggregates-only CLI / GitHub-App PR cost-check, built by *consuming* telemetry, never a production proxy/APM.
+- **Pro/Team tier + licensed dataset** — monetization; subscription + dataset, **never affiliate**. Possibly its own brand.
+
+### The gate — what "proves useful" means
+
+The green light to build the product: people **complete and share** the estimator, and — above all — **opt into the "measure my real usage" probe** at a meaningful rate. That opt-in rate is the direct demand signal for the trace-ingesting product; alert-me opt-ins are the secondary (retention) signal. Until then, the index + education + estimator stand on their own as the funnel and the moat.
 
 ---
 
 ## Wedge & Positioning — decision update (15 June 2026)
 
-*Refined by the 17 June product definition above: the "cost calculator" wedge is now scoped as estimate + measure → optimize, and the C+D synthesis (calculator + watch) becomes V1's Cost tool + a deferred alert pipeline. The reasoning here — history as plumbing, cost-led advice, the side-project maintenance lens — still holds.*
+*Refined by the 17 June (revised) product definition above: V1 is now scoped to the index + education + a lightweight estimator, with the measure-&-optimize tool split out as a later product. The reasoning here — history as plumbing, cost-led advice, the side-project maintenance lens — still holds.*
 
 *Context: since the June review, the market-signals pipeline (news → Haiku classifier → Opus curation → Slack) and the historical backfill (~81 models, price history to 2023) have shipped. The question now is not "what to build" but "what is the wedge."*
 

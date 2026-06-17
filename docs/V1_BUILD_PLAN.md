@@ -1,156 +1,149 @@
-# V1 Build Plan — the Cost tool (`/cost`)
+# V1 Build Plan — price index + education + a lightweight estimator
 
-*Companion to `PRODUCT_VISION.md` (17 June product definition) and the Claude Design V1
-brief. Scope = the **tight V1** only. Everything in the vision's "Deferred to V2+" list
-stays deferred. Goal: ship the smallest thing that proves devs find "estimate + measure →
-optimize" valuable and shareable, with almost no new infrastructure.*
+*Companion to `PRODUCT_VISION.md` (17 June, revised). Scope = the **tight V1**: nail the price
+index, add an education layer, and a lightweight single-workload estimator with two demand
+probes. The trace-ingesting measure-&-optimize tool is the **proper product, later** (§11) —
+do not build it until the gate is met. Goal: ship the smallest thing that makes the index a
+destination and tests demand for the product, with almost no new infrastructure.*
 
 ---
 
-## 1. Principle — reuse the house patterns, add almost nothing
+## 1. What V1 is (and isn't)
 
-The app already has every pattern V1 needs:
+**In:**
+- (a) the existing **reference pages**, polished — the hero;
+- (b) an **education** layer — evergreen explainers + live-data widgets;
+- (c) a **single-workload estimator** (`/cost`) — describe/sliders → cost across every model →
+  cheapest-equivalent savings → shareable permalink, embedded on model pages;
+- (d) two **demand probes** — "measure my real usage (notify me)" and "alert me when this price
+  changes" — capture only.
 
-- **Server-rendered ERB + a Turbo Frame** for the live result (the homepage swaps the
-  `#models` frame on each debounced form submit via `filters_controller.js`). The Cost
-  tool's result panel is the same pattern.
-- **Inline SVG charts via a helper** (`ChartsHelper#price_history_chart`). The retrospective
-  sparkline is the same approach.
-- **Tailwind + CSS custom-property tokens** + per-view `<style>` blocks. Port the Claude
-  Design output into this, reusing existing tokens (`--color-indigo-*`, `--font-mono`, …).
-- **Tested Ruby (`bin/rails test`)** for all money math; **thin vanilla Stimulus** only for
-  local text→number transforms.
+**Out → the proper product (§11):** measuring real calls (paste-a-trace, CSV import),
+multi-step / agent-loop modelling, tools/reasoning inputs, save/watch alert *sending*, any
+SDK/CLI/telemetry. The estimator takes *typed* inputs only — so V1 never touches prompt text,
+and the privacy story is trivial.
 
-No Node build, no accounts/login, no email sending, no SDK, no new model/price fields.
+## 2. Principle — reuse the house patterns
 
-## 2. Privacy architecture (the load-bearing decision)
+- **Server-rendered ERB + a Turbo Frame** for the live estimator result (the homepage already
+  swaps the `#models` frame via `filters_controller`).
+- **Inline SVG charts via a helper** (`ChartsHelper`).
+- **Tailwind + the existing CSS tokens**; port the Claude Design output into this.
+- **Tested Ruby (`bin/rails test`)** for the money math; thin vanilla Stimulus only for the
+  debounced form + permalink.
+- No Node build, no accounts, no email sending, no SDK, no model/price schema changes beyond
+  the tiny signups table.
 
-The "we never see your prompts" promise is kept literally: **prompt text and usage CSVs are
-tokenized/parsed client-side; only derived numbers are submitted.**
+## 3. The data seam (`PriceCatalog`) — the one architectural must
 
-| Input | Done in the browser (never sent) | Sent to the server |
-|---|---|---|
-| **Describe** | — | workload profile: per-step token counts, fan-out, req/mo, cache %, tier, baseline |
-| **Measure a call** | tokenize pasted prompt/output / parse a trace | the resulting per-step token counts |
-| **Import usage** | parse the CSV, match models, aggregate | per-model aggregates (model + token sums + req/cost) |
+Introduce a single read interface that the estimator (and, later, the product and the public
+API) use for prices — never ad hoc model queries:
 
-So the server only ever receives integers and slugs, in query params (which also makes every
-estimate a **shareable, indexable permalink**).
+- `PriceCatalog` service: `models` (listed, with current input/output/cached + context +
+  tier), `model(slug)`, `history(slug)`, `as_of(slug, date)`. Backed by `AiModel` today.
+- Everything cost-related reads through it. This (a) keeps the future product cleanly
+  separable, (b) is the basis of the public **JSON API** (`/api/v1/models.json`) — the
+  backlink/citation flywheel and licensed-dataset seed — and (c) lets the product later
+  swap/extend data sources ("or other").
 
-## 3. Compute location — server-side, tested
+## 4. The lightweight estimator (`/cost`)
 
-The pricing math is the heart of the product, so it lives in tested Ruby POROs (not JS), and
-the result renders into a Turbo Frame — exactly mirroring the homepage. The browser does only
-the privacy-preserving text→number work above.
+- **Route:** `get "cost", to: "costs#show"`. State in query params (shareable, indexable).
+- **`CostsController#show`** — decode the workload profile from params → `CostEstimate` (via
+  `PriceCatalog`) → render; result in `turbo_frame_tag "cost_result"` (frame-only on a frame
+  request, like `models#index`).
+- **`CostEstimate` PORO** (`app/services/cost_estimate.rb`) — *single workload*:
+  `{ sys, fresh, out, req, cache, min_tier, baseline_slug }` → for each catalog model:
+  `$/request`, `$/month` (cache blending), context-fit, tier-eligibility; `recommendation` =
+  cheapest that fits + meets tier; `savings` vs baseline (`$/mo`, `%`, `$/yr`); `breakdown`
+  (input/output/cache); `retrospective` (cheapest fitting model `$/mo` on each price-change
+  date, via `PriceCatalog.as_of`). *Structured so a list of steps can slot in later (the
+  product) — V1 calls it with one step.*
+- **`cost_form` Stimulus controller** — debounced `requestSubmit` + URL sync (a near-clone of
+  `filters_controller`); drives the `cost_result` frame and the permalink; copy-link button.
+- **Embed:** a compact "estimate your monthly cost" widget on model pages (pre-filled with
+  that model as baseline) → links into `/cost`. Rides existing SEO traffic.
+- **Privacy:** inputs are typed token counts, never prompt text — V1 is trivially "we never
+  see your prompts."
 
-## 4. Backend (small, all tested)
+## 5. Education layer
 
-**Routes**
-```ruby
-get  "cost",       to: "costs#show",          as: :cost
-post "cost/alert", to: "alert_signups#create", as: :cost_alert
-```
+- **Pattern:** evergreen concept prose + **live-data widgets** (small partials/helpers reading
+  `PriceCatalog`, e.g. "output is typically N× input — live spread") + a **CTA into `/cost`**
+  pre-filled for the concept.
+- **Pages:** a `/learn` index + one explainer per concept (extend `PagesController`;
+  `/how-pricing-works`, `/why`, `/which-model` already exist and fold in). Indexed, JSON-LD,
+  in the sitemap.
+- **Starter set:** (1) how LLM API pricing works; (2) prompt caching; (3) batch processing;
+  (4) reasoning / "thinking" tokens; (5) what an AI agent actually costs (the bridge to the
+  product); (6) what drives the cost of common features; (7) cost-cutting strategies +
+  savings. Ship 1 / 6 / 7 first (largely drafted).
+- **Discipline:** small, evergreen, data-backed — not a publishing cadence.
 
-**`CostsController#show`** — decodes the profile *or* import aggregates from params, runs the
-PORO, renders the page with the result inside `turbo_frame_tag "cost_result"`. On a frame
-request it returns just the frame (same as `models#index`).
+## 6. Demand probes (capture only — the gate's instruments)
 
-**`CostEstimate` PORO** (`app/services/cost_estimate.rb`) — *port of `estimator.js` +
-`blueprint-core.js`'s `priceStep` / `priceBlueprint` / `stepSwaps`*. **Prices a *list of
-steps*; a single-workload calculator is just a list of length one.**
-- Input: `{ steps: [{ label, model_slug, sys, fresh, out, calls, cache }], req_per_month,
-  min_tier, baseline_slug }`.
-- Per step: `$/request` and `$/month` (cache blending `inFresh + inCached(hit%) + out`, × the
-  `calls` fan-out), context-fit flag, and the cheapest model that fits + qualifies for that
-  step (the per-step swap hint, `−$X`).
-- Whole workload: total `$/request` and `$/month` (sum of enabled steps); each step's share of
-  the bill (the per-step "where the money goes" stacked bar); savings if every step takes its
-  cheapest-fit swap.
-- **Single-step case** also yields the full cross-model board: every `AiModel.listed` priced
-  for that one step (the classic calculator), with `recommendation` = cheapest model that fits
-  **and** meets `min_tier`, and `savings` vs `baseline_slug` (`$/mo`, `%`, `$/yr`).
-- `breakdown` = input / output / cache split + cache-saved $/mo (per step and total).
-- `retrospective` = the whole workload's cheapest fitting+eligible `$/mo` on each distinct
-  price-change date (reuse `AiModel#price_as_of`); used by the sparkline.
+- One small table `signal_signups`: `kind` ("measure_interest" | "price_alert"), `email`,
+  `payload` (encoded workload/context), `created_at`.
+- **"Measure your real usage — notify me"** stub on the estimator (and the agent-cost
+  explainer): a locked "coming soon" card + email field → stores `measure_interest`. *This is
+  the primary demand signal for the proper product.*
+- **"Alert me when this price changes"** on the estimator / model pages → stores `price_alert`.
+  (Sending is the product, later.)
+- `SignalSignupsController#create` validates email, stores, returns a success partial. No
+  sending.
 
-**`UsageReprice` PORO** (`app/services/usage_reprice.rb`) — *port of `analyzeUsage`*: given
-per-model aggregates `{slug => {in, out, cached, reqs, cost?}}`, compute actual spend (use the
-reported `cost` column when present, else price at current rates) + a leaderboard repricing
-**all observed tokens** across the catalog. (CSV *parsing* is client-side; only this repricing
-is server-side.)
+## 7. Views
 
-**`AlertSignup`** model + `alert_signups` table (the only new migration): `email`,
-`payload` (the encoded workload, so it can seed an alert later), `created_at`. `#create`
-validates the email, stores it, returns a success partial. **No sending in V1.**
+- `costs/show.html.erb` + `costs/_result.html.erb` — headline spend · savings callout ·
+  cross-model board (reuse the `.data` table + provider-square / tier / delta badges) ·
+  input/output/cache breakdown · retrospective sparkline · strategy-hint links into the
+  explainers · assumptions footer · copy-link + the two probes.
+- `learn/index` + explainer templates with live-data partials.
+- model page: the embedded estimate widget.
+- `signal_signups/_form` + `_success`.
 
-**`ChartsHelper#cost_retrospective_sparkline(series)`** — small SVG helper in the existing
-style.
+## 8. Tests (`bin/rails test`)
 
-## 5. Frontend (vanilla Stimulus — no build step; matches existing controllers)
+- `CostEstimate`: per-model pricing incl. cache blend; cheapest-fit honours tier + context;
+  savings vs baseline; no-fit; retrospective dates ascending.
+- `PriceCatalog`: shapes match the catalog; `as_of` correctness.
+- `CostsController`: renders; permalink round-trip; frame request returns the frame.
+- `SignalSignup`: email validation; create stores the right `kind`.
+- (Stimulus stays thin; the math is server-side and covered.)
 
-- **`cost_form_controller`** — debounced `requestSubmit` on input change + URL sync; a near-clone
-  of `filters_controller`. Drives the `cost_result` Turbo Frame and the permalink.
-- **`cost_tokenizer_controller`** — counts tokens from pasted text locally (*port `tokenizer.js`*),
-  writes the counts into the profile fields. Raw text is never put in a submittable field.
-- **`cost_import_controller`** — parses a pasted/dropped CSV locally (*port `parseUsageCSV` +
-  `matchSlug` + `COL` from `blueprint-core.js`*), emits hidden per-model aggregate fields.
-- **`cost_steps_controller`** — add / remove / reorder step rows (a plain list, **no canvas**),
-  defaulting to one row; `cost_tokenizer` and `cost_import` can emit multiple rows (a trace →
-  one row per call, repeats collapsed to "× N"), so measurement builds the list.
-- **Mode switch** — a segmented control (Describe / Measure / Import) toggling which subform is
-  active; all three write into the same step fields the frame reads.
+## 9. Build order (small, shippable steps)
 
-## 6. Views
+1. **`PriceCatalog` + `CostEstimate` + tests** — the seam + engine, no UI.
+2. **`/cost` estimator page + `cost_result` frame + `cost_form`** + the model-page embed.
+   *Shippable:* a cross-model estimator with shareable permalinks, riding the index.
+3. **Education:** `/learn` + the first explainers (1 / 6 / 7) with live-data widgets +
+   estimator CTAs.
+4. **Demand probes:** `signal_signups` + the two capture cards.
+5. **Public JSON API** (`/api/v1/models.json`) off `PriceCatalog` — near-zero, starts the
+   flywheel.
+6. Polish to the Claude Design output; wire the gate metrics (§10).
 
-- `costs/show.html.erb` — nav gains a "Cost" link; input panel (3 modes); `turbo_frame_tag
-  "cost_result"` wrapping the result partial.
-- `costs/_result.html.erb` — headline spend · savings callout · reprice board (reuse the
-  `.data` table + provider-square / tier / delta badges) · **per-step stacked bar** (a single
-  step → the input/output/cache split) · retrospective sparkline · strategy hint cards ·
-  assumptions + "we never see your prompts" footer · action bar (Copy link / Save / Alert me).
-- `alert_signups/_form.html.erb` + `_success.html.erb`.
-- Reuse existing helpers: provider square, tier/delta badges, `PriceFormat`.
+## 10. The gate — what unlocks the proper product
 
-## 7. Tests (`bin/rails test`)
+Cheaply measured: estimator **completions** and **permalink shares**; education **organic
+entrances** → estimator CTR; and — the decider — the **"measure my real usage" opt-in rate**.
+A meaningful measure-opt-in rate is the green light to build §11; alert-opt-ins are the
+secondary (retention) signal.
 
-- `CostEstimate`: per-model pricing incl. cache blend; cheapest-fit honours tier floor +
-  context window; savings vs baseline; no-model-fits case; retrospective dates ascending.
-- `UsageReprice`: aggregation; reprice leaderboard; unmatched models; reported-cost vs derived.
-- `CostsController`: `/cost` renders; permalink params round-trip; frame request returns the frame.
-- `AlertSignup`: email validation; create stores; bad email rejected.
-- Stimulus stays thin (text→number only); the money math is fully covered server-side. One
-  optional system test for the happy path.
+## 11. The proper product (later — recorded, not built)
 
-## 8. Build order (each step is a small, shippable PR)
+The trace-ingesting measure-&-optimize tool: client-side trace/CSV ingestion (and
+OTel/OpenLLMetry/Langfuse export consumption); the multi-step / agent-loop cost model (tools,
+max-tool-calls with growing cache-dominated context, reasoning effort); per-step "where the
+money goes" + cheapest-equivalent swaps; batch flagged where latency allows; save/watch + the
+alert *pipeline*; optionally a local, aggregates-only CLI / GitHub-App PR cost-check (consume
+telemetry, never a proxy). Monetize via Pro/Team + licensed dataset, never affiliate. Reads
+prices via `PriceCatalog`; can graduate to its own brand/domain. Design reference:
+`DESIGN_BRIEF_V1.md` (now the *product* brief) + the step-list iteration prompt.
 
-1. **`CostEstimate` + tests** — the engine, **step-aware from day one** (prices a list; one
-   step = the calculator), no UI.
-2. **`/cost` page + result frame + `cost_form`** (Describe mode, single step: fields/sliders +
-   presets). *Shippable:* a working cross-model estimator with shareable permalinks. Then add
-   `cost_steps` (the "+ Add step" row list) once single-step is solid.
-3. **`cost_tokenizer`** (Measure mode): paste → counts.
-4. **`UsageReprice` + `cost_import`** (Import mode): CSV → reprice leaderboard.
-5. **Retrospective sparkline + strategy hints.**
-6. **`alert_signups` capture + success state.**
-7. **Polish to the Claude Design output** + wire the three signal metrics (below).
+---
 
-## 9. Promising-signs instrumentation (cheap — this is the V2 gate)
-
-Count, privacy-friendly: estimate/measure/import **completions** (by mode), **permalink copies**,
-and **alert opt-ins**. Share-rate and alert-opt-in are the two indicators (per the vision) that
-say "there's a returning product here" and justify pushing into V2.
-
-## 10. Open decisions (confirm before/while building)
-
-1. **Alert *sending* stays out of V1** (capture only). — assumed; confirm.
-2. **"Measure" depth:** V1 supports a multi-call trace populating a **step list** (rows,
-   repeats collapsed to "× N"). What stays in V2 is the **visual canvas** (nodes / roles /
-   drag / fan-out diagrams) and the Ask chat — not multi-step itself. — updated 17 Jun.
-3. **LLM "describe" front door deferred:** V1 = fields + example presets + an optional
-   client-side heuristic. This sidesteps the BYO-key / API-cost question entirely. — assumed.
-4. **Server-side compute (tested Ruby + Turbo Frame)** over a fully client-side tool, to keep
-   the money math tested and consistent with the house style. — recommended; confirm.
-
-*Estimated surface: one new table, one controller, two POROs, ~four small Stimulus controllers
-(form, tokenizer, CSV import, step list), two views — most of it ported from the existing
-prototypes. Still deliberately small: a step **list**, not a canvas.*
+*Surface for V1: one read seam (`PriceCatalog`), one PORO (`CostEstimate`), one estimator
+controller + one Stimulus controller, an education section (mostly prose + small live-data
+partials), one tiny signups table, and an optional read-only JSON endpoint. Deliberately
+small — the index is the hero.*
