@@ -4,9 +4,60 @@
 
 *Updated 15 June 2026 with the wedge & positioning decision below — the sharpened call on what to lead with, what to stop feeding, and how it earns. The review in §§1–8 stands as the underlying analysis; this section supersedes it where they differ.*
 
+*Updated 17 June 2026 with the **Product Definition & V1 Scope** below — now the authoritative section. It refines the wedge from "a calculator" to **estimate + measure → optimize** and scopes a tight, low-investment V1. Everything else stands as supporting analysis; this top section governs where they differ.*
+
+---
+
+## Product Definition & V1 Scope (17 June 2026)
+
+*Authoritative product definition. It sharpens the 15 June decision: the wedge is no longer "a calculator" — it is **estimate + measure → optimize**, and the product is the **neutral cross-model cost-optimization layer**, not a price reference with a calculator bolted on. Anything below that conflicts is superseded.*
+
+### Identity
+
+> **tokenprice.fyi tells developers what their AI features cost and where they're overpaying — grounded in their real calls and priced against every model, today and through history.**
+
+The job is *"know what my AI feature costs, and cut it."* We answer it **neutrally** — we sell no inference and take no referral fee — which is the one thing the gateways and FinOps tools structurally can't.
+
+### The core insight (why this is defensible)
+
+- **Measuring spend is a commodity.** Langfuse, Helicone, LiteLLM, Portkey, Vantage, CloudZero et al. already capture calls and report cost, with broader scope (tracing, routing, budgets) than a side project could match. We do **not** try to be another observability/FinOps tool.
+- **Neutrally *optimizing* across models is wide open.** Everyone reports what you *did* spend. Almost nobody answers *"what would this exact workload cost on every **other** model — at today's and historical prices — what's the cheapest equivalent, and tell me when that changes."* That is a **price-data problem**, and the sourced, dated, cross-provider price history is our moat.
+- **So: measurement is the on-ramp, the optimizer is the product, history is the plumbing** that makes the numbers credible and powers the "tell me when it changes" loop.
+- **Estimate and measure are one grounding ladder**, trading friction for fidelity: *describe in words* (low friction, rough) → *paste a real prompt/trace* (real tokens) → *import a usage CSV* (real spend). One optimizer engine consumes all three.
+- **Trust + de-scope rule: we never see prompts — token counts and costs only.** A privacy feature *and* what keeps the build side-project-sized (no trace store, no PII, no compliance load).
+
+### V1 — tight, low-investment, almost entirely from existing prototypes/data
+
+One surface — **the Cost tool**: three ways to ground a workload, one optimizer output. No new infrastructure, no accounts beyond an email capture, no SDK, no server-side LLM on the critical path.
+
+**In scope:**
+1. **Three grounding inputs** (tabs on one page):
+   - *Describe* — plain-English or sliders → workload profile (heuristic fill; optional LLM front door with graceful fallback, never required). The no-friction / SEO on-ramp.
+   - *Measure a call* — paste a prompt / output / agent trace → real token counts → cost on every model ("Prompt Cost Lab"). Zero setup.
+   - *Import usage* — paste/upload a provider usage-export CSV → actual spend → reprice across all models. The V1 "measure" workhorse.
+2. **One optimizer output** (shared across inputs): ranked cost across every model for *this* workload; "cheapest that's good enough" highlighted; **savings callout** ("switch A→B, save $X/mo, −Y%"); **where the money goes** (input/output/cache split); **retrospective** (this workload priced through history); **strategy hints** (caching, batch, routing, shorter output).
+3. **Save + shareable permalink** (state in the URL; local save) — the distribution artifact.
+4. **"Alert me when this changes"** — captures an email + the saved scenario. *Sending* is deferred; the opt-in itself is a primary V1 demand signal.
+5. The existing **model / provider / index pricing pages stay as the funnel** and link into the Cost tool; history stays as plumbing.
+
+**Cost-led honesty (non-negotiable):** every result states its assumptions; the cross-model "what-if" reprices the *same tokens* and is labelled a cost comparison, not a quality verdict ("validate the cheaper model with your own eval"); the "we never see your prompts" line is visible.
+
+### Deferred to V2+ (do NOT build until V1 shows signs)
+
+- **Email alert *pipeline*** (ESP, double opt-in, watches table, dedupe/sending). V1 captures intent only.
+- **The "push harder" bet — code-level measurement:** a lightweight, local, aggregates-only **CLI / GitHub-App PR cost-check** ("this change adds ~$X/mo; the review step could use Haiku, −60%"), and/or ingesting existing **OpenTelemetry `gen_ai.*` / OpenLLMetry / Langfuse exports**. This is the potential *proper product* and the team wedge — validate it *after* V1. Build measurement by *consuming* telemetry, never a production proxy/APM.
+- **Blueprint** (multi-step pipeline modeller) and **Ask** chat — the power-mode; fold in later.
+- **Pro/Team tier + licensed historical dataset** — monetization, once there's an audience. Subscription + dataset, **never affiliate/sponsorship** (neutrality is the moat).
+
+### What "promising signs" means (the gate to investing more)
+
+V1 earns a V2 push if, cheaply measured: people **complete** an estimate/measure (especially the higher-fidelity *paste* / *import* inputs, not just *describe*), **share** permalinks, and **opt into "alert me"** at a meaningful rate. Sharing and alert-opt-in are the two leading indicators that there's a real, returning product here — not just SEO drive-by traffic.
+
 ---
 
 ## Wedge & Positioning — decision update (15 June 2026)
+
+*Refined by the 17 June product definition above: the "cost calculator" wedge is now scoped as estimate + measure → optimize, and the C+D synthesis (calculator + watch) becomes V1's Cost tool + a deferred alert pipeline. The reasoning here — history as plumbing, cost-led advice, the side-project maintenance lens — still holds.*
 
 *Context: since the June review, the market-signals pipeline (news → Haiku classifier → Opus curation → Slack) and the historical backfill (~81 models, price history to 2023) have shipped. The question now is not "what to build" but "what is the wedge."*
 
