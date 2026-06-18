@@ -79,6 +79,57 @@
   <% end %>
 </div>
 
+<%# ── Estimate embed: a compact mini-estimator pre-filled with this model as
+    the baseline, riding the model page's traffic into /cost. ── %>
+<% if @catalog_entry %>
+  <% frame_id = "estimate_embed_#{@model.slug}" %>
+  <% in0 = CostEstimate.embed_slider(1500) %>
+  <% out0 = CostEstimate.embed_slider(600) %>
+  <section class="embed-wrap">
+    <div class="card emb-card">
+      <div class="emb-head">
+        <span class="emb-tag"><%= co_icon(:spark, size: 14) %>Estimate your monthly cost</span>
+        <h3>What would <span class="emb-model"><%= provider_square(@model.provider) %><%= @model.name %></span> cost you?</h3>
+        <p class="emb-sub">A rough monthly bill for this model, priced live. Open the full estimator to add caching, reused context, and a capability floor.</p>
+      </div>
+      <%= form_with url: model_estimate_path(@model), method: :get,
+            data: { controller: "cost-form", turbo_frame: frame_id, turbo_action: "replace" } do %>
+        <div class="emb-grid">
+          <div class="emb-controls">
+            <div class="emb-field">
+              <label for="in_pos">Input tokens / request</label>
+              <%= range_field_tag :in_pos, in0, min: 0, max: 100, id: "in_pos", class: "emb-range", data: { action: "input->cost-form#edit" } %>
+            </div>
+            <div class="emb-field">
+              <label for="out_pos">Output tokens / request</label>
+              <%= range_field_tag :out_pos, out0, min: 0, max: 100, id: "out_pos", class: "emb-range", data: { action: "input->cost-form#edit" } %>
+            </div>
+            <div class="emb-field">
+              <label>Requests / month</label>
+              <div class="emb-presets" role="radiogroup" aria-label="Requests per month">
+                <% [["10K", 10_000], ["100K", 100_000], ["500K", 500_000], ["2M", 2_000_000]].each do |lbl, v| %>
+                  <label class="emb-chip <%= 'on' if v == 100_000 %>">
+                    <%= radio_button_tag :req, v, v == 100_000, class: "sr-only", data: { action: "change->cost-form#submit" } %><%= lbl %>
+                  </label>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <%= turbo_frame_tag frame_id, src: model_estimate_path(@model, in_pos: in0, out_pos: out0, req: 100_000), loading: "eager" do %>
+            <div class="emb-out"><span class="emb-out-l">Pricing…</span></div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div>
+      <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
+            payload: "model=#{@model.slug}",
+            title: "Alert me when #{@model.name}'s price changes",
+            body: "We watch list prices across every provider. Get an email the moment #{@model.name}'s price moves — no dashboard to check.", error: nil %>
+    </div>
+  </section>
+<% end %>
+
 <% if @insights.facts.any? %>
   <section class="mb-8">
     <h2 class="mb-3 text-lg font-semibold">Where it sits</h2>

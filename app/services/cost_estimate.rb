@@ -51,6 +51,25 @@ class CostEstimate
     @models  = models || PriceCatalog.models
   end
 
+  # Exponential token mapping for the model-page embed's sliders (50 → 200k
+  # tokens across a 0–100 position), ported from cost-embed.js.
+  EMBED_MIN = 50
+  EMBED_MAX = 200_000
+
+  def self.embed_tokens(pos)
+    pos = pos.to_i
+    return 0 if pos <= 0
+
+    (EMBED_MIN * ((EMBED_MAX.to_f / EMBED_MIN)**(pos / 100.0)) / 10).round * 10
+  end
+
+  def self.embed_slider(tok)
+    tok = tok.to_i
+    return 0 if tok <= EMBED_MIN
+
+    (100 * Math.log(tok.to_f / EMBED_MIN) / Math.log(EMBED_MAX.to_f / EMBED_MIN)).round
+  end
+
   # ---- ranking helpers (ported) ----
   def self.tier_rank(t) = { "small" => 1, "mid" => 2, "frontier" => 3 }[t] || 0
   # capability floor: any/small → 1, mid → 2, frontier → 3
