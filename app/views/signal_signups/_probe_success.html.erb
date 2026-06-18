@@ -6,9 +6,9 @@
       <span class="probe-ok-ic"><%= co_icon(:check, size: 18) %></span>
       <div>
         <% if variant == "measure" %>
-          <strong>You're on the list.</strong> We'll email <span data-probe-email><%= email %></span> the moment trace + data import goes live.
+          <strong>You're on the list.</strong> We'll email <span data-probe-email><%= email %></span> when trace and data import go live.
         <% else %>
-          <strong>Watching for you.</strong> We'll email <span data-probe-email><%= email %></span> when a price move changes this.
+          <strong>Watching this one.</strong> We'll email <span data-probe-email><%= email %></span> when the price changes.
         <% end %>
       </div>
     </div>

@@ -90,7 +90,7 @@
       <div class="emb-head">
         <span class="emb-tag"><%= co_icon(:spark, size: 14) %>Estimate your monthly cost</span>
         <h3>What would <span class="emb-model"><%= provider_square(@model.provider) %><%= @model.name %></span> cost you?</h3>
-        <p class="emb-sub">A rough monthly bill for this model, priced live. Open the full estimator to add caching, reused context, and a capability floor.</p>
+        <p class="emb-sub">A rough monthly bill for this model at current prices. Open the full estimator to add caching, reused context, and a capability floor.</p>
       </div>
       <%= form_with url: model_estimate_path(@model), method: :get,
             data: { controller: "cost-form", turbo_frame: frame_id, turbo_action: "replace" } do %>
@@ -125,7 +125,7 @@
       <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
             payload: "model=#{@model.slug}",
             title: "Alert me when #{@model.name}'s price changes",
-            body: "We watch list prices across every provider. Get an email the moment #{@model.name}'s price moves — no dashboard to check.", error: nil %>
+            body: "We track list prices across every provider. Get an email when #{@model.name}'s price moves. No dashboard to check.", error: nil %>
     </div>
   </section>
 <% end %>

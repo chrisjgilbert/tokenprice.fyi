@@ -11,7 +11,7 @@
           <h3>Measure your <em>real</em> usage</h3>
         </div>
       </div>
-      <p class="probe-lede">Paste a production trace or connect your provider data and get your <strong>exact</strong> cost per call — then the same cheapest-equivalent recommendation, on the calls you actually ship.</p>
+      <p class="probe-lede">Paste a production trace or connect your provider data to get your <strong>exact</strong> cost per call, plus the same cheapest-equivalent recommendation on the calls you actually ship.</p>
       <div class="probe-feats">
         <span class="probe-feat"><%= co_icon(:trace, size: 14) %>Paste a trace</span>
         <span class="probe-feat"><%= co_icon(:plug, size: 14) %>Connect your data</span>
@@ -21,7 +21,7 @@
             frame_id: frame_id, variant: "measure", kind: "measure_interest",
             payload: payload, title: nil, body: nil, error: error,
             button_label: "Notify me", button_class: "tp-btn tp-btn-primary" %>
-      <p class="probe-fine">No spam — one note when it ships. This is the separate measure product, not part of the estimator.</p>
+      <p class="probe-fine">One email when it ships, nothing else. This is the separate measure product, not part of the estimator.</p>
     </div>
   <% else %>
     <div class="probe probe-alert">
@@ -29,7 +29,7 @@
         <span class="probe-bell"><%= co_icon(:bell, size: 19) %></span>
         <div>
           <h4><%= title.presence || "Alert me when this price changes" %></h4>
-          <p><%= body.presence || "We watch list prices across every provider. Get an email the moment a change moves this number — no dashboard to check." %></p>
+          <p><%= body.presence || "We track list prices across every provider daily. Get an email when one moves this number. No dashboard to check." %></p>
         </div>
       </div>
       <%= render "signal_signups/probe_form",

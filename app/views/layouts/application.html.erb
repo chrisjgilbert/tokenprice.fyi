@@ -8,7 +8,7 @@
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
     <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi' %>">
-    <meta property="og:description" content="<%= content_for(:description) || 'Compare LLM API token prices and track how they change over time.' %>">
+    <meta property="og:description" content="<%= content_for(:description) || 'Every major LLM API price in one unit, tracked daily and kept as history.' %>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<%= request.original_url %>">
     <meta property="og:image" content="<%= request.base_url %>/og.svg">
@@ -39,7 +39,7 @@
             <%= brand_mark(28) %>
             <span>tokenprice<span class="fyi">.fyi</span></span>
           <% end %>
-          <span class="tp-beta" title="Beta — data is still being sense-checked and verified, so figures may change.">beta</span>
+          <span class="tp-beta" title="Beta — figures are still being verified and may change.">beta</span>
         </div>
         <div class="tp-nav-links">
           <%= nav_link "Models", root_path, active: current_page?(root_path) %>
@@ -86,7 +86,7 @@
         <span>Representative data · USD per 1M tokens</span>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
-        <span class="tp-foot-beta">Beta — data is still being sense-checked and verified, so figures may change.</span>
+        <span class="tp-foot-beta">Beta — figures are still being verified and may change.</span>
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
