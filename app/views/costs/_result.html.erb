@@ -38,11 +38,15 @@
       </div>
       <% if estimate.same? %>
         <div class="co-reco-note"><%= co_icon(:check) %>That's already your baseline — you're on the cheapest fit for this workload.</div>
-      <% else %>
+      <% elsif savings && savings[:monthly] > 0 %>
         <div class="co-reco-save">
           <span class="tp-delta"><%= co_icon(:trend_down, size: 14) %><%= savings[:pct].abs %>%</span>
-          <span>Switch <strong><%= base.entry.name %> → <%= reco.entry.name %></strong>, save <strong><%= co_money(savings[:monthly].abs) %>/mo</strong> (<%= co_money(savings[:yearly].abs) %>/yr)</span>
+          <span>Switch <strong><%= base.entry.name %> → <%= reco.entry.name %></strong>, save <strong><%= co_money(savings[:monthly]) %>/mo</strong> (<%= co_money(savings[:yearly]) %>/yr)</span>
         </div>
+      <% else %>
+        <%# Baseline is cheaper but doesn't meet the context / capability
+            constraints, so it can't be recommended. %>
+        <div class="co-reco-note"><%= co_icon(:check) %><strong><%= reco.entry.name %></strong> is the cheapest model that fits your context and capability needs. <%= base.entry.name %> is cheaper but doesn't qualify.</div>
       <% end %>
     </div>
   </div>

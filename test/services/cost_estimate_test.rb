@@ -107,6 +107,14 @@ class CostEstimateTest < ActiveSupport::TestCase
     assert_equal 900, p.out
   end
 
+  test "profile_from falls back to defaults for non-numeric params, not the lower bound" do
+    p = CostEstimate.profile_from(req: "abc", sys: "lots", out: "12.7")
+
+    assert_equal CostEstimate::DEFAULT[:req], p.req # garbage → default, not 1
+    assert_equal CostEstimate::DEFAULT[:sys], p.sys # garbage → default, not 0
+    assert_equal 13, p.out                           # "12.7" rounds to 13
+  end
+
   test "to_query round-trips a profile through params" do
     p = CostEstimate.profile_from(sys: 1200, fresh: 300, out: 600, req: 200_000, cache: 40, tier: "mid", base: "x")
     again = CostEstimate.profile_from(p.to_query)

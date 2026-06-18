@@ -729,8 +729,8 @@ footer.tp-foot {
 .co-tierseg { display: inline-flex; padding: 4px; gap: 2px; background: var(--slate-100); border-radius: var(--r-pill); border: 1px solid var(--border); flex-wrap: wrap; }
 .co-tierseg label { padding: 7px 13px; background: transparent; font-family: var(--sans); font-size: 12.5px; font-weight: 600;
   color: var(--text-soft); cursor: pointer; border-radius: var(--r-pill); transition: color .14s var(--ease); position: relative; white-space: nowrap; }
-.co-tierseg label.on { color: var(--indigo-700); }
-.co-tierseg label.on::before { content: ""; position: absolute; inset: 0; background: var(--surface); border-radius: var(--r-pill); box-shadow: var(--shadow-sm); z-index: -1; }
+.co-tierseg label.on, .co-tierseg label:has(:checked) { color: var(--indigo-700); }
+.co-tierseg label.on::before, .co-tierseg label:has(:checked)::before { content: ""; position: absolute; inset: 0; background: var(--surface); border-radius: var(--r-pill); box-shadow: var(--shadow-sm); z-index: -1; }
 
 /* output cards */
 .co-out { display: flex; flex-direction: column; gap: 18px; }
@@ -951,7 +951,7 @@ footer.tp-foot {
 .emb-presets { display: flex; gap: 7px; flex-wrap: wrap; }
 .emb-chip { padding: 6px 13px; border-radius: var(--r-pill); border: 1px solid var(--border-strong); background: var(--surface); font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text-soft); cursor: pointer; transition: all .14s var(--ease); }
 .emb-chip:hover { border-color: var(--indigo-400); color: var(--indigo-700); }
-.emb-chip.on { background: var(--indigo-50); border-color: var(--indigo-400); color: var(--indigo-700); }
+.emb-chip.on, .emb-chip:has(:checked) { background: var(--indigo-50); border-color: var(--indigo-400); color: var(--indigo-700); }
 .emb-out { background: var(--slate-50); border: 1px solid var(--border); border-radius: var(--r-md); padding: 20px; display: flex; flex-direction: column; }
 .emb-out-l { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-mute); }
 .emb-total { font-size: 38px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); margin: 6px 0 2px; }

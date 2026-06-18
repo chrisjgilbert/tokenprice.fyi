@@ -265,10 +265,16 @@ class CostEstimate
     v = value.to_s.strip
     return default if v.empty?
 
-    n = Integer(v.to_f.round) rescue nil
-    return default if n.nil?
+    # Float() raises on non-numeric input (unlike to_f), so garbage params fall
+    # back to the default rather than silently collapsing to the lower bound.
+    num = begin
+      Float(v)
+    rescue ArgumentError, TypeError
+      nil
+    end
+    return default if num.nil?
 
-    n.clamp(lo, hi)
+    num.round.clamp(lo, hi)
   end
   private_class_method :clamp
 end
