@@ -11,6 +11,10 @@ class PriceCatalog
   # `cached` is nil when the model offers no prompt cache.
   Snapshot = Data.define(:date, :input, :output, :cached)
 
+  # Minimal provider shape so the shared `provider_square` helper (which reads
+  # name/slug/accent) works against catalog entries without an AiModel.
+  ProviderRef = Data.define(:name, :slug, :accent)
+
   # One listed model with its current prices, context, tier, provider, and
   # full price history. Self-contained: `as_of` answers historical prices so
   # the retrospective can be computed without going back to the catalog.
@@ -40,6 +44,8 @@ class PriceCatalog
 
     # Convenience alias matching the design engine's `m.ctx`.
     def ctx = context_window
+
+    def provider = ProviderRef.new(name: provider_name, slug: provider_slug, accent: provider_accent)
 
     def current = snapshots.last
     def input  = current&.input
@@ -77,6 +83,20 @@ class PriceCatalog
     # the x-axis for the "priced through history" retrospective.
     def change_dates
       models.flat_map { |e| e.snapshots.map(&:date) }.uniq.sort
+    end
+
+    # A sensible default "compare against" baseline: a recognizable premium model
+    # if one is listed, otherwise the priciest frontier model — so the estimator
+    # opens on a meaningful cheapest-equivalent savings story regardless of which
+    # exact slugs the catalog carries.
+    PREFERRED_BASELINES = %w[gpt-5 gpt-4o gpt-4-1 claude-opus-4-8 claude-sonnet-4-5 gemini-2-5-pro].freeze
+
+    def default_baseline_slug
+      all = models
+      by_slug = all.index_by(&:slug)
+      PREFERRED_BASELINES.find { |s| by_slug.key?(s) } ||
+        all.select { |m| m.tier == "frontier" }.max_by { |m| (m.input || 0) + (m.output || 0) }&.slug ||
+        all.first&.slug
     end
   end
 end

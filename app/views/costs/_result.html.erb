@@ -1,0 +1,170 @@
+<%# The estimator result — rendered inside the #cost_result Turbo Frame.
+    locals: estimate, profile, sort ("monthly"|"call") %>
+<% reco = estimate.recommendation %>
+<% base = estimate.baseline %>
+<% rows = sort == "call" ? estimate.rows.sort_by(&:per_req) : estimate.rows %>
+<% fit_count = estimate.rows.count { |r| r.fits? && r.eligible? } %>
+
+<%# ── 1. Hero: headline spend + cheapest-equivalent recommendation ── %>
+<% if reco.nil? %>
+  <div class="co-hero co-card is-nofit reveal">
+    <div class="co-hero-l">No model fits</div>
+    <div class="co-hero-v num" style="font-size:34px"><%= co_kfmt(estimate.total_tokens) %> tokens / request</div>
+    <div class="co-reco-note"><%= co_icon(:warn) %>No model in this capability tier has a context window big enough. Lower the minimum capability, trim the prompt, or split the request.</div>
+  </div>
+<% else %>
+  <% savings = estimate.savings %>
+  <div class="co-hero co-card reveal">
+    <div class="co-hero-top">
+      <div class="co-hero-spend">
+        <div class="co-hero-l">Estimated spend · recommended model</div>
+        <div class="co-hero-v num"><%= co_money(reco.monthly) %><span class="per"> /mo</span></div>
+        <div class="co-hero-sub"><%= "#{profile.summary} · " if profile.summary.present? %><%= co_kfmt(profile.req) %> req/mo · <%= co_kfmt(estimate.total_tokens) %> tok/req</div>
+      </div>
+      <div class="co-hero-per"><span class="pv num"><%= co_per_call(reco.per_req) %></span><span class="pl">per request</span></div>
+    </div>
+
+    <div class="co-reco">
+      <div class="co-reco-tag"><%= co_icon(:check, size: 14) %>Cheapest equivalent that fits your needs</div>
+      <div class="co-reco-main">
+        <div class="co-reco-model">
+          <%= provider_square(reco.entry.provider) %>
+          <span class="co-reco-name"><%= reco.entry.name %><span class="sub"><%= reco.entry.provider_name %> · <%= reco.entry.tier.capitalize %> · <%= tokens_short(reco.entry.context_window) %> ctx</span></span>
+        </div>
+        <div class="co-reco-cost">
+          <span class="co-reco-mo num"><%= co_money(reco.monthly) %></span>
+          <span class="co-reco-call num"><%= co_per_call(reco.per_req) %> / call</span>
+        </div>
+      </div>
+      <% if estimate.same? %>
+        <div class="co-reco-note"><%= co_icon(:check) %>That's already your baseline — you're on the cheapest fit for this workload.</div>
+      <% else %>
+        <div class="co-reco-save">
+          <span class="tp-delta"><%= co_icon(:trend_down, size: 14) %><%= savings[:pct].abs %>%</span>
+          <span>Switch <strong><%= base.entry.name %> → <%= reco.entry.name %></strong>, save <strong><%= co_money(savings[:monthly].abs) %>/mo</strong> (<%= co_money(savings[:yearly].abs) %>/yr)</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── 2. Cost board: every model priced for this workload ── %>
+<% fitting_vals = rows.select(&:fits?).map { |r| sort == "call" ? r.per_req : r.monthly } %>
+<% max_val = [ fitting_vals.max || 0, 1e-9 ].max %>
+<div class="co-card reveal">
+  <div class="co-card-h">
+    <h3>Every model, priced for this workload</h3>
+    <span class="co-seg-sm">
+      <%= link_to "$/mo", cost_path(profile.to_query.merge(sort: "monthly")), class: ("on" if sort != "call"), data: { turbo_frame: "cost_result", turbo_action: "replace" } %>
+      <%= link_to "$/call", cost_path(profile.to_query.merge(sort: "call")), class: ("on" if sort == "call"), data: { turbo_frame: "cost_result", turbo_action: "replace" } %>
+    </span>
+  </div>
+  <p class="co-card-sub">Ranked cheapest first · green = cheapest equivalent, your baseline marked</p>
+  <% if fit_count == 1 %>
+    <div class="co-board-note"><%= co_icon(:warn) %>Only one model fits this workload's context + capability needs. Lower the minimum capability or trim the prompt to open up cheaper options.</div>
+  <% end %>
+  <div class="co-board">
+    <% rows.each do |r| %>
+      <% is_reco = reco && r.slug == reco.slug %>
+      <% is_base = r.slug == profile.base %>
+      <% value = sort == "call" ? r.per_req : r.monthly %>
+      <% width = r.fits? ? [ 2, (value / max_val * 100) ].max : 0 %>
+      <%= link_to model_path(r.slug), class: "co-brow #{'is-reco' if is_reco} #{'is-nofit' unless r.fits?} #{'is-base' if is_base}" do %>
+        <span class="co-brow-id">
+          <%= provider_square(r.entry.provider) %>
+          <span class="co-brow-name"><%= r.entry.name %><% if is_reco %> <span class="co-reco-pin"><%= co_icon(:check, size: 12) %></span><% end %><span class="sub"><%= r.entry.tier.capitalize %> · <%= tokens_short(r.entry.context_window) %> ctx<% if is_base %> · <em>baseline</em><% end %><% unless r.eligible? %> · below min tier<% end %></span></span>
+        </span>
+        <span class="co-brow-track">
+          <span class="co-brow-fill" style="width:<%= width %>%;background:<%= is_reco ? 'var(--color-indigo-500)' : safe_hex(r.entry.provider_accent) %>"></span>
+          <% unless r.fits? %><span class="co-nofit-tag">context too small</span><% end %>
+        </span>
+        <span class="co-brow-cost">
+          <span class="co-brow-mo num"><%= co_money(value) %></span>
+          <span class="co-brow-call num"><%= co_per_call(r.per_req) %>/call</span>
+        </span>
+        <span class="co-brow-d"><%= co_delta(r.delta) unless is_base %></span>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# ── 3. Where the money goes ── %>
+<% if reco %>
+  <% total = reco.in_cost + reco.out_cost %>
+  <% total = 1 if total.zero? %>
+  <% ip = reco.in_cost / total * 100 %>
+  <% op = reco.out_cost / total * 100 %>
+  <div class="co-card reveal">
+    <div class="co-card-h"><h3>Where the money goes</h3><span class="co-card-sub"><%= reco.entry.name %> · <%= co_money(reco.monthly) %>/mo</span></div>
+    <div class="co-split-bar">
+      <span style="width:<%= ip %>%;background:var(--color-indigo-500)"></span>
+      <span style="width:<%= op %>%;background:var(--color-sky-500)"></span>
+    </div>
+    <div class="co-split-legend">
+      <span class="co-split-li"><span class="dot" style="background:var(--color-indigo-500)"></span>Input <%= ip.round %>% <b><%= co_money(reco.in_cost * profile.req) %>/mo</b></span>
+      <span class="co-split-li"><span class="dot" style="background:var(--color-sky-500)"></span>Output <%= op.round %>% <b><%= co_money(reco.out_cost * profile.req) %>/mo</b></span>
+    </div>
+    <% if reco.has_cache? && profile.cache > 0 %>
+      <div class="co-cache-line on"><%= co_icon(:cache) %>Prompt caching at <%= profile.cache %>% saves <strong><%= co_money(reco.cache_saved * profile.req) %>/mo</strong> on input.</div>
+    <% else %>
+      <div class="co-cache-line off"><%= co_icon(:cache) %><%= reco.has_cache? ? "Turn up cache hit rate to cut input cost — reused context bills up to 90% cheaper." : "#{reco.entry.name} has no prompt cache; input is billed in full." %></div>
+    <% end %>
+  </div>
+<% end %>
+
+<%# ── 4. Priced through history (the moat) ── %>
+<% series = estimate.retrospective %>
+<% if series.size >= 2 %>
+  <% first = series.first; last = series.last %>
+  <% change = CostFormat.pct(last[:monthly], first[:monthly]) %>
+  <div class="co-card reveal">
+    <div class="co-card-h"><h3>This workload, priced through history</h3><span class="co-card-sub">cheapest model that fit, on each date</span></div>
+    <div class="co-retro-wrap">
+      <%= cost_retro_sparkline(series) %>
+      <div class="co-retro-ends">
+        <div class="co-retro-end"><span class="d"><%= fmt_date(first[:date]) %></span><span class="v num"><%= co_money(first[:monthly]) %></span></div>
+        <span class="tp-delta <%= change <= 0 ? 'tp-delta-down' : 'tp-delta-up' %>"><%= co_icon(:trend_down, size: 13) %><%= change.abs %>%</span>
+        <div class="co-retro-end"><span class="d">today</span><span class="v num"><%= co_money(last[:monthly]) %></span></div>
+      </div>
+    </div>
+    <%= link_to trends_path, class: "co-retro-link" do %>See what drove the drops <%= co_icon(:arrow_right) %><% end %>
+  </div>
+<% end %>
+
+<%# ── 5. Cut it further: contextual strategy hints ── %>
+<div class="co-card reveal">
+  <div class="co-card-h"><h3>Cut it further</h3><span class="co-card-sub">contextual levers for this workload</span></div>
+  <div class="co-strat-grid">
+    <% estimate.strategy_hints.each do |h| %>
+      <div class="co-strat">
+        <div class="co-strat-h"><span class="ic"><%= co_icon(h.icon, size: 16) %></span><%= h.title %></div>
+        <p><%= h.body %></p>
+        <% if h.save.present? %><div class="save"><%= h.save %></div><% end %>
+      </div>
+    <% end %>
+  </div>
+  <%= link_to learn_cost_cutting_path, class: "co-strat-more" do %>Read the cost-cutting playbook <%= co_icon(:arrow_right) %><% end %>
+</div>
+
+<%# ── 6. Assumptions + the cost-led caveat + privacy line ── %>
+<div class="co-card co-assume reveal">
+  <h4>Assumptions</h4>
+  <ul>
+    <li>Prices are USD per 1M tokens, at current list rates.</li>
+    <li>Dimensions priced: input, output, and cached input where offered.</li>
+    <li>Cache hit rate applies to your system / reused tokens only.</li>
+    <li>Excludes batch discounts, free tiers, image/audio, and rate-limit effects.</li>
+    <li>“Cheapest equivalent” respects your context-window and minimum-capability constraints.</li>
+  </ul>
+  <div class="co-caveat"><strong>A cost comparison, not a quality verdict.</strong> A cheaper model can change output quality; validate any switch with your own eval before moving production traffic.</div>
+  <div class="co-trust"><%= co_icon(:check) %>Always-current, history-backed list prices — nothing you enter leaves your browser.</div>
+</div>
+
+<%# ── Action bar: shareable permalink ── %>
+<div class="co-card co-actions reveal" data-controller="clipboard">
+  <button class="co-mini" type="button" data-action="clipboard#copy">
+    <%= co_icon(:link) %><span data-clipboard-target="label">Copy shareable link</span>
+  </button>
+  <span class="co-act-spacer"></span>
+  <span class="co-act-note">Permalink encodes this exact workload</span>
+</div>
