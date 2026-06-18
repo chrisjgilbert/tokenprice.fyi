@@ -97,12 +97,12 @@
         <div class="emb-grid">
           <div class="emb-controls">
             <div class="emb-field">
-              <label for="in_pos">Input tokens / request</label>
-              <%= range_field_tag :in_pos, in0, min: 0, max: 100, id: "in_pos", class: "emb-range", data: { action: "input->cost-form#edit" } %>
+              <label for="in_pos">Input tokens / request <span class="emb-v num"><%= co_kfmt(1500) %></span></label>
+              <%= range_field_tag :in_pos, in0, min: 0, max: 100, id: "in_pos", class: "emb-range", data: { action: "input->cost-form#token input->cost-form#edit" } %>
             </div>
             <div class="emb-field">
-              <label for="out_pos">Output tokens / request</label>
-              <%= range_field_tag :out_pos, out0, min: 0, max: 100, id: "out_pos", class: "emb-range", data: { action: "input->cost-form#edit" } %>
+              <label for="out_pos">Output tokens / request <span class="emb-v num"><%= co_kfmt(600) %></span></label>
+              <%= range_field_tag :out_pos, out0, min: 0, max: 100, id: "out_pos", class: "emb-range", data: { action: "input->cost-form#token input->cost-form#edit" } %>
             </div>
             <div class="emb-field">
               <label>Requests / month</label>

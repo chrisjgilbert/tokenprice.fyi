@@ -91,8 +91,7 @@ class PriceCatalog
     # exact slugs the catalog carries.
     PREFERRED_BASELINES = %w[gpt-5 gpt-4o gpt-4-1 claude-opus-4-8 claude-sonnet-4-5 gemini-2-5-pro].freeze
 
-    def default_baseline_slug
-      all = models
+    def default_baseline_slug(all = models)
       by_slug = all.index_by(&:slug)
       PREFERRED_BASELINES.find { |s| by_slug.key?(s) } ||
         all.select { |m| m.tier == "frontier" }.max_by { |m| (m.input || 0) + (m.output || 0) }&.slug ||

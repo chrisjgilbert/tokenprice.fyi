@@ -140,11 +140,22 @@ class CostEstimate
     recommendation && baseline && recommendation.slug == baseline.slug
   end
 
-  # Monthly/%/yearly delta of switching baseline → recommendation.
+  # Whether the requested baseline slug actually resolved to a catalog model
+  # (vs the cheapest-row fallback used for an unknown slug).
+  def baseline_known?
+    rows.any? { |r| r.slug == profile.base }
+  end
+
+  # Monthly/%/yearly saving of switching baseline → recommendation, or nil when
+  # there's no actual saving (baseline already optimal, or cheaper than the
+  # recommendation because it fails the fit/capability constraints). Callers can
+  # therefore treat a present value as a genuine, positive saving.
   def savings
     return nil unless recommendation && baseline
 
     monthly = baseline.monthly - recommendation.monthly
+    return nil unless monthly > 0
+
     {
       monthly: monthly,
       pct: CostFormat.pct(recommendation.monthly, baseline.monthly),
@@ -158,7 +169,9 @@ class CostEstimate
   # price-change date — the "priced through history" sparkline series, ascending.
   def retrospective
     @retrospective ||= begin
-      dates = (PriceCatalog.change_dates + [ Date.current ]).uniq.sort
+      # Derive the change dates from the already-loaded models rather than
+      # re-querying the catalog (PriceCatalog.change_dates).
+      dates = (@models.flat_map { |e| e.snapshots.map(&:date) } + [ Date.current ]).uniq.sort
       min_rank = self.class.floor_rank(profile.tier)
       dates.filter_map do |d|
         best = nil

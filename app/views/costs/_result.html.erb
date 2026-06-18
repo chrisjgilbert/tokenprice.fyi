@@ -38,15 +38,18 @@
       </div>
       <% if estimate.same? %>
         <div class="co-reco-note"><%= co_icon(:check) %>That's already your baseline — you're on the cheapest fit for this workload.</div>
-      <% elsif savings && savings[:monthly] > 0 %>
+      <% elsif savings %>
         <div class="co-reco-save">
           <span class="tp-delta"><%= co_icon(:trend_down, size: 14) %><%= savings[:pct].abs %>%</span>
           <span>Switch <strong><%= base.entry.name %> → <%= reco.entry.name %></strong>, save <strong><%= co_money(savings[:monthly]) %>/mo</strong> (<%= co_money(savings[:yearly]) %>/yr)</span>
         </div>
+      <% elsif !estimate.baseline_known? %>
+        <%# Baseline slug wasn't in the catalog — don't compare against an arbitrary fallback. %>
+        <div class="co-reco-note"><%= co_icon(:check) %><strong><%= reco.entry.name %></strong> is the cheapest model that fits your context and capability needs.</div>
+      <% elsif !base.fits? %>
+        <div class="co-reco-note"><%= co_icon(:check) %><strong><%= reco.entry.name %></strong> is the cheapest model that fits — <%= base.entry.name %> is cheaper but its context window is too small for this workload.</div>
       <% else %>
-        <%# Baseline is cheaper but doesn't meet the context / capability
-            constraints, so it can't be recommended. %>
-        <div class="co-reco-note"><%= co_icon(:check) %><strong><%= reco.entry.name %></strong> is the cheapest model that fits your context and capability needs. <%= base.entry.name %> is cheaper but doesn't qualify.</div>
+        <div class="co-reco-note"><%= co_icon(:check) %><strong><%= reco.entry.name %></strong> is the cheapest model that meets your capability floor — <%= base.entry.name %> is cheaper but sits below it.</div>
       <% end %>
     </div>
   </div>

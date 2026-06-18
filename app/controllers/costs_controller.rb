@@ -19,14 +19,14 @@ class CostsController < ApplicationController
     # Default the baseline to a recognizable catalog model when none is given,
     # so the opening view shows a real cheapest-equivalent comparison.
     query = request.query_parameters
-    query = query.merge("base" => PriceCatalog.default_baseline_slug) if query["base"].blank?
+    query = query.merge("base" => PriceCatalog.default_baseline_slug(@models)) if query["base"].blank?
 
     @profile  = CostEstimate.profile_from(query)
     @estimate = CostEstimate.new(@profile, models: @models)
     @sort     = params[:sort].presence_in(%w[monthly call]) || "monthly"
 
     if request.headers["Turbo-Frame"] == "cost_result"
-      render partial: "costs/result", locals: { estimate: @estimate, profile: @profile, sort: @sort }
+      render(partial: "costs/result", locals: { estimate: @estimate, profile: @profile, sort: @sort }) and return
     end
   end
 

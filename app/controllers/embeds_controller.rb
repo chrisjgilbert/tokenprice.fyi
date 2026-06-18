@@ -5,7 +5,8 @@
 # encoded as the baseline.
 class EmbedsController < ApplicationController
   def show
-    @entry = PriceCatalog.model(params[:id])
+    models = PriceCatalog.models
+    @entry = models.find { |m| m.slug == params[:id] }
     return head :not_found unless @entry
 
     @in_pos  = (params[:in_pos]  || CostEstimate.embed_slider(1500)).to_i.clamp(0, 100)
@@ -16,7 +17,7 @@ class EmbedsController < ApplicationController
 
     profile  = CostEstimate.profile_from(sys: 0, fresh: fresh, out: out, req: @req,
                                          cache: 0, tier: "any", base: @entry.slug)
-    estimate = CostEstimate.new(profile, models: PriceCatalog.models)
+    estimate = CostEstimate.new(profile, models: models)
 
     @here     = estimate.rows.find { |r| r.slug == @entry.slug }
     @cheapest = estimate.rows.find(&:fits?)

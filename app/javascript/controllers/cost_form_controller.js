@@ -21,10 +21,23 @@ export default class extends Controller {
     this.element.requestSubmit()
   }
 
-  // Mirror the cache-rate value as the slider moves, then debounce-submit.
+  // Mirror the cache-rate value live as the slider moves. The submit itself
+  // fires once on release via a separate change->submit action, so dragging
+  // doesn't also queue a redundant debounced submit.
   cache(event) {
     if (this.hasCacheValueTarget) this.cacheValueTarget.textContent = `${event.target.value}%`
-    this.edit()
+  }
+
+  // Live token readout for the embed's exponential sliders (display only — the
+  // server is authoritative for the actual cost). Mirrors cost_estimate.rb's
+  // embed_tokens / CostFormat.kfmt.
+  token(event) {
+    const out = event.target.closest(".emb-field")?.querySelector(".emb-v")
+    if (!out) return
+    const MIN = 50, MAX = 200000
+    const pos = Number(event.target.value)
+    const tok = pos <= 0 ? 0 : Math.round((MIN * (MAX / MIN) ** (pos / 100)) / 10) * 10
+    out.textContent = tok >= 1000 ? `${(tok / 1000).toFixed(tok % 1000 ? 1 : 0)}K` : `${tok}`
   }
 
   disconnect() {

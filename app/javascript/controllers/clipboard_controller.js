@@ -11,6 +11,8 @@ export default class extends Controller {
   }
 
   flip() {
+    if (!this.hasLabelTarget) return
+
     this.element.classList.add("is-ok")
     const prev = this.labelTarget.textContent
     this.labelTarget.textContent = "Link copied"
@@ -19,5 +21,9 @@ export default class extends Controller {
       this.element.classList.remove("is-ok")
       this.labelTarget.textContent = prev
     }, 1800)
+  }
+
+  disconnect() {
+    clearTimeout(this.timer)
   }
 }

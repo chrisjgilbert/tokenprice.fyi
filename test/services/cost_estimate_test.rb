@@ -49,11 +49,21 @@ class CostEstimateTest < ActiveSupport::TestCase
     assert_in_delta est.savings[:monthly] * 12, est.savings[:yearly], 0.01
   end
 
-  test "baseline already cheapest reports no switch" do
+  test "baseline already cheapest reports no switch and no saving" do
     est = estimate(tier: "any", base: "deepseek-v4-pro")
 
     assert est.same?
     assert_equal "deepseek-v4-pro", est.baseline.slug
+    assert_nil est.savings # nothing to switch to → no saving
+    assert est.baseline_known?
+  end
+
+  test "savings is nil when the resolved baseline is not actually cheaper" do
+    # An unknown baseline slug falls back to the cheapest row; the recommendation
+    # can't beat it, so there is no genuine saving to report.
+    est = estimate(tier: "any", base: "no-such-model")
+    refute est.baseline_known?
+    assert_nil est.savings
   end
 
   test "unknown baseline slug falls back to the cheapest row" do
