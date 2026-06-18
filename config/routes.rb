@@ -16,6 +16,26 @@ Rails.application.routes.draw do
   get "which-model", to: "pages#which_model", as: :which_model
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
+  # The single-workload estimator. State lives in query params (shareable,
+  # indexable); the result renders into a Turbo Frame.
+  get "cost", to: "costs#show", as: :cost
+
+  # Education layer — directory index + explainers (each with live-data
+  # widgets and an estimator CTA).
+  get "learn", to: "learn#index", as: :learn
+  get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
+  get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
+
+  # Demand probes (capture only — no sending).
+  resources :signal_signups, only: :create
+
+  # Public read-only JSON API off PriceCatalog — the citation/backlink flywheel.
+  namespace :api do
+    namespace :v1 do
+      resources :models, only: :index, defaults: { format: :json }
+    end
+  end
+
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
 
   namespace :admin do
