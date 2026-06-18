@@ -71,9 +71,14 @@ API) use for prices — never ad hoc model queries:
 - **Pattern:** evergreen concept prose + **live-data widgets** (small partials/helpers reading
   `PriceCatalog`, e.g. "output is typically N× input — live spread") + a **CTA into `/cost`**
   pre-filled for the concept.
-- **Pages:** a `/learn` index + one explainer per concept (extend `PagesController`;
-  `/how-pricing-works`, `/why`, `/which-model` already exist and fold in). Indexed, JSON-LD,
-  in the sitemap.
+- **Widget placement (build note):** live-data widgets render **only inside explainer pages**
+  (and the estimator) — *never on the `/learn` index* or other navigation pages, where they
+  duplicate the explainer and blur the page's job. Do not port the index widget from the design
+  prototype.
+- **Pages:** a `/learn` index — a clean directory (concept cards + a "Start here" featured card
+  linking to the foundational explainer; an optional single decorative stat line, not a widget)
+  — plus one explainer per concept (extend `PagesController`; `/how-pricing-works`, `/why`,
+  `/which-model` already exist and fold in). Indexed, JSON-LD, in the sitemap.
 - **Starter set:** (1) how LLM API pricing works; (2) prompt caching; (3) batch processing;
   (4) reasoning / "thinking" tokens; (5) what an AI agent actually costs (the bridge to the
   product); (6) what drives the cost of common features; (7) cost-cutting strategies +
