@@ -10,8 +10,9 @@ class CostsController < ApplicationController
     # path). Fill a profile from the text, then redirect to the canonical param
     # URL so the fields and the permalink reflect it.
     if params[:describe].present? && !workload_params?
-      filled = CostEstimate.heuristic_fill(params[:describe])
-      redirect_to cost_path(CostEstimate.profile_from(filled).to_query) and return
+      query = CostEstimate.profile_from(CostEstimate.heuristic_fill(params[:describe])).to_query
+      query.delete(:base) # let the catalog default baseline win, not the heuristic's mock slug
+      redirect_to cost_path(query) and return
     end
 
     @models   = PriceCatalog.models
