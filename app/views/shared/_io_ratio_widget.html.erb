@@ -1,0 +1,44 @@
+<%# Live-data widget: "output costs N× input — today's spread across models".
+    Server-rendered from PriceCatalog so the education layer is always current.
+    locals: compact (default false), caption (optional). %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% priced = PriceCatalog.models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
+<% if priced.any? %>
+  <% ratios = priced.map { |m| m.output / m.input }.sort %>
+  <% median = ratios[ratios.size / 2] %>
+  <% lo, hi = ratios.minmax %>
+  <%# one representative (cheapest-blended) model per provider, capped at 6 %>
+  <% rows = priced.group_by(&:provider_slug).map { |_, ms| ms.min_by { |m| m.input + m.output } }
+                  .sort_by { |m| m.input + m.output }.first(6) %>
+  <% max_out = rows.map(&:output).max %>
+  <div class="lw<%= ' is-compact' if compact %>">
+    <div class="lw-head">
+      <span class="lw-live"><%= co_icon(:live, size: 12) %>Live · prices today</span>
+      <h4>Output costs <span class="lw-stat"><%= median.round(1) %>×</span> input, on average</h4>
+      <p>Every model charges more to <em>write</em> tokens than to <em>read</em> them. Across <%= priced.size %> tracked models the multiple runs from <strong><%= lo.round(1) %>×</strong> to <strong><%= hi.round(1) %>×</strong>.</p>
+    </div>
+    <div class="lw-bars">
+      <% rows.each do |m| %>
+        <% iw = [ 2.5, m.input / max_out * 100 ].max %>
+        <% ow = [ 2.5, m.output / max_out * 100 ].max %>
+        <%= link_to model_path(m.slug), class: "lw-bar" do %>
+          <span class="lw-bar-id">
+            <%= provider_square(m.provider) %>
+            <span class="lw-bar-nm"><%= m.name %><span class="lw-bar-px"><%= usd_plain(m.input) %> in · <%= usd_plain(m.output) %> out</span></span>
+          </span>
+          <span class="lw-bar-track">
+            <span class="lw-seg in" style="width:<%= iw %>%"></span>
+            <span class="lw-seg out" style="width:<%= ow %>%"></span>
+          </span>
+          <span class="lw-bar-x"><%= (m.output / m.input).round(1) %>×</span>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="lw-foot">
+      <span class="lw-key"><span class="dot in"></span>input / 1M</span>
+      <span class="lw-key"><span class="dot out"></span>output / 1M</span>
+      <span class="lw-note">per 1M tokens · tap a row for its history</span>
+    </div>
+  </div>
+  <% if local_assigns[:caption] %><p class="lw-cap"><%= caption %></p><% end %>
+<% end %>

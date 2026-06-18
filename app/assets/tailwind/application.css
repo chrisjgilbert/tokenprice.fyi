@@ -1054,3 +1054,9 @@ a.led-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); bo
   .led-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) { .led-grid { grid-template-columns: 1fr; } }
+
+/* Learn index featured decorative stat (the index carries no live-data widget) */
+.led-feat-deco { text-align: center; width: 100%; }
+.led-feat-deco .lw-live { margin-bottom: 14px; }
+.led-feat-stat { font-family: var(--mono); font-size: 56px; font-weight: 700; letter-spacing: -0.04em; color: var(--indigo-600); line-height: 1; }
+.led-feat-deco p { margin: 12px auto 0; font-size: 13.5px; color: var(--text-soft); line-height: 1.55; max-width: 26em; }
