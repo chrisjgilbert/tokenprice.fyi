@@ -1,5 +1,5 @@
 <% content_for :title, "What drives the cost of common features — tokenprice.fyi" %>
-<% content_for :description, "RAG, chat, classification, summarisation, coding agents — each has a different cost shape. Where the money concentrates in each, the dominant lever, and which cheaper tier often suffices." %>
+<% content_for :description, "RAG, chat, classification, summarisation, coding agents — each has a different cost shape. Where the money concentrates, the dominant lever, and when a cheaper tier is good enough." %>
 <% content_for :canonical, learn_feature_costs_url %>
 <% content_for :head do %>
   <%= json_ld({ "@context": "https://schema.org", "@type": "Article", headline: "What drives the cost of common features",
@@ -10,11 +10,11 @@
 <article class="hp">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Feature cost shapes · June 2026</p>
   <h1>What drives the cost of common features</h1>
-  <p class="hp-subtitle">Most LLM features fall into a handful of shapes, and each one concentrates its cost in a different place. Knowing where the money pools tells you which lever to pull — and which cheaper tier often suffices.</p>
+  <p class="hp-subtitle">Most LLM features fall into a handful of shapes, each concentrating cost in a different place. Knowing where tells you which lever to pull — and when a cheaper tier is good enough.</p>
 
   <p>The sticker price — input and output per million tokens — is the same for every feature you build. What changes is the <strong>shape of the workload</strong>: how much you send, how much comes back, how often the same context repeats, and whether the task is hard enough to need a capable model. Two features on the same model can differ by 100× in cost per call purely because of shape.</p>
 
-  <p>This is a guide to the five most common shapes. For each: a worked example, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. As always, the tier calls are <strong>a cost comparison, not a quality verdict</strong> — validate the cheaper option against your own eval before you ship it.</p>
+  <p>Five common shapes. For each: a worked example, where cost concentrates, the dominant lever, and the cheaper tier that often does the job. Tier calls are <strong>a cost comparison, not a quality verdict</strong> — validate against your own eval before you ship.</p>
 
   <%# Live-data widget — the input/output spread these shapes are multiplied against. %>
   <%= render "shared/io_ratio_widget", caption: "Live from the index — the per-1M spread every shape below is multiplied against." %>
@@ -106,8 +106,8 @@
 
   <hr>
   <h2>Reading your own feature</h2>
-  <p>Before estimating, place the feature on two axes. First, the <strong>input/output ratio</strong>: heavily input-bound features (RAG, summarisation, classification) live or die on input price and context discipline; the rare output-heavy feature makes output rate the meter to watch. Second, <strong>how much context repeats</strong>: anything that re-sends a stable prefix — chat history, a fixed system prompt, an agent's growing transcript — is a caching opportunity, often the largest single saving available.</p>
-  <p>From there the dominant lever usually picks itself: <strong>tier choice</strong> where one meter dwarfs the other, <strong>retrieval precision and context trimming</strong> where you are sending too much, and <strong>caching</strong> wherever the same tokens go out twice. None of these are quality decisions — they are cost decisions. Make the cheaper choice, then let an eval tell you whether you can keep it.</p>
+  <p>Place the feature on two axes. First, the <strong>input/output ratio</strong>: input-bound features (RAG, summarisation, classification) live or die on input price and context discipline; output-heavy features make output rate the meter to watch. Second, <strong>how much context repeats</strong>: anything re-sending a stable prefix — chat history, a fixed system prompt, an agent's growing transcript — is a caching opportunity, often the largest single saving available.</p>
+  <p>The dominant lever usually picks itself from there: <strong>tier choice</strong> where one meter dwarfs the other, <strong>retrieval precision and context trimming</strong> where you're sending too much, and <strong>caching</strong> wherever the same tokens go out twice. These are cost decisions, not quality decisions. Make the cheaper choice, then let an eval tell you whether you can keep it.</p>
 
   <div class="hp-cta">
     <%= link_to concept_cta_path(learn_concept("features")), class: "hp-cta-primary" do %>

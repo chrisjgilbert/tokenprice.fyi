@@ -10,11 +10,11 @@
 <article class="hp">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Cost-cutting · June 2026</p>
   <h1>Cost-cutting strategies and what they save</h1>
-  <p class="hp-subtitle">Six concrete levers, each with a rough saving and the trade-off that comes with it. None of them changes what your feature does — they change what it costs to do it.</p>
+  <p class="hp-subtitle">Six concrete levers, each with a rough saving and its trade-off. None changes what your feature does.</p>
 
-  <p>Cutting an LLM bill is rarely about finding a cheaper model. It is about matching each call to the cheapest way to serve it: caching what repeats, batching what can wait, routing easy work to small models, and not paying the expensive meter — output — for tokens you didn't need. The savings below stack. A workload that applies three or four of them often runs at a fraction of its naive cost.</p>
+  <p>Cutting an LLM bill is rarely about finding a cheaper model. It's about matching each call to the cheapest way to serve it: caching what repeats, batching what can wait, routing easy work to small models, not paying for output tokens you didn't need. These savings stack — a workload applying three or four of them often runs at a fraction of its naive cost.</p>
 
-  <p>Every figure here states its assumptions, and every cross-tier swap is <strong>a cost comparison, not a quality verdict</strong> — validate the cheaper path against your own eval before you rely on it.</p>
+  <p>All figures state their assumptions. Every cross-tier swap is <strong>a cost comparison, not a quality verdict</strong> — validate the cheaper path against your own eval before you rely on it.</p>
 
   <%# Live-data widget — the output/input gap that output-side levers exploit. %>
   <%= render "shared/io_ratio_widget", caption: "Live from the index — output is the pricey meter these levers target." %>
@@ -117,8 +117,8 @@
 
   <hr>
   <h2>Stacking the levers</h2>
-  <p>These savings multiply. Route the easy 80% of traffic to a small model, cache the stable prefix on the calls that remain, batch anything no user is waiting on, trim retrieval to what's relevant, and ask for tight output — and a workload can land at a small fraction of its naive cost without touching what it delivers. The order to reach for them: <strong>routing</strong> and <strong>caching</strong> usually move the most, <strong>batch</strong> is free wherever latency allows, and <strong>output discipline</strong> plus <strong>context trimming</strong> tighten what's left.</p>
-  <p>Every one of these is a cost decision, not a quality decision. The savings are real and easy to estimate; whether the cheaper path still does the job is the one thing only your own eval can tell you. Estimate the saving first, then verify the quality.</p>
+  <p>These savings multiply. Route the easy 80% to a small model. Cache the stable prefix on what's left. Batch anything no user is waiting on. Trim retrieval. Ask for tight output. Applied together, a workload can land at a small fraction of its naive cost without changing what it delivers. Priority order: <strong>routing</strong> and <strong>caching</strong> usually move the most; <strong>batch</strong> is free wherever latency allows; <strong>output discipline</strong> and <strong>context trimming</strong> tighten what's left.</p>
+  <p>None of these trade quality for cost — they trade convenience for cost. Whether the cheaper path still does the job is the one thing only your eval can tell you. Estimate the saving first, then verify.</p>
 
   <div class="hp-cta">
     <%= link_to concept_cta_path(learn_concept("cutting")), class: "hp-cta-primary" do %>

@@ -15,7 +15,7 @@
     <div class="lw-head">
       <span class="lw-live"><%= co_icon(:live, size: 12) %>Live · prices today</span>
       <h4>Output costs <span class="lw-stat"><%= median.round(1) %>×</span> input, on average</h4>
-      <p>Every model charges more to <em>write</em> tokens than to <em>read</em> them. Across <%= priced.size %> tracked models the multiple runs from <strong><%= lo.round(1) %>×</strong> to <strong><%= hi.round(1) %>×</strong>.</p>
+      <p>Output costs more than input across every provider. Across <%= priced.size %> models the multiple ranges from <strong><%= lo.round(1) %>×</strong> to <strong><%= hi.round(1) %>×</strong>.</p>
     </div>
     <div class="lw-bars">
       <% rows.each do |m| %>
