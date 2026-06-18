@@ -1,124 +1,101 @@
-# tokenprice.fyi — Product Vision & Review
+# tokenprice.fyi — Product Vision
 
-*Product review conducted June 2026. Grounded in the current codebase: Rails 8 server-rendered app, SQLite, ~50 curated models across 9+ providers, append-only price history, daily OpenRouter sync, admin-curated Anthropic data.*
+*The live price index for LLM APIs — understand and compare what every model costs, and price your own usage against all of them.*
 
----
+## What this is
 
-## 1. Strengths
+tokenprice.fyi is a **price index for LLM APIs**: it normalizes what every model from every provider costs, tracks how those prices move over time, and explains how API pricing actually works — so a developer can understand, compare, and roughly price their own usage in one place.
 
-**The data model is the best thing about this product, and it's genuinely good.** Prices are an append-only dated history (`PricePoint`), not a mutable number. Every snapshot carries `source` and `note` provenance. Curated data is never clobbered by the automated sync. This is the architecture of a *record of record* — most competitors store "current price" and throw history away. If LLM pricing data ever matters as a dataset, this design is the moat-in-waiting.
+That index is the foundation for a second, later product: a tool that **measures what a developer's *actual* AI feature costs** — grounded in their real calls — and shows them, neutrally, where they're overpaying and the cheapest equivalent across every model.
 
-**Price history + market events is a real differentiator today.** Nobody else shows "DeepSeek cut prices 75% on this date, here's the chart, here's what else happened that week" in one view. The trends page with launch/market event overlays is the closest thing this product has to a unique artifact. Provider pricing pages show *now*; this shows *trajectory* — and in a market where prices moved double-digit percentages multiple times a year, trajectory is decision-relevant ("should I wait?", "does this provider habitually cut prices post-launch?").
+Two products, one shared data backend. **Build the index first; build the cost tool only if the index earns it.**
 
-**Normalization is quietly valuable.** Every provider quotes pricing differently (per 1K, per 1M, cached vs. not, tables buried in docs). One table, one unit ($/Mtok), one blended sortable number is exactly the "I just need to compare" job. The 3:1 blended metric is opinionated and documented — good — even if the fixed ratio is a weakness (see below).
+## The opportunity
 
-**The engineering posture fits the product.** Server-rendered, zero-JS-framework, inline SVG charts, JSON-LD, sitemap, canonical URLs: this is built to win SEO queries like "claude opus 4.8 pricing" — which is how 90% of users will arrive. Fast, indexable, cheap to run. Correct call.
+The market reprices constantly — frontier prices have fallen ~99% since GPT-4, with double-digit cuts several times a year — yet almost nobody re-evaluates their model choice after shipping. Developers decide model and budget in the dark: they see sticker prices but can't translate them into "what my feature will cost," so they default to expensive frontier models for tasks a model 20× cheaper would handle.
 
-**Data hygiene as editorial stance.** "Anthropic figures are authoritative; others are best-effort with sources recorded" is honest in a way that builds trust. The sync's refusal to guess tiers (imports land in `mid` for human re-curation rather than polluting the frontier ranking) shows the right instinct: curation over automation when accuracy is the product.
+Two things in this space are already commodities, and one is wide open:
 
-## 2. Weaknesses & Gaps
+- **The price table is a commodity.** OpenRouter, artificialanalysis, llm-prices.com, and every provider's docs show current prices. Most people arrive from Google, get their number, and leave.
+- **Measuring your own spend is a commodity too.** Langfuse, Helicone, LiteLLM, Portkey, Vantage, and CloudZero already capture calls and report cost, with far broader scope (tracing, routing, budgets) than a side project could match.
+- **Neutrally *optimizing across models* is wide open.** Everyone reports what you *did* spend. Almost nobody answers *"what would this exact workload cost on every **other** model — at today's and historical prices — what's the cheapest equivalent, and tell me when that changes."* That's a price-data problem, and the answer is the moat.
 
-**Bluntly: the current product is a very well-built pricing table, and pricing tables are a commodity.** OpenRouter (the upstream data source!), artificialanalysis.ai, llm-stats, Simon Willison's llm-prices.com, and every provider's own docs all show current prices. Anyone arriving from Google gets their number and leaves in 40 seconds. There is no reason to return, no account, no alert, no saved state, no API. **Today the product has zero retention surface and a thin defensible position.** The history data is defensible; the table is not.
+## The moat
 
-Specific gaps, in rough order of how much they hurt:
+A **sourced, dated, append-only price history across every provider** — ~80 models back to early 2023, each snapshot carrying its source. Most competitors store "today's price" and discard history. This record is the one asset that's hard to copy, and it does real work:
 
-- **$/Mtok is the wrong unit for decisions.** Nobody budgets in millions of tokens. They budget in "support tickets classified per month" or "documents summarized per day." The product makes users do the multiplication that *is* the hard part. This is the single biggest gap between what the product shows and what users need.
-- **The pricing model itself is incomplete.** Real bills include batch API discounts (~50%), prompt-cache *write* costs (cache read is shown, write is not), thinking/reasoning tokens billed as output, image/audio tokens, and tiered or volume pricing. A comparison that omits batch pricing can be off by 2x — enough to flip a model decision.
-- **No quality dimension.** Price without capability is half a comparison. A user choosing between a $0.30 model and a $15 model isn't asking "which is cheaper" — they're asking "is the cheap one good enough for *my task*?" The tier taxonomy (frontier/mid/small) is a start but it's a supply-side label, not a task-fit answer.
-- **The fixed 3:1 blend silently misranks models for many workloads.** RAG/classification workloads are 20:1 input-heavy; generation workloads are near 1:2. A model with cheap input and expensive output can rank above or below a rival depending entirely on this hidden assumption. The footnote disclaims it, but a footnote doesn't fix a ranking.
-- **Compare is capped at two models and has no workload context.** Real shortlists are 3–5 models, and the question is "at *my* token mix and volume, what's the monthly delta?"
-- **No alerts, no feed, no API.** The data updates daily but users have no way to be told when something changes. A price cut — the product's most valuable event — currently reaches zero people proactively. There's no JSON endpoint, so nobody can build on the data, which is how reference resources usually become canonical.
-- **Coverage trust is fragile beyond Anthropic.** "Best-effort, may lag" is honest but it's also the thing a paying or deciding user can't tolerate. There's no per-model "last verified" timestamp shown, no link to the provider's source page on each price point in the UI.
+- it makes any estimate **current and trustworthy** — a shared number recomputes at today's prices, which no static calculator does;
+- it lets us **price a workload through history** ("already 40% cheaper than a year ago");
+- it's the only thing that can detect *the moment a price moves* — the trigger for "tell me when my answer changes."
 
-**Friction summary for a user making a real decision:** they can see prices, but they must bring their own token estimates, do their own arithmetic, guess at quality equivalence, mentally adjust for batch/caching, and re-check manually next month. The product answers "what does a million tokens cost?" when the user's actual question is "what will *this feature* cost me, and on which model?"
+We never compete on model **quality**. Benchmarks are an arms race against funded leaderboards, they go stale, and they're off-brand for a neutral price source. **We lead with cost — the one axis we can be authoritative on — and treat quality as a tier floor, never a score.**
 
-## 3. Core User Problem
+## Neutrality is the wedge
 
-> **LLM API costs are decided in the dark.** A developer choosing a model can see sticker prices but can't translate them into "what my workload will cost," because cost is a function of price × token volume × traffic shape × discounts (caching, batch) × model choice — and every one of those variables is opaque before launch, fuzzy during build, and tedious to re-derive every time prices move or a new model ships. The result: teams over-pay by defaulting to frontier models for tasks a model 20x cheaper would handle, or under-build by fearing costs they never actually quantified — and almost nobody re-evaluates after launch, even as the market reprices around them monthly.
+We **sell no inference and take no referral fee.** That's the one thing the gateways and FinOps tools structurally can't claim, and it's what makes our advice trustworthy enough to act on. Every recommendation is "cheapest equivalent by price," never "the model that pays us."
 
-The user is a developer, founder, or platform/infra lead at a team shipping LLM features. They make a model decision a handful of times a year, but the decision is high-stakes (it compounds with usage) and high-churn (the right answer changes every quarter). They need three things at three moments:
+## Two products, one backend
 
-1. **Before building:** "Given my use case, what would this cost per month on each candidate model?"
-2. **While building:** "Which is the cheapest model that's good enough for this task?"
-3. **After launch:** "Tell me when the answer changes" — a price cut, a new model, a cheaper equivalent.
+**1. tokenprice.fyi — the price index (build now).**
+*"Understand and compare LLM API pricing — then roughly price your own."* The reference data, an education layer, and a lightweight estimator. This is the funnel (SEO + citation) and the moat (the history). Low-maintenance; compounds passively.
 
-The current product partially serves moment 2 and ignores moments 1 and 3. The vision is to own all three.
+**2. The cost product (build later, if signs justify).**
+*"Know what my feature actually costs, and cut it."* A neutral cross-model cost-optimization tool fed by a developer's real traces and usage. The differentiated, monetizable product.
 
-## 4. Model Selection Guidance
+**The seam between them:** the cost product reads price data only through a defined interface — a `PriceCatalog` service and a public JSON API — never ad hoc. That one decision (a) keeps the two cleanly separable, (b) *is* the "free API → licensed dataset" monetization, and (c) lets the product later move to its own brand/domain as a packaging change, not a rebuild. It also keeps other data sources possible, since the product depends on the interface, not our table.
 
-**Yes — this is the highest-value editorial layer the product could add, and it should be framed as cost-fit, not benchmark rivalry.** Don't try to out-benchmark artificialanalysis.ai or LMArena; that's a different (expensive) product and an arms race. The framing that fits this product: **"What's the cheapest model that's good enough for this job?"** — selection as a *cost-optimization* question, which is the lens the product already owns.
+## Operating principles
 
-**How I'd frame it: task profiles, not model reviews.** Curate 8–12 canonical task archetypes that cover most real workloads:
+- **Estimate and measure are one grounding ladder**, trading friction for fidelity: *describe in words* → *paste a real prompt/trace* → *import a usage CSV* → *consume telemetry*. The same optimizer consumes all of them; V1 only does the first (typed inputs).
+- **We never see prompts.** When the product ingests real calls, tokens are counted client-side and only counts and costs are sent — a privacy feature and a major de-scope (no trace store, no PII, no compliance load).
+- **Cost-led honesty.** Every number states its assumptions; a cross-model "what-if" reprices the *same tokens* and is labelled a cost comparison, not a quality verdict ("validate with your eval").
+- **Owner attention is the scarce resource.** This is a side project. Favour build-once-compounds surfaces (SEO pages, education, shareable permalinks, a free API) over maintenance treadmills — the market-events/news pipeline stays as quiet chart context, never a headline; the map page is buried.
+- **Don't rebrand on a guess.** Keep the clean, fast, info-style aesthetic for the reference pages (it's an SEO asset); give the product its own polish under `tokenprice.fyi/cost` (or a subdomain). Split into a separate brand/domain only once the product proves itself — you'll know the right name by then.
 
-| Task profile | Typical token shape | Tier needed |
-|---|---|---|
-| Classification / routing / moderation | tiny in, tiny out, huge volume | small |
-| Data extraction to JSON | medium in, small out | small–mid |
-| RAG answering over docs | large in (cacheable), small out | mid |
-| Long-document summarisation | very large in, medium out | small–mid (revised Jun 2026: cheap long-context models cover routine summaries; mid+ for high-stakes documents) |
-| Customer-facing chat | medium in/out, quality-sensitive | mid–frontier |
-| Code generation / agentic coding | large in (cacheable), large out | frontier |
-| Multi-step agents / tool use | huge in via loops, caching critical | frontier + cache pricing |
-| Deep reasoning / analysis | medium in, large out incl. thinking tokens | frontier |
+## V1 — the index, done well
 
-Each profile page says: here's the token shape, here's which pricing dimension dominates (this is non-obvious and genuinely useful — e.g. *for agents, cached-input price matters more than headline input price*), here are the 3–4 cost-optimal models at each tier with a per-1K-tasks cost, and here's the "you could drop a tier if…" guidance.
+Tight and low-investment. The index is the hero; education makes it a destination; the estimator is a demand probe. Four legs:
 
-**How I'd build it (fits the stack):**
-- A `TaskProfile` model: name, token-shape parameters (avg input/output/cached tokens per task), minimum tier, narrative. Admin-curated like everything else — curation is already this product's operating model.
-- Each profile renders a ranked table computed from live pricing: *"Classification, per 1M requests: Model A $40 · Model B $55 · Model C $310."* The numbers stay fresh automatically because they derive from `PricePoint`s; only the shapes and tier judgments need human maintenance.
-- These pages are SEO gold ("cheapest model for summarization 2026") and feed directly into the calculator (section 5) — pick a profile, get pre-filled estimates.
+1. **Reference data.** The normalized price table, model/provider pages, the price-history trends chart, and a market-event timeline — polished. The authority surface that ranks and gets cited.
+2. **Education (a core pillar).** Evergreen explainers of how LLM pricing actually works — each written once, kept fresh by **embedded live data**, and ending in a **CTA into the estimator, pre-filled for that concept**. Starter set: (1) how API pricing works (input/output/cached units; why output costs more); (2) prompt caching; (3) batch processing; (4) reasoning/"thinking" tokens; (5) what an AI agent actually costs (context accumulation over tool loops); (6) what drives the cost of common features (RAG, chat, classification, summarization, coding agents); (7) cost-cutting strategies and what they save. This is what turns a commodity table into a place worth returning to and citing.
+3. **A lightweight estimator.** Single-workload: describe-in-a-sentence or sliders → cost across every model → a **cheapest-equivalent savings** callout → a "priced through history" sparkline → a shareable permalink. Embedded as a compact card on every model page so it rides existing traffic. Its differentiator is *cheapest equivalent on always-current, history-backed prices* — not the arithmetic. Reads prices through `PriceCatalog`.
+4. **Two demand probes (capture only).** A **"measure your real usage — notify me"** stub (the primary signal that the second product is wanted) and an **"alert me when this price changes"** capture. No measurement and no sending are built; the opt-in itself is the data.
 
-**Be honest about the limit:** "good enough" judgments are editorial opinions and will sometimes be wrong. Ship them as opinions with reasoning ("we put this at mid-tier because extraction accuracy plateaus above it for typical schemas"), date-stamped and revisable. An opinionated, dated, transparently-reasoned guide beats both silence and fake benchmark precision — and opinionated curation is already the brand.
+Nothing here needs new infrastructure beyond a tiny email-capture table — no accounts, no LLM on the critical path. Detailed in `V1_BUILD_PLAN.md`.
 
-## 5. Cost Estimation Tooling
+## The gate — what unlocks the second product
 
-The calculator is the bridge from "pricing table" to "decision tool." What a genuinely useful one looks like:
+Cheaply measured: do people **complete and share** the estimator, do education pages **draw organic traffic** that clicks into it, and — the decider — do they **opt into "measure my real usage"** at a meaningful rate? That opt-in rate is the direct demand signal for the trace-ingesting product; alert opt-ins are the secondary, retention signal. Until the gate is met, the index + education + estimator stand on their own as the funnel and the moat.
 
-**Input layer — meet users where their knowledge is.** Most users don't know their token counts; forcing token inputs kills the tool. Offer three entry modes, best-guess defaults everywhere:
+## The second product (later)
 
-1. **Task-profile mode (default):** pick a profile from section 4 → token shape pre-filled → user supplies only volume ("10k requests/day").
-2. **Plain-language mode:** "average prompt ≈ 2 pages, response ≈ 3 paragraphs, plus a 1,500-word system prompt" → convert via ~4 chars/token. Approximation is fine; the answer needs to be right within ±30%, not ±3%.
-3. **Power mode:** raw input/output/cached tokens per request, cache hit rate, batch share — for people who have production numbers.
+When the gate is met, build the neutral cross-model cost-optimization tool:
 
-**Output layer — a monthly bill, side by side.** For every model (or a chosen shortlist): estimated $/month, $/task, with the three big levers shown explicitly: *with prompt caching* (huge for agents and RAG), *with batch API* (huge for offline workloads), and a sensitivity band ("if usage is 2x your estimate: $X"). The killer row is the delta: **"Switching from Model A to Model B saves $1,840/mo (−62%)."** That sentence is what gets screenshotted into a team Slack — which is the distribution loop.
+- **Ingest real usage** — paste a trace, import a usage CSV, and later consume OpenTelemetry `gen_ai.*` / OpenLLMetry / Langfuse exports. Tokenized client-side.
+- **Measure and optimize** — model a real workload, including the things that actually drive bills: tool definitions as per-call input, agentic loops where context accumulates and caching dominates, and reasoning effort billed as hidden output. Show per-step "where the money goes," the cheapest-equivalent swap for each step, and flag batch processing where latency allows.
+- **Save, watch, alert** — save a workload and get told when a price move or a new model changes its cheapest answer.
+- **A code-level path** — a lightweight, local, aggregates-only CLI or GitHub-App PR cost-check ("this change adds ~$X/mo; the review step could use a cheaper model, −60%"), built by *consuming* telemetry, never by becoming a production proxy.
 
-**Three product properties that make it durable rather than a toy:**
-- **Shareable, permalink-able URLs** (`/calculator?profile=rag&volume=300k&models=…`). The artifact people paste into planning docs and PRs. Server-rendered Rails makes this trivial — state in query params, zero JS framework needed.
-- **Estimates stay live.** Because results derive from `PricePoint`s, a saved/shared estimate recomputes at today's prices — "your February estimate is now 18% cheaper." No competitor's static calculator can do this; it's the history architecture paying off.
-- **Honest arithmetic.** Include cache-write costs, thinking-token output billing, and batch discounts, with assumptions stated inline. The product's trust positioning ("sources recorded, Anthropic authoritative") should extend to its math.
+This product can graduate to its own brand and domain; it still reads prices through the same `PriceCatalog` seam.
 
-A second, smaller tool falls out for free: **per-task price** as a first-class unit alongside $/Mtok ("a 50-page-document summary on this model ≈ $0.11"), shown on model pages. It reframes the entire site from token prices to task prices.
+## How it makes money
 
-## 6. Differentiation — Becoming the Definitive Resource
+In rough order of cleanliness, none of which compromises neutrality:
 
-A pricing table can't be defended. Four assets can:
+1. **A free JSON API → a licensed historical dataset.** The free current-price API seeds a citation/backlink flywheel; the dated, sourced history is the paid product that analysts, finance teams, and tool-builders buy. The moat, monetized directly.
+2. **A thin Pro/Team tier** on the second product — saved workloads, price-move alerts, team sharing. No API keys, no spend dashboards.
+3. **Opportunistic consulting** — "cut your AI bill" engagements. Doesn't scale, which is fine for a side project; highest $/hour.
 
-1. **The historical record.** Already being accumulated and nobody else does it properly. Double down: per-price-point source links surfaced in the UI, "last verified" timestamps on every model, an auditable changelog page ("every LLM price change, dated, sourced"). Become the dataset journalists, analysts, and finance teams cite. *Trust + freshness, compounding daily.*
-2. **A free JSON API + embeds.** `/api/v1/models.json`, a badge/widget ("live pricing by tokenprice.fyi"), a published CSV of the full history. Counterintuitive but correct: giving the data away is what makes you canonical — every README, dashboard, and blog post that embeds it is a backlink and a reason the ecosystem standardizes on your numbers. The moat isn't the current prices (those are public); it's being the *normalized, versioned, trusted* source of them. Cheap to build on Rails.
-3. **The changelog as a media product.** A "what changed this week in LLM pricing" feed — RSS, email, posted to the site. The market events table is the seed of this. Pricing news is a recurring reason to return that a static table never gives anyone; it converts SEO drive-by traffic into subscribers, and subscribers into the alert audience (section 7).
-4. **Decision artifacts, not just data.** The calculator permalinks and task-profile guides from sections 4–5. Tables get checked; artifacts get *shared*. Sharing is the only realistic growth channel for a product like this.
+## What we deliberately don't do
 
-**What I would deliberately not do:** benchmarks (arms race, off-brand), an inference gateway/proxy (that's OpenRouter — your data source and 100x your size), spend-tracking dashboards requiring API-key access (a real but different product — heavy trust ask, crowded space; revisit only after the audience exists). Stay the neutral, trusted *reference and decision layer* — the Kelley Blue Book of LLM pricing, not the dealership.
+- **Quality benchmarks** — an arms race; off-brand. Link out instead.
+- **An inference gateway/proxy** or key management — that's OpenRouter, and it forfeits neutrality.
+- **A general observability/FinOps platform** — crowded, broad, not a side-project shape.
+- **Spend dashboards that need customers' API keys** — heavy trust; revisit only with an audience.
+- **Affiliate or sponsorship that touches rankings** — neutrality is the whole asset.
+- **A content/news treadmill** — education is a small, evergreen, data-backed set, not a publishing cadence.
+- **A rename or full rebrand before the product is proven.**
 
-## 7. Top 3 Product Bets
+## Where things stand today
 
-**Bet 1 — Workload cost calculator with shareable permalinks.** *(Impact: high · Effort: low — ship first.)*
-This converts the product's core weakness ($/Mtok ≠ a budget) into its core strength, using only data already in the database. It's a few controllers and views in a stack built for exactly this — no new infrastructure, no new data dependencies. It changes the user's question from "what does a million tokens cost?" (answerable anywhere) to "what does *my workload* cost?" (answerable nowhere else with live, history-backed prices). Shareable URLs make every serious user a distribution channel, and "savings vs. your current model" gives the site its first screenshot-worthy artifact. Every later bet builds on it.
-
-**Bet 2 — Price-change alerts + public changelog/RSS.** *(Impact: high · Effort: medium.)*
-The product's most valuable event — a price change — currently notifies nobody. A "watch this model / watch the market" email (plus RSS and a public changelog page) is the retention engine: it turns anonymous SEO traffic into the product's first owned audience, and it's the foundation for everything monetizable later (team alerts, API tiers). The sync job already detects exactly the trigger moment (it appends a `PricePoint` only when price actually moved), so the hard part is solved; what's left is email delivery and a subscription record — well within a weekend-scale Rails effort. This is also the bet that most directly compounds the historical-record moat: the changelog *is* the history, productized.
-
-**Bet 3 — Task-profile model picker ("cheapest model that's good enough").** *(Impact: highest long-term · Effort: high — start small.)*
-This is the bet that moves the product from reference to advisor, and it's where the durable brand lives — nobody neutral and trusted currently answers "which tier do I actually need for X?" It's ranked third only because it requires sustained editorial investment: the token-shape math is easy, but the tier-fit judgments must be maintained as models improve, and credibility dies fast if guidance goes stale. Start with 5 profiles, date-stamp every judgment, wire each profile into the calculator as a preset, and let SEO performance ("best cheap model for classification") tell you which profiles to deepen. If this works, it becomes the front door of the product and the calculator becomes its checkout.
-
-*(Honorable mention, do alongside rather than instead: the free JSON API — near-zero effort, pure compounding distribution.)*
-
-## 8. Positioning Statement
-
-> **tokenprice.fyi is the live price index for LLM APIs — every model, every provider, normalized, sourced, and tracked over time. Estimate what your workload will actually cost, find the cheapest model that's good enough, and get told the moment the market moves.**
-
----
-
-### Bottom line
-
-As it stands, this is an excellently engineered commodity: the table is replaceable, but the append-only sourced price history and the curation discipline are not — they're the foundation of a record-of-record nobody else is building. The product becomes indispensable the day it stops answering "what does a million tokens cost?" and starts answering "what will *my thing* cost, on which model, and when did that answer change?" The calculator gets it there fastest, alerts make it sticky, and task guidance makes it the authority. Ship them in that order.
+A Rails 8 app (SQLite, server-rendered, Tailwind, zero-JS-framework): the normalized price table, model/provider pages, head-to-head compare, a price-history trends chart with market-event overlays, and editorial pages (`/why`, `/which-model`, `/how-pricing-works`, `/sources`). ~80 models with sourced price history to early 2023, a daily OpenRouter sync keeping current prices fresh, and an admin for curation. A hi-fi design system and prototypes exist for the next surfaces. The immediate work is V1: the `PriceCatalog` seam, the single-workload estimator, the education layer, and the two demand probes.
