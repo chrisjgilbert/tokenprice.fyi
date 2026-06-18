@@ -74,6 +74,35 @@ module ChartsHelper
     svg.join.html_safe
   end
 
+  # Area sparkline of a workload's monthly cost across historical price-change
+  # dates — the estimator's "priced through history" retrospective. Ported from
+  # the design's co-retro SVG (sqrt-scaled so big drops stay legible).
+  # `series` is an array of { date:, monthly: } ascending.
+  def cost_retro_sparkline(series, width: 360, height: 70, pad: 5)
+    return "".html_safe if series.size < 2
+
+    xs = ->(i) { pad + (i.to_f / (series.size - 1)) * (width - 2 * pad) }
+    vals = series.map { |s| Math.sqrt(s[:monthly]) }
+    mn, mx = vals.minmax
+    ys = ->(v) { height - pad - (mx == mn ? 0.5 : (v - mn) / (mx - mn)) * (height - 2 * pad) }
+
+    line = series.each_index.map { |i| "#{i.zero? ? 'M' : 'L'}#{xs.(i).round(1)} #{ys.(vals[i]).round(1)}" }.join(" ")
+    area = "M#{pad} #{height - pad} " +
+           series.each_index.map { |i| "L#{xs.(i).round(1)} #{ys.(vals[i]).round(1)}" }.join(" ") +
+           " L#{width - pad} #{height - pad} Z"
+
+    raw <<~SVG
+      <svg class="co-retro-svg" viewBox="0 0 #{width} #{height}" preserveAspectRatio="none" role="img" aria-label="This workload's monthly cost on the cheapest fitting model, over time">
+        <defs><linearGradient id="co-retro-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="var(--color-indigo-400)" stop-opacity=".5"/>
+          <stop offset="1" stop-color="var(--color-indigo-50)" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="#{area}" fill="url(#co-retro-grad)"/>
+        <path d="#{line}" fill="none" stroke="var(--color-indigo-500)" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    SVG
+  end
+
   def chart_legend
     safe_join([
       content_tag(:span, "Input (solid)", class: "inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 before:h-2 before:w-2 before:rounded-full before:bg-indigo-600 before:content-['']"),

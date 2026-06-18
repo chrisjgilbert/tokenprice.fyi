@@ -1,0 +1,131 @@
+<% content_for :title, "Cost-cutting strategies and what they save — tokenprice.fyi" %>
+<% content_for :description, "Six concrete levers for cutting an LLM bill — prompt caching, batch, model routing, shorter output, context trimming, reasoning-effort control — each with a rough saving and its trade-off." %>
+<% content_for :canonical, learn_cost_cutting_url %>
+<% content_for :head do %>
+  <%= json_ld({ "@context": "https://schema.org", "@type": "Article", headline: "Cost-cutting strategies and what they save",
+        publisher: { "@type": "Organization", name: "tokenprice.fyi" }, mainEntityOfPage: learn_cost_cutting_url }) %>
+<% end %>
+<%= render "shared/explainer_styles" %>
+
+<article class="hp">
+  <p class="hp-meta"><%= link_to "Learn", learn_path %> › Cost-cutting · June 2026</p>
+  <h1>Cost-cutting strategies and what they save</h1>
+  <p class="hp-subtitle">Six concrete levers, each with a rough saving and the trade-off that comes with it. None of them changes what your feature does — they change what it costs to do it.</p>
+
+  <p>Cutting an LLM bill is rarely about finding a cheaper model. It is about matching each call to the cheapest way to serve it: caching what repeats, batching what can wait, routing easy work to small models, and not paying the expensive meter — output — for tokens you didn't need. The savings below stack. A workload that applies three or four of them often runs at a fraction of its naive cost.</p>
+
+  <p>Every figure here states its assumptions, and every cross-tier swap is <strong>a cost comparison, not a quality verdict</strong> — validate the cheaper path against your own eval before you rely on it.</p>
+
+  <%# Live-data widget — the output/input gap that output-side levers exploit. %>
+  <%= render "shared/io_ratio_widget", caption: "Live from the index — output is the pricey meter these levers target." %>
+
+  <hr>
+  <h2>Prompt caching <span class="hp-mult hp-mult-green">50–90% off cached input</span></h2>
+  <p><strong>Mechanism:</strong> if you send the same prefix on every request — a system prompt, a fixed instruction block, a set of retrieved documents, a few-shot example set — the provider can serve those tokens from a KV cache instead of reprocessing them. You pay a steep discount on the repeated portion.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">RAG query — without vs with caching</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Stable prefix (sys + docs)</span><span class="hp-calc-value">3,500 tokens</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Fresh per-request input</span><span class="hp-calc-value">50 tokens</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Output</span><span class="hp-calc-value">250 tokens</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">No cache <span class="hp-calc-op">3,550 × $3 + 250 × $15 / 1M</span></span><span class="hp-calc-value">$0.01440</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Cached <span class="hp-calc-op">3,500 @ 90% off + 50 × $3 + 250 × $15</span></span><span class="hp-calc-value">$0.00540</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Saving on this call</span><span class="hp-calc-value">~62%</span></div>
+    <div class="hp-calc-note">The more of your input is a stable, repeating prefix, the larger the win. Agent loops re-sending a long context save the most.</div>
+  </div>
+  <p><strong>Rough saving:</strong> <span class="num">50–90%</span> off the cached portion of input (the exact discount and mechanism vary by provider — some cache prefixes automatically, some require you to mark content explicitly). <strong>Trade-off:</strong> only the stable prefix benefits, so a system prompt or document set that changes per request is a cache miss; caches also expire after a short idle window. <strong>When it applies:</strong> anything with a repeating prefix — chat, RAG, agents, few-shot prompts.</p>
+
+  <hr>
+  <h2>Batch processing <span class="hp-mult hp-mult-green">~50% off</span></h2>
+  <p><strong>Mechanism:</strong> submit work as a non-real-time job and the provider runs it when capacity is free, usually within a few hours. In exchange you get roughly half off both input and output. The discount applies to the whole call, not just a prefix, so it composes with everything else.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">10,000 documents — real-time vs batch</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Per-doc cost (real-time)</span><span class="hp-calc-value">$0.0025</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">10,000 docs, real-time</span><span class="hp-calc-value">$25.00</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">10,000 docs, batch <span class="hp-calc-op">@ 50% off</span></span><span class="hp-calc-value">$12.50</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Saving</span><span class="hp-calc-value">$12.50 (50%)</span></div>
+    <div class="hp-calc-note">Free money on any job a user isn't waiting on. The only cost is wall-clock latency.</div>
+  </div>
+  <p><strong>Rough saving:</strong> ~<span class="num">50%</span> off standard prices at most providers. <strong>Trade-off:</strong> latency — results arrive in minutes to hours, not seconds, with no firm SLA. <strong>When it applies:</strong> anything not in a user's live path — overnight extraction, bulk summarisation, evals, embeddings backfills. If nobody is waiting on the response, batch should be the default.</p>
+
+  <hr>
+  <h2>Model routing and tiering <span class="hp-mult hp-mult-amber">often 10×+ on routed calls</span></h2>
+  <p><strong>Mechanism:</strong> not every call needs your best model. Send easy, high-volume work to a cheaper tier and reserve the frontier model for the calls that genuinely need it — either by classifying difficulty up front, or by trying a cheap model first and escalating only on failure.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">100k calls/day — all-frontier vs routed</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">All frontier <span class="hp-calc-op">100k × $0.012</span></span><span class="hp-calc-value">$1,200 / day</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">80% routed to small <span class="hp-calc-op">80k × $0.0006</span></span><span class="hp-calc-value">$48 / day</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">20% kept on frontier <span class="hp-calc-op">20k × $0.012</span></span><span class="hp-calc-value">$240 / day</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Routed total</span><span class="hp-calc-value">$288 / day</span></div>
+    <div class="hp-calc-note">A 76% cut, just by sending the easy 80% to a model that handles them fine. The saving tracks how much of your traffic is genuinely easy.</div>
+  </div>
+  <p><strong>Rough saving:</strong> proportional to how much traffic you can safely move down — frequently the single largest lever, because the spread between tiers can exceed <span class="num">10×</span> on every dimension. <strong>Trade-off:</strong> a routing decision can be wrong, and a too-cheap route shows up as quality regressions. <strong>When it applies:</strong> any mixed workload where some calls are clearly easier than others — which is most of them. Let an eval, not a guess, set the routing threshold.</p>
+
+  <hr>
+  <h2>Shorter, structured output <span class="hp-mult hp-mult-amber">output is the pricey meter</span></h2>
+  <p><strong>Mechanism:</strong> output typically costs <span class="num">2–5×</span> input, and every token is generated sequentially, so it is the meter most worth shrinking. Ask for exactly what you need — a label, a JSON object, a short answer — instead of a discursive essay. Constrained or structured output formats keep responses tight and parseable at the same time.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">Same task — verbose vs terse output</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Input (same both ways)</span><span class="hp-calc-value">1,000 tokens</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Verbose answer</span><span class="hp-calc-value">800 tokens out</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Terse / structured answer</span><span class="hp-calc-value">120 tokens out</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Verbose <span class="hp-calc-op">1,000 × $1 + 800 × $5 / 1M</span></span><span class="hp-calc-value">$0.00500</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Terse <span class="hp-calc-op">1,000 × $1 + 120 × $5 / 1M</span></span><span class="hp-calc-value">$0.00160</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Saving</span><span class="hp-calc-value">~68%</span></div>
+    <div class="hp-calc-note">Output dominates the bill here even though it's a fraction of the token count. Trimming it moves the needle far more than trimming input.</div>
+  </div>
+  <p><strong>Rough saving:</strong> scales directly with how much output you remove — often the difference between a cheap call and an expensive one. <strong>Trade-off:</strong> over-constraining can clip answers that genuinely needed room. <strong>When it applies:</strong> almost everywhere, but especially classification, extraction, and routing, where a long answer was never the point.</p>
+
+  <hr>
+  <h2>Trimming context and tightening retrieval <span class="hp-mult hp-mult-amber">cut input directly</span></h2>
+  <p><strong>Mechanism:</strong> for input-heavy features, the fastest cut is sending less. Tighten retrieval so you pass three relevant documents instead of ten; strip boilerplate, headers, and duplicated front-matter; summarise or drop stale conversation turns. Every token you don't send is a token you don't pay for — on every request, forever.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">RAG retrieval — loose vs precise</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Loose: top-10 docs</span><span class="hp-calc-value">9,000 tokens in</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Precise: top-3 docs</span><span class="hp-calc-value">2,700 tokens in</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Loose input cost <span class="hp-calc-op">9,000 × $1 / 1M</span></span><span class="hp-calc-value">$0.00900</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Precise input cost <span class="hp-calc-op">2,700 × $1 / 1M</span></span><span class="hp-calc-value">$0.00270</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Saving on input</span><span class="hp-calc-value">~70%</span></div>
+    <div class="hp-calc-note">Better retrieval often improves answer quality too — less irrelevant context means less to get lost in. One of the rare levers that cuts cost and helps accuracy at once.</div>
+  </div>
+  <p><strong>Rough saving:</strong> proportional to the context you remove — frequently <span class="num">30–70%</span> of input on bloated prompts. <strong>Trade-off:</strong> trim too aggressively and you drop the document that held the answer, raising failure and retry rates. The right target is <em>precision</em>, not simply <em>less</em>. <strong>When it applies:</strong> every input-heavy shape — RAG, summarisation, long-context chat.</p>
+
+  <hr>
+  <h2>Reasoning-effort control <span class="hp-mult hp-mult-rose">thinking is billed as output</span></h2>
+  <p><strong>Mechanism:</strong> reasoning models generate an internal chain of thought before answering, and those thinking tokens are billed at the output rate — often many times longer than the visible response. Most providers let you dial reasoning effort up or down (or off). Turning it down on tasks that don't need deliberation removes a large, invisible block of output tokens.</p>
+  <div class="hp-calc">
+    <div class="hp-calc-title">Same answer — high vs low reasoning effort</div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Visible answer (both)</span><span class="hp-calc-value">200 tokens</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">High effort: thinking</span><span class="hp-calc-value">3,800 tokens</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Low effort: thinking</span><span class="hp-calc-value">400 tokens</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">High <span class="hp-calc-op">4,000 output × $15 / 1M</span></span><span class="hp-calc-value">$0.06000</span></div>
+    <div class="hp-calc-line"><span class="hp-calc-label">Low <span class="hp-calc-op">600 output × $15 / 1M</span></span><span class="hp-calc-value">$0.00900</span></div>
+    <div class="hp-calc-sep"></div>
+    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Saving</span><span class="hp-calc-value">~85%</span></div>
+    <div class="hp-calc-note">The visible answer is identical; the hidden reasoning is where the money went. On easy tasks, most of that thinking was unnecessary.</div>
+  </div>
+  <p><strong>Rough saving:</strong> can be the largest of any lever on reasoning models, because thinking tokens often outnumber the visible answer by <span class="num">10–20×</span>. <strong>Trade-off:</strong> hard tasks genuinely benefit from reasoning, and turning it down too far costs accuracy on exactly the problems you chose a reasoning model for. The decision is per-task. <strong>When it applies:</strong> any reasoning-capable model on a mixed workload.</p>
+
+  <hr>
+  <h2>Stacking the levers</h2>
+  <p>These savings multiply. Route the easy 80% of traffic to a small model, cache the stable prefix on the calls that remain, batch anything no user is waiting on, trim retrieval to what's relevant, and ask for tight output — and a workload can land at a small fraction of its naive cost without touching what it delivers. The order to reach for them: <strong>routing</strong> and <strong>caching</strong> usually move the most, <strong>batch</strong> is free wherever latency allows, and <strong>output discipline</strong> plus <strong>context trimming</strong> tighten what's left.</p>
+  <p>Every one of these is a cost decision, not a quality decision. The savings are real and easy to estimate; whether the cheaper path still does the job is the one thing only your own eval can tell you. Estimate the saving first, then verify the quality.</p>
+
+  <div class="hp-cta">
+    <%= link_to concept_cta_path(learn_concept("cutting")), class: "hp-cta-primary" do %>
+      Estimate what you'd save →
+    <% end %>
+    <%= link_to how_pricing_works_path, class: "hp-cta-ghost" do %>
+      How LLM pricing works
+    <% end %>
+  </div>
+</article>

@@ -45,9 +45,10 @@
           <%= nav_link "Models", root_path, active: current_page?(root_path) %>
           <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
           <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
+          <%= nav_link "Estimate", cost_path, active: current_page?(cost_path) %>
           <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
               on the mobile scroll-nav it flattens to inline links via CSS. %>
-          <% learn_active = current_page?(how_pricing_works_path) || current_page?(which_model_path) || current_page?(why_path) || current_page?(map_path) %>
+          <% learn_active = current_page?(learn_path) || current_page?(learn_feature_costs_path) || current_page?(learn_cost_cutting_path) || current_page?(how_pricing_works_path) || current_page?(which_model_path) || current_page?(why_path) || current_page?(map_path) %>
           <div class="tp-nav-group" data-controller="dropdown">
             <button type="button" class="tp-nav-link tp-nav-trigger<%= " active" if learn_active %>"
                     data-dropdown-target="trigger" data-action="dropdown#toggle"
@@ -56,7 +57,10 @@
               <svg class="tp-nav-chevron" width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="tp-nav-menu" data-dropdown-target="menu">
+              <%= link_to "All explainers", learn_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_path)) } %>
               <%= link_to "How pricing works", how_pricing_works_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(how_pricing_works_path)) } %>
+              <%= link_to "What drives feature cost", learn_feature_costs_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_feature_costs_path)) } %>
+              <%= link_to "Cost-cutting strategies", learn_cost_cutting_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_cost_cutting_path)) } %>
               <%= link_to "Which model?", which_model_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(which_model_path)) } %>
               <%= link_to "Where do models come from?", map_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(map_path)) } %>
               <%= link_to "Why this exists", why_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(why_path)) } %>

@@ -95,6 +95,9 @@
     letter-spacing: .01em;
   }
 
+  /* Hero entry-points into the estimator + education */
+  .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
+
   /* Latest update card */
   .hero-card {
     border-radius: var(--radius-xl);
@@ -423,6 +426,11 @@
             <span class="hero-stat-label">Cheapest I/O /1M</span>
           </div>
         <% end %>
+      </div>
+
+      <div class="hero-cta">
+        <%= link_to cost_path, class: "tp-btn tp-btn-primary" do %><%= co_icon(:spark) %>Estimate your cost<% end %>
+        <%= link_to learn_path, class: "tp-btn tp-btn-ghost" do %>Learn how pricing works<% end %>
       </div>
     </div>
 
