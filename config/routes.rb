@@ -54,5 +54,10 @@ Rails.application.routes.draw do
     resources :market_events, except: :show do
       member { patch :publish }
     end
+
+    # Read-only visibility into the demand-probe signups (the V1 gate metric).
+    resources :signal_signups, only: :index do
+      collection { get :export }
+    end
   end
 end
