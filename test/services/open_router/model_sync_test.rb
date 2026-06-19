@@ -83,6 +83,31 @@ module OpenRouter
       assert_equal "openrouter.ai", price.source
     end
 
+    test "keeps a long but genuine description intact" do
+      # A real model description that runs past the old 10k cap. It used to be
+      # clipped mid-sentence on the model page; now it survives in full.
+      long = (([ "Capable across reasoning, coding and long-context tasks." ] * 250).join(" "))
+      assert_operator long.length, :>, 10_000
+      assert_operator long.length, :<, ModelSync::DESCRIPTION_LIMIT
+
+      sync([ or_model(id: "newlab/verbose-1", name: "NewLab: Verbose 1",
+                      prompt: "0.0000001", completion: "0.0000004", description: long) ])
+
+      model = AiModel.find_by!(openrouter_id: "newlab/verbose-1")
+      assert_equal long, model.description
+    end
+
+    test "trims a pathological description on a word boundary" do
+      huge = "word " * 20_000 # ~100k chars, well past the abuse guard
+      sync([ or_model(id: "newlab/runaway-1", name: "NewLab: Runaway 1",
+                      prompt: "0.0000001", completion: "0.0000004", description: huge) ])
+
+      desc = AiModel.find_by!(openrouter_id: "newlab/runaway-1").description
+      assert_operator desc.length, :<=, ModelSync::DESCRIPTION_LIMIT
+      assert desc.end_with?("..."), "expected a clean ellipsis, got #{desc[-10..].inspect}"
+      assert desc.delete_suffix("...").end_with?("word") # cut on a word boundary
+    end
+
     test "creates and names an unknown provider from the catalogue" do
       assert_difference("Provider.count", 1) do
         sync([ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",

@@ -29,8 +29,13 @@ module OpenRouter
     # frontier-tier models.
     DEFAULT_TIER = "mid".freeze
 
-    # Defensive cap on the free-text description we copy from an untrusted API.
-    DESCRIPTION_LIMIT = 10_000
+    # Abuse guard on the free-text description we copy from the API, not an
+    # editorial limit: real model descriptions run a few thousand characters at
+    # most, so this only ever trips on a pathologically large payload. We had it
+    # low enough (2k, then 10k) to clip genuine descriptions mid-sentence on the
+    # model page; keep it well clear of real content and trim on a word boundary
+    # if it ever fires.
+    DESCRIPTION_LIMIT = 50_000
 
     # Patterns for OpenRouter variant models that duplicate a versioned entry.
     LATEST_NAME_RE = /\blatest\b/i
@@ -324,7 +329,7 @@ module OpenRouter
     # Fill metadata from OpenRouter. For rows it owns the importer keeps the
     # data fresh; for an admin-linked curated row it only fills genuine blanks.
     def enrich(model, row)
-      desc     = row["description"].presence&.truncate(DESCRIPTION_LIMIT)
+      desc     = row["description"].presence&.truncate(DESCRIPTION_LIMIT, separator: /\s/)
       context  = row.dig("top_provider", "context_length") || row["context_length"]
       max_out  = row.dig("top_provider", "max_completion_tokens")
       released = (Time.at(row["created"].to_i).utc.to_date if row["created"].present?)
