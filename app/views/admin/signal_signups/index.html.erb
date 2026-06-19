@@ -1,0 +1,57 @@
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold tracking-tight">Signals</h1>
+  <%= link_to "Download CSV", export_admin_signal_signups_path(format: :csv),
+        class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" %>
+</div>
+
+<div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+  <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-5">
+    <div class="text-xs font-medium uppercase tracking-wide text-indigo-700">Measure interest</div>
+    <div class="mt-1 text-3xl font-bold tabular-nums text-indigo-900"><%= @measure_interest_count %></div>
+    <div class="mt-1 text-xs text-indigo-700/80">Primary gate signal</div>
+  </div>
+  <div class="rounded-xl border border-slate-200 bg-white p-5">
+    <div class="text-xs font-medium uppercase tracking-wide text-slate-500">Price alerts</div>
+    <div class="mt-1 text-3xl font-bold tabular-nums text-slate-900"><%= @price_alert_count %></div>
+    <div class="mt-1 text-xs text-slate-500">Secondary retention signal</div>
+  </div>
+</div>
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th scope="col" class="px-4 py-3 font-medium">Kind</th>
+        <th scope="col" class="px-4 py-3 font-medium">Email</th>
+        <th scope="col" class="px-4 py-3 font-medium">Payload</th>
+        <th scope="col" class="px-4 py-3 font-medium text-right">Created</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% if @signups.empty? %>
+        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">No signups yet.</td></tr>
+      <% else %>
+        <% @signups.each do |signup| %>
+          <tr>
+            <td class="px-4 py-3">
+              <% if signup.kind == "measure_interest" %>
+                <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">measure interest</span>
+              <% else %>
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20"><%= signup.kind.tr("_", " ") %></span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 font-medium text-slate-900"><%= signup.email %></td>
+            <td class="px-4 py-3 text-slate-500">
+              <% if signup.payload.present? %>
+                <span class="font-mono text-xs" title="<%= signup.payload %>"><%= truncate(signup.payload, length: 80) %></span>
+              <% else %>
+                <span class="text-slate-300">—</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right text-slate-500 tabular-nums whitespace-nowrap"><%= signup.created_at.strftime("%-d %b %Y, %H:%M") %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
