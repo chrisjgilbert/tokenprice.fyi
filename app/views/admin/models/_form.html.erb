@@ -15,8 +15,13 @@
         <%= f.text_field :name, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
       </div>
       <div>
-        <%= f.label :slug, "Slug (optional — auto from name)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-        <%= f.text_field :slug, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        <%= f.label :slug, model.persisted? ? "Slug (locked)" : "Slug (optional — auto from name)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+        <% if model.persisted? %>
+          <%= f.text_field :slug, readonly: true, class: "block w-full rounded-lg border-slate-200 bg-slate-50 text-slate-500 shadow-sm cursor-not-allowed" %>
+          <p class="mt-1 text-xs text-slate-400">The permanent public URL — locked after creation so links and citations don't break.</p>
+        <% else %>
+          <%= f.text_field :slug, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        <% end %>
       </div>
     </div>
 
@@ -64,6 +69,25 @@
         <%= f.label :limitations, "Limitations (weaknesses)", class: "block text-sm font-medium text-slate-700 mb-1" %>
         <%= f.text_area :limitations, rows: 3, placeholder: "Trade-offs to know", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
       </div>
+    </div>
+
+    <%# Data source — controls how the daily OpenRouter import treats this row. %>
+    <div class="border-t border-slate-100 pt-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= f.label :source, "Data source", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.select :source,
+                [["Manual (hand-curated)", AiModel::MANUAL_SOURCE], ["OpenRouter (synced)", AiModel::OPENROUTER_SOURCE]],
+                {}, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        </div>
+        <div>
+          <%= f.label :openrouter_id, "OpenRouter ID (link)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.text_field :openrouter_id, placeholder: "e.g. anthropic/claude-opus-4.8", class: "block w-full rounded-lg border-slate-300 shadow-sm font-mono text-sm" %>
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-slate-400">
+        <strong>Manual</strong> protects this model's details from the daily OpenRouter import — only blank fields are ever filled. To also stop automatic <em>price</em> updates, clear the OpenRouter ID (an empty value unlinks it).
+      </p>
     </div>
   </div>
 

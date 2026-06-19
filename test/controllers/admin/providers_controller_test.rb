@@ -36,4 +36,13 @@ class Admin::ProvidersControllerTest < ActionDispatch::IntegrationTest
       delete admin_provider_path(empty)
     end
   end
+
+  test "the slug is locked on update" do
+    patch admin_provider_path(providers(:anthropic)),
+          params: { provider: { slug: "hijacked", name: "Anthropic Renamed" } }
+    assert_redirected_to admin_providers_path
+    anthropic = providers(:anthropic).reload
+    assert_equal "anthropic", anthropic.slug      # unchanged
+    assert_equal "Anthropic Renamed", anthropic.name # other fields still update
+  end
 end
