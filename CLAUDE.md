@@ -27,6 +27,26 @@ Practical consequences:
   from credentials and fails fast with a clear error if it's missing or blank,
   rather than sending a blank key and surfacing a confusing 401.
 
+## Copy style
+
+Voice: a developer who built this tool and uses it themselves, writing for peers.
+Not a marketing team. Not a chatbot.
+
+Rules:
+- **Cut filler.** If a sentence restates what the user can already see, delete it.
+- **Don't explain the obvious.** "Compare LLM prices" as a description of a table of LLM prices adds nothing.
+- **Be specific.** "Updated daily" beats "up-to-date". "40+ models" beats "comprehensive". If you can name the number, name it.
+- **No em-dashes for drama.** No rhetorical questions. No "Whether you're a startup or an enterprise…" constructions.
+- **Plain declaratives.** Short sentences are fine. Fragments are fine if they carry weight.
+- **Trust the reader.** This is a reference tool, not a landing page. Copy should inform, not persuade.
+
+What this looks like in practice:
+- Hero subtitle: one specific sentence, not a paragraph selling the idea
+- Section headers: say what's there, not what the user will "discover" or "learn"
+- CTAs: `"Price your workload"` not `"Ready to price your workload?"`
+- Empty/loading states: functional, not cute
+- Tooltips: the fact, not an intro to the fact
+
 ## Testing
 
 - Run the suite with `bin/rails test`.
