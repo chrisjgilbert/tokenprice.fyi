@@ -64,28 +64,28 @@
 
   <div class="wm-tldr">
     <p class="wm-tldr-label">The short version</p>
-    <p class="wm-tldr-intro">Staring at a model dropdown in Claude Code, Codex, Cursor or a chat app? You don't need token maths to make a good pick — almost every lineup is really just three tiers, and the names change but the trade-off doesn't:</p>
+    <p class="wm-tldr-intro">Almost every model lineup is three tiers. The names change; the trade-off doesn't:</p>
     <div class="wm-tier wm-tier-small">
       <span class="wm-tier-dot"></span>
       <span class="wm-tier-name">Small</span>
-      <p class="wm-tier-body"><strong>Fast and cheap.</strong> Haiku, GPT-mini, Flash. Good for quick edits, search, simple Q&amp;A and high-volume routine work, and a reasonable default for more tasks than it usually gets.</p>
+      <p class="wm-tier-body"><strong>Fast and cheap.</strong> Haiku, GPT-mini, Flash. Good for quick edits, search, simple Q&amp;A, and high-volume routine work. Underused.</p>
     </div>
     <div class="wm-tier wm-tier-mid">
       <span class="wm-tier-dot"></span>
       <span class="wm-tier-name">Mid</span>
-      <p class="wm-tier-body"><strong>The all-rounder.</strong> Sonnet, GPT standard, Gemini Pro. The sweet spot for everyday coding, writing and answering questions over documents — good enough for most things without frontier prices.</p>
+      <p class="wm-tier-body"><strong>The all-rounder.</strong> Sonnet, GPT standard, Gemini Pro. Everyday coding, writing, RAG. Handles most tasks at a fraction of frontier prices.</p>
     </div>
     <div class="wm-tier wm-tier-frontier">
       <span class="wm-tier-dot"></span>
       <span class="wm-tier-name">Frontier</span>
-      <p class="wm-tier-body"><strong>The capable, slower, costly one.</strong> Fable, Opus, GPT's reasoning models. Worth it for hard, multi-step work — agentic coding, difficult debugging, deep analysis — where being a little better each step compounds. Often <span class="num">10×</span> the cost of a small model, and more than most everyday tasks need.</p>
+      <p class="wm-tier-body"><strong>Capable, slower, expensive.</strong> Fable, Opus, GPT's reasoning models. Worth it for hard, multi-step work — agentic coding, difficult debugging, deep analysis — where marginal quality gains per step compound. Often <span class="num">10×</span> the cost of a small model. Overkill for most tasks.</p>
     </div>
     <p class="wm-tldr-foot">Rule of thumb: <strong>start one tier lower than feels comfortable, and only move up when the cheaper model actually falls short.</strong> The rest of this page is the longer version — task by task — and <%= link_to "the price table", root_path %> shows what each tier costs.</p>
   </div>
 
-  <p>A common and costly pattern is using a frontier model for everything. It's understandable — <%= link_to '"the good one" feels like the safe default', why_path %> — but the price spread between tiers is large: within Anthropic's own lineup, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension, and across providers the gap between the priciest frontier model and the cheapest small one is more than <span class="num">300×</span>. A tier mismatch isn't a rounding error; on a high-volume task it can dominate the bill.</p>
+  <p>Using a frontier model for everything is a common and costly default. <%= link_to "The reasoning is understandable", why_path %>, but the price spread is large: within Anthropic's lineup alone, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension; across providers, the gap between the priciest frontier and the cheapest small model exceeds <span class="num">300×</span>. A tier mismatch isn't a rounding error. At volume, it can dominate the bill.</p>
 
-  <p>A simple rule works well: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> With no eval yet, the rule can run in reverse — prototype on a frontier model to find the quality ceiling, then walk down tiers until something breaks. The eval is the arbiter, not this page and not a leaderboard. As a starting point, here's a guide to the five most common task shapes: what tier is usually enough, and which price dimension tends to dominate the cost — often not the one on the sticker.</p>
+  <p>A simple rule works well: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> With no eval yet, run it in reverse — prototype on a frontier model to find the quality ceiling, then walk down until something breaks. The eval is the arbiter, not this page and not a leaderboard. Below: the five most common task shapes, the tier that usually suffices, and which price dimension tends to dominate — often not the one on the sticker.</p>
 
   <h2>Classification and routing</h2>
   <p class="verdict">tier: small · cost driver: input price</p>
@@ -110,5 +110,5 @@
   <h2>Caveats</h2>
   <p>These are dated judgments, not benchmarks — they say "good enough for typical schemas," never "scores 87.2," and when the market moves (a mid model gets frontier-grade at coding, say) these verdicts get revised, visibly. The tier floor is also only half the decision: a "small" verdict still leaves more than a <span class="num">10×</span> spread between the cheapest and priciest small models, which is what <%= link_to "the table", root_path %> is for.</p>
 
-  <p>And the other half — <em>"fine, mid tier for RAG, but what does that cost at my volume?"</em> — is the question this site exists to answer next. A <strong>cost calculator</strong> is on the way: pick a task shape like the ones above, set your volume, and get a ranked monthly bill across every model tracked here, at live prices, shareable as a link. Until then: start cheap, write an eval, and only pay frontier prices where the task actually earns them.</p>
+  <p>The other half of the decision — what does mid-tier RAG actually cost at your volume? — is what <%= link_to "the estimator", cost_path %> is for. Pick a task shape, set your volume, and get a ranked monthly bill across every tracked model at live prices, shareable as a link. Start cheap, write an eval, and only pay frontier prices where the task earns them.</p>
 </article>

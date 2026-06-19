@@ -19,14 +19,14 @@
 <article class="hp">
   <p class="hp-meta">June 2026</p>
   <h1>How LLM pricing works</h1>
-  <p class="hp-subtitle">Every provider charges for the same thing — tokens in, tokens out — but the bill has more dimensions than the sticker price suggests. Here's what you're actually paying for.</p>
+  <p class="hp-subtitle">Every provider charges for the same thing — tokens in, tokens out — but the bill has more dimensions than the sticker price suggests.</p>
 
   <%# ─── SECTION 1: TOKENS ─── %>
-  <h2>Tokens: the unit you're buying</h2>
+  <h2>Tokens: the unit of billing</h2>
 
   <p>LLMs don't read words — they read <strong>tokens</strong>, fragments of text that the model's tokeniser has split your input into. Most English words are one token. Longer or rarer words get split into pieces. Punctuation and whitespace are tokens too.</p>
 
-  <p>Here's how a real sentence gets tokenised:</p>
+  <p>A real sentence tokenised:</p>
 
   <div class="hp-tokens">
     <span class="hp-token hp-token-0">The</span>
@@ -149,7 +149,7 @@
 
   <%# ─── SECTION 4: CACHED INPUT ─── %>
   <hr>
-  <h2>Cached input: the discount most people miss</h2>
+  <h2>Cached input: the discount worth knowing</h2>
 
   <p>If you send the same prefix on every request — a system prompt, a set of retrieved documents, a few-shot example block — the provider can serve those tokens from a KV cache instead of reprocessing them. The discount is steep:</p>
 
@@ -165,9 +165,9 @@
 
   <%# ─── SECTION 5: WORKED EXAMPLE ─── %>
   <hr>
-  <h2>Worked example: what does a RAG query cost?</h2>
+  <h2>Worked example: a RAG query</h2>
 
-  <p>Let's price a real request. A customer asks a question, your app retrieves three documents and sends them to the model, and the model answers in a paragraph.</p>
+  <p>A customer asks a question. Your app retrieves three documents and sends them to the model. The model answers in a paragraph.</p>
 
   <div class="hp-calc">
     <div class="hp-calc-title">Cost breakdown — single RAG query</div>
@@ -245,7 +245,7 @@
 
   <p>Reasoning models — OpenAI's o-series, Anthropic's Claude in extended thinking mode, Google's Gemini thinking — don't just produce a response. They first generate an internal chain of thought: planning, reasoning, self-correcting. These <strong>thinking tokens are billed as output</strong>, at output price.</p>
 
-  <p>The multiplier can be dramatic:</p>
+  <p>The multiplier is often large:</p>
 
   <div class="hp-calc">
     <div class="hp-calc-title">Reasoning model — visible vs actual output</div>
@@ -267,11 +267,11 @@
     <div class="hp-calc-note">Your "200-token answer" actually consumed 4,000 output tokens — 20× what the visible response suggests.</div>
   </div>
 
-  <p>This is why reasoning model pricing looks deceptively similar to standard models until you check the invoice. The per-token rate might be comparable, but <strong>the token count explodes</strong>. Always check whether a model uses thinking tokens before estimating cost — the pricing pages don't always make this prominent.</p>
+  <p>Reasoning model pricing can look similar to standard models on paper. The per-token rate may be comparable, but <strong>the token count is not</strong>. Check whether a model uses thinking tokens before estimating cost — pricing pages don't always make this prominent.</p>
 
   <%# ─── SECTION 7: WHAT THIS SITE DOES ─── %>
   <hr>
-  <h2>How we present this</h2>
+  <h2>How prices are shown here</h2>
 
   <p>Every model on <%= link_to "the table", root_path %> shows normalised pricing in <strong>USD per 1M tokens</strong> — input, output, and cached where available. The <strong>blended price</strong> column gives a single sortable figure weighted 75% input / 25% output (approximating a typical 3:1 workload mix).</p>
 

@@ -29,7 +29,7 @@
         <span class="probe-bell"><%= co_icon(:bell, size: 19) %></span>
         <div>
           <h4><%= title.presence || "Alert me when this price changes" %></h4>
-          <p><%= body.presence || "We watch list prices across every provider. Get an email the moment a change moves this number — no dashboard to check." %></p>
+          <p><%= body.presence || "Get an email when this price changes. No dashboard to check — we watch every provider." %></p>
         </div>
       </div>
       <%= render "signal_signups/probe_form",

@@ -1,5 +1,5 @@
-<% content_for :title, "Estimate your workload — what will it cost? · tokenprice.fyi" %>
-<% content_for :description, "Describe your AI workload or set the fields, then see what it costs on every model — the cheapest equivalent on always-current, history-backed prices, where the money goes, and a shareable permalink." %>
+<% content_for :title, "Cost estimator — tokenprice.fyi" %>
+<% content_for :description, "Price any AI workload across every model. Cheapest-equivalent recommendation, cost breakdown, and full price history." %>
 <% content_for :canonical, cost_url %>
 
 <% examples = [
@@ -18,7 +18,7 @@
     <span class="co-beta">part of the price index</span>
   </div>
   <h1>Price your workload across every model.</h1>
-  <p>Describe it in a sentence or set the fields — then see the bill on every model, the <strong>cheapest equivalent</strong> that still fits, and where the money goes. Always-current, history-backed prices.</p>
+  <p>Describe it in a sentence or fill in the fields. You'll see the bill for every model, the <strong>cheapest equivalent</strong> that fits, and where the money goes. Prices pull from the live index.</p>
 </header>
 
 <div class="co-layout">
@@ -102,6 +102,6 @@
     <%= render "signal_signups/probe", frame_id: "probe_alert_cost", variant: "alert",
           payload: @profile.to_query.to_query,
           title: "Alert me when this estimate changes",
-          body: "Prices move often. Get an email the moment a change shifts this bill — we'll name the model and the new number.", error: nil %>
+          body: "Get an email when a price change shifts this bill — we'll name the model and the new number.", error: nil %>
   </section>
 </div>

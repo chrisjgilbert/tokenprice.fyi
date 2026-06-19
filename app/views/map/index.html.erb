@@ -1,5 +1,5 @@
 <% content_for :title, "Where your models come from — tokenprice.fyi" %>
-<% content_for :description, "A map of the labs behind every tracked LLM: which countries they call home, what they charge, and how the pricing compares." %>
+<% content_for :description, "The labs behind every tracked LLM, by country, with pricing data." %>
 
 <div class="map-page">
   <%# ── Header ─────────────────────────────────────────────────────────── %>
@@ -10,9 +10,8 @@
     </div>
     <h1 class="map-h1">Where your models <span class="accent">come from</span></h1>
     <p class="map-subtitle">
-      Every model on this site is built by a lab headquartered somewhere.
-      This is the map — <%= pluralize(@located_providers, "provider") %> across
-      <%= pluralize(@countries.size, "country") %>, and what they charge<% if @leader %>.
+      <%= pluralize(@located_providers, "provider") %> across
+      <%= pluralize(@countries.size, "country") %><% if @leader %> —
       <strong><%= @leader[:providers].first.flag_emoji %> <%= @leader[:name] %></strong>
       leads with <%= pluralize(@leader[:provider_count], "lab") %> shipping
       <%= pluralize(@leader[:model_count], "tracked model") %><% end %>.
