@@ -1,4 +1,5 @@
 require "test_helper"
+require "csv"
 
 class Admin::SignalSignupsControllerTest < ActionDispatch::IntegrationTest
   test "redirects to login when not signed in" do
@@ -58,5 +59,25 @@ class Admin::SignalSignupsControllerTest < ActionDispatch::IntegrationTest
     assert_match "'+cmd@evil.com", response.body    # leading + quoted
     assert_match "'=HYPERLINK(1)", response.body     # leading = quoted
     refute_match(/,=HYPERLINK\(1\)/, response.body)  # never written raw
+  end
+
+  test "CSV guard isn't bypassed by leading whitespace or a newline in payload" do
+    sign_in_admin
+    SignalSignup.create!(kind: "price_alert", email: "a@example.com", payload: " =HYPERLINK(0,0)")
+    SignalSignup.create!(kind: "price_alert", email: "b@example.com", payload: "\n=cmd")
+
+    get export_admin_signal_signups_path(format: :csv)
+    assert_response :success
+
+    # Parse the CSV and assert no cell would evaluate as a formula: every
+    # dangerous cell must be text (quote-prefixed), so after stripping leading
+    # whitespace no cell starts with a formula trigger.
+    rows = CSV.parse(response.body, headers: true)
+    rows.each do |row|
+      row.fields.each do |cell|
+        refute cell.to_s.lstrip.match?(/\A[=+\-@]/),
+               "cell #{cell.inspect} would be evaluated as a formula"
+      end
+    end
   end
 end

@@ -31,11 +31,15 @@ module Admin
 
     private
 
-    # Prefix a leading formula trigger (= + - @ tab CR) with a quote so the value
-    # can't execute when the export is opened in Excel / Google Sheets.
+    # Neutralize spreadsheet formula injection: quote any cell that begins with a
+    # formula trigger (= + - @), including after leading whitespace/newlines
+    # (some apps trim those before evaluating), or with a leading tab/CR/LF.
+    # payload is free-form and attacker-supplied, so the check can't assume the
+    # trigger sits at position 0.
     def csv_safe(value)
       string = value.to_s
-      string.match?(/\A[=+\-@\t\r]/) ? "'#{string}" : string
+      dangerous = string.match?(/\A[\t\r\n]/) || string.lstrip.match?(/\A[=+\-@]/)
+      dangerous ? "'#{string}" : string
     end
   end
 end
