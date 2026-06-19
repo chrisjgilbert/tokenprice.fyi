@@ -68,7 +68,7 @@
           </div>
         </div>
         <span class="tp-nav-spacer"></span>
-        <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
+        <%= render "shared/prices_synced", css: "tp-nav-sync" %>
         <button type="button" class="tp-nav-toggle" data-mobile-nav-target="toggle"
                 data-action="mobile-nav#toggle" aria-expanded="false"
                 aria-controls="tp-mobile-menu" aria-label="Menu">
@@ -98,7 +98,7 @@
           </div>
         </nav>
         <div class="tp-m-foot">
-          <span class="tp-m-sync"><span class="tp-nav-dot"></span>prices synced <span class="num"><%= Date.current.iso8601 %></span></span>
+          <%= render "shared/prices_synced", css: "tp-m-sync" %>
         </div>
       </div>
     </nav>

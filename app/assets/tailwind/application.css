@@ -34,6 +34,7 @@
 
   /* Layout */
   --maxw: 1200px;
+  --nav-h: 62px;
 }
 
 /* ============================================================ BASE */
@@ -99,7 +100,7 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   max-width: var(--maxw);
   margin: 0 auto;
   padding: 0 28px;
-  height: 62px;
+  height: var(--nav-h);
   display: flex;
   align-items: center;
   gap: 26px;
@@ -270,7 +271,7 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   .tp-m-scrim {
     display: block;
     position: fixed;
-    inset: 62px 0 0;
+    inset: var(--nav-h) 0 0;
     background: rgba(15,23,42,.34);
     opacity: 0;
     visibility: hidden;
@@ -286,7 +287,7 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
     top: 100%;
     left: 0;
     right: 0;
-    max-height: calc(100vh - 62px);
+    max-height: calc(100vh - var(--nav-h));
     overflow-y: auto;
     overscroll-behavior: contain;
     background: rgba(248,250,252,.92);
