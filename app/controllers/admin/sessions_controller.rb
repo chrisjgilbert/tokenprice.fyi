@@ -15,6 +15,8 @@ module Admin
       if correct_password?(params[:password].to_s)
         reset_session            # rotate the session id on privilege change
         session[:admin] = true
+        # Stamp the session so BaseController can enforce idle + absolute expiry.
+        session[:admin_since] = session[:admin_seen_at] = Time.current.to_i
         redirect_to admin_root_path, notice: "Signed in."
       else
         flash.now[:alert] = "Incorrect password."

@@ -189,4 +189,19 @@ class AiModelTest < ActiveSupport::TestCase
       model.blended_per_mtok
     end
   end
+
+  test "a blank openrouter_id normalizes to nil" do
+    model = ai_models(:opus)
+    model.update!(openrouter_id: "   ")
+    assert_nil model.reload.openrouter_id
+  end
+
+  test "openrouter_id must be unique across models" do
+    ai_models(:opus).update!(openrouter_id: "anthropic/claude-opus-4-8")
+    dup = ai_models(:deepseek_v4)
+    dup.openrouter_id = "anthropic/claude-opus-4-8"
+
+    refute dup.valid?
+    assert_includes dup.errors[:openrouter_id], "has already been taken"
+  end
 end

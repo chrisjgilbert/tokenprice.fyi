@@ -38,4 +38,36 @@ class Admin::ModelsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to admin_models_path
   end
+
+  test "the slug is locked on update" do
+    patch admin_model_path(ai_models(:opus)),
+          params: { ai_model: { slug: "hijacked-slug", status: "legacy" } }
+    assert_redirected_to admin_models_path
+    opus = ai_models(:opus).reload
+    assert_equal "claude-opus-4-8", opus.slug # unchanged
+    assert_equal "legacy", opus.status         # other fields still update
+  end
+
+  test "admin can change a model's data source and OpenRouter link" do
+    patch admin_model_path(ai_models(:opus)),
+          params: { ai_model: { source: "openrouter", openrouter_id: "anthropic/claude-opus-4-8" } }
+    assert_redirected_to admin_models_path
+    opus = ai_models(:opus).reload
+    assert_equal "openrouter", opus.source
+    assert_equal "anthropic/claude-opus-4-8", opus.openrouter_id
+  end
+
+  test "clearing the OpenRouter id unlinks the model" do
+    ai_models(:opus).update_column(:openrouter_id, "anthropic/x")
+    patch admin_model_path(ai_models(:opus)), params: { ai_model: { openrouter_id: "" } }
+    assert_redirected_to admin_models_path
+    assert_nil ai_models(:opus).reload.openrouter_id
+  end
+
+  test "rejects an OpenRouter id already linked to another model" do
+    ai_models(:deepseek_v4).update_column(:openrouter_id, "deepseek/v4")
+    patch admin_model_path(ai_models(:opus)), params: { ai_model: { openrouter_id: "deepseek/v4" } }
+    assert_response :unprocessable_entity
+    assert_nil ai_models(:opus).reload.openrouter_id
+  end
 end

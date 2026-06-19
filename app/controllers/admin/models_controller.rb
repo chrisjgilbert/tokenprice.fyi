@@ -42,11 +42,16 @@ module Admin
     end
 
     def model_params
-      params.require(:ai_model).permit(
-        :provider_id, :name, :slug, :tier, :status,
+      permitted = params.require(:ai_model).permit(
+        :provider_id, :name, :slug, :source, :openrouter_id, :tier, :status,
         :context_window, :max_output_tokens, :released_on, :description,
         :strengths, :limitations, :best_for
       )
+      # The slug is the model's permanent public URL (and SEO/citation target),
+      # so it's set once at creation and locked thereafter. @model is nil during
+      # create (built from these params) and the persisted record during update.
+      permitted.delete(:slug) if @model&.persisted?
+      permitted
     end
   end
 end

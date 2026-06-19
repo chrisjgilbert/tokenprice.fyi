@@ -37,8 +37,12 @@ class AiModel < ApplicationRecord
   validates :name, presence: true, length: { maximum: 255 }
   validates :slug, presence: true, uniqueness: true
   validates :source, presence: true
+  # Surfaces a friendly error instead of a DB-level RecordNotUnique when an admin
+  # links a model to an OpenRouter id another row already owns.
+  validates :openrouter_id, uniqueness: true, allow_nil: true
 
   before_validation :set_slug, on: :create
+  before_validation :normalize_openrouter_id
 
   scope :listed, -> { where.not(status: "retired").where(id: PricePoint.select(:ai_model_id)) }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
@@ -195,5 +199,11 @@ class AiModel < ApplicationRecord
 
   def set_slug
     self.slug ||= name&.parameterize
+  end
+
+  # Blank reads as "not linked": collapse "" to nil so clearing the field in the
+  # admin unlinks the model (and the unique index doesn't reject a second blank).
+  def normalize_openrouter_id
+    self.openrouter_id = openrouter_id.presence
   end
 end
