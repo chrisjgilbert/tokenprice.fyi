@@ -63,14 +63,21 @@ class Admin::SessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "session expires at the absolute cap even when kept active" do
-    sign_in_admin
-    # A request every hour stays inside the idle window, but the absolute cap
-    # still forces re-authentication.
-    (1..12).each do |hour|
-      travel(hour.hours) { get admin_models_path }
+    # Anchor every step to a fixed base so there's no wall-clock drift between
+    # travels (which would cross the cap boundary early under parallel load).
+    base = Time.zone.local(2026, 1, 1, 12, 0, 0)
+    travel_to(base) { sign_in_admin }
+
+    # A request every hour stays inside the idle window, right up to the cap.
+    (1..11).each do |hour|
+      travel_to(base + hour.hours) { get admin_models_path }
       assert_response :success, "expected to remain signed in at hour #{hour}"
     end
-    travel(13.hours) { get admin_models_path }
-    assert_redirected_to admin_login_path
+
+    # Just past the absolute cap (idle gap is only ~1h, so this proves the cap).
+    travel_to(base + Admin::BaseController::ABSOLUTE_TIMEOUT + 1.minute) do
+      get admin_models_path
+      assert_redirected_to admin_login_path
+    end
   end
 end

@@ -21,7 +21,10 @@ module Admin
         redirect_to admin_login_path, alert: "Your session expired. Please sign in again." and return
       end
 
-      session[:admin_seen_at] = Time.current.to_i
+      # Back-fill the absolute-cap anchor for sessions created before this was
+      # introduced, so they too are capped from first contact.
+      session[:admin_since]   ||= Time.current.to_i
+      session[:admin_seen_at]   = Time.current.to_i
     end
 
     def admin_session_expired?
