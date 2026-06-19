@@ -61,7 +61,7 @@ function parseDateUTC(iso) {
 function fmtAxisDate(t) {
   const d = new Date(t)
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-  return months[d.getUTCMonth()] + " '" + String(d.getUTCFullYear()).slice(2)
+  return months[d.getUTCMonth()] + " " + d.getUTCDate() + ", " + d.getUTCFullYear()
 }
 function fmtDateFullFromISO(iso) {
   const [y, m, d] = iso.split("-").map(Number)

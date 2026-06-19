@@ -491,7 +491,7 @@
               <span class="hero-tl-kind <%= ev.kind == 'launch' ? 'launch' : 'market' %>">
                 <%= ev.kind == "launch" ? "Launch" : "Market" %>
               </span>
-              <span class="hero-tl-date"><%= fmt_date(ev.date) %></span>
+              <span class="hero-tl-date"><%= fmt_date_full(ev.date) %></span>
             </div>
           <% end %>
         </div>
