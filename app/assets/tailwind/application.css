@@ -223,41 +223,158 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
 }
 @keyframes tp-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .4; } }
 
+/* Mobile menu — hidden above the breakpoint, where the inline nav takes over.
+   The toggle, scrim, and slide-down panel only come into play under 760px. */
+.tp-nav-toggle { display: none; }
+.tp-m-scrim, .tp-m-panel { display: none; }
+
 @media (max-width: 760px) {
-  .tp-nav-links {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    gap: 2px;
-    margin-left: 0;
-  }
-  .tp-nav-link {
-    font-size: 12.5px;
-    padding: 5px 9px;
-    white-space: nowrap;
-  }
-  /* Flatten the Learn dropdown to inline links so the menu isn't clipped
-     by the horizontally-scrolling nav. */
-  .tp-nav-group { display: contents; }
-  .tp-nav-trigger { display: none; }
-  .tp-nav-menu {
-    position: static;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    min-width: 0;
-    padding: 0;
+  /* The inline links, dropdown, and bar sync indicator give way to the drawer. */
+  .tp-nav-links, .tp-nav-sync { display: none; }
+  .tp-nav-inner { gap: 12px; }
+
+  .tp-nav-toggle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -10px;
     border: 0;
     background: transparent;
-    box-shadow: none;
-    flex-direction: row;
-    gap: 2px;
-    z-index: auto;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--color-slate-700);
+    -webkit-tap-highlight-color: transparent;
   }
-  .tp-nav-menu-item {
+  .tp-nav-toggle:hover { background: var(--color-slate-100); }
+  .tp-nav-toggle-bars { position: relative; width: 20px; height: 14px; }
+  .tp-nav-toggle-bars span {
+    position: absolute;
+    left: 0;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .26s var(--ease-out), opacity .18s var(--ease-default), top .26s var(--ease-out);
+  }
+  .tp-nav-toggle-bars span:nth-child(1) { top: 0; }
+  .tp-nav-toggle-bars span:nth-child(2) { top: 6px; }
+  .tp-nav-toggle-bars span:nth-child(3) { top: 12px; }
+  /* Three bars morph into an X when open. */
+  .menu-open .tp-nav-toggle-bars span:nth-child(1) { top: 6px; transform: rotate(45deg); }
+  .menu-open .tp-nav-toggle-bars span:nth-child(2) { opacity: 0; }
+  .menu-open .tp-nav-toggle-bars span:nth-child(3) { top: 6px; transform: rotate(-45deg); }
+
+  .tp-m-scrim {
+    display: block;
+    position: fixed;
+    inset: 62px 0 0;
+    background: rgba(15,23,42,.34);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .22s var(--ease-default), visibility .22s;
+    z-index: 40;
+  }
+  .menu-open .tp-m-scrim { opacity: 1; visibility: visible; }
+
+  .tp-m-panel {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 62px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: rgba(248,250,252,.92);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    border-bottom: 1px solid var(--color-slate-200);
+    box-shadow: var(--shadow-lg);
+    padding: 8px 14px 14px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity .24s var(--ease-out), transform .26s var(--ease-out), visibility .24s;
+    z-index: 45;
+  }
+  .menu-open .tp-m-panel { opacity: 1; visibility: visible; transform: translateY(0); }
+
+  .tp-m-link, .tp-m-sublink {
+    display: flex;
+    align-items: center;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+    transition: background .16s var(--ease-default), color .16s var(--ease-default);
+  }
+  .tp-m-link {
+    min-height: 48px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-slate-800);
+  }
+  .tp-m-link:hover { background: var(--color-slate-100); }
+  .tp-m-link.active {
+    color: var(--color-indigo-700);
+    background: var(--color-indigo-50);
+    border-left-color: var(--color-indigo-600);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .tp-m-section {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-slate-200);
+  }
+  .tp-m-eyebrow {
+    display: block;
+    padding: 0 12px 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--color-slate-400);
+  }
+  .tp-m-sublink {
+    min-height: 42px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--color-slate-600);
+  }
+  .tp-m-sublink:hover { background: var(--color-slate-100); color: var(--color-slate-900); }
+  .tp-m-sublink.active {
+    color: var(--color-indigo-700);
+    background: var(--color-indigo-50);
+    border-left-color: var(--color-indigo-600);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .tp-m-foot {
+    margin-top: 14px;
+    padding: 14px 12px 0;
+    border-top: 1px solid var(--color-slate-200);
+  }
+  .tp-m-sync {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
     font-size: 12.5px;
-    padding: 5px 9px;
+    color: var(--color-slate-500);
   }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .tp-m-panel, .tp-m-scrim, .tp-nav-toggle-bars span { transition: none; }
 }
 
 /* ============================================================ BADGES */

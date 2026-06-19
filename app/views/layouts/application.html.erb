@@ -32,7 +32,7 @@
   </head>
 
   <body class="min-h-screen bg-slate-50 text-slate-900">
-    <nav class="tp-nav">
+    <nav class="tp-nav" data-controller="mobile-nav">
       <div class="tp-nav-inner">
         <div class="tp-brand-group">
           <%= link_to root_path, class: "tp-brand" do %>
@@ -69,6 +69,37 @@
         </div>
         <span class="tp-nav-spacer"></span>
         <span class="tp-nav-sync"><span class="tp-nav-dot"></span>prices synced <%= Date.current.iso8601 %></span>
+        <button type="button" class="tp-nav-toggle" data-mobile-nav-target="toggle"
+                data-action="mobile-nav#toggle" aria-expanded="false"
+                aria-controls="tp-mobile-menu" aria-label="Menu">
+          <span class="tp-nav-toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+      </div>
+
+      <%# Mobile drawer. Slides down under the bar; flattens the Learn dropdown
+          into a labelled section. Hidden above 760px, where the inline nav and
+          dropdown take over. %>
+      <div class="tp-m-scrim" data-action="click->mobile-nav#close" aria-hidden="true"></div>
+      <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
+        <nav class="tp-m-links" aria-label="Primary">
+          <%= mobile_nav_link "Models", root_path, active: current_page?(root_path) %>
+          <%= mobile_nav_link "Trends", trends_path, active: current_page?(trends_path) %>
+          <%= mobile_nav_link "Compare", compare_path, active: current_page?(compare_path) %>
+          <%= mobile_nav_link "Estimate", cost_path, active: current_page?(cost_path) %>
+          <div class="tp-m-section">
+            <span class="tp-m-eyebrow">Learn</span>
+            <%= mobile_nav_link "All explainers", learn_path, active: current_page?(learn_path), sub: true %>
+            <%= mobile_nav_link "How pricing works", how_pricing_works_path, active: current_page?(how_pricing_works_path), sub: true %>
+            <%= mobile_nav_link "What drives feature cost", learn_feature_costs_path, active: current_page?(learn_feature_costs_path), sub: true %>
+            <%= mobile_nav_link "Cost-cutting strategies", learn_cost_cutting_path, active: current_page?(learn_cost_cutting_path), sub: true %>
+            <%= mobile_nav_link "Which model?", which_model_path, active: current_page?(which_model_path), sub: true %>
+            <%= mobile_nav_link "Where do models come from?", map_path, active: current_page?(map_path), sub: true %>
+            <%= mobile_nav_link "Why this exists", why_path, active: current_page?(why_path), sub: true %>
+          </div>
+        </nav>
+        <div class="tp-m-foot">
+          <span class="tp-m-sync"><span class="tp-nav-dot"></span>prices synced <span class="num"><%= Date.current.iso8601 %></span></span>
+        </div>
       </div>
     </nav>
 

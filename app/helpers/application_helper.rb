@@ -113,6 +113,14 @@ module ApplicationHelper
     link_to label, path, class: css
   end
 
+  # Mobile drawer link. `sub: true` renders the indented Learn variant.
+  def mobile_nav_link(label, path, active: false, sub: false)
+    css = sub ? "tp-m-sublink" : "tp-m-link"
+    css += " active" if active
+    link_to label, path, class: css, data: { action: "mobile-nav#close" },
+                         aria: { current: ("page" if active) }
+  end
+
   # Sort link for table headers
   def sort_link(label, key, current_sort:, current_dir:, filters: {}, &url_builder)
     active = current_sort == key
