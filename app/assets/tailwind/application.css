@@ -311,6 +311,12 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
     text-decoration: none;
     transition: background .16s var(--ease-default), color .16s var(--ease-default);
   }
+  .tp-m-link.active, .tp-m-sublink.active {
+    color: var(--color-indigo-700);
+    background: var(--color-indigo-50);
+    border-left-color: var(--color-indigo-600);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
   .tp-m-link {
     min-height: 48px;
     padding: 0 12px;
@@ -321,12 +327,6 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
     color: var(--color-slate-800);
   }
   .tp-m-link:hover { background: var(--color-slate-100); }
-  .tp-m-link.active {
-    color: var(--color-indigo-700);
-    background: var(--color-indigo-50);
-    border-left-color: var(--color-indigo-600);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  }
 
   .tp-m-section {
     margin-top: 8px;
@@ -352,12 +352,6 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
     color: var(--color-slate-600);
   }
   .tp-m-sublink:hover { background: var(--color-slate-100); color: var(--color-slate-900); }
-  .tp-m-sublink.active {
-    color: var(--color-indigo-700);
-    background: var(--color-indigo-50);
-    border-left-color: var(--color-indigo-600);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  }
 
   .tp-m-foot {
     margin-top: 14px;

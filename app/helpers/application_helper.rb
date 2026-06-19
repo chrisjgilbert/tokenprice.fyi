@@ -113,6 +113,34 @@ module ApplicationHelper
     link_to label, path, class: css
   end
 
+  # The single source of truth for the nav, shared by the desktop bar and the
+  # mobile drawer so the two can't drift. Each item is [label, path].
+  def primary_nav_items
+    [
+      ["Models", root_path],
+      ["Trends", trends_path],
+      ["Compare", compare_path],
+      ["Estimate", cost_path]
+    ]
+  end
+
+  def learn_nav_items
+    [
+      ["All explainers", learn_path],
+      ["How pricing works", how_pricing_works_path],
+      ["What drives feature cost", learn_feature_costs_path],
+      ["Cost-cutting strategies", learn_cost_cutting_path],
+      ["Which model?", which_model_path],
+      ["Where do models come from?", map_path],
+      ["Why this exists", why_path]
+    ]
+  end
+
+  # True when the current page is any of the Learn explainers.
+  def learn_active?
+    learn_nav_items.any? { |_, path| current_page?(path) }
+  end
+
   # Mobile drawer link. `sub: true` renders the indented Learn variant.
   def mobile_nav_link(label, path, active: false, sub: false)
     css = sub ? "tp-m-sublink" : "tp-m-link"

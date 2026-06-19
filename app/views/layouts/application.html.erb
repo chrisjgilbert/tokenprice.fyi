@@ -42,28 +42,22 @@
           <span class="tp-beta" title="Beta — data is still being sense-checked and verified, so figures may change.">beta</span>
         </div>
         <div class="tp-nav-links">
-          <%= nav_link "Models", root_path, active: current_page?(root_path) %>
-          <%= nav_link "Trends", trends_path, active: current_page?(trends_path) %>
-          <%= nav_link "Compare", compare_path, active: current_page?(compare_path) %>
-          <%= nav_link "Estimate", cost_path, active: current_page?(cost_path) %>
+          <% primary_nav_items.each do |label, path| %>
+            <%= nav_link label, path, active: current_page?(path) %>
+          <% end %>
           <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
-              on the mobile scroll-nav it flattens to inline links via CSS. %>
-          <% learn_active = current_page?(learn_path) || current_page?(learn_feature_costs_path) || current_page?(learn_cost_cutting_path) || current_page?(how_pricing_works_path) || current_page?(which_model_path) || current_page?(why_path) || current_page?(map_path) %>
+              on mobile it's replaced by the drawer's Learn section. %>
           <div class="tp-nav-group" data-controller="dropdown">
-            <button type="button" class="tp-nav-link tp-nav-trigger<%= " active" if learn_active %>"
+            <button type="button" class="tp-nav-link tp-nav-trigger<%= " active" if learn_active? %>"
                     data-dropdown-target="trigger" data-action="dropdown#toggle"
                     aria-expanded="false">
               Learn
               <svg class="tp-nav-chevron" width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="tp-nav-menu" data-dropdown-target="menu">
-              <%= link_to "All explainers", learn_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_path)) } %>
-              <%= link_to "How pricing works", how_pricing_works_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(how_pricing_works_path)) } %>
-              <%= link_to "What drives feature cost", learn_feature_costs_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_feature_costs_path)) } %>
-              <%= link_to "Cost-cutting strategies", learn_cost_cutting_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(learn_cost_cutting_path)) } %>
-              <%= link_to "Which model?", which_model_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(which_model_path)) } %>
-              <%= link_to "Where do models come from?", map_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(map_path)) } %>
-              <%= link_to "Why this exists", why_path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(why_path)) } %>
+              <% learn_nav_items.each do |label, path| %>
+                <%= link_to label, path, class: "tp-nav-menu-item", data: { action: "dropdown#hide" }, aria: { current: ("page" if current_page?(path)) } %>
+              <% end %>
             </div>
           </div>
         </div>
@@ -82,19 +76,14 @@
       <div class="tp-m-scrim" data-action="click->mobile-nav#close" aria-hidden="true"></div>
       <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
         <nav class="tp-m-links" aria-label="Primary">
-          <%= mobile_nav_link "Models", root_path, active: current_page?(root_path) %>
-          <%= mobile_nav_link "Trends", trends_path, active: current_page?(trends_path) %>
-          <%= mobile_nav_link "Compare", compare_path, active: current_page?(compare_path) %>
-          <%= mobile_nav_link "Estimate", cost_path, active: current_page?(cost_path) %>
+          <% primary_nav_items.each do |label, path| %>
+            <%= mobile_nav_link label, path, active: current_page?(path) %>
+          <% end %>
           <div class="tp-m-section">
             <span class="tp-m-eyebrow">Learn</span>
-            <%= mobile_nav_link "All explainers", learn_path, active: current_page?(learn_path), sub: true %>
-            <%= mobile_nav_link "How pricing works", how_pricing_works_path, active: current_page?(how_pricing_works_path), sub: true %>
-            <%= mobile_nav_link "What drives feature cost", learn_feature_costs_path, active: current_page?(learn_feature_costs_path), sub: true %>
-            <%= mobile_nav_link "Cost-cutting strategies", learn_cost_cutting_path, active: current_page?(learn_cost_cutting_path), sub: true %>
-            <%= mobile_nav_link "Which model?", which_model_path, active: current_page?(which_model_path), sub: true %>
-            <%= mobile_nav_link "Where do models come from?", map_path, active: current_page?(map_path), sub: true %>
-            <%= mobile_nav_link "Why this exists", why_path, active: current_page?(why_path), sub: true %>
+            <% learn_nav_items.each do |label, path| %>
+              <%= mobile_nav_link label, path, active: current_page?(path), sub: true %>
+            <% end %>
           </div>
         </nav>
         <div class="tp-m-foot">

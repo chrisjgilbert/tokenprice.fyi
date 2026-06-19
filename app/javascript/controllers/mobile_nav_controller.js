@@ -26,7 +26,7 @@ export default class extends Controller {
     this.setBackgroundInert(true)
     document.addEventListener("keydown", this.onKeydown)
     document.addEventListener("turbo:before-visit", this.close)
-    window.addEventListener("resize", this.closeIfWide)
+    this.desktopQuery.addEventListener("change", this.closeIfWide)
     this.focusables()[0]?.focus()
   }
 
@@ -38,7 +38,7 @@ export default class extends Controller {
     this.setBackgroundInert(false)
     document.removeEventListener("keydown", this.onKeydown)
     document.removeEventListener("turbo:before-visit", this.close)
-    window.removeEventListener("resize", this.closeIfWide)
+    this.desktopQuery.removeEventListener("change", this.closeIfWide)
     // Pull focus back to the toggle if it was stranded inside the closing panel.
     if (hadFocusInPanel && this.hasToggleTarget) this.toggleTarget.focus()
   }
@@ -75,9 +75,12 @@ export default class extends Controller {
     })
   }
 
-  // The desktop nav reappears above 760px; drop the panel so it can't linger.
+  // Matches the CSS breakpoint: above 760px the desktop nav takes over.
+  desktopQuery = window.matchMedia("(min-width: 761px)")
+
+  // When the layout crosses back to desktop, drop the panel so it can't linger.
   closeIfWide = () => {
-    if (window.innerWidth > 760) this.close()
+    if (this.desktopQuery.matches) this.close()
   }
 
   disconnect() {
