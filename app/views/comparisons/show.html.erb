@@ -308,7 +308,7 @@
                 <%= provider_square(m.provider, size: :sm) %>
                 <span class="cmp-pop-item-info">
                   <span class="cmp-pop-item-name"><%= m.name %></span>
-                  <span class="cmp-pop-item-price"><%= usd(m.blended_per_mtok) %></span>
+                  <span class="cmp-pop-item-price"><%= usd(m.current_input) %> in</span>
                 </span>
               </button>
             </li>
@@ -362,7 +362,7 @@
                 <%= provider_square(m.provider, size: :sm) %>
                 <span class="cmp-pop-item-info">
                   <span class="cmp-pop-item-name"><%= m.name %></span>
-                  <span class="cmp-pop-item-price"><%= usd(m.blended_per_mtok) %></span>
+                  <span class="cmp-pop-item-price"><%= usd(m.current_input) %> in</span>
                 </span>
               </button>
             </li>
@@ -409,11 +409,11 @@
           { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         cmp: :lower_better,  fmt: :usd },
           { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        cmp: :lower_better,  fmt: :usd },
           { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  cmp: :lower_better,  fmt: :usd },
-          { label: "I/O avg /1M",    a_val: @left.blended_per_mtok,      b_val: @right.blended_per_mtok,      cmp: :lower_better,  fmt: :usd },
           { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
         ]
         text_rows = [
-          { label: "Δ since launch", a_val: @left.blended_change_since_launch, b_val: @right.blended_change_since_launch, fmt: :change },
+          { label: "Δ input since launch",  a_val: @left.input_change_since_launch,  b_val: @right.input_change_since_launch,  fmt: :change },
+          { label: "Δ output since launch", a_val: @left.output_change_since_launch, b_val: @right.output_change_since_launch, fmt: :change },
           { label: "Tier",     a_val: tier_badge(@left.tier),   b_val: tier_badge(@right.tier),   fmt: :raw  },
           { label: "Released", a_val: fmt_date(@left.released_on), b_val: fmt_date(@right.released_on), fmt: :text },
           { label: "Status",   a_val: status_badge(@left.status),  b_val: status_badge(@right.status),  fmt: :raw  },

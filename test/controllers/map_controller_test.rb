@@ -17,7 +17,7 @@ class MapControllerTest < ActionDispatch::IntegrationTest
   test "each country shows a median price" do
     get map_url
     assert_response :success
-    assert_select ".map-cc-metric-label", text: "median I/O /1M", minimum: 2
+    assert_select ".map-cc-metric-label", text: "median input /1M", minimum: 2
     # the hover payload the Stimulus controller reads carries it too
     assert_select "[data-map-countries-value]"
   end

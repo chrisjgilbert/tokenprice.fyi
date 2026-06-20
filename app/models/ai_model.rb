@@ -1,12 +1,6 @@
 class AiModel < ApplicationRecord
-  # A blended $/Mtok figure assumes this input:output token mix. It gives the
-  # comparison table and "cheapest model" ranking a single sortable number.
-  # Roughly models a chat/agent workload that reads more than it writes.
-  BLEND_INPUT_WEIGHT = 3
-  BLEND_OUTPUT_WEIGHT = 1
-
   # Trailing windows for the "% change over time" indicators, in display order.
-  # A window is the blended price in effect that long ago vs. now; :launch spans
+  # A window is the price in effect that long ago vs. now; :launch spans
   # the whole history. Prices are a step function (a snapshot holds until the
   # next one), so "the price N days ago" is the latest snapshot on or before
   # that date — see #price_as_of.
@@ -101,15 +95,6 @@ class AiModel < ApplicationRecord
     segments.compact.join(" ").presence
   end
 
-  # Single sortable number for ranking models against each other.
-  def blended_per_mtok(price = current_price)
-    return nil unless price
-
-    total = BLEND_INPUT_WEIGHT + BLEND_OUTPUT_WEIGHT
-    ((price.input_per_mtok * BLEND_INPUT_WEIGHT) +
-     (price.output_per_mtok * BLEND_OUTPUT_WEIGHT)) / total
-  end
-
   # The price snapshot in effect on a given date — the latest one on or before
   # it, or nil if the model had no price yet. Uses the in-memory association so
   # an eager-loaded `includes(:price_points)` isn't defeated by a fresh query.
@@ -117,13 +102,13 @@ class AiModel < ApplicationRecord
     price_points.select { |pp| pp.effective_on <= date }.max_by(&:effective_on)
   end
 
-  # Percentage change in blended price over a trailing window (an
-  # ActiveSupport::Duration like 30.days) or since launch (:launch). Negative
-  # means it got cheaper. The window is clamped to the model's history: if it
-  # reaches back before launch, the launch price is the reference. Returns nil
-  # when there's nothing to report — a single snapshot, or a flat price across
-  # the window.
-  def blended_change_over(window)
+  # Percentage change in a price dimension (:input or :output) over a trailing
+  # window (an ActiveSupport::Duration like 30.days) or since launch (:launch).
+  # Negative means it got cheaper. The window is clamped to the model's history:
+  # if it reaches back before launch, the launch price is the reference. Returns
+  # nil when there's nothing to report — a single snapshot, or a flat price
+  # across the window.
+  def price_change_over(dimension, window)
     reference =
       if window == :launch
         launch_price
@@ -131,19 +116,22 @@ class AiModel < ApplicationRecord
         price_as_of(Date.current - window) || launch_price
       end
 
-    blended_change_between(reference, current_price)
+    price_change_between(dimension, reference, current_price)
   end
 
-  # Percentage change in blended price between launch and now.
-  # Negative means it got cheaper.
-  def blended_change_since_launch
-    blended_change_over(:launch)
-  end
+  # Percentage change between launch and now (negative = cheaper). Input leads
+  # the table because most workloads are input-heavy; output sits alongside it
+  # wherever there's room to show both.
+  def input_change_since_launch  = price_change_over(:input, :launch)
+  def output_change_since_launch = price_change_over(:output, :launch)
 
-  # Label/percentage pairs for every CHANGE_WINDOWS entry, in display order.
-  # Percent is nil where there's nothing to report for that window.
-  def blended_changes
-    CHANGE_WINDOWS.map { |label, window| [ label, blended_change_over(window) ] }
+  # Per-window change for both dimensions, in display order:
+  # [label, input_pct, output_pct]. Either percent is nil where there's nothing
+  # to report for that window.
+  def price_changes
+    CHANGE_WINDOWS.map do |label, window|
+      [ label, price_change_over(:input, window), price_change_over(:output, window) ]
+    end
   end
 
   def price_changed?
@@ -163,13 +151,15 @@ class AiModel < ApplicationRecord
 
   private
 
-  # Shared core of the blended-change figures: % move from one snapshot's
-  # blended price to another's, or nil when the move is undefined or zero
-  # (missing data, a zero base, or the same snapshot on both ends).
-  def blended_change_between(from_price, to_price)
-    from = blended_per_mtok(from_price)
-    to   = blended_per_mtok(to_price)
-    return nil if from.nil? || to.nil? || from.zero? || from_price == to_price
+  # Shared core of the price-change figures: % move in one dimension from one
+  # snapshot to another, or nil when the move is undefined or zero (missing
+  # data, a zero base, or the same snapshot on both ends).
+  def price_change_between(dimension, from_price, to_price)
+    return nil if from_price.nil? || to_price.nil? || from_price == to_price
+
+    from = from_price.public_send("#{dimension}_per_mtok")
+    to   = to_price.public_send("#{dimension}_per_mtok")
+    return nil if from.nil? || to.nil? || from.zero?
 
     (((to - from) / from) * 100).round(1)
   end

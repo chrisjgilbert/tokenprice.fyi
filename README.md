@@ -44,8 +44,8 @@ card on top as progressive enhancement — no map engine or tile CDN.
 
 - `AiModel#current_price` — the most recent snapshot.
 - `AiModel#launch_price` — the earliest snapshot.
-- `AiModel#blended_per_mtok` — a single sortable figure at a 3:1 input:output mix.
-- `AiModel#blended_change_since_launch` — % change from launch to now.
+- `AiModel#input_change_since_launch` / `#output_change_since_launch` — % change from launch to now.
+- `AiModel#price_changes` — per-window `[label, input_pct, output_pct]` rows for the history table.
 
 To **record a price change**, add a new `PricePoint` with a later `effective_on`. The launch
 point stays, so the history chart draws the move. (See `db/seeds.rb` — DeepSeek V4's 75% cut
@@ -72,7 +72,7 @@ bin/rails server
 bin/rails test
 ```
 
-Covers the pricing/blended-price domain logic and every public route.
+Covers the pricing domain logic and every public route.
 
 ## Updating prices
 

@@ -566,7 +566,6 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-model-name { font-weight: 600; font-size: 14.5px; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
 .tp-model-sub { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-slate-400); }
 .tp-model-sub .tp-prov-name { color: var(--color-slate-600); font-weight: 500; }
-.tp-blended-val { font-weight: 500; color: var(--color-slate-600); }
 
 /* ============================================================ FORM CONTROLS */
 .tp-search {

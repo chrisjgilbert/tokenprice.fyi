@@ -1,10 +1,9 @@
 class ModelsController < ApplicationController
   SORTS = {
-    "blended"  => ->(m) { m.blended_per_mtok || Float::INFINITY },
-    "change"   => ->(m) { m.blended_change_since_launch || 0 },
     "input"    => ->(m) { m.current_input  || Float::INFINITY },
     "output"   => ->(m) { m.current_output || Float::INFINITY },
     "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },
+    "change"   => ->(m) { m.input_change_since_launch || 0 },
     "context"  => ->(m) { m.context_window || 0 },
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
     "name"     => ->(m) { m.name.to_s.downcase },
@@ -22,8 +21,8 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || "blended"
-    @dir  = params[:dir].presence_in(%w[asc desc]) || (@sort == "blended" ? "desc" : "asc")
+    @sort = params[:sort].presence_in(SORTS.keys) || "input"
+    @dir  = params[:dir].presence_in(%w[asc desc]) || "asc"
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
@@ -41,9 +40,9 @@ class ModelsController < ApplicationController
     models.reverse! if @dir == "desc"
     @models = models
 
-    # Headline stat: cheapest frontier model by blended price.
+    # Headline stat: cheapest frontier model by input price.
     @cheapest_frontier = AiModel.listed.frontier.includes(:price_points, :provider)
-                                .min_by { |m| m.blended_per_mtok || Float::INFINITY }
+                                .min_by { |m| m.current_input || Float::INFINITY }
 
     # Hero events timeline (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
@@ -52,7 +51,7 @@ class ModelsController < ApplicationController
       @all_models_count = AiModel.listed.count
       @providers_count = Provider.count
       @cheapest_model = AiModel.listed.includes(:price_points, :provider)
-                               .min_by { |m| m.blended_per_mtok || Float::INFINITY }
+                               .min_by { |m| m.current_input || Float::INFINITY }
     end
   end
 

@@ -509,8 +509,8 @@
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
 <p class="tp-section-label mb-4">Price table</p>
 
-<% default_dir = @sort == "blended" ? "desc" : "asc" %>
-<% sort_params = { sort: (@sort unless @sort == "blended"), dir: (@dir unless @dir == default_dir) }.compact %>
+<% default_dir = "asc" %>
+<% sort_params = { sort: (@sort unless @sort == "input"), dir: (@dir unless @dir == default_dir) }.compact %>
 
 <%= form_with url: root_path, method: :get, id: "filters", role: "search", "aria-label": "Filter models",
       data: { controller: "filters",
@@ -630,11 +630,8 @@
             <th scope="col" class="numeric <%= th_cls.('context') %>" aria-sort="<%= aria_sort_for('context', current_sort: @sort, current_dir: @dir) %>">
               <%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
-            <th scope="col" class="numeric <%= th_cls.('blended') %>" aria-sort="<%= aria_sort_for('blended', current_sort: @sort, current_dir: @dir) %>" title="I/O avg assumes a 3:1 input:output mix">
-              <%= sort_link "I/O avg /1M", "blended", current_sort: @sort, current_dir: @dir, filters: filter_params %>
-            </th>
-            <th scope="col" class="numeric <%= th_cls.('change') %>" aria-sort="<%= aria_sort_for('change', current_sort: @sort, current_dir: @dir) %>" title="Change in blended price from launch to now">
-              <%= sort_link "Δ since launch", "change", current_sort: @sort, current_dir: @dir, filters: filter_params %>
+            <th scope="col" class="numeric <%= th_cls.('change') %>" aria-sort="<%= aria_sort_for('change', current_sort: @sort, current_dir: @dir) %>" title="Change in input price from launch to now">
+              <%= sort_link "Δ input", "change", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
             <th scope="col" class="numeric <%= th_cls.('released') %>" aria-sort="<%= aria_sort_for('released', current_sort: @sort, current_dir: @dir) %>">
               <%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, filters: filter_params %>
@@ -644,7 +641,7 @@
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="9">
+              <td colspan="8">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -691,12 +688,9 @@
                 <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
                 </td>
-                <td class="numeric <%= sort_col == 'blended' ? 'tp-col-highlight' : '' %>">
-                  <span class="tp-blended-val num"><%= usd(model.blended_per_mtok) %></span>
-                </td>
                 <td class="numeric <%= sort_col == 'change' ? 'tp-col-highlight' : '' %>">
-                  <% if model.blended_change_since_launch %>
-                    <%= price_change_badge(model.blended_change_since_launch) %>
+                  <% if model.input_change_since_launch %>
+                    <%= price_change_badge(model.input_change_since_launch) %>
                   <% else %>
                     <span class="tp-muted-dash">—</span>
                   <% end %>
@@ -714,5 +708,5 @@
 <% end %>
 
 <p class="mt-4 text-xs text-slate-400">
-  I/O avg assumes a 3:1 input-to-output token mix — a rough stand-in for a typical chat/agent workload, so models with different input vs. output pricing can be ranked on one number.
+  Sorted by input price by default — most workloads are input-heavy, so it's the dimension that usually dominates the bill. Sort by output or cached input when your mix differs.
 </p>

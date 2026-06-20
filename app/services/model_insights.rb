@@ -35,27 +35,27 @@ class ModelInsights
 
   def tier_noun = "#{model.tier} model"
 
-  # Same-tier, listed models that have a comparable blended price. The model
+  # Same-tier, listed models that have a comparable input price. The model
   # itself is included so its rank is computed against the full field.
   def cohort
     @cohort ||= AiModel.listed.where(tier: model.tier)
                        .includes(:price_points)
-                       .select(&:blended_per_mtok)
+                       .select(&:current_input)
   end
 
   # [position, field_size] with position 1 = cheapest, or [nil, size] if the
-  # model has no blended price to place.
+  # model has no input price to place.
   def rank
     @rank ||= begin
-      mine = model.blended_per_mtok
-      sorted = cohort.sort_by(&:blended_per_mtok)
+      mine = model.current_input
+      sorted = cohort.sort_by(&:current_input)
       idx = mine && sorted.index { |m| m.id == model.id }
       [ idx && idx + 1, sorted.size ]
     end
   end
 
-  def median_blended
-    values = cohort.map(&:blended_per_mtok).sort
+  def median_input
+    values = cohort.map(&:current_input).sort
     return nil if values.empty?
 
     mid = values.size / 2
@@ -75,16 +75,16 @@ class ModelInsights
     return nil unless position && total > 1
 
     label = position == 1 ? "Cheapest #{tier_noun}" : "#{position.ordinalize}-cheapest #{tier_noun}"
-    Fact.new(label: label, detail: "by blended $/Mtok among #{total} listed #{tier_noun.pluralize}")
+    Fact.new(label: label, detail: "by input $/Mtok among #{total} listed #{tier_noun.pluralize}")
   end
 
   def median_fact
-    median = median_blended
-    mine = model.blended_per_mtok
+    median = median_input
+    mine = model.current_input
     return nil if median.nil? || mine.nil? || median.zero? || cohort.size < 3
 
     pct = (((mine - median) / median) * 100).round
-    detail = "blended $/Mtok across #{cohort.size} #{tier_noun.pluralize}"
+    detail = "input $/Mtok across #{cohort.size} #{tier_noun.pluralize}"
 
     if pct.abs < 5
       Fact.new(label: "Right at the #{model.tier} median", detail: detail)
@@ -119,7 +119,7 @@ class ModelInsights
     return nil unless launch
 
     since = "since launch (#{launch.effective_on.strftime('%b %Y')})"
-    change = model.blended_change_since_launch
+    change = model.input_change_since_launch
 
     if change.nil? || change.zero?
       "flat #{since}"
@@ -135,14 +135,14 @@ class ModelInsights
     return nil unless launch
 
     since = "since launch (#{launch.effective_on.strftime('%b %Y')})"
-    change = model.blended_change_since_launch
+    change = model.input_change_since_launch
 
     if change.nil? || change.zero?
-      Fact.new(label: "Held flat #{since}", detail: "no blended price change recorded")
+      Fact.new(label: "Held flat #{since}", detail: "no input price change recorded")
     elsif change.negative?
-      Fact.new(label: "Down #{change.abs.round}% #{since}", detail: "blended price vs launch")
+      Fact.new(label: "Down #{change.abs.round}% #{since}", detail: "input price vs launch")
     else
-      Fact.new(label: "Up #{change.round}% #{since}", detail: "blended price vs launch")
+      Fact.new(label: "Up #{change.round}% #{since}", detail: "input price vs launch")
     end
   end
 

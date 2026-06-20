@@ -8,8 +8,8 @@ class ModelInsightsTest < ActiveSupport::TestCase
     assert labels.any? { |l| l.include?("Cached input saves 90%") }, labels.inspect
   end
 
-  test "ranks a model against same-tier peers by blended price" do
-    # Fixtures: opus (blended 10) and deepseek_v4 (blended ~0.49 after the cut)
+  test "ranks a model against same-tier peers by input price" do
+    # Fixtures: opus (input $5) and deepseek_v4 (input $0.435 after the cut)
     # are the only two frontier models with prices, so DeepSeek is cheapest.
     labels = ModelInsights.new(ai_models(:deepseek_v4)).facts.map(&:label)
     assert labels.any? { |l| l.include?("Cheapest frontier model") }, labels.inspect

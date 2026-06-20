@@ -154,20 +154,20 @@
 
   <% if @model.price_changed? %>
     <div class="mt-5 border-t border-slate-100 pt-4">
-      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Blended price change
-        <span class="ml-1 font-normal normal-case tracking-normal text-slate-400">(3:1 I/O mix)</span>
-      </p>
+      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Price change</p>
       <dl class="flex flex-wrap gap-x-8 gap-y-3">
-        <% @model.blended_changes.each do |label, pct| %>
+        <% @model.price_changes.each do |label, in_pct, out_pct| %>
           <div>
             <dt class="mb-1 text-xs text-slate-400"><%= label %></dt>
-            <dd>
-              <% if pct %>
-                <%= price_change_badge(pct) %>
-              <% else %>
-                <span class="tp-muted-dash">—</span>
-              <% end %>
+            <dd class="flex flex-col gap-1.5">
+              <span class="flex items-center gap-1.5 text-xs">
+                <span class="w-7 text-slate-400">in</span>
+                <% if in_pct %><%= price_change_badge(in_pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
+              </span>
+              <span class="flex items-center gap-1.5 text-xs">
+                <span class="w-7 text-slate-400">out</span>
+                <% if out_pct %><%= price_change_badge(out_pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
+              </span>
             </dd>
           </div>
         <% end %>

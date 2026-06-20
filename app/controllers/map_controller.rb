@@ -25,8 +25,8 @@ class MapController < ApplicationController
 
   def build_country(code, provs)
     models   = provs.flat_map { |p| listed_models(p) }
-    blendeds = models.filter_map(&:blended_per_mtok)
-    cheapest = models.select { |m| m.blended_per_mtok }.min_by(&:blended_per_mtok)
+    inputs   = models.filter_map(&:current_input)
+    cheapest = models.select(&:current_input).min_by(&:current_input)
 
     {
       code:           code,
@@ -39,7 +39,7 @@ class MapController < ApplicationController
       models:         models,
       model_count:    models.size,
       frontier_count: models.count { |m| m.tier == "frontier" },
-      median_blended: median(blendeds),
+      median_input:   median(inputs),
       cheapest:       cheapest
     }
   end
@@ -53,14 +53,14 @@ class MapController < ApplicationController
       providers: c[:provider_count],
       models:   c[:model_count],
       frontier: c[:frontier_count],
-      median:   c[:median_blended] ? helpers.usd_plain(c[:median_blended]) : "—",
+      median:   c[:median_input] ? helpers.usd_plain(c[:median_input]) : "—",
       cheapest: c[:cheapest] && {
         io: "#{helpers.usd_plain(c[:cheapest].current_input)} / #{helpers.usd_plain(c[:cheapest].current_output)}"
       }
     }
   end
 
-  # Median blended price — more representative than the mean, which a country
+  # Median input price — more representative than the mean, which a country
   # with many cheap small models would drag down.
   def median(values)
     return nil if values.empty?
