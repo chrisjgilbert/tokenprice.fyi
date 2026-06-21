@@ -44,6 +44,13 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the summarization task heads with the US spelling" do
+    get guide_task_path("summarization")
+    assert_response :success
+    assert_select "h1", text: /Summarization/
+    assert_select "h1", text: /Summarisation/, count: 0
+  end
+
   # --- AUDIT #4: the takeaway branches on the data.
 
   test "summarization uses the no-capable-model takeaway with no empty-name artifact" do
