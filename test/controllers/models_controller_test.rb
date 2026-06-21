@@ -50,6 +50,23 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "index emits an owned meta description targeting the head term and providers" do
+    get root_url
+    assert_response :success
+    # An owned description, not the layout default fallback.
+    assert_select "meta[name=description][content*=?]", "LLM API token prices"
+    assert_select "meta[name=description][content*=?]", "Claude"
+    assert_select "meta[name=description][content*=?]", "updated daily"
+  end
+
+  test "index carries a crawlable keyworded intro matching the ranking target" do
+    get root_url
+    assert_response :success
+    # The body text must contain the head term so it matches the ranking target.
+    assert_match(/LLM API pricing/, response.body)
+    assert_match(/token prices per 1M/, response.body)
+  end
+
   test "latest-changes widget is present and the market-event timeline strip is gone" do
     get root_url
     assert_response :success

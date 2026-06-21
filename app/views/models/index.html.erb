@@ -1,4 +1,6 @@
 <% content_for :title, "LLM API price tracker — tokenprice.fyi" %>
+<%# Own the head term and name the providers, rather than inheriting the layout default. ~155 chars. %>
+<% content_for :description, "Compare LLM API token prices for Claude, GPT-5, Gemini, Grok, and DeepSeek. Input, output, and cached rates per 1M tokens, updated daily." %>
 <%# Canonicalise away the tier/sort/dir permutations so they don't read as duplicates. %>
 <% content_for :canonical, root_url %>
 <% content_for :head do %>
@@ -331,6 +333,12 @@
       <p class="hero-sub">
         Starting points for chatbots, RAG, and coding agents, priced per call against
         <span class="num"><%= @all_models_count %></span> models, with full price history since 2023.
+      </p>
+
+      <%# Crawlable keyworded line so the body text matches the ranking target. %>
+      <p class="hero-sub" style="margin-top:-20px">
+        LLM API pricing for Claude, GPT-5, Gemini, Grok, and DeepSeek, with token prices per 1M
+        tokens for input, output, and cached reads. Updated daily.
       </p>
 
       <div class="hero-stats">
