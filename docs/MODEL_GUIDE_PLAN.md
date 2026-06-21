@@ -125,21 +125,67 @@ pricing math that powered `/cost`; we keep the function, drop the page.
 
 ---
 
-## 5. Education
+## 5. The feature pattern (one shared data structure)
+
+The highest-value idea in the guide layer is that **a feature is a chain of calls, each with a
+different job** — a chatbot is intent → classify/route → retrieve → generate, not one call. That
+insight is *why* you pick a model per step, *why* the cheap step and the smart step are usually
+different models, and *why* per-token sticker prices don't tell you what a feature costs.
+
+We model it **once, as data**, so the same source drives both the guide and the education
+explainer (§6) and they can never drift apart. A feature pattern is an ordered list of steps:
+
+```
+FeaturePattern:
+  key        # "chatbot", "rag", "agent", "classification", ...
+  label      # "Support chatbot"
+  blurb      # one line: what it is
+  steps: [
+    {
+      role          # "intent", "retrieve/rerank", "generate", "plan", "tool-call", ...
+      purpose       # one clause: what this call does
+      tier          # starting tier for this step: small | mid | frontier
+      shape         # representative per-call token shape {sys, in, out}
+      cost_driver   # is this step where the money concentrates? (bool / note)
+      capability    # is this the step that actually needs the capable model? (bool / note)
+      loops         # does this step repeat? (e.g. agents) — flag, not a number
+      options       # 2–3 curated model slugs: cheap / quality / open-weight
+    }, ...
+  ]
+```
+
+The two payoff fields are `cost_driver` and `capability`: they're often **different steps**, and
+that mismatch is the thing developers get wrong (one frontier model for the whole chain when only
+the generate step needed it). The guide and the explainer both render straight from this — the
+guide as an interactive per-step view with inline per-call cost, the explainer as a worked
+call-chain diagram. One edit updates both.
+
+---
+
+## 6. Education
 
 No educational content is lost. Only `/why` (positioning, not teaching) is demoted.
 
 - **Keep** `how-pricing-works`, `feature-costs`, `cost-cutting` as distinct, well-made pages under
   a **lean Learn landing**.
-- **Trim only genuine overlap** — if caching is explained in two places, say it once and link.
-  Trim duplication, never depth.
-- **Cross-link education and the guide.** `feature-costs` teaches the cost shape; the guide applies
-  it. The guide's "why this is input-heavy" blurb links to the explainer; the explainer ends with
-  "→ see starting options in the guide." They reinforce each other instead of competing.
+- **Add the foundational explainer: "What an AI feature is actually made of."** Teaches the
+  feature-pattern idea (§5) generally, then shows worked call-chains — chatbot, RAG, agent, bulk
+  classification — and for each, which step dominates cost and which step actually needs the
+  capable model (usually not the same step). This is the concept the whole guide layer stands on,
+  and it's genuinely shareable/SEO-friendly ("how many LLM calls does a chatbot actually make").
+  It renders from the same `FeaturePattern` data the guide uses.
+- **Fold the pipeline anatomy into `feature-costs`.** `feature-costs` currently answers "where does
+  the money go in feature X"; lead it with the call-chain first ("a feature is several calls"),
+  then show where cost concentrates *in that chain*. These are close cousins — consider whether
+  they become one stronger piece rather than two. Trim overlap, never depth.
+- **Cross-link education and the guide.** The explainer teaches the pattern; the guide applies it
+  to a specific job. The guide's "why this is input-heavy" blurb links to `feature-costs`; the
+  explainer ends with "→ see starting options in the guide." They reinforce each other instead of
+  competing.
 
 ---
 
-## 6. Open questions / risks
+## 7. Open questions / risks
 
 - **Starting-option curation.** Who picks the cheap/quality/open-weight option per step, and how
   often is it refreshed? This is editorial and must stay current as models ship. Lighter than a
@@ -159,20 +205,23 @@ No educational content is lost. Only `/why` (positioning, not teaching) is demot
 
 ---
 
-## 7. Sequencing
+## 8. Sequencing
 
 **Phase 0 — Bank the cuts (fast, low-risk, immediately tighter).**
 Remove `/map`, `/cost` (as a destination), `/why` (→ footer line); collapse `/learn` from a hub to
 a lean landing; drop `/compare` and `/providers/:id` from the primary nav (keep the routes as
 generated views). Keep the pricing math from `/cost` as a shared function for the guide.
 
-**Phase 1 — Build the Guide, replacing `/which-model`.**
-Port `/which-model` content into the structured guide. Per task: drivers + pipeline steps +
-starting options + inline per-call cost. `/which-model` 301s to the guide. Add "Guide" to the nav.
+**Phase 1 — Model the feature patterns, then build the Guide, replacing `/which-model`.**
+Define the `FeaturePattern` data (§5) for the launch tasks first — it's the source of truth for
+both the guide and the explainer. Then build the guide off it: per task, drivers + pipeline steps +
+starting options + inline per-call cost. Port `/which-model` content into it; `/which-model` 301s
+to the guide. Add "Guide" to the nav.
 
 **Phase 2 — Wire education + homepage.**
-Cross-link `feature-costs` ↔ guide. Add the slim market-event timeline teaser to the homepage,
-linking to the Trends signature page.
+Build the "What an AI feature is actually made of" explainer from the same `FeaturePattern` data,
+and lead `feature-costs` with the call-chain. Cross-link explainer ↔ guide. Add the slim
+market-event timeline teaser to the homepage, linking to the Trends signature page.
 
 **Phase 3 — Later, only if earned.**
 Modality expansion (TTS/image/embeddings data model) and per-step pipeline cost summation. Both
@@ -180,7 +229,7 @@ gated on real demand, same discipline as the original cost-tool gate.
 
 ---
 
-## 8. Out of scope
+## 9. Out of scope
 
 A standalone pricing-calculator destination; per-job model rankings or leaderboards; usage-based
 rankings (OpenRouter's moat — we lack the traffic); benchmark-score breadth (Artificial Analysis's
@@ -188,7 +237,7 @@ moat); modalities beyond text tokens at launch; any backend/account surface for 
 
 ---
 
-## 9. What success looks like
+## 10. What success looks like
 
 - Organic landings on the guide's task pages (the "best model for X" intent we can credibly own).
 - The guide → price-table click-through (the guide sends people *into* the index, not away).
