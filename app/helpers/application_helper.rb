@@ -131,7 +131,6 @@ module ApplicationHelper
       ["What drives feature cost", learn_feature_costs_path],
       ["Cost-cutting strategies", learn_cost_cutting_path],
       ["Which model?", which_model_path],
-      ["Where do models come from?", map_path],
       ["Why this exists", why_path]
     ]
   end
