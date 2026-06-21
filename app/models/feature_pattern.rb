@@ -66,6 +66,37 @@ class FeaturePattern
     freeze
   end
 
+  # --- the driver/capable relationship, derived once from the steps ---
+  #
+  # A feature's cost-driver step and capable-model step are often DIFFERENT
+  # steps, sometimes the SAME step, and sometimes there is NO capable-model step
+  # at all (summarization, classification). The guide takeaway and the anatomy
+  # reading both branch on this relationship; computing it here keeps that
+  # branching single-sourced (AUDIT #2) so the two views can never drift.
+
+  # The first step that drives the bill, or nil if none is flagged.
+  def cost_driver_step = steps.find(&:cost_driver?)
+
+  # The first step that needs a capable model, or nil if none is flagged.
+  def capable_step = steps.find(&:capability?)
+
+  # How the cost-driver step and the capable-model step relate:
+  #   :no_capability — no step needs a capable model (the bill, if it
+  #                    concentrates anywhere, sits on a small model).
+  #   :same          — one step is both the cost driver and the capable step.
+  #   :different     — the cost driver and the capable step are distinct steps.
+  # A missing cost driver alongside a present capable step reads as :same
+  # (there is no contrast to draw), matching the takeaway/anatomy branching.
+  def driver_and_capable_relationship
+    capable = capable_step
+    return :no_capability if capable.nil?
+
+    driver = cost_driver_step
+    return :same if driver.nil? || driver.equal?(capable)
+
+    :different
+  end
+
   # --- construction helpers (keep the registry below readable) ---
 
   def self.step(role:, purpose:, tier:, shape:, options:,

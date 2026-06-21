@@ -126,6 +126,46 @@ class FeaturePatternTest < ActiveSupport::TestCase
     end
   end
 
+  # --- driver/capable relationship query methods (single source for the
+  # guide takeaway and the anatomy reading) ---
+
+  test "cost_driver_step returns the first step flagged cost_driver, or nil" do
+    rag = FeaturePattern.find("rag")
+    assert_equal "generate answer", rag.cost_driver_step.role
+
+    agentic = FeaturePattern.find("agentic")
+    assert_equal "subagent search", agentic.cost_driver_step.role
+  end
+
+  test "capable_step returns the first step flagged capability, or nil" do
+    coding = FeaturePattern.find("coding_agent")
+    assert_equal "plan", coding.capable_step.role
+
+    summ = FeaturePattern.find("summarization")
+    assert_nil summ.capable_step
+  end
+
+  test "driver_and_capable_relationship is :same when one step is both" do
+    %w[rag chatbot].each do |key|
+      assert_equal :same, FeaturePattern.find(key).driver_and_capable_relationship,
+        "#{key} should read as :same"
+    end
+  end
+
+  test "driver_and_capable_relationship is :different when they are distinct steps" do
+    %w[coding_agent agentic].each do |key|
+      assert_equal :different, FeaturePattern.find(key).driver_and_capable_relationship,
+        "#{key} should read as :different"
+    end
+  end
+
+  test "driver_and_capable_relationship is :no_capability when no step needs a capable model" do
+    %w[summarization classification].each do |key|
+      assert_equal :no_capability, FeaturePattern.find(key).driver_and_capable_relationship,
+        "#{key} should read as :no_capability"
+    end
+  end
+
   private
 
   def each_step

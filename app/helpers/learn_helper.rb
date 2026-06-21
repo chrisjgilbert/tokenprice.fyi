@@ -20,6 +20,30 @@ module LearnHelper
     ]
   end
 
+  # The line a call-chain teaches in the anatomy explainer, computed from the
+  # FeaturePattern relationship (AUDIT #2/#4) — never a hardcoded per-pattern
+  # string, and never a second copy of the find/branch the guide does. Mirrors
+  # GuideHelper#guide_takeaway's branching, framed for the anatomy lesson and
+  # carrying <strong> emphasis. Returns an array of HTML-bearing lines; the view
+  # is responsible for marking them html_safe.
+  def anatomy_chain_reading(pattern)
+    driver_role = pattern.cost_driver_step&.role
+    capable_role = pattern.capable_step&.role
+
+    case pattern.driver_and_capable_relationship
+    when :no_capability
+      if driver_role
+        [ "The bill concentrates on <strong>#{driver_role}</strong>. No step here needs a capable model, so a small model runs the whole chain." ]
+      else
+        [ "No step here drives the bill or needs a capable model; a small model runs the whole chain." ]
+      end
+    when :same
+      [ "Here the cost-driver step and the capable-model step are the <strong>same one</strong>: #{capable_role}. Spend there, keep the rest small." ]
+    else
+      [ "The cost-driver step is <strong>#{driver_role}</strong>. The capable-model step is <strong>#{capable_role}</strong>. They are different steps, so the capable model goes on #{capable_role} and the rest stay small." ]
+    end
+  end
+
   LEARN_ICONS = {
     coin:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9a2.5 2.5 0 0 0-2.3-1.4c-1.4 0-2.5.9-2.5 2s1 1.7 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2A2.5 2.5 0 0 1 9.2 15"/><path d="M12 6v1.6M12 16.4V18"/></svg>',
     blocks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>',

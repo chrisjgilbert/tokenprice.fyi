@@ -39,28 +39,6 @@
   }
 </style>
 
-<%
-  # The line a call-chain teaches, computed from the step objects (AUDIT #2/#4) —
-  # never a hardcoded per-pattern string. Mirrors GuideHelper#guide_takeaway's
-  # branching, framed for the anatomy lesson: name the cost-driver step and the
-  # capable-model step, and say plainly whether they are the same one.
-  chain_reading = lambda do |pattern|
-    driver  = pattern.steps.find(&:cost_driver?)
-    capable = pattern.steps.find(&:capability?)
-    if capable.nil?
-      if driver
-        ["The bill concentrates on <strong>#{driver.role}</strong>. No step here needs a capable model, so a small model runs the whole chain."]
-      else
-        ["No step here drives the bill or needs a capable model; a small model runs the whole chain."]
-      end
-    elsif driver.nil? || driver.role == capable.role
-      ["Here the cost-driver step and the capable-model step are the <strong>same one</strong>: #{capable.role}. Spend there, keep the rest small."]
-    else
-      ["The cost-driver step is <strong>#{driver.role}</strong>. The capable-model step is <strong>#{capable.role}</strong>. They are different steps, so the capable model goes on #{capable.role} and the rest stay small."]
-    end
-  end
-%>
-
 <article class="hp">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Feature anatomy · June 2026</p>
   <h1>What an AI feature is actually made of.</h1>
@@ -104,7 +82,7 @@
           </div>
         <% end %>
       </div>
-      <% chain_reading.call(pattern).each do |line| %>
+      <% anatomy_chain_reading(pattern).each do |line| %>
         <p class="ac-read"><%= raw line %></p>
       <% end %>
     </div>
