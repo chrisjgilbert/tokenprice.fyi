@@ -3,7 +3,7 @@
   <head>
     <title><%= content_for(:title) || "tokenprice.fyi — LLM API price tracker" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and 40+ others — updated daily with full history.' %>">
+    <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and more LLM APIs. Updated daily, with full price history.' %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
@@ -105,6 +105,7 @@
         <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
         <span>List prices · USD per 1M tokens</span>
         <span>Independent price record, not affiliated with any provider</span>
+        <span>sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <span class="tp-foot-beta">Beta — data is still being sense-checked and verified, so figures may change.</span>

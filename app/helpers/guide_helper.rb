@@ -98,23 +98,20 @@ module GuideHelper
   # The slots come from the data — a missing capability step takes the third
   # branch rather than rendering "the capable-model step () …".
   def guide_takeaway(pattern)
-    driver = pattern.steps.find(&:cost_driver?)
-    capable = pattern.steps.find(&:capability?)
+    driver_role = pattern.cost_driver_step&.role
+    capable_role = pattern.capable_step&.role
 
-    driver_role = driver&.role
-    capable_role = capable&.role
-
-    if capable.nil?
+    case pattern.driver_and_capable_relationship
+    when :no_capability
       # No step needs a capable model (summarization, classification).
       if driver_role
         "No step here needs a frontier model. The bill concentrates on the cost-driver step (#{driver_role}); a small model handles it."
       else
         "No step here needs a frontier model, and none dominates the bill; a small model handles the whole chain."
       end
-    elsif driver.nil? || driver_role == capable_role
+    when :same
       # Cost-driver and capable-model are the same step (rag, chatbot).
-      role = capable_role
-      "The cost-driver step and the capable-model step are the same one: #{role}. Spend there; keep the rest small."
+      "The cost-driver step and the capable-model step are the same one: #{capable_role}. Spend there; keep the rest small."
     else
       # They are different steps (coding_agent, agentic) — the payoff.
       "The cost-driver step is #{driver_role}. The capable-model step is #{capable_role}. They are different, so put the capable model on #{capable_role} and keep the rest small."

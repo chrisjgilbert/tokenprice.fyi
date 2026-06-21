@@ -51,8 +51,15 @@ class ModelsController < ApplicationController
       @all_events = helpers.build_all_events
       @all_models_count = AiModel.listed.count
       @providers_count = Provider.count
-      @cheapest_model = AiModel.listed.includes(:price_points, :provider)
-                               .min_by { |m| m.blended_per_mtok || Float::INFINITY }
+
+      # The genuine minimum simple in+out average across the priced catalog,
+      # so the "cheapest, in+out avg /1M" stat's value truly is the minimum its
+      # label claims. nil when nothing is priced.
+      @cheapest_io_avg = AiModel.listed.includes(:price_points)
+                                .filter_map { |m|
+                                  next unless m.current_input && m.current_output
+                                  (m.current_input + m.current_output) / 2.0
+                                }.min
     end
   end
 

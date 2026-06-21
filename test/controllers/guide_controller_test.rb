@@ -96,4 +96,19 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "—"
   end
+
+  # --- SPEC §3: the guide's feature_costs cross-link lands on the MATCHING
+  # feature_costs section when one exists, and falls back to the index otherwise.
+  test "the guide deep-links to the matching feature_costs section for a known pattern" do
+    get guide_task_path("rag")
+    assert_response :success
+    assert_select "a[href=?]", "#{learn_feature_costs_path}#rag"
+  end
+
+  test "the guide falls back to the plain feature_costs link for a pattern with no matching section" do
+    get guide_task_path("agentic")
+    assert_response :success
+    # agentic has no dedicated feature_costs section, so the generic link stands.
+    assert_select "a[href=?]", learn_feature_costs_path
+  end
 end

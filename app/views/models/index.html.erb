@@ -76,7 +76,6 @@
     gap: 28px;
     flex-wrap: wrap;
   }
-  .hero-stat {}
   .hero-stat-val {
     font-family: var(--font-mono);
     font-size: 22px;
@@ -217,83 +216,6 @@
     color: rgba(203,213,225,.9);
   }
 
-  /* Timeline divider */
-  .hero-divider {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: rgba(100,116,139,.7);
-    margin: 20px 0 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .hero-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(255,255,255,.07);
-  }
-
-  /* Timeline rows */
-  .hero-timeline { display: flex; flex-direction: column; gap: 12px; }
-  .hero-tl-row {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-  }
-  .hero-tl-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(244,63,94,.8);
-    flex: none;
-    margin-left: 1px;
-  }
-  .hero-tl-title {
-    flex: 1;
-    font-size: 13px;
-    color: rgba(203,213,225,.9);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-  }
-  a.hero-tl-title {
-    text-decoration: none;
-    transition: color var(--transition-fast, .15s) var(--ease-default);
-  }
-  a.hero-tl-title:hover {
-    color: #fff;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .hero-tl-kind {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-  .hero-tl-kind.launch {
-    background: rgba(16,185,129,.12);
-    color: #6ee7b7;
-  }
-  .hero-tl-kind.market {
-    background: rgba(244,63,94,.1);
-    color: #fda4af;
-  }
-  .hero-tl-date {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: rgba(100,116,139,.9);
-    white-space: nowrap;
-    flex: none;
-  }
-
   /* Filters card */
   .filters-card {
     background: #fff;
@@ -393,43 +315,44 @@
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
   <% latest_event = @all_events.last %>
-  <% recent_events = @all_events.last(5).first(4) %>
 
   <div class="hero-grid">
-    <%# Left column %>
+    <%# Left column: the decision-bridge %>
     <div>
       <div class="hero-eyebrow">
         <span class="hero-eyebrow-dot"></span>
-        Live LLM API price index
+        The price index
       </div>
 
       <h1 class="hero-h1">
-        Compare token prices across <%= @providers_count %> LLM APIs
+        Which model for what you're building, and <span class="accent">what it costs.</span>
       </h1>
 
       <p class="hero-sub">
-        <%= @all_models_count %> models across <%= @providers_count %> providers. Prices tracked from launch.
+        Starting points for chatbots, RAG, and coding agents, priced per call against
+        <span class="num"><%= @all_models_count %></span> models, with full price history since 2023.
       </p>
 
       <div class="hero-stats">
         <div class="hero-stat">
           <span class="hero-stat-val num"><%= @all_models_count %></span>
-          <span class="hero-stat-label">Models tracked</span>
+          <span class="hero-stat-label">models</span>
         </div>
         <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
           <span class="hero-stat-val num"><%= @providers_count %></span>
           <span class="hero-stat-label">Providers</span>
         </div>
-        <% if @cheapest_model %>
+        <% if @cheapest_io_avg %>
           <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
-            <span class="hero-stat-val"><%= io_price(@cheapest_model) %></span>
-            <span class="hero-stat-label">Cheapest I/O /1M</span>
+            <span class="hero-stat-val num"><%= usd(@cheapest_io_avg) %></span>
+            <span class="hero-stat-label">cheapest, in+out avg /1M</span>
           </div>
         <% end %>
       </div>
 
       <div class="hero-cta">
-        <%= link_to learn_path, class: "tp-btn tp-btn-ghost" do %>Learn how pricing works<% end %>
+        <%= link_to guide_path, class: "tp-btn tp-btn-primary" do %>Find a model<% end %>
+        <%= link_to "#models", class: "tp-btn tp-btn-ghost" do %>Browse all prices<% end %>
       </div>
     </div>
 
@@ -438,7 +361,7 @@
       <div class="hero-card-inner">
         <div class="hero-card-tag">
           <%= icon(:spark, size: 13) %>
-          Latest update
+          Latest changes
         </div>
 
         <% if latest_event %>
@@ -472,32 +395,9 @@
           </div>
         <% end %>
 
-        <div class="hero-divider">Recent activity</div>
-
-        <div class="hero-timeline">
-          <% recent_events.reverse.each do |ev| %>
-            <div class="hero-tl-row">
-              <% if ev.kind == "launch" && ev.provider %>
-                <div style="flex:none"><%= provider_square(ev.provider, size: :sm) %></div>
-              <% else %>
-                <div class="hero-tl-dot"></div>
-              <% end %>
-              <% if ev.model %>
-                <%= link_to ev.title, model_path(ev.model), class: "hero-tl-title" %>
-              <% else %>
-                <span class="hero-tl-title"><%= ev.title %></span>
-              <% end %>
-              <span class="hero-tl-kind <%= ev.kind == 'launch' ? 'launch' : 'market' %>">
-                <%= ev.kind == "launch" ? "Launch" : "Market" %>
-              </span>
-              <span class="hero-tl-date"><%= fmt_date_full(ev.date) %></span>
-            </div>
-          <% end %>
-        </div>
-
         <div style="margin-top:20px">
           <%= link_to trends_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-            See the full timeline →
+            Full price history →
           <% end %>
         </div>
       </div>

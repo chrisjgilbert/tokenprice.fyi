@@ -127,7 +127,11 @@
   <section class="gs-links reveal">
     <h2>Go deeper</h2>
     <div class="gs-links-grid">
-      <%= link_to learn_feature_costs_path, class: "gs-link card" do %>
+      <%# SPEC §3: land on the matching feature_costs section when one exists
+          (its <h2> ids mirror the pattern keys), else the generic explainer. %>
+      <% fc_sections = %w[rag chatbot classification summarization coding_agent] %>
+      <% fc_href = fc_sections.include?(@pattern.key) ? "#{learn_feature_costs_path}##{@pattern.key}" : learn_feature_costs_path %>
+      <%= link_to fc_href, class: "gs-link card" do %>
         <span class="gs-link-kind">Explainer</span>
         <span class="gs-link-title">What drives the cost of common features</span>
         <span class="gs-link-sub">The worked cost breakdown behind these shapes, with live prices.</span>
