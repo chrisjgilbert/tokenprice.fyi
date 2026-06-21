@@ -28,6 +28,11 @@ class ModelsController < ApplicationController
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
 
+    # Conditional GET. The page varies by every filter/sort param, so they MUST
+    # ride in the etag — otherwise a conditional request for one filtered view
+    # would 304 off a different view's cache. Renders 304 and halts on a match.
+    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query ])
+
     models = scope.to_a
     if @query.match?(/[a-z0-9]/i)
       if @query.include?(",")
@@ -61,6 +66,11 @@ class ModelsController < ApplicationController
 
   def show
     @model = AiModel.includes(:provider, :price_points).find_by!(slug: params[:id])
+
+    # Conditional GET keyed on this model's latest price date.
+    return if catalog_fresh?(etag: [ :model_show, @model.slug ],
+                             last_modified: @model.current_price&.effective_on)
+
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
     @catalog_entry = PriceCatalog.model(@model.slug)

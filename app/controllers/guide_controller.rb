@@ -4,12 +4,16 @@
 # unknown task the same way the rest of the app surfaces a missing record.
 class GuideController < ApplicationController
   def index
+    return if catalog_fresh?(etag: [ :guide_index ])
+
     @patterns = FeaturePattern.all
   end
 
   def show
     @pattern = FeaturePattern.find(params[:task])
     return head :not_found unless @pattern
+
+    return if catalog_fresh?(etag: [ :guide_show, @pattern.key ])
 
     # Load the price catalog once for the whole page; GuideCost prices every
     # step's options against this injected catalog instead of re-loading it.

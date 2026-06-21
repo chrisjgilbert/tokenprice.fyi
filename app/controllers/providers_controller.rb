@@ -14,6 +14,10 @@ class ProvidersController < ApplicationController
     @sort = params[:sort].presence_in(SORTS.keys) || "released"
     @dir  = params[:dir] == "asc" ? "asc" : "desc"
 
+    # Conditional GET. The listing varies by ?sort=/?dir=, so both ride in the
+    # etag to keep a sorted view from 304ing off a differently-sorted one.
+    return if catalog_fresh?(etag: [ :provider_show, @provider.slug, @sort, @dir ])
+
     models = @provider.ai_models.includes(:price_points).to_a
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"

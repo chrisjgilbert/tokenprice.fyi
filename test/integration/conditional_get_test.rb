@@ -1,0 +1,85 @@
+require "test_helper"
+
+# Public reference pages support conditional GET (ETag + Last-Modified) so a
+# daily-updated crawl budget isn't spent re-downloading unchanged HTML. The
+# correctness risk is param-varying pages: the ETag MUST vary by the filter/sort
+# params, or a conditional GET would serve a stale filtered view from cache.
+class ConditionalGetTest < ActionDispatch::IntegrationTest
+  # Replays the conditioning headers a client would send back, and asserts 304.
+  def assert_not_modified_on_replay(url)
+    get url
+    assert_response :success
+    etag = response.headers["ETag"]
+    last_mod = response.headers["Last-Modified"]
+    assert etag.present?, "expected an ETag on #{url}"
+    assert last_mod.present?, "expected a Last-Modified on #{url}"
+
+    get url, headers: { "If-None-Match" => etag, "If-Modified-Since" => last_mod }
+    assert_response :not_modified
+    [ etag, last_mod ]
+  end
+
+  test "models#index supports conditional GET" do
+    assert_not_modified_on_replay(root_url)
+  end
+
+  test "models#index ETag varies by filter and sort params" do
+    get root_url(tier: "frontier", sort: "input", dir: "desc")
+    assert_response :success
+    filtered_etag = response.headers["ETag"]
+
+    # The first view's etag must NOT satisfy a request for a different view.
+    get root_url(tier: "mid", sort: "output", dir: "asc"),
+        headers: { "If-None-Match" => filtered_etag }
+    assert_response :success, "a different filter/sort must not 304 off another view's etag"
+
+    # ...but replaying its own etag does 304.
+    get root_url(tier: "frontier", sort: "input", dir: "desc"),
+        headers: { "If-None-Match" => filtered_etag }
+    assert_response :not_modified
+  end
+
+  test "models#index ETag varies by query and provider params" do
+    get root_url(q: "claude", providers: [ "anthropic" ])
+    assert_response :success
+    etag = response.headers["ETag"]
+
+    get root_url(q: "deepseek", providers: [ "deepseek" ]),
+        headers: { "If-None-Match" => etag }
+    assert_response :success
+  end
+
+  test "models#show supports conditional GET keyed on the model's current price" do
+    assert_not_modified_on_replay(model_url(ai_models(:opus)))
+  end
+
+  test "guide#index supports conditional GET" do
+    assert_not_modified_on_replay(guide_url)
+  end
+
+  test "guide#show supports conditional GET" do
+    assert_not_modified_on_replay(guide_task_url("coding-agent"))
+  end
+
+  test "how_pricing_works supports conditional GET" do
+    assert_not_modified_on_replay(how_pricing_works_url)
+  end
+
+  test "providers#show supports conditional GET" do
+    assert_not_modified_on_replay(provider_url(providers(:anthropic)))
+  end
+
+  test "providers#show ETag varies by sort param" do
+    get provider_url(providers(:anthropic), sort: "input")
+    assert_response :success
+    etag = response.headers["ETag"]
+
+    get provider_url(providers(:anthropic), sort: "output"),
+        headers: { "If-None-Match" => etag }
+    assert_response :success
+  end
+
+  test "trends supports conditional GET" do
+    assert_not_modified_on_replay(trends_url)
+  end
+end

@@ -76,6 +76,14 @@ class PriceCatalog
       (among || models).select { |e| e.tier == tier && e.input }.min_by(&:input)
     end
 
+    # The catalog's freshness timestamp for conditional GET (Last-Modified /
+    # ETag) on list pages: the most recent price-row write across the whole
+    # catalog. A single aggregate query — does NOT load every entry. nil when
+    # there are no price points yet (controllers fall back gracefully).
+    def last_modified
+      PricePoint.maximum(:updated_at)
+    end
+
     # Chronological price history for one model.
     def history(slug)
       model(slug)&.snapshots || []
