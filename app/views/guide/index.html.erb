@@ -1,0 +1,37 @@
+<% content_for :title, "The guide — a starting model per pipeline step, priced per call · tokenprice.fyi" %>
+<% content_for :description, "Pick the task you're building. Each step gets a starting model and a per-call cost. No fabricated bills, no rankings." %>
+<% content_for :canonical, guide_url %>
+<% content_for :head do %>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Starting models by task",
+        itemListElement: @patterns.each_with_index.map { |p, i|
+          { "@type": "ListItem", position: i + 1, name: p.label, url: guide_task_url(p.key) }
+        }
+      }) %>
+<% end %>
+
+<header class="led-head reveal">
+  <div class="led-eyebrow">
+    <span class="nav-dot"></span>
+    <span class="tp-section-label">Guide</span>
+  </div>
+  <h1>Your job is a pipeline. Here's a starting model per step, priced per call.</h1>
+  <p>Most steps run on a small model; one step needs a capable one, and it usually isn't the step that drives the bill. Each step gets a starting option and a per-call cost. No fabricated bills, no rankings.</p>
+</header>
+
+<section class="led-series">
+  <div class="led-grid">
+    <% @patterns.each_with_index do |pattern, i| %>
+      <%= link_to guide_task_path(pattern.key), class: "card led-card reveal", style: "animation-delay:#{(0.04 * i).round(2)}s" do %>
+        <h4><%= pattern.label %></h4>
+        <p><%= pattern.blurb %></p>
+        <div class="led-card-foot">
+          <span><%= pluralize(pattern.steps.size, "step") %></span>
+          <span class="go"><%= safe_join([ "View pipeline", co_icon(:arrow_right, size: 14) ]) %></span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</section>

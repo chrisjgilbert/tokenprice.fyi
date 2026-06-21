@@ -1,0 +1,9 @@
+<%# T1.3b builds the full pipeline view here %>
+<% content_for :title, "#{@pattern.label} — the guide · tokenprice.fyi" %>
+
+<header class="led-head reveal">
+  <h1><%= @pattern.label %></h1>
+  <p><%= @pattern.blurb %></p>
+</header>
+
+<p><%= link_to "Back to the guide", guide_path %></p>

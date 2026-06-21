@@ -12,6 +12,11 @@ Rails.application.routes.draw do
   get "trends",  to: "trends#index",     as: :trends
   get "sources", to: "sources#index",    as: :sources
   get "which-model", to: "pages#which_model", as: :which_model
+
+  # The Guide — browse-by-task model picker. Index is the task chooser; each
+  # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.
+  get "guide", to: "guide#index", as: :guide
+  get "guide/:task", to: "guide#show", as: :guide_task
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
   # The compact model-page estimate embed (its own Turbo Frame).
