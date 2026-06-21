@@ -15,6 +15,27 @@
 # ladder small / mid / frontier; no drama em-dashes; no "=" in prose; no
 # rhetorical questions.
 module GuideHelper
+  # The label for each starting-option role, keyed by the `kind` GuideCost::Result
+  # carries — so the view names options from data, never from array position.
+  OPTION_KIND_LABELS = {
+    cheap: "cheap default", quality: "step-up for quality", open_weight: "open-weight option"
+  }.freeze
+
+  def guide_option_label(kind) = OPTION_KIND_LABELS.fetch(kind, "option")
+
+  # Pattern keys with a worked section in the feature_costs explainer; the guide
+  # deep-links to the matching #anchor. Kept beside the keys (not as an in-view
+  # literal) so the list has one home; mirrors the <h2 id="..."> anchors in
+  # app/views/learn/feature_costs.html.erb. A key without a section (agentic)
+  # falls back to the explainer index.
+  FEATURE_COSTS_SECTIONS = %w[rag chatbot classification summarization coding_agent].freeze
+
+  def feature_costs_link(pattern)
+    return learn_feature_costs_path unless FEATURE_COSTS_SECTIONS.include?(pattern.key)
+
+    "#{learn_feature_costs_path}##{pattern.key}"
+  end
+
   # Two short paragraphs per task — "what drives cost here" — with DISTINCT
   # openings (the deck forbids a repeated "is not one call" opener). Plain
   # declaratives, grounded in each pattern's real cost shape.

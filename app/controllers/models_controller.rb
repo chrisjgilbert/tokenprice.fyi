@@ -41,10 +41,6 @@ class ModelsController < ApplicationController
     models.reverse! if @dir == "desc"
     @models = models
 
-    # Headline stat: cheapest frontier model by blended price.
-    @cheapest_frontier = AiModel.listed.frontier.includes(:price_points, :provider)
-                                .min_by { |m| m.blended_per_mtok || Float::INFINITY }
-
     # Hero events timeline (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
     unless request.headers["Turbo-Frame"] == "models"

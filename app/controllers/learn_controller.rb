@@ -13,9 +13,11 @@ class LearnController < ApplicationController
   # so the real agent pattern appears, not the coding pipeline mislabelled.
   def anatomy
     @patterns = %w[chatbot rag agentic classification].filter_map { |k| FeaturePattern.find(k) }
-    @frontier_example = AiModel.listed.where(tier: "frontier")
-                              .select(&:current_input)
-                              .min_by(&:current_input)
+    # Load the catalog once and reuse it for both the io_ratio widget and the
+    # frontier example, rather than the widget loading it and a second query
+    # finding the cheapest frontier model (which also N+1'd on current_input).
+    @catalog = PriceCatalog.models
+    @frontier_example = @catalog.select { |e| e.tier == "frontier" && e.input }.min_by(&:input)
   end
 
   def feature_costs
