@@ -80,7 +80,8 @@
 </div>
 
 <%# ── Estimate embed: a compact mini-estimator pre-filled with this model as
-    the baseline, riding the model page's traffic into /cost. ── %>
+    the baseline, rendering a per-model monthly cost estimate inline via a
+    Turbo Frame. ── %>
 <% if @catalog_entry %>
   <% frame_id = "estimate_embed_#{@model.slug}" %>
   <% in0 = CostEstimate.embed_slider(1500) %>
