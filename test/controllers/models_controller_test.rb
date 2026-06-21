@@ -251,14 +251,38 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     body = @response.body
     assert_includes body, "\"@type\":\"AggregateOffer\""
     assert_includes body, "\"priceCurrency\":\"USD\""
-    assert_includes body, "\"offerCount\":2"
-    # lowPrice = min(input, output), highPrice = max(input, output)
-    assert_includes body, "\"lowPrice\":\"#{model.current_input}\""
+    # offerCount is derived from the non-nil price set: input + output + cached = 3.
+    assert_includes body, "\"offerCount\":3"
+    # lowPrice = min over the priced set, highPrice = max over the same set.
+    assert_includes body, "\"lowPrice\":\"#{model.current_cached_input}\""
     assert_includes body, "\"highPrice\":\"#{model.current_output}\""
+    # Availability carried over from the old single Offer.
+    assert_includes body, "\"availability\":\"https://schema.org/InStock\""
     # The unit (per 1M tokens) must be expressed so the price isn't ambiguous.
     assert_match(/per 1M tokens/i, body)
     # No stale single-Offer price field that hid the output cost.
     assert_not_includes body, "\"@type\":\"Offer\""
+  end
+
+  test "show AggregateOffer drops the nil cached component from count and breakdown" do
+    # A model with input + output but NO cached input (the only nilable price
+    # column): the cached component must be absent from offerCount and from the
+    # price breakdown, and no non-numeric em-dash placeholder (from usd_plain(nil))
+    # may land in the structured-data price text.
+    model = ai_models(:opus)
+    model.current_price.update!(cached_input_per_mtok: nil)
+    get model_url(model)
+    assert_response :success
+
+    json_ld = @response.body[/<script type="application\/ld\+json">(.+?)<\/script>/m, 1]
+    assert json_ld, "expected Product JSON-LD on the show page"
+    # input + output only (cached dropped) → offerCount 2.
+    assert_includes json_ld, "\"offerCount\":2"
+    # The dropped cached component must not appear at all in the breakdown.
+    assert_not_includes json_ld, "cached input"
+    # No em-dash placeholder for a nil price value in the breakdown text.
+    assert_not_includes json_ld, "input —"
+    assert_not_includes json_ld, "—\""
   end
 
   test "show renders the computed insights section" do

@@ -3,10 +3,10 @@
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
   <%
-    prices = [ @model.current_input, @model.current_output ].compact
+    prices = [ @model.current_input, @model.current_output, @model.current_cached_input ].compact
     price_breakdown = [
-      "input #{usd_plain(@model.current_input)}",
-      "output #{usd_plain(@model.current_output)}",
+      (@model.current_input && "input #{usd_plain(@model.current_input)}"),
+      (@model.current_output && "output #{usd_plain(@model.current_output)}"),
       (@model.current_cached_input && "cached input #{usd_plain(@model.current_cached_input)}")
     ].compact.join(", ")
     aggregate_offer =
@@ -14,9 +14,10 @@
         {
           "@type": "AggregateOffer",
           priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
           lowPrice: prices.min.to_s,
           highPrice: prices.max.to_s,
-          offerCount: 2,
+          offerCount: prices.size,
           description: "List price per 1M tokens — #{price_breakdown}.",
           priceSpecification: {
             "@type": "UnitPriceSpecification",
