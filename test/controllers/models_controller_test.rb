@@ -196,6 +196,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg"
   end
 
+  test "show emits a self-canonical link that ignores query params" do
+    get model_url(ai_models(:opus), ref: "twitter")
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", model_url(ai_models(:opus))
+  end
+
   test "show returns 404 for an unknown slug" do
     get model_url(id: "does-not-exist")
     assert_response :not_found

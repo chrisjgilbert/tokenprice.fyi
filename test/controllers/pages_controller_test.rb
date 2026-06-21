@@ -12,4 +12,10 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /How LLM pricing works/
   end
+
+  test "how-pricing-works emits a self-canonical link that ignores query params" do
+    get how_pricing_works_url(ref: "twitter")
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", how_pricing_works_url
+  end
 end

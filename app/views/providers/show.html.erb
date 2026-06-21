@@ -1,4 +1,6 @@
 <% content_for :title, "#{@provider.name} model pricing — tokenprice.fyi" %>
+<% content_for :description, "#{@provider.name} API pricing across #{@models.size} models — input/output rates per 1M tokens, with price history." %>
+<% content_for :canonical, provider_url(@provider) %>
 
 <nav class="mb-6 text-sm text-slate-500">
   <%= link_to "← All models", root_path, class: "hover:text-indigo-600" %>

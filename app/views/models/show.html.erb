@@ -1,5 +1,6 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
 <% content_for :description, [ "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens.", @insights.summary_sentence ].compact.join(" ") %>
+<% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
   <%= json_ld({
         "@context": "https://schema.org",
