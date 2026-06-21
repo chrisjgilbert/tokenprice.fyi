@@ -30,6 +30,11 @@ class FeaturePattern
   # 2–3 curated starting-option model slugs for a step: a cheap default (small
   # tier), a quality step-up (mid/frontier), and an open-weight option. Any may
   # be nil, but a step always has at least one. These are slugs, not records.
+  #
+  # Convention: `cheap` is the cheapest VIABLE option and may sit one tier below
+  # the step's stated `tier`; `quality` is the option that meets the stated
+  # tier; `open_weight` is orthogonal to the tier ladder. The step's `tier` badge
+  # and the "see all {tier}-tier models" link both refer to the stated tier.
   Options = Data.define(:cheap, :quality, :open_weight) do
     def to_h = { cheap:, quality:, open_weight: }
     def values = to_h.values
