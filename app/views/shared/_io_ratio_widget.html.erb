@@ -1,8 +1,10 @@
 <%# Live-data widget: "output costs N× input — today's spread across models".
     Server-rendered from PriceCatalog so the education layer is always current.
-    locals: compact (default false), caption (optional). %>
+    locals: compact (default false), caption (optional), models (optional — an
+    already-loaded catalog to reuse so the page loads it once). %>
 <% compact = local_assigns.fetch(:compact, false) %>
-<% priced = PriceCatalog.models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
+<% models = local_assigns.fetch(:models, nil) || PriceCatalog.models %>
+<% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
 <% if priced.any? %>
   <% ratios = priced.map { |m| m.output / m.input }.sort %>
   <% median = ratios[ratios.size / 2] %>
