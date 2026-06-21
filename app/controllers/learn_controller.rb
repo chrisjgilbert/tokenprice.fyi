@@ -14,10 +14,10 @@ class LearnController < ApplicationController
   def anatomy
     @patterns = %w[chatbot rag agentic classification].filter_map { |k| FeaturePattern.find(k) }
     # Load the catalog once and reuse it for both the io_ratio widget and the
-    # frontier example, rather than the widget loading it and a second query
-    # finding the cheapest frontier model (which also N+1'd on current_input).
+    # cheapest-frontier example (passed via among:), rather than the widget
+    # loading it and a second query that also N+1'd on current_input.
     @catalog = PriceCatalog.models
-    @frontier_example = @catalog.select { |e| e.tier == "frontier" && e.input }.min_by(&:input)
+    @frontier_example = PriceCatalog.cheapest(tier: "frontier", among: @catalog)
   end
 
   def feature_costs

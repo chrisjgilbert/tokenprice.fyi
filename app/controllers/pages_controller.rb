@@ -1,7 +1,7 @@
 class PagesController < ApplicationController
   def how_pricing_works
-    @frontier_example = AiModel.listed.where(tier: "frontier")
-                              .select(&:current_input)
-                              .min_by(&:current_input)
+    # The cheapest frontier model as a worked example (PriceCatalog eager-loads,
+    # so this avoids the per-model current_input N+1 of an AiModel query).
+    @frontier_example = PriceCatalog.cheapest(tier: "frontier")
   end
 end

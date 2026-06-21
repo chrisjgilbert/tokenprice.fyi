@@ -69,6 +69,13 @@ class PriceCatalog
       models.find { |e| e.slug == slug }
     end
 
+    # The cheapest listed model of `tier`, by current input price — a representative
+    # "entry-price" example for the education pages. Pass `among:` to reuse an
+    # already-loaded catalog and avoid a second `models` load. Nil if none qualify.
+    def cheapest(tier:, among: nil)
+      (among || models).select { |e| e.tier == tier && e.input }.min_by(&:input)
+    end
+
     # Chronological price history for one model.
     def history(slug)
       model(slug)&.snapshots || []
