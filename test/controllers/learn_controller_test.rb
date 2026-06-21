@@ -101,10 +101,9 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_match(/prices today/, response.body)
     # A live frontier-model example price (mono): the cheapest frontier model's rate.
     fm = AiModel.listed.where(tier: "frontier").select(&:current_input).min_by(&:current_input)
-    if fm
-      assert_match(/#{Regexp.escape(fm.name)}/, response.body)
-      assert_select "span.num"
-    end
+    assert fm, "expected a priced frontier model in fixtures"
+    assert_match(/#{Regexp.escape(fm.name)}/, response.body)
+    assert_select "span.num"
   end
 
   test "the anatomy explainer renders worked call-chains from FeaturePattern, agent loop included" do
