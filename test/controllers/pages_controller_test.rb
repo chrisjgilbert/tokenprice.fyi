@@ -1,12 +1,6 @@
 require "test_helper"
 
 class PagesControllerTest < ActionDispatch::IntegrationTest
-  test "the why page is public" do
-    get why_url
-    assert_response :success
-    assert_select "h1", /LLM costs are hard to estimate/
-  end
-
   test "the which-model guide is public" do
     get which_model_url
     assert_response :success

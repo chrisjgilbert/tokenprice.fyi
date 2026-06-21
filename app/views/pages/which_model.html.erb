@@ -83,7 +83,7 @@
     <p class="wm-tldr-foot">Rule of thumb: <strong>start one tier lower than feels comfortable, and only move up when the cheaper model actually falls short.</strong> The rest of this page is the longer version — task by task — and <%= link_to "the price table", root_path %> shows what each tier costs.</p>
   </div>
 
-  <p>Using a frontier model for everything is a common and costly default. <%= link_to "The reasoning is understandable", why_path %>, but the price spread is large: within Anthropic's lineup alone, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension; across providers, the gap between the priciest frontier and the cheapest small model exceeds <span class="num">300×</span>. A tier mismatch isn't a rounding error. At volume, it can dominate the bill.</p>
+  <p>Using a frontier model for everything is a common and costly default. The reasoning is understandable, but the price spread is large: within Anthropic's lineup alone, Claude Fable 5 costs <span class="num">10×</span> what Claude Haiku 4.5 does on every dimension; across providers, the gap between the priciest frontier and the cheapest small model exceeds <span class="num">300×</span>. A tier mismatch isn't a rounding error. At volume, it can dominate the bill.</p>
 
   <p>A simple rule works well: <strong>use the cheapest model that passes your eval, and route up when it fails.</strong> With no eval yet, run it in reverse — prototype on a frontier model to find the quality ceiling, then walk down until something breaks. The eval is the arbiter, not this page and not a leaderboard. Below: the five most common task shapes, the tier that usually suffices, and which price dimension tends to dominate — often not the one on the sticker.</p>
 
