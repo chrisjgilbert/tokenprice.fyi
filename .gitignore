@@ -47,4 +47,6 @@
 /.kamal/secrets.*.local
 
 # Claude Code internal state (worktree tracking, local session data)
-/.claude/
+/.claude/*
+# ...but keep shared, checked-in skills
+!/.claude/skills/
