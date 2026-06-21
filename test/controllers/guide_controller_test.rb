@@ -8,7 +8,7 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Your job is a pipeline\. Here's a starting model per step, priced per call\./
 
     FeaturePattern.all.each do |pattern|
-      assert_select "a[href=?]", guide_task_path(pattern.key), text: /#{Regexp.escape(pattern.label)}/
+      assert_select "a[href=?]", guide_task_path(pattern.slug), text: /#{Regexp.escape(pattern.label)}/
     end
   end
 
@@ -23,9 +23,23 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # --- Slug hygiene: coding_agent ships as the hyphenated /guide/coding-agent.
+
+  test "coding agent resolves at the hyphenated slug" do
+    get "/guide/coding-agent"
+    assert_response :success
+    assert_select "h1", text: /#{Regexp.escape(FeaturePattern.find("coding_agent").label)}/
+  end
+
+  test "the legacy underscore slug 301s to the hyphenated URL" do
+    get "/guide/coding_agent"
+    assert_response :moved_permanently
+    assert_redirected_to "/guide/coding-agent"
+  end
+
   test "every task renders 200 (smoke)" do
     FeaturePattern.all.each do |pattern|
-      get guide_task_path(pattern.key)
+      get guide_task_path(pattern.slug)
       assert_response :success, "#{pattern.key} did not render"
     end
   end
@@ -44,7 +58,7 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "coding_agent names both a cost-driver step and a different capable-model step" do
-    get guide_task_path("coding_agent")
+    get guide_task_path("coding-agent")
     assert_response :success
     body = @response.body
 

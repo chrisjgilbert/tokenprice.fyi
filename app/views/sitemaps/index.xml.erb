@@ -11,7 +11,7 @@
   <url><loc><%= learn_cost_cutting_url %></loc></url>
   <url><loc><%= guide_url %></loc></url>
   <% FeaturePattern.all.each do |pattern| %>
-    <url><loc><%= guide_task_url(pattern.key) %></loc></url>
+    <url><loc><%= guide_task_url(pattern.slug) %></loc></url>
   <% end %>
   <% @providers.each do |provider| %>
     <url><loc><%= provider_url(provider) %></loc></url>

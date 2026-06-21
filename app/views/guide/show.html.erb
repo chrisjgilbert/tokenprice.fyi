@@ -1,7 +1,7 @@
 <% title = "Best starting models for #{@pattern.label}, priced per call · tokenprice.fyi" %>
 <% content_for :title, title %>
 <% content_for :description, "#{@pattern.label}: the pipeline broken into steps, a starting model per step, and a per-call cost. No fabricated bills, no rankings." %>
-<% content_for :canonical, guide_task_url(@pattern.key) %>
+<% content_for :canonical, guide_task_url(@pattern.slug) %>
 <% content_for :head do %>
   <%= json_ld({
         "@context": "https://schema.org",

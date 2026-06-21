@@ -66,6 +66,11 @@ class FeaturePattern
     freeze
   end
 
+  # The public URL slug. The internal `key` may carry an underscore
+  # (e.g. "coding_agent"); the slug hyphenates it to match the site's
+  # hyphen convention ("coding-agent"). Used by every guide URL/link.
+  def slug = key.tr("_", "-")
+
   # --- the driver/capable relationship, derived once from the steps ---
   #
   # A feature's cost-driver step and capable-model step are often DIFFERENT
@@ -303,13 +308,19 @@ class FeaturePattern
 
   BY_KEY = REGISTRY.index_by(&:key).freeze
 
+  # Resolve either an internal key ("coding_agent") or a public slug
+  # ("coding-agent") to a pattern. Slugs only differ from keys by underscore
+  # vs. hyphen, so a hyphenated lookup maps straight back to the key.
+  BY_SLUG = REGISTRY.index_by(&:slug).freeze
+
   # All patterns, in launch order.
   def self.all = REGISTRY
 
-  # The pattern for `key`, or nil for an unknown key.
+  # The pattern for an internal key or a public slug, or nil if unknown.
   def self.find(key)
     return nil if key.nil?
 
-    BY_KEY[key.to_s]
+    key = key.to_s
+    BY_KEY[key] || BY_SLUG[key]
   end
 end

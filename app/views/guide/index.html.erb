@@ -7,7 +7,7 @@
         "@type": "ItemList",
         name: "Starting models by task",
         itemListElement: @patterns.each_with_index.map { |p, i|
-          { "@type": "ListItem", position: i + 1, name: p.label, url: guide_task_url(p.key) }
+          { "@type": "ListItem", position: i + 1, name: p.label, url: guide_task_url(p.slug) }
         }
       }) %>
 <% end %>
@@ -24,7 +24,7 @@
 <section class="led-series">
   <div class="led-grid">
     <% @patterns.each_with_index do |pattern, i| %>
-      <%= link_to guide_task_path(pattern.key), class: "card led-card reveal", style: "animation-delay:#{(0.04 * i).round(2)}s" do %>
+      <%= link_to guide_task_path(pattern.slug), class: "card led-card reveal", style: "animation-delay:#{(0.04 * i).round(2)}s" do %>
         <h4><%= pattern.label %></h4>
         <p><%= pattern.blurb %></p>
         <div class="led-card-foot">

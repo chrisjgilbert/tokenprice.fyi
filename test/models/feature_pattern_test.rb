@@ -27,6 +27,26 @@ class FeaturePatternTest < ActiveSupport::TestCase
     assert_nil FeaturePattern.find(nil)
   end
 
+  # --- Public slug: underscores in the key become hyphens for the URL, while
+  # the internal key keeps its underscore.
+
+  test "slug hyphenates the underscored key but every slug is well-formed" do
+    coding = FeaturePattern.find("coding_agent")
+    assert_equal "coding-agent", coding.slug
+    assert_equal "coding_agent", coding.key
+
+    FeaturePattern.all.each do |p|
+      assert_match SLUG_RE, p.slug, "#{p.key} slug not well-formed: #{p.slug.inspect}"
+      assert_not_includes p.slug, "_", "#{p.key} slug must not contain an underscore"
+    end
+  end
+
+  test "find resolves a hyphenated slug back to the underscored key" do
+    assert_equal "coding_agent", FeaturePattern.find("coding-agent").key
+    # The underscored key still resolves (used internally and by the legacy URL).
+    assert_equal "coding_agent", FeaturePattern.find("coding_agent").key
+  end
+
   test "every pattern has a label, blurb and at least one step" do
     FeaturePattern.all.each do |p|
       assert p.label.present?, "#{p.key} missing label"

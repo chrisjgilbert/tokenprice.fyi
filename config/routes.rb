@@ -16,6 +16,9 @@ Rails.application.routes.draw do
   # The Guide — browse-by-task model picker. Index is the task chooser; each
   # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.
   get "guide", to: "guide#index", as: :guide
+  # The coding-agent slug shipped with an underscore; 301 the legacy URL to the
+  # hyphenated one to preserve link equity. Must precede the generic task route.
+  get "guide/coding_agent", to: redirect("/guide/coding-agent", status: 301)
   get "guide/:task", to: "guide#show", as: :guide_task
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 

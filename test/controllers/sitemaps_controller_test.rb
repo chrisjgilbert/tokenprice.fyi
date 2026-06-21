@@ -22,4 +22,11 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, learn_anatomy_url
   end
+
+  test "the sitemap lists the coding agent at its hyphenated slug" do
+    get sitemap_url
+    assert_response :success
+    assert_includes @response.body, guide_task_url("coding-agent")
+    assert_not_includes @response.body, "/guide/coding_agent"
+  end
 end
