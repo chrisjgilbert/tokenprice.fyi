@@ -134,4 +134,44 @@ class GuideCostTest < ActiveSupport::TestCase
     results = GuideCost.for_step(step)
     refute_includes results.map(&:slug), nil
   end
+
+  # --- catalog injection (efficiency): one load per page, no redundant DB hits ---
+
+  test "an injected catalog resolves every option with zero extra catalog loads" do
+    step = FeaturePattern.find("rag").steps.last
+    catalog = PriceCatalog.models # the single load the page performs
+
+    assert_queries_count(0) do
+      GuideCost.for_step(step, catalog: catalog)
+    end
+  end
+
+  test "per_call with an injected catalog runs no catalog queries" do
+    catalog = PriceCatalog.models
+    assert_queries_count(0) do
+      GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
+    end
+  end
+
+  test "injected and non-injected per_call produce identical numbers" do
+    catalog = PriceCatalog.models
+    injected = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
+    plain    = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    assert_in_delta plain.per_call, injected.per_call, 1e-15
+  end
+
+  test "resolution uses the injected catalog, not the DB" do
+    # A catalog containing ONLY claude-opus-4-8: a slug present in it prices; a
+    # slug absent from it (even though it exists in the DB) returns nil —
+    # proving the DB path is bypassed when a catalog is injected.
+    only_opus = PriceCatalog.models.select { |e| e.slug == "claude-opus-4-8" }
+    assert_equal 1, only_opus.size, "fixture sanity"
+
+    hit  = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: only_opus)
+    miss = GuideCost.per_call(slug: "uncached-mid", shape: GENERATE_SHAPE, catalog: only_opus)
+
+    assert hit.priced?
+    refute miss.resolved?, "a slug absent from the injected catalog must not fall back to the DB"
+    assert_nil miss.per_call
+  end
 end

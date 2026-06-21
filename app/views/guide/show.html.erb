@@ -75,7 +75,7 @@
           <% if step.priced? %>
             <div class="gs-opts">
               <% labels = { 0 => "cheap default", 1 => "step-up for quality", 2 => "open-weight option" } %>
-              <% GuideCost.for_step(step).each_with_index do |result, oi| %>
+              <% GuideCost.for_step(step, catalog: @catalog).each_with_index do |result, oi| %>
                 <div class="gs-opt">
                   <span class="gs-opt-kind"><%= labels[oi] || "option" %></span>
                   <span class="gs-opt-model">

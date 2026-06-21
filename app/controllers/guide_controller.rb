@@ -10,5 +10,9 @@ class GuideController < ApplicationController
   def show
     @pattern = FeaturePattern.find(params[:task])
     return head :not_found unless @pattern
+
+    # Load the price catalog once for the whole page; GuideCost prices every
+    # step's options against this injected catalog instead of re-loading it.
+    @catalog = PriceCatalog.models
   end
 end

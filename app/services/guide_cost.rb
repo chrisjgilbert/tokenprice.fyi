@@ -37,17 +37,28 @@ class GuideCost
     def priced? = !per_call.nil?
   end
 
+  # A frozen empty model list for CostEstimate. `price_with` is pure math that
+  # never reads `@models`, so handing it an empty array avoids the redundant
+  # `PriceCatalog.models` load the initializer would otherwise run.
+  NO_MODELS = [].freeze
+
   class << self
     # Per-call cost of pricing `slug` against `shape` ({sys:, in:, out:} hash or
     # a FeaturePattern::Shape). Always on the no-cache basis (AUDIT #1).
-    def per_call(slug:, shape:)
-      entry = resolve(slug)
+    #
+    # `catalog:` (an array of PriceCatalog::Entry) lets a caller inject the
+    # already-loaded catalog so the slug resolves in-memory — a guide page loads
+    # the catalog ONCE and prices every option against it. When nil, falls back
+    # to PriceCatalog.model(slug) (the original per-call DB path).
+    def per_call(slug:, shape:, catalog: nil)
+      entry = resolve(slug, catalog)
       return Result.new(slug: slug, per_call: nil, resolved: false) if entry.nil?
       return Result.new(slug: slug, per_call: nil, resolved: true) if entry.input.nil? || entry.output.nil?
 
       profile = profile_for(shape)
       # cached: nil and cache: 0 — the deliberate no-discount basis (see header).
-      per_req = CostEstimate.new(profile).price_with(
+      # models: NO_MODELS — price_with never reads @models, so skip its load.
+      per_req = CostEstimate.new(profile, models: NO_MODELS).price_with(
         input: entry.input, output: entry.output, cached: nil, prof: profile
       )[:per_req]
 
@@ -58,23 +69,29 @@ class GuideCost
     # shape, in cheap → quality → open_weight order, skipping nil option slugs.
     # An unpriced step (priced:false, AUDIT #5) yields unpriced markers — never a
     # fabricated number.
-    def for_step(step)
+    #
+    # `catalog:` is threaded through so every option of the step resolves
+    # against the SAME injected catalog (one load per page).
+    def for_step(step, catalog: nil)
       slugs = step.options.to_h.values.compact
       shape = step.shape
       slugs.map do |slug|
         if step.priced?
-          per_call(slug: slug, shape: shape)
+          per_call(slug: slug, shape: shape, catalog: catalog)
         else
           # Resolve so the view can still link the model, but never price it.
-          Result.new(slug: slug, per_call: nil, resolved: !resolve(slug).nil?)
+          Result.new(slug: slug, per_call: nil, resolved: !resolve(slug, catalog).nil?)
         end
       end
     end
 
     private
 
-    def resolve(slug)
+    # Resolve a slug to a catalog Entry. With an injected `catalog` array, look
+    # it up in-memory (no DB); otherwise fall back to the per-call DB path.
+    def resolve(slug, catalog = nil)
       return nil if slug.nil?
+      return catalog.find { |e| e.slug == slug } if catalog
 
       PriceCatalog.model(slug)
     end
