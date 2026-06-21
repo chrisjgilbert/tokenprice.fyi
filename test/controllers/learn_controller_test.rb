@@ -44,6 +44,25 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hp-cta a"
   end
 
+  test "the feature-costs explainer cross-links to the guide (the reverse link)" do
+    get learn_feature_costs_url
+    assert_response :success
+    # feature_costs is the conceptual twin of the guide: it must link back to it
+    # from within the article body (the global nav link doesn't count).
+    assert_select "article.hp a[href=?]", guide_path
+  end
+
+  # AUDIT #3 regression guards: every explainer keeps its live io_ratio widget.
+  # A future edit must not silently drop the credibility-anchoring live data.
+  test "all four explainers render the live io_ratio widget (AUDIT #3 guard)" do
+    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url, learn_anatomy_url ].each do |url|
+      get url
+      assert_response :success
+      assert_select ".lw", { minimum: 1 }, "expected the live io_ratio widget on #{url}"
+      assert_match(/prices today/, response.body, "expected the widget's live marker on #{url}")
+    end
+  end
+
   test "the cost-cutting explainer renders with a live widget and no dead estimator CTA" do
     get learn_cost_cutting_url
     assert_response :success
