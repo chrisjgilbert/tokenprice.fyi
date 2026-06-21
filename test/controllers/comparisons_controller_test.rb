@@ -7,6 +7,12 @@ class ComparisonsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /Compare two models/
   end
 
+  test "canonicalizes every param permutation to the param-free compare URL" do
+    get compare_url(a: ai_models(:opus).slug, b: ai_models(:deepseek_v4).slug)
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", compare_url
+  end
+
   test "compares the two requested models" do
     get compare_url(a: ai_models(:opus).slug, b: ai_models(:deepseek_v4).slug)
     assert_response :success
