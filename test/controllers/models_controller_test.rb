@@ -208,6 +208,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", minimum: 1
   end
 
+  test "index canonicalizes every filtered/sorted state to the bare root URL" do
+    get root_url(tier: "frontier", sort: "input", dir: "desc")
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", root_url
+  end
+
   test "show emits Product JSON-LD" do
     get model_url(ai_models(:opus))
     assert_select "script[type='application/ld+json']", minimum: 1

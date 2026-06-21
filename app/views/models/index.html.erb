@@ -1,6 +1,6 @@
 <% content_for :title, "LLM API price tracker — tokenprice.fyi" %>
-<%# Canonicalise away the sort/dir permutations so they don't read as duplicates. %>
-<% content_for :canonical, root_url(tier: @tier) %>
+<%# Canonicalise away the tier/sort/dir permutations so they don't read as duplicates. %>
+<% content_for :canonical, root_url %>
 <% content_for :head do %>
   <%= json_ld({
         "@context": "https://schema.org",
