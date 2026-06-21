@@ -6,7 +6,8 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /Understand what you're paying for/
     assert_select ".led-grid .led-card", minimum: 7   # the full 7-concept series
-    assert_select ".led-cta a[href*='/cost']"          # closing estimator CTA
+    # The standalone /cost estimator was removed; the closing estimator CTA with it.
+    assert_select ".led-cta", false
   end
 
   test "the learn index carries no live-data widget (only a decorative stat)" do
@@ -16,26 +17,38 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select ".led-feat-stat"
   end
 
-  test "the feature-costs explainer has a live widget and a prefilled estimator CTA" do
+  test "the feature-costs explainer has a live widget and no dead estimator CTA" do
     get learn_feature_costs_url
     assert_response :success
     assert_select "h1", /What drives the cost of common features/
     assert_select ".lw"                                # embedded live-data widget
-    assert_select ".hp-cta a[href*='/cost?']"          # CTA pre-filled with a workload
+    # The /cost estimator was removed; its CTA is gone, the ghost cross-link stays.
+    assert_no_dead_cost_cta
+    assert_select ".hp-cta a"
   end
 
-  test "the cost-cutting explainer renders with a live widget and CTA" do
+  test "the cost-cutting explainer renders with a live widget and no dead estimator CTA" do
     get learn_cost_cutting_url
     assert_response :success
     assert_select "h1", /Cost-cutting strategies/
     assert_select ".lw"
-    assert_select ".hp-cta a[href*='/cost?']"
+    assert_no_dead_cost_cta
+    assert_select ".hp-cta a"
   end
 
-  test "how-pricing-works gained a live widget and an estimator CTA" do
+  test "how-pricing-works has a live widget and no dead estimator CTA" do
     get how_pricing_works_url
     assert_response :success
     assert_select ".lw"
-    assert_select ".hp-cta a[href*='/cost?']"
+    assert_no_dead_cost_cta
+    assert_select ".hp-cta a"
+  end
+
+  private
+
+  # No link points at the removed /cost destination (exact path or with a query
+  # string) — anchored so the live /learn/cost-cutting cross-link doesn't match.
+  def assert_no_dead_cost_cta
+    assert_no_match(%r{href="/cost(\?[^"]*)?"}, response.body)
   end
 end

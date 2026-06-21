@@ -110,9 +110,6 @@
   <p>The dominant lever usually picks itself from there: <strong>tier choice</strong> where one meter dwarfs the other, <strong>retrieval precision and context trimming</strong> where you're sending too much, and <strong>caching</strong> wherever the same tokens go out twice. These are cost decisions, not quality decisions. Make the cheaper choice, then let an eval tell you whether you can keep it.</p>
 
   <div class="hp-cta">
-    <%= link_to concept_cta_path(learn_concept("features")), class: "hp-cta-primary" do %>
-      Estimate your feature's cost →
-    <% end %>
     <%= link_to learn_cost_cutting_path, class: "hp-cta-ghost" do %>
       Cost-cutting strategies
     <% end %>

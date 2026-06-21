@@ -119,8 +119,7 @@ module ApplicationHelper
     [
       ["Models", root_path],
       ["Trends", trends_path],
-      ["Compare", compare_path],
-      ["Estimate", cost_path]
+      ["Compare", compare_path]
     ]
   end
 

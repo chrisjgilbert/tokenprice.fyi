@@ -40,11 +40,6 @@ module LearnHelper
     learn_concepts.find { |c| c[:slug] == slug }
   end
 
-  # The estimator CTA URL, pre-filled for a concept.
-  def concept_cta_path(concept)
-    cost_cta_path(concept[:w])
-  end
-
   # A single decorative stat for the /learn index featured panel — the median
   # output:input multiple across the catalog. (The index carries only this one
   # stat line, never a live-data widget; those live inside the explainers.)

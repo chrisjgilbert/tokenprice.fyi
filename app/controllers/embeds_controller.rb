@@ -1,8 +1,7 @@
 # The model-page estimate embed: a compact mini-estimator pre-filled with the
 # current model as the baseline, so the estimator rides the index's traffic.
 # Uses the same CostEstimate engine, rendering its output into a per-model
-# Turbo Frame; "Open in full estimator" deep-links to /cost with this model
-# encoded as the baseline.
+# Turbo Frame.
 class EmbedsController < ApplicationController
   def show
     models = PriceCatalog.models
@@ -21,10 +20,9 @@ class EmbedsController < ApplicationController
 
     @here     = estimate.rows.find { |r| r.slug == @entry.slug }
     @cheapest = estimate.rows.find(&:fits?)
-    @deep_link = cost_path(profile.to_query)
 
     render partial: "embeds/embed",
            locals: { entry: @entry, here: @here, cheapest: @cheapest, fresh: fresh, out: out,
-                     req: @req, in_pos: @in_pos, out_pos: @out_pos, deep_link: @deep_link }
+                     req: @req, in_pos: @in_pos, out_pos: @out_pos }
   end
 end

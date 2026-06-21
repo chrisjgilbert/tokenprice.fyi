@@ -15,10 +15,6 @@ Rails.application.routes.draw do
   get "which-model", to: "pages#which_model", as: :which_model
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
-  # The single-workload estimator. State lives in query params (shareable,
-  # indexable); the result renders into a Turbo Frame.
-  get "cost", to: "costs#show", as: :cost
-
   # The compact model-page estimate embed (its own Turbo Frame).
   get "models/:id/estimate", to: "embeds#show", as: :model_estimate
 

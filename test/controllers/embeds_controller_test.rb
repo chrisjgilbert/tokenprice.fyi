@@ -6,7 +6,9 @@ class EmbedsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-frame#estimate_embed_claude-opus-4-8 .emb-out"
     assert_select ".emb-total"
-    assert_select ".emb-cta[href*='/cost']" # deep-links into the full estimator
+    # The standalone /cost estimator was removed; the embed no longer carries a
+    # deep link into it.
+    assert_select ".emb-cta", false
   end
 
   test "surfaces a cheaper equivalent when one exists" do
