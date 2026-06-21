@@ -50,3 +50,14 @@ deepseek_v4:
   released_on: 2026-02-01
   status: active
   description: Test model with a price cut.
+
+uncached_mid:
+  provider: deepseek
+  name: Uncached Mid
+  slug: uncached-mid
+  tier: mid
+  context_window: 1000000
+  max_output_tokens: 128000
+  released_on: 2026-03-01
+  status: active
+  description: Active model with input/output but NO cached rate — exercises the cache-null path.
