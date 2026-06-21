@@ -80,9 +80,9 @@
                   <span class="gs-opt-kind"><%= labels[oi] || "option" %></span>
                   <span class="gs-opt-model">
                     <% if result.resolved? %>
-                      <%= link_to result.slug, model_path(result.slug), class: "gs-opt-link" %>
+                      <%= link_to (result.name || result.slug), model_path(result.slug), class: "gs-opt-link" %>
                     <% else %>
-                      <span class="gs-opt-slug"><%= result.slug %></span>
+                      <span class="gs-opt-slug"><%= result.name || result.slug %></span>
                     <% end %>
                   </span>
                   <span class="gs-opt-cost num">
@@ -105,8 +105,10 @@
             <div class="gs-opts gs-opts-unpriced">
               <p class="gs-unpriced-note">Not priced here. This runs on a separate embeddings endpoint with its own rates the price table doesn't carry.</p>
               <div class="gs-opt-slugs">
-                <% step.options.values.compact.each do |slug| %>
-                  <span class="gs-opt-slug"><%= slug %></span>
+                <%# Reuse for_step (now carrying names) so the unpriced models show
+                    their display name too, falling back to the slug when unresolved. %>
+                <% GuideCost.for_step(step, catalog: @catalog).each do |result| %>
+                  <span class="gs-opt-slug"><%= result.name || result.slug %></span>
                 <% end %>
               </div>
             </div>

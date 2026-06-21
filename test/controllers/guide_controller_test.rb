@@ -87,6 +87,30 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_includes body, "per call"
   end
 
+  # --- FU.2: options show the model DISPLAY NAME, not the raw slug.
+
+  test "the generate step shows resolvable options by display name, linking by slug" do
+    get guide_task_path("rag")
+    assert_response :success
+    body = @response.body
+
+    # The fixtures claude-haiku-4-5 / claude-sonnet-4-6 carry display names.
+    assert_includes body, "Guide Haiku Fixture"
+    assert_includes body, "Guide Sonnet Fixture"
+    # The link still routes by slug.
+    assert_select "a[href=?]", model_path("claude-haiku-4-5")
+    assert_select "a[href=?]", model_path("claude-sonnet-4-6")
+    # The display name is the visible link text, not the raw slug.
+    assert_select "a[href=?]", model_path("claude-haiku-4-5"), text: "Guide Haiku Fixture"
+  end
+
+  test "an unresolved option falls back to rendering its slug" do
+    get guide_task_path("rag")
+    assert_response :success
+    # llama-4-maverick is not in fixtures → shown as its slug, no crash.
+    assert_includes @response.body, "llama-4-maverick"
+  end
+
   # --- Graceful "—" for an option whose slug isn't in the catalog.
 
   test "an unresolved option slug renders an em-dash, not an error" do
