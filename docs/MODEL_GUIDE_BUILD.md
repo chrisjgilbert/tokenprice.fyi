@@ -76,7 +76,7 @@ builders `isolation: "worktree"` to avoid write conflicts.
 ## Phases
 
 This is the real Rails app. Build in Rails (routes, controllers, ERB, Stimulus, helpers, tests).
-**Never port the prototype HTML** — it was a design reference only. Branch off the planning branch.
+**Never port the prototype HTML** — it was a design reference only. Branch each phase off `main`.
 
 ### Phase 0 — Bank the cuts
 **Builder tasks (sequential):**
