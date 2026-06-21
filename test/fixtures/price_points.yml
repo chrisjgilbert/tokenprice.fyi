@@ -14,6 +14,22 @@ suspended_fable_launch:
   cached_input_per_mtok: 1.0
   source: anthropic.com/pricing
 
+haiku_launch:
+  ai_model: haiku
+  effective_on: 2026-04-01
+  input_per_mtok: 1
+  output_per_mtok: 5
+  cached_input_per_mtok: 0.1
+  source: anthropic.com/pricing
+
+sonnet_launch:
+  ai_model: sonnet
+  effective_on: 2026-04-01
+  input_per_mtok: 3
+  output_per_mtok: 15
+  cached_input_per_mtok: 0.3
+  source: anthropic.com/pricing
+
 deepseek_launch:
   ai_model: deepseek_v4
   effective_on: 2026-02-01
@@ -31,3 +47,12 @@ deepseek_cut:
   cached_input_per_mtok: 0.003625
   source: deepseek.ai/blog
   note: 75% permanent price cut
+
+uncached_mid_launch:
+  ai_model: uncached_mid
+  effective_on: 2026-03-01
+  input_per_mtok: 2
+  output_per_mtok: 8
+  cached_input_per_mtok:
+  source: example.com/pricing
+  note: No prompt cache offered

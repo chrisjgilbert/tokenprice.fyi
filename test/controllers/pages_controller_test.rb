@@ -1,11 +1,10 @@
 require "test_helper"
 
 class PagesControllerTest < ActionDispatch::IntegrationTest
-  test "the which-model guide is public" do
-    get which_model_url
-    assert_response :success
-    assert_select "h1", /Which model should you actually use/
-    assert_select ".wm-tldr"
+  test "which-model 301s to the guide" do
+    get "/which-model"
+    assert_response :moved_permanently
+    assert_redirected_to "/guide"
   end
 
   test "how-pricing-works is public" do
