@@ -26,6 +26,30 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-sub", text: /40\+/, count: 0
   end
 
+  test "the cheapest in+out avg hero stat shows the true minimum average, not the blended-cheapest model's" do
+    get root_url
+    assert_response :success
+
+    priced = AiModel.listed.includes(:price_points)
+                    .select { |m| m.current_input && m.current_output }
+    # The genuine minimum simple in+out average across the priced catalog.
+    min_io_avg = priced.map { |m| (m.current_input + m.current_output) / 2.0 }.min
+    expected = "$#{PriceFormat.usd_amount(min_io_avg)}"
+
+    # On the fixtures the blended-cheapest model (DeepSeek V4 Pro, avg $0.6525)
+    # is NOT the model with the lowest simple in+out average (Lopri Mid, $0.60),
+    # so the displayed value must be the true minimum, not the blended pick.
+    blended_cheapest = priced.min_by { |m| m.blended_per_mtok }
+    blended_avg = (blended_cheapest.current_input + blended_cheapest.current_output) / 2.0
+    assert_not_equal min_io_avg, blended_avg,
+      "fixtures must distinguish true-min-average from blended-cheapest's average"
+
+    assert_in_delta 0.60, min_io_avg, 1e-9 # guards the fixture math (Lopri Mid)
+    assert_select ".hero-stat", text: /cheapest, in\+out avg \/1M/ do
+      assert_select ".hero-stat-val", text: expected
+    end
+  end
+
   test "latest-changes widget is present and the market-event timeline strip is gone" do
     get root_url
     assert_response :success

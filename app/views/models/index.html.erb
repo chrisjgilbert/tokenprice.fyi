@@ -343,10 +343,9 @@
           <span class="hero-stat-val num"><%= @providers_count %></span>
           <span class="hero-stat-label">Providers</span>
         </div>
-        <% if @cheapest_model && @cheapest_model.current_input && @cheapest_model.current_output %>
-          <% cheapest_avg = (@cheapest_model.current_input + @cheapest_model.current_output) / 2.0 %>
+        <% if @cheapest_io_avg %>
           <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
-            <span class="hero-stat-val num"><%= usd(cheapest_avg) %></span>
+            <span class="hero-stat-val num"><%= usd(@cheapest_io_avg) %></span>
             <span class="hero-stat-label">cheapest, in+out avg /1M</span>
           </div>
         <% end %>
