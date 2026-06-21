@@ -17,7 +17,14 @@
     <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <%# Non-render-blocking webfonts: load as print media (off the critical path),
+        then flip to all media on load. <noscript> covers JS-disabled clients.
+        Weight list (400;500;600;700 per family) matches actual usage in
+        app/assets/tailwind/application.css — every weight is in use, so none can
+        be dropped without a visual regression. %>
+    <% fonts_href = "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" %>
+    <link href="<%= fonts_href %>" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="<%= fonts_href %>" rel="stylesheet"></noscript>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
