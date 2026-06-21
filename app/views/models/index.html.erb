@@ -568,8 +568,9 @@
               <%# Russian-doll cache: the row content is keyed on the model and its
                   latest price point, plus the active sort — the sorted column gets
                   a `tp-col-highlight` class, so a sort-blind key would serve a row
-                  highlighting the wrong column. %>
-              <% cache [ model, model.current_price&.effective_on, sort_col ] do %>
+                  highlighting the wrong column. Key on the price point's updated_at
+                  (not effective_on) so a same-day in-place correction busts the row. %>
+              <% cache [ model, model.current_price&.updated_at, sort_col ] do %>
               <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>" onclick="location.href='<%= j(model_path(model)) %>'">
                 <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">

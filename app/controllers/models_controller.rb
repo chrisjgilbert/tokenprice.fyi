@@ -67,9 +67,12 @@ class ModelsController < ApplicationController
   def show
     @model = AiModel.includes(:provider, :price_points).find_by!(slug: params[:id])
 
-    # Conditional GET keyed on this model's latest price date.
-    return if catalog_fresh?(etag: [ :model_show, @model.slug ],
-                             last_modified: @model.current_price&.effective_on)
+    # Conditional GET keyed on this model's latest price write (updated_at, not
+    # effective_on) so a same-day in-place price correction still busts the cache.
+    # The timestamp rides the ETag too, so an If-None-Match alone invalidates.
+    price_updated_at = @model.current_price&.updated_at
+    return if catalog_fresh?(etag: [ :model_show, @model.slug, price_updated_at ],
+                             last_modified: price_updated_at)
 
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).

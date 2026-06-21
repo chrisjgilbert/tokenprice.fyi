@@ -73,6 +73,31 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a same-day in-place price correction invalidates the cached homepage row" do
+    # The row cache key must track the price point's updated_at, not effective_on:
+    # a same-day correction (new value, new updated_at, SAME effective_on) must
+    # bust the cached row rather than serve the stale priced figure.
+    model = ai_models(:opus)
+
+    with_fragment_caching do
+      get root_url # primes the row cache
+      assert_includes model_row(response.body, model.name), "$5.00",
+        "fixture sanity: opus input renders as $5.00 before the correction"
+
+      pp = model.current_price
+      travel_to 1.hour.from_now do
+        pp.update!(input_per_mtok: 7) # same effective_on, new updated_at
+      end
+
+      get root_url
+      row = model_row(response.body, model.name)
+      assert_includes row, "$7.00",
+        "the corrected price must appear — the stale cached row was served"
+      assert_not_includes row, "$5.00",
+        "the pre-correction price must not survive in the cached row"
+    end
+  end
+
   test "io ratio widget page is byte-identical with caching on vs off" do
     assert_equal body_without_caching(how_pricing_works_url),
                  body_with_caching(how_pricing_works_url)

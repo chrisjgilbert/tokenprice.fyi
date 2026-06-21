@@ -75,6 +75,25 @@ class ConditionalGetTest < ActionDispatch::IntegrationTest
     assert_not_modified_on_replay(model_url(ai_models(:opus)))
   end
 
+  test "models#show etag invalidates on a same-day in-place price correction" do
+    model = ai_models(:opus)
+    get model_url(model)
+    assert_response :success
+    before_etag = response.headers["ETag"]
+
+    # Correct the price in place: the value (and updated_at) change, but the
+    # effective_on date stays the same. Keying on effective_on would serve a
+    # stale 304; keying on the price point's updated_at must not.
+    pp = model.current_price
+    travel_to 1.hour.from_now do
+      pp.update!(input_per_mtok: pp.input_per_mtok + 1) # same effective_on, new updated_at
+    end
+
+    get model_url(model), headers: { "If-None-Match" => before_etag }
+    assert_response :success,
+      "a same-day price correction must invalidate the show etag, not 304"
+  end
+
   test "guide#index supports conditional GET" do
     assert_not_modified_on_replay(guide_url)
   end
