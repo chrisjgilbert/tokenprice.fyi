@@ -3,12 +3,13 @@
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
   <%
-    prices = [ @model.current_input, @model.current_output, @model.current_cached_input ].compact
-    price_breakdown = [
-      (@model.current_input && "input #{usd_plain(@model.current_input)}"),
-      (@model.current_output && "output #{usd_plain(@model.current_output)}"),
-      (@model.current_cached_input && "cached input #{usd_plain(@model.current_cached_input)}")
-    ].compact.join(", ")
+    parts = {
+      "input" => @model.current_input,
+      "output" => @model.current_output,
+      "cached input" => @model.current_cached_input
+    }.compact
+    prices = parts.values
+    price_breakdown = parts.map { |label, value| "#{label} #{usd_plain(value)}" }.join(", ")
     aggregate_offer =
       if prices.any?
         {

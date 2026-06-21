@@ -142,13 +142,8 @@ module GuideHelper
     ]
   }.freeze
 
-  # Two short paragraphs of unique "how to choose for {task}" prose, joined for
-  # presence/uniqueness assertions and rendered paragraph-by-paragraph in the view.
-  def guide_choosing(pattern)
-    CHOOSING.fetch(pattern.key).join("\n\n")
-  end
-
-  # The paragraphs of the how-to-choose block, for the view.
+  # The two short paragraphs of unique "how to choose for {task}" prose,
+  # rendered paragraph-by-paragraph in the view.
   def guide_choosing_paras(pattern)
     CHOOSING.fetch(pattern.key)
   end

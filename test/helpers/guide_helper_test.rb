@@ -74,7 +74,7 @@ class GuideHelperTest < ActionView::TestCase
 
   test "every pattern has a non-empty how-to-choose block that names its cost-driver step" do
     FeaturePattern.all.each do |pattern|
-      prose = guide_choosing(pattern)
+      prose = guide_choosing_paras(pattern).join("\n\n")
       assert prose.present?, "#{pattern.key} produced a blank how-to-choose block"
       driver = pattern.cost_driver_step
       assert_includes prose, driver.role, "#{pattern.key} block should name its cost-driver step" if driver
@@ -82,20 +82,20 @@ class GuideHelperTest < ActionView::TestCase
   end
 
   test "the how-to-choose blocks are unique editorial per task, not boilerplate" do
-    blocks = FeaturePattern.all.map { |p| guide_choosing(p) }
+    blocks = FeaturePattern.all.map { |p| guide_choosing_paras(p).join("\n\n") }
     assert_equal blocks.size, blocks.uniq.size, "how-to-choose blocks must differ per task"
   end
 
   test "a task with a distinct capable-model step names it in the how-to-choose block" do
     # coding_agent: capable-model step = "plan", a different step from the driver.
-    prose = guide_choosing(FeaturePattern.find("coding_agent"))
+    prose = guide_choosing_paras(FeaturePattern.find("coding_agent")).join("\n\n")
     assert_includes prose, "plan"
     assert_includes prose, "capable-model step"
   end
 
   test "the no-capability task does not claim a capable-model step in the block" do
     # summarization: no capability step, so the block must not assert one.
-    prose = guide_choosing(FeaturePattern.find("summarization"))
+    prose = guide_choosing_paras(FeaturePattern.find("summarization")).join("\n\n")
     assert_match(/no step here needs a frontier model/i, prose)
   end
 

@@ -3,7 +3,7 @@
     locals: compact (default false), caption (optional), models (optional — an
     already-loaded catalog to reuse so the page loads it once). %>
 <% compact = local_assigns.fetch(:compact, false) %>
-<% models_local = local_assigns.fetch(:models, nil) %>
+<% models_local = local_assigns[:models] %>
 <%# Cache the widget body on the latest catalog price update (+ the compact/caption
     variants, which change the markup) — it's pure live-price content, identical
     across every page that embeds it until a price moves. A model-set fingerprint
@@ -13,7 +13,7 @@
 <% set_key = models_local&.map(&:slug) %>
 <%# Reuse a caller-supplied freshness timestamp when given, so a page that
     already resolved PriceCatalog.last_modified doesn't issue a second query. %>
-<% last_modified = local_assigns.fetch(:last_modified, nil) || PriceCatalog.last_modified %>
+<% last_modified = local_assigns[:last_modified] || PriceCatalog.last_modified %>
 <% cache [ :io_ratio_widget, last_modified, set_key, compact, local_assigns[:caption] ] do %>
 <% models = models_local || PriceCatalog.models %>
 <% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
