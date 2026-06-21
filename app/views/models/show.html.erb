@@ -2,6 +2,35 @@
 <% content_for :description, [ "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens.", @insights.summary_sentence ].compact.join(" ") %>
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
+  <%
+    prices = [ @model.current_input, @model.current_output ].compact
+    price_breakdown = [
+      "input #{usd_plain(@model.current_input)}",
+      "output #{usd_plain(@model.current_output)}",
+      (@model.current_cached_input && "cached input #{usd_plain(@model.current_cached_input)}")
+    ].compact.join(", ")
+    aggregate_offer =
+      if prices.any?
+        {
+          "@type": "AggregateOffer",
+          priceCurrency: "USD",
+          lowPrice: prices.min.to_s,
+          highPrice: prices.max.to_s,
+          offerCount: 2,
+          description: "List price per 1M tokens — #{price_breakdown}.",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            priceCurrency: "USD",
+            unitText: "per 1M tokens",
+            referenceQuantity: {
+              "@type": "QuantitativeValue",
+              value: 1_000_000,
+              unitText: "tokens"
+            }
+          }
+        }
+      end
+  %>
   <%= json_ld({
         "@context": "https://schema.org",
         "@type": "Product",
@@ -10,13 +39,7 @@
         description: @model.long_description,
         brand: { "@type": "Brand", name: @model.provider.name },
         releaseDate: @model.released_on&.iso8601,
-        offers: ([ @model.current_input, @model.current_output ].compact.min && {
-          "@type": "Offer",
-          priceCurrency: "USD",
-          price: @model.current_input&.to_s,
-          description: "Per 1M input tokens (output #{usd_plain(@model.current_output)} / 1M)",
-          availability: "https://schema.org/InStock"
-        })
+        offers: aggregate_offer
       }.compact) %>
   <%= json_ld({
         "@context": "https://schema.org",

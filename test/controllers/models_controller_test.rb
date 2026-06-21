@@ -243,6 +243,24 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "\"@type\":\"Product\""
   end
 
+  test "show emits an AggregateOffer spanning input and output prices" do
+    model = ai_models(:opus) # input 5, output 25, cached 0.5 per 1M tokens
+    get model_url(model)
+    assert_response :success
+
+    body = @response.body
+    assert_includes body, "\"@type\":\"AggregateOffer\""
+    assert_includes body, "\"priceCurrency\":\"USD\""
+    assert_includes body, "\"offerCount\":2"
+    # lowPrice = min(input, output), highPrice = max(input, output)
+    assert_includes body, "\"lowPrice\":\"#{model.current_input}\""
+    assert_includes body, "\"highPrice\":\"#{model.current_output}\""
+    # The unit (per 1M tokens) must be expressed so the price isn't ambiguous.
+    assert_match(/per 1M tokens/i, body)
+    # No stale single-Offer price field that hid the output cost.
+    assert_not_includes body, "\"@type\":\"Offer\""
+  end
+
   test "show renders the computed insights section" do
     get model_url(ai_models(:deepseek_v4))
     assert_response :success
