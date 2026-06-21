@@ -46,7 +46,7 @@
 
   <p>The thing people picture as one model call is almost never one call. A support chatbot classifies the message, retrieves help-centre passages, then writes a reply. A coding agent plans, edits, runs tools, and re-checks across many steps. Each link in the chain has a different job, a different token shape, and a different right model.</p>
 
-  <p>Two of those steps matter most, and they pull in opposite directions. One step is the <strong>cost-driver step</strong>: where the tokens, and so the bill, concentrate. Another is the <strong>capable-model step</strong>: the one that actually needs a frontier-grade model to get the job right. The common mistake is putting one frontier model across the whole chain because a single step needs it.</p>
+  <p>Two of those steps matter most, and they pull in opposite directions. One step is the <strong>cost-driver step</strong>: where the tokens, and so the bill, concentrate. Another is the <strong>capable-model step</strong>: the one that actually needs a frontier model to get the job right. The common mistake is putting one frontier model across the whole chain because a single step needs it.</p>
 
   <p>The fix is to read the chain step by step. Below are four common shapes, each rendered from the same data the guide uses. For each, the cost-driver step and the capable-model step are named from the chain itself.</p>
 
@@ -54,7 +54,7 @@
   <%= render "shared/io_ratio_widget", caption: "Live from the index — the per-1M spread every chain below is multiplied against." %>
 
   <% if @frontier_example&.current_input && @frontier_example&.current_output %>
-    <p>That spread sets the stakes for the capable-model step. Today the cheapest frontier model on the index is <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.current_input) %></span> in / <span class="num"><%= usd_plain(@frontier_example.current_output) %></span> out per 1M tokens. Put that rate on one step that needs it, not on the three that don't.</p>
+    <p>That spread sets the stakes for the capable-model step. Today the cheapest frontier model on the index is <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.current_input) %></span> in / <span class="num"><%= usd_plain(@frontier_example.current_output) %></span> out per 1M tokens. Put that rate on one step that needs it, not on every step that doesn't.</p>
   <% end %>
 
   <% @patterns.each do |pattern| %>
