@@ -6,6 +6,13 @@ question — should the product pivot toward model selection now that pricing-co
 The answer is a **reframe, not a pivot**: keep the price index as the spine, add a tight guide
 layer that helps a developer pick where to start, and cut the sprawl that has accumulated.*
 
+This is the strategy hub. Detail lives in three companion docs:
+
+- **`MODEL_GUIDE_SPEC.md`** — how to build it: the Guide page, the shared `FeaturePattern` data
+  structure, and the education layer.
+- **`MODEL_GUIDE_COPY.md`** — the copy deck: house style and final strings for every screen.
+- **`MODEL_GUIDE_AUDIT.md`** — the pre-build fix list from pressure-testing a design prototype.
+
 ---
 
 ## 1. The decision
@@ -64,7 +71,7 @@ plumbing.
 | Surface | Disposition | Role |
 |---|---|---|
 | **Models** (`/`) | **KEEP — nav** | The price reference. Sort, filter, search. The homepage. Carries a compact **Latest-update widget** (newest launches/price moves with real numbers, links to Trends) — kept deliberately; reads as a dev changelog, not marketing. |
-| **Guide** (new) | **BUILD — nav** | Where to start, per job. Pipeline-shaped, sensible options, per-call cost inline. Replaces `/which-model`. |
+| **Guide** (new) | **BUILD — nav** | Where to start, per job. Pipeline-shaped, sensible options, per-call cost inline. Replaces `/which-model`. (Spec §1.) |
 | **Trends** (`/trends`) | **KEEP — signature** | Full price-history chart. The homepage links to it from the Latest-update widget (no separate timeline teaser). |
 | Model detail (`/models/:id`) | KEEP — drill-down | Per-model profile + its price history. Not in nav; reached from the table. |
 | Compare (`/compare`) | DEMOTE — generated view | Kept as a view/URL off the index for "X vs Y" intent. Out of primary nav. |
@@ -87,105 +94,12 @@ What this removes, deliberately:
 - The pipeline-pricing fork disappears: with no `/cost` destination, there is no estimator to
   extend into multi-step billing.
 
----
-
-## 4. The Guide (the one new build)
-
-**Purpose.** A developer arrives knowing their job ("RAG support bot", "coding agent", "bulk
-classification") and leaves knowing where to start — which kind of model for each step, and
-roughly what a call costs. Browse-by-task, linkable ("best models for RAG"), volume-free.
-
-**Shape of a guide page (per task):**
-
-1. **What drives cost here** — 2 short paragraphs + 3 cost drivers. Plain declaratives. (This is
-   `/which-model` + `feature-costs` content, restructured.)
-2. **The pipeline** — the job broken into steps/roles. Example, a RAG support bot:
-   - *Retrieve / rerank* — small model, cheap, runs every query.
-   - *Generate answer* — mid model, large input (retrieved context), short output.
-   Each step names a **starting tier** and 2–3 concrete model options.
-3. **Starting options per step** — a cheap default, a step-up for quality, an open-weight option.
-   Each shows `≈ $X per call` for the step's representative token shape, and links into the price
-   table. No ranking, no scores, no monthly total.
-4. **Cross-links** — to the matching `feature-costs` explainer ("why RAG is input-heavy") and to
-   the price table filtered to the suggested tier.
-
-**Tasks to cover at launch** (the cost-distinct ones): RAG, coding agent, chatbot,
-classification/extraction, summarization, agentic workflow. Translation, synthetic data, and
-text-to-speech are candidates but see §6 on modality limits.
-
-**Data it needs.** Because we do **not** rank, the guide needs no numeric capability score — the
-single hardest data problem from earlier explorations is avoided. It needs, per task: a
-representative per-step token shape, and a small curated set of "starting option" model slugs per
-step (cheap / quality / open-weight). That curation is editorial, keyed by model slug, and
-maintained in seeds alongside the existing `best_for` / `strengths` / `tier` fields.
-
-**The per-call cost figure.** Computed from the model's current input/output/cached price (already
-in the catalog) against the step's representative token shape. Volume-free. This reuses the
-pricing math that powered `/cost`; we keep the function, drop the page.
+The build detail for the Guide, the shared `FeaturePattern`, and the education layer is in
+`MODEL_GUIDE_SPEC.md`.
 
 ---
 
-## 5. The feature pattern (one shared data structure)
-
-The highest-value idea in the guide layer is that **a feature is a chain of calls, each with a
-different job** — a chatbot is intent → classify/route → retrieve → generate, not one call. That
-insight is *why* you pick a model per step, *why* the cheap step and the smart step are usually
-different models, and *why* per-token sticker prices don't tell you what a feature costs.
-
-We model it **once, as data**, so the same source drives both the guide and the education
-explainer (§6) and they can never drift apart. A feature pattern is an ordered list of steps:
-
-```
-FeaturePattern:
-  key        # "chatbot", "rag", "agent", "classification", ...
-  label      # "Support chatbot"
-  blurb      # one line: what it is
-  steps: [
-    {
-      role          # "intent", "retrieve/rerank", "generate", "plan", "tool-call", ...
-      purpose       # one clause: what this call does
-      tier          # starting tier for this step: small | mid | frontier
-      shape         # representative per-call token shape {sys, in, out}
-      cost_driver   # is this step where the money concentrates? (bool / note)
-      capability    # is this the step that actually needs the capable model? (bool / note)
-      loops         # does this step repeat? (e.g. agents) — flag, not a number
-      options       # 2–3 curated model slugs: cheap / quality / open-weight
-    }, ...
-  ]
-```
-
-The two payoff fields are `cost_driver` and `capability`: they're often **different steps**, and
-that mismatch is the thing developers get wrong (one frontier model for the whole chain when only
-the generate step needed it). The guide and the explainer both render straight from this — the
-guide as an interactive per-step view with inline per-call cost, the explainer as a worked
-call-chain diagram. One edit updates both.
-
----
-
-## 6. Education
-
-No educational content is lost. Only `/why` (positioning, not teaching) is demoted.
-
-- **Keep** `how-pricing-works`, `feature-costs`, `cost-cutting` as distinct, well-made pages under
-  a **lean Learn landing**.
-- **Add the foundational explainer: "What an AI feature is actually made of."** Teaches the
-  feature-pattern idea (§5) generally, then shows worked call-chains — chatbot, RAG, agent, bulk
-  classification — and for each, which step dominates cost and which step actually needs the
-  capable model (usually not the same step). This is the concept the whole guide layer stands on,
-  and it's genuinely shareable/SEO-friendly ("how many LLM calls does a chatbot actually make").
-  It renders from the same `FeaturePattern` data the guide uses.
-- **Fold the pipeline anatomy into `feature-costs`.** `feature-costs` currently answers "where does
-  the money go in feature X"; lead it with the call-chain first ("a feature is several calls"),
-  then show where cost concentrates *in that chain*. These are close cousins — consider whether
-  they become one stronger piece rather than two. Trim overlap, never depth.
-- **Cross-link education and the guide.** The explainer teaches the pattern; the guide applies it
-  to a specific job. The guide's "why this is input-heavy" blurb links to `feature-costs`; the
-  explainer ends with "→ see starting options in the guide." They reinforce each other instead of
-  competing.
-
----
-
-## 7. Open questions / risks
+## 4. Open questions / risks
 
 - **Starting-option curation.** Who picks the cheap/quality/open-weight option per step, and how
   often is it refreshed? This is editorial and must stay current as models ship. Lighter than a
@@ -205,7 +119,7 @@ No educational content is lost. Only `/why` (positioning, not teaching) is demot
 
 ---
 
-## 8. Sequencing
+## 5. Sequencing
 
 **Phase 0 — Bank the cuts (fast, low-risk, immediately tighter).**
 Remove `/map`, `/cost` (as a destination), `/why` (→ footer line); collapse `/learn` from a hub to
@@ -213,7 +127,7 @@ a lean landing; drop `/compare` and `/providers/:id` from the primary nav (keep 
 generated views). Keep the pricing math from `/cost` as a shared function for the guide.
 
 **Phase 1 — Model the feature patterns, then build the Guide, replacing `/which-model`.**
-Define the `FeaturePattern` data (§5) for the launch tasks first — it's the source of truth for
+Define the `FeaturePattern` data (Spec §2) for the launch tasks first — it's the source of truth for
 both the guide and the explainer. Then build the guide off it: per task, drivers + pipeline steps +
 starting options + inline per-call cost. Port `/which-model` content into it; `/which-model` 301s
 to the guide. Add "Guide" to the nav.
@@ -227,9 +141,12 @@ widget as the homepage's link into the Trends signature page (no separate timeli
 Modality expansion (TTS/image/embeddings data model) and per-step pipeline cost summation. Both
 gated on real demand, same discipline as the original cost-tool gate.
 
+Apply the `MODEL_GUIDE_AUDIT.md` fixes as you build — #1–#3 are gating and touch the Guide and the
+education layer directly.
+
 ---
 
-## 9. Out of scope
+## 6. Out of scope
 
 A standalone pricing-calculator destination; per-job model rankings or leaderboards; usage-based
 rankings (OpenRouter's moat — we lack the traffic); benchmark-score breadth (Artificial Analysis's
@@ -237,138 +154,9 @@ moat); modalities beyond text tokens at launch; any backend/account surface for 
 
 ---
 
-## 10. What success looks like
+## 7. What success looks like
 
 - Organic landings on the guide's task pages (the "best model for X" intent we can credibly own).
 - The guide → price-table click-through (the guide sends people *into* the index, not away).
 - Education pages retained and cross-linked, not orphaned.
 - Nav down to 2 primary destinations; no page in the product depends on a fabricated number.
-
----
-
-## 11. Pre-build fix list (from the design-artifact audit)
-
-A clickable design prototype of this plan was built and pressure-tested by five adversarial
-auditors (cost-lens, scope/IA, pipeline integrity, voice/design system, education degradation).
-The direction held up — *no fabricated volume*, *tightened scope*, and *pipelines / no ranking*
-all passed, and the pipeline insight proved real across all six tasks (the Agent task has its cost
-driver on a small-tier step while the capable-model steps are elsewhere — not a chatbot
-contrivance). The issues below are execution-level. They are recorded here so the build starts
-from them rather than rediscovering them.
-
-Two of the findings confirm concerns raised during planning: the per-call cost lens has one real
-leak (the asymmetric cache discount, #1), and the education comes out thinner than today unless
-deliberately preserved (#3).
-
-### Gating (touch the centerpiece — fix before/with the build)
-
-| # | Severity | Issue | Fix |
-|---|---|---|---|
-| 1 | FAIL | In the guide, only the "cheap default" option was priced with a 50% cache discount; the step-up and open-weight options got none, all shown as comparable "≈ $X per call" with no label. Understates the cheap option ~22%+ on input-heavy steps — a misleading comparison in the centerpiece. A latent bug compounds it: models with no published cache rate fall back to the full input rate. | Price every option on the **same cache assumption** (default none), or keep a discount but **label it** ("$X cached"). Gate any cache discount on `cached != null` so a model without a cache rate can never appear discounted. |
-| 2 | FAIL | The guide's pipeline data and the anatomy explainer's call-chains were **two hardcoded copies that already disagreed** (the "Verify" step was mid-tier in one, small in the other; the explainer's "agent" diagram was actually the coding pipeline, so the real agent loop never appeared). This is exactly the drift §5's shared `FeaturePattern` exists to prevent. | Build both surfaces from the **one `FeaturePattern` source** (§5). The explainer projects `{role, tier, cost_driver, capability}` off the same step objects. Fix the coding/agent mislabel so the explainer shows the actual agent loop. |
-| 3 | FAIL (directional) | The anatomy explainer **replaced** `feature_costs`' worked cost-breakdown tables (78% input, 30× tier gap, $80 vs $2,400/day) with a numbers-free call-chain diagram, and the **live price widget** (`io_ratio_widget`) — education backed by live data, our differentiator — was absent from the whole Learn area. Stub cards for the other explainers are fine for a mock; this is the directional loss to avoid. | Make the anatomy explainer the **on-ramp to** `feature_costs`, not a replacement — keep the worked tables and the "where the bill concentrates" analysis. **Port `io_ratio_widget`** (and a live frontier-model example) into the rebuilt explainers, wired to the real `PriceCatalog`. |
-
-### Non-gating (correctness + polish)
-
-| # | Severity | Issue | Fix |
-|---|---|---|---|
-| 4 | Bug | A task with a cost-driver step but **no** capable-model step (summarization) rendered a broken takeaway — "…the steps that need the capable model (****) are different" with an empty name. | Branch the takeaway copy when there is no `capability` step; don't assert a driver≠capability contrast that doesn't exist. |
-| 5 | Weak | The RAG "embed query" step was priced as a chat completion. Embeddings are a **separate endpoint** with their own pricing the catalog doesn't carry, so the per-call cost was fabricated. | Drop the embed step from the *priced* pipeline (it's plumbing, like vector search), or label it "not priced here — separate embeddings endpoint." Reinforces the text-token-only launch scope (§7). |
-| 6 | IA | The homepage buried the price index under **two overlapping "recent activity" modules** (a changelog panel and the market-event strip), both funnelling to Trends — three Trends entry points and four hero CTAs before the table. The one place the tightening didn't land. | **Decided:** keep the **Latest-update widget** (the substantive one — real numbers, links to Trends); **drop the market-event timeline strip** (thin, redundant). One Trends entry point. Keep the widget compact so the table isn't pushed far down; trim hero CTAs to two (Guide + Learn). |
-| 7 | Voice | ~5 marketing/chatbot/rhetorical slips, concentrated in the guide and Learn headers: a rhetorical question ("Want the model behind this?"), "No fluff, no funnel… it reframes how you think about cost", "The model guide that knows what it costs" (personification), two dramatic em-dashes, and "frontier-adjacent quality" (vague, unmeasurable). | Rewrite to plain declaratives per the CLAUDE.md copy rules. Headers say what's there; CTAs don't ask "Ready to…?"; name numbers instead of vague quality claims. |
-| 8 | Token | One price rendered in the sans UI font instead of mono/tabular; footer copy said "40+ models" while the catalog held 29. | Every price/date/count is mono + tabular. Keep marketed counts consistent with the data. |
-
-### What explicitly passed (don't relitigate)
-
-No fabricated volume anywhere (no requests/month, no monthly or annual total); per-call is the
-consistent decision lens, `$/1M` only on the index where it belongs. Nav is exactly Models · Guide
-· Trends · Learn; every cut page (`/cost`, `/map`, `/why`, `/which-model`, the `/learn` hub) is
-genuinely gone; compare/provider are not destinations. Jobs are real pipelines with no model
-ranking, and the six tasks have genuinely distinct cost shapes. Design tokens match the live app.
-
----
-
-## 12. Copy (voice + final strings)
-
-A surface-by-surface copy pass (homepage, guide, trends/detail, learn) produced the strings below.
-The aim throughout: a developer who built the tool, writing for peers — inform, don't persuade.
-The original homepage hero ("Every LLM API price, normalized." + a spec-list subtitle) was the
-worst offender: abstract, generic, and selling only the table while ignoring the guide.
-
-### House style (locked across every screen)
-
-- **"the guide"** lowercase in prose; "Guide" only as the nav tab. No "the model guide"
-  (personification).
-- **"per call"** is the only cost unit shown to users — never per month. The table keeps
-  "per 1M tokens" (the spec unit, a different thing).
-- **"No fabricated bills, no rankings."** — verbatim couplet, identical on the footer and the guide.
-- **"cost-driver step" / "capable-model step"** — the canonical paired terms, in prose and in the
-  step annotations. Retire "expensive step", "smart step", "strong model".
-- **"a feature is a chain of calls"** — fixed phrasing for the core idea ("pipeline" allowed as a
-  supporting noun).
-- **Name the step, not a euphemism** — "save the capable model for Generate," not "where it counts."
-- **Headings state the subject, not a verdict** — "Price per 1M tokens, 2023 to 2026," not "Three
-  years of falling prices."
-- **Captions never restate the big number above them** — attribution (which model, when), not the
-  stat.
-- **Describe behavior, not pixels** — "click a model to toggle," not "indigo flags."
-- No drama em-dashes; no "=" in prose ("means"); "×" only for literal arithmetic. Cross-link
-  headings are labels, not questions. Tier ladder is small / mid / frontier (no "nano").
-  "near-frontier" not "frontier-ish". "in+out" not "I/O". "open weight" not bare "open".
-
-### Homepage hero (chosen: the decision-bridge)
-
-Leads with the developer's question; the index is the backing. The homepage is the price index, so
-this hero fronts the decision while the secondary CTA and subtitle keep the table and history present.
-
-- Eyebrow: `The price index`
-- H1: **Which model for what you're building, and what it costs.**
-- Subtitle: **Starting points for chatbots, RAG, and coding agents, priced per call against 40+
-  models, with full price history since 2023.**
-- Primary CTA: `Find a model` · Secondary CTA: `Browse all prices`
-
-(The two runner-up directions, kept for reference: ① history-moat — "Every model's price, and every
-price it used to have."; ③ the spread — "The same task runs on a frontier model or one 20× cheaper.")
-
-### Winning copy by screen
-
-**Guide**
-- H1: **Your job is a pipeline. Here's a starting model per step, priced per call.**
-- Lede: **Most steps run on a small model; one step needs a capable one, and it usually isn't the
-  step that drives the bill. Each step gets a starting option and a per-call cost. No fabricated
-  bills, no rankings.**
-- Footer cross-link heading: `Want the model behind this?` → **Go deeper**.
-- All six task ledes rewritten to distinct openings (no repeated "is not one call"); the takeaway
-  template rewritten to plain declaratives with the computed step slots intact.
-
-**Homepage / chrome**
-- Stat labels: "models tracked" → **models**; "cheapest I/O avg /1M" → **cheapest, in+out avg /1M**.
-- Latest-update panel heading: **Latest changes**.
-- Footer disclaimer (matches the guide verbatim): **sourced from provider price pages · costs are
-  per-call estimates, never a monthly bill**.
-- **Credibility fix:** the model count must be **dynamic**, never a rounded-up static "40+". A tool
-  whose pitch is "we don't fabricate numbers" can't ship an inflated count; render the live count.
-
-**Trends**
-- Heading: "Three years of falling prices." → **Price per 1M tokens, 2023 to 2026.**
-- Lede: **Every rate change since launch, by model, with the market events that moved them. History
-  no other reference keeps.**
-- Stat-card captions carry attribution (which model, when), not the number already shown.
-
-**Model detail**
-- "Representative call cost" → **Cost per call**; caption → **Cost of one call at these token
-  counts. No fabricated monthly bill.**
-- CTA "Use in a pipeline" → **Price this in the guide**.
-
-**Learn / anatomy explainer**
-- Index intro (was the most marketing line in the artifact) → **Four explainers on what an LLM
-  feature costs and why: the call chain a feature runs, how an API bill reads, where the tokens go,
-  and which levers cut it.**
-- Anatomy closing callout: "The expensive step and the smart step are usually different." → **The
-  cost-driver step and the capable-model step are usually different.** (the headline uses the terms
-  the page taught).
-
-### Note
-
-The defining sentence (§1) contains an em-dash. It is fine as an internal anchor; anywhere it
-appears as shipped UI, split it into two sentences to match the no-drama rule.
