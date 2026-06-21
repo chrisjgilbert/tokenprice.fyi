@@ -1,8 +1,18 @@
 <% content_for :title, "#{@provider.name} model pricing — tokenprice.fyi" %>
 <% content_for :description, "#{@provider.name} API pricing across #{@models.size} models — input/output rates per 1M tokens, with price history." %>
 <% content_for :canonical, provider_url(@provider) %>
+<% content_for :head do %>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Models", item: root_url },
+          { "@type": "ListItem", position: 2, name: @provider.name, item: provider_url(@provider) }
+        ]
+      }) %>
+<% end %>
 
-<nav class="mb-6 text-sm text-slate-500">
+<nav aria-label="Breadcrumb" class="mb-6 text-sm text-slate-500">
   <%= link_to "← All models", root_path, class: "hover:text-indigo-600" %>
 </nav>
 
@@ -15,6 +25,13 @@
     <% end %>
   </div>
 </header>
+
+<p class="mb-8 max-w-2xl text-sm leading-relaxed text-slate-600">
+  <%= @provider.name %> API pricing for <%= @models.size %> models, updated daily with full price
+  history since 2023. For a model per step on a real workload, see
+  <%= link_to "the guide", guide_path, class: "text-indigo-600 hover:underline" %>; for every rate
+  change since launch, see <%= link_to "price trends", trends_path, class: "text-indigo-600 hover:underline" %>.
+</p>
 
 <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
   <table class="min-w-full divide-y divide-slate-200 text-sm">
