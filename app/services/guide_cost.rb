@@ -33,8 +33,8 @@ class GuideCost
   # One option priced for one step's shape. `per_call` is USD or nil.
   # `name` is the resolved catalog entry's display name (nil when unresolved),
   # carried so the view shows the model's name without a second lookup. `kind`
-  # is the option's role (:cheap / :quality / :open_weight) so the view labels
-  # it from data rather than from array position (nil for a bare #per_call).
+  # is the option's role (:cheap / :quality / :open_weight), set by #for_step so
+  # the view labels it from data rather than from array position.
   Result = Data.define(:slug, :name, :per_call, :resolved, :kind) do
     def resolved? = resolved
     # Priceable means: resolved to a catalog entry AND a per-call figure exists.
@@ -54,10 +54,10 @@ class GuideCost
     # already-loaded catalog so the slug resolves in-memory — a guide page loads
     # the catalog ONCE and prices every option against it. When nil, falls back
     # to PriceCatalog.model(slug) (the original per-call DB path).
-    def per_call(slug:, shape:, catalog: nil)
+    def per_call(slug:, shape:, catalog: nil, kind: nil)
       entry = resolve(slug, catalog)
-      return Result.new(slug: slug, name: nil, per_call: nil, resolved: false, kind: nil) if entry.nil?
-      return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true, kind: nil) if entry.input.nil? || entry.output.nil?
+      return Result.new(slug: slug, name: nil, per_call: nil, resolved: false, kind: kind) if entry.nil?
+      return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true, kind: kind) if entry.input.nil? || entry.output.nil?
 
       profile = profile_for(shape)
       # cached: nil and cache: 0 — the deliberate no-discount basis (see header).
@@ -66,7 +66,7 @@ class GuideCost
         input: entry.input, output: entry.output, cached: nil, prof: profile
       )[:per_req]
 
-      Result.new(slug: slug, name: entry.name, per_call: per_req, resolved: true, kind: nil)
+      Result.new(slug: slug, name: entry.name, per_call: per_req, resolved: true, kind: kind)
     end
 
     # Price every PRESENT option of a FeaturePattern::Step against the step's
@@ -84,7 +84,7 @@ class GuideCost
         next if slug.nil?
 
         if step.priced?
-          per_call(slug: slug, shape: shape, catalog: catalog).with(kind: kind)
+          per_call(slug: slug, shape: shape, catalog: catalog, kind: kind)
         else
           # Resolve so the view can still name and link the model, but never price it.
           entry = resolve(slug, catalog)
