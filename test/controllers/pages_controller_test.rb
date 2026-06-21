@@ -19,6 +19,35 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=canonical][href=?]", how_pricing_works_url
   end
 
+  test "how-pricing-works resolves the catalog last_modified once per request" do
+    # The conditional-GET key and the embedded io_ratio widget's cache key both
+    # need the catalog freshness timestamp; it must be resolved a single time per
+    # request, not once for each, so the page issues one PricePoint.maximum query.
+    calls = 0
+    counting = Module.new do
+      define_method(:last_modified) { calls += 1; super() }
+    end
+    PriceCatalog.singleton_class.prepend(counting)
+    begin
+      get how_pricing_works_url
+      assert_response :success
+    ensure
+      counting.send(:define_method, :last_modified) { super() }
+    end
+    assert_equal 1, calls,
+      "PriceCatalog.last_modified must be resolved once per request, not twice"
+  end
+
+  test "how-pricing-works supports conditional GET after the memoization" do
+    get how_pricing_works_url
+    assert_response :success
+    etag = response.headers["ETag"]
+    last_mod = response.headers["Last-Modified"]
+    get how_pricing_works_url,
+        headers: { "If-None-Match" => etag, "If-Modified-Since" => last_mod }
+    assert_response :not_modified
+  end
+
   test "how-pricing-works emits Article JSON-LD via the json_ld helper" do
     get how_pricing_works_url
     assert_response :success

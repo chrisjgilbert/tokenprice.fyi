@@ -76,7 +76,8 @@
   <% end %>
 
   <%# Live-data widget — today's output:input spread across models. %>
-  <%= render "shared/io_ratio_widget", caption: "Live from the index — updates whenever a provider changes a price." %>
+  <%= render "shared/io_ratio_widget", last_modified: @catalog_last_modified,
+        caption: "Live from the index — updates whenever a provider changes a price." %>
 
   <h3>Where your money actually goes</h3>
 

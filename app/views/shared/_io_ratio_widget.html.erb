@@ -11,7 +11,10 @@
     caller that hands us a different set. The PriceCatalog.models fallback lives
     INSIDE the block so a cache hit skips that AiModel.listed.includes(...) load. %>
 <% set_key = models_local&.map(&:slug) %>
-<% cache [ :io_ratio_widget, PriceCatalog.last_modified, set_key, compact, local_assigns[:caption] ] do %>
+<%# Reuse a caller-supplied freshness timestamp when given, so a page that
+    already resolved PriceCatalog.last_modified doesn't issue a second query. %>
+<% last_modified = local_assigns.fetch(:last_modified, nil) || PriceCatalog.last_modified %>
+<% cache [ :io_ratio_widget, last_modified, set_key, compact, local_assigns[:caption] ] do %>
 <% models = models_local || PriceCatalog.models %>
 <% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
 <% if priced.any? %>
