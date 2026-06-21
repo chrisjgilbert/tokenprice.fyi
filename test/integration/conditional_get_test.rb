@@ -39,6 +39,28 @@ class ConditionalGetTest < ActionDispatch::IntegrationTest
     assert_response :not_modified
   end
 
+  test "models#index ETag varies between a Turbo-Frame and a full-page render" do
+    # The full-page render includes the hero; the Turbo-Frame render skips it,
+    # so the two responses to the SAME url differ. Their ETags must differ too,
+    # or replaying one's If-None-Match on the other 304s off the wrong body.
+    get root_url(tier: "frontier")
+    assert_response :success
+    full_etag = response.headers["ETag"]
+
+    get root_url(tier: "frontier"), headers: { "Turbo-Frame" => "models" }
+    assert_response :success
+    frame_etag = response.headers["ETag"]
+
+    assert_not_equal full_etag, frame_etag,
+      "frame and full-page renders of the same url must not share an etag"
+
+    # Replaying the full-page etag on a frame request must NOT 304.
+    get root_url(tier: "frontier"),
+        headers: { "Turbo-Frame" => "models", "If-None-Match" => full_etag }
+    assert_response :success,
+      "a frame request must not 304 off the full-page etag"
+  end
+
   test "models#index ETag varies by query and provider params" do
     get root_url(q: "claude", providers: [ "anthropic" ])
     assert_response :success
