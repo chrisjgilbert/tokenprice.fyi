@@ -1,0 +1,74 @@
+<style>
+  /* Guide show — the per-task pipeline page. Scoped to .guide-show; reuses the
+     app tokens (--mono, --surface, --border, tier badges, .card, .reveal). */
+  .guide-show { max-width: 760px; margin: 0 auto; }
+  .guide-show .gs-drivers { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .guide-show .gs-drivers li { position: relative; padding-left: 20px; font-size: 14.5px; color: var(--text-soft); line-height: 1.5; }
+  .guide-show .gs-drivers li::before { content: ""; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--indigo-400); }
+
+  .guide-show .gs-pipe { margin-top: 48px; }
+  .guide-show .gs-pipe-head h2,
+  .guide-show .gs-takeaway h2,
+  .guide-show .gs-links h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-mute); }
+  .guide-show .gs-pipe-head p { margin: 6px 0 0; font-size: 14px; color: var(--text-soft); }
+
+  .guide-show .gs-steps { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .guide-show .gs-step { padding: 20px; }
+  .guide-show .gs-step-head { display: flex; align-items: flex-start; gap: 14px; }
+  .guide-show .gs-step-no { font-size: 13px; color: var(--text-mute); padding-top: 2px; }
+  .guide-show .gs-step-id { flex: 1; min-width: 0; }
+  .guide-show .gs-step-role { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+  .guide-show .gs-step-purpose { margin: 4px 0 0; font-size: 14px; color: var(--text-soft); line-height: 1.5; }
+  .guide-show .gs-step-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 200px; }
+
+  .guide-show .gs-flag { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2, #f1f5f9); color: var(--text-mute); border: 1px solid var(--border); }
+  .guide-show .gs-flag-cost { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .guide-show .gs-flag-cap { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+
+  .guide-show .gs-shape { margin: 16px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 10px 12px; border-radius: var(--r-md, 10px); background: var(--surface-2, #f8fafc); border: 1px solid var(--border); }
+  .guide-show .gs-shape-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); margin-right: 4px; }
+  .guide-show .gs-shape-v { font-size: 13px; color: var(--text); }
+  .guide-show .gs-shape-in { color: #4f46e5; }
+  .guide-show .gs-shape-out { color: #059669; }
+  .guide-show .gs-shape-plus { color: var(--text-mute); font-size: 12px; }
+
+  .guide-show .gs-opts { margin: 16px 0 0; display: flex; flex-direction: column; gap: 2px; }
+  .guide-show .gs-opt { display: grid; grid-template-columns: 130px 1fr auto; align-items: baseline; gap: 12px; padding: 8px 4px; border-top: 1px solid var(--border); }
+  .guide-show .gs-opt:first-child { border-top: none; }
+  .guide-show .gs-opt-kind { font-size: 12px; color: var(--text-mute); }
+  .guide-show .gs-opt-model { font-size: 14px; min-width: 0; }
+  .guide-show .gs-opt-link { font-family: var(--mono); font-size: 13px; color: var(--indigo-600); text-decoration: none; }
+  .guide-show .gs-opt-link:hover { text-decoration: underline; }
+  .guide-show .gs-opt-slug { font-family: var(--mono); font-size: 13px; color: var(--text-mute); }
+  .guide-show .gs-opt-cost { font-size: 13px; color: var(--text); white-space: nowrap; text-align: right; }
+  .guide-show .gs-opt-more { margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--indigo-600); text-decoration: none; }
+  .guide-show .gs-opt-more:hover { text-decoration: underline; }
+  .guide-show .gs-opt-more svg { width: 13px; height: 13px; }
+
+  .guide-show .gs-opts-unpriced { padding: 12px; border-radius: var(--r-md, 10px); background: var(--surface-2, #f8fafc); border: 1px dashed var(--border); }
+  .guide-show .gs-unpriced-note { margin: 0; font-size: 13px; color: var(--text-soft); line-height: 1.5; }
+  .guide-show .gs-opt-slugs { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .guide-show .gs-takeaway { margin-top: 40px; padding: 22px 24px; border-radius: var(--r-lg, 14px); background: var(--indigo-50, #eef2ff); border: 1px solid var(--indigo-200, #c7d2fe); }
+  .guide-show .gs-takeaway p { margin: 10px 0 0; font-size: 17px; line-height: 1.55; color: var(--text); }
+  .guide-show .gs-takeaway-foot { font-family: var(--mono); font-size: 12px; color: var(--text-mute) !important; }
+
+  .guide-show .gs-links { margin-top: 44px; }
+  .guide-show .gs-links-grid { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .guide-show .gs-link { padding: 18px; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: inherit; transition: transform .16s var(--ease), border-color .16s var(--ease); }
+  .guide-show a.gs-link:hover { transform: translateY(-2px); border-color: var(--indigo-200); }
+  .guide-show .gs-link-kind { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); }
+  .guide-show .gs-link-title { font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
+  .guide-show .gs-link-sub { font-size: 13px; color: var(--text-soft); line-height: 1.45; }
+  .guide-show .gs-back { margin-top: 22px; font-size: 13.5px; }
+  .guide-show .gs-back a { display: inline-flex; align-items: center; gap: 5px; color: var(--indigo-600); }
+  .guide-show .gs-back svg { width: 13px; height: 13px; }
+
+  @media (max-width: 560px) {
+    .guide-show .gs-step-head { flex-wrap: wrap; }
+    .guide-show .gs-step-tags { max-width: none; justify-content: flex-start; }
+    .guide-show .gs-opt { grid-template-columns: 1fr; gap: 2px; }
+    .guide-show .gs-opt-cost { text-align: left; }
+    .guide-show .gs-links-grid { grid-template-columns: 1fr; }
+  }
+</style>

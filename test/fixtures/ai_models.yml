@@ -40,6 +40,31 @@ suspended_fable:
   status: suspended
   description: Suspended test model — still listed but flagged as suspended.
 
+# Two real Guide starting-option slugs, on the EXISTING anthropic provider so
+# the provider count stays stable. They give the Guide a positive per-call path
+# to render (the RAG "generate answer" step's cheap/quality options).
+haiku:
+  provider: anthropic
+  name: Guide Haiku Fixture
+  slug: claude-haiku-4-5
+  tier: small
+  context_window: 200000
+  max_output_tokens: 64000
+  released_on: 2026-04-01
+  status: active
+  description: Cheap small-tier model — a Guide starting option. Name kept distinct from the OpenRouter sync test's "Claude Haiku 4.5" so dedup-by-name stays unaffected; the slug is what GuideCost resolves.
+
+sonnet:
+  provider: anthropic
+  name: Guide Sonnet Fixture
+  slug: claude-sonnet-4-6
+  tier: mid
+  context_window: 1000000
+  max_output_tokens: 128000
+  released_on: 2026-04-01
+  status: active
+  description: Mid-tier step-up model — a Guide starting option. Name kept distinct from the sync test's Sonnet rows; the slug is what GuideCost resolves.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
