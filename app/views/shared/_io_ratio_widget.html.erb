@@ -4,6 +4,10 @@
     already-loaded catalog to reuse so the page loads it once). %>
 <% compact = local_assigns.fetch(:compact, false) %>
 <% models = local_assigns.fetch(:models, nil) || PriceCatalog.models %>
+<%# Cache the widget body on the latest catalog price update (+ the compact/caption
+    variants, which change the markup) — it's pure live-price content, identical
+    across every page that embeds it until a price moves. %>
+<% cache [ :io_ratio_widget, PriceCatalog.last_modified, compact, local_assigns[:caption] ] do %>
 <% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
 <% if priced.any? %>
   <% ratios = priced.map { |m| m.output / m.input }.sort %>
@@ -43,4 +47,5 @@
     </div>
   </div>
   <% if local_assigns[:caption] %><p class="lw-cap"><%= caption %></p><% end %>
+<% end %>
 <% end %>

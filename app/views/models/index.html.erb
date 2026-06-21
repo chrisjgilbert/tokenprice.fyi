@@ -565,6 +565,11 @@
             <% @models.each do |model| %>
               <%# Highlight the sorted column %>
               <% sort_col = @sort %>
+              <%# Russian-doll cache: the row content is keyed on the model and its
+                  latest price point, plus the active sort — the sorted column gets
+                  a `tp-col-highlight` class, so a sort-blind key would serve a row
+                  highlighting the wrong column. %>
+              <% cache [ model, model.current_price&.effective_on, sort_col ] do %>
               <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>" onclick="location.href='<%= j(model_path(model)) %>'">
                 <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">
@@ -612,6 +617,7 @@
                   <%= fmt_date(model.released_on) %>
                 </td>
               </tr>
+              <% end %>
             <% end %>
           <% end %>
         </tbody>
