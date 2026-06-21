@@ -3,11 +3,16 @@
     locals: compact (default false), caption (optional), models (optional — an
     already-loaded catalog to reuse so the page loads it once). %>
 <% compact = local_assigns.fetch(:compact, false) %>
-<% models = local_assigns.fetch(:models, nil) || PriceCatalog.models %>
+<% models_local = local_assigns.fetch(:models, nil) %>
 <%# Cache the widget body on the latest catalog price update (+ the compact/caption
     variants, which change the markup) — it's pure live-price content, identical
-    across every page that embeds it until a price moves. %>
-<% cache [ :io_ratio_widget, PriceCatalog.last_modified, compact, local_assigns[:caption] ] do %>
+    across every page that embeds it until a price moves. A model-set fingerprint
+    (the passed-in local's slugs, nil for the default catalog) discriminates a
+    caller that hands us a different set. The PriceCatalog.models fallback lives
+    INSIDE the block so a cache hit skips that AiModel.listed.includes(...) load. %>
+<% set_key = models_local&.map(&:slug) %>
+<% cache [ :io_ratio_widget, PriceCatalog.last_modified, set_key, compact, local_assigns[:caption] ] do %>
+<% models = models_local || PriceCatalog.models %>
 <% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
 <% if priced.any? %>
   <% ratios = priced.map { |m| m.output / m.input }.sort %>
