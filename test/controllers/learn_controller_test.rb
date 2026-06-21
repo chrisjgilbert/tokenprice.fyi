@@ -1,20 +1,25 @@
 require "test_helper"
 
 class LearnControllerTest < ActionDispatch::IntegrationTest
-  test "the learn index is a directory with the concept series" do
+  test "the learn index is a lean directory of the three real explainers" do
     get learn_url
     assert_response :success
-    assert_select "h1", /Understand what you're paying for/
-    assert_select ".led-grid .led-card", minimum: 7   # the full 7-concept series
-    # The standalone /cost estimator was removed; the closing estimator CTA with it.
+    # Links to each of the three built explainers.
+    assert_select "a[href=?]", how_pricing_works_path
+    assert_select "a[href=?]", learn_feature_costs_path
+    assert_select "a[href=?]", learn_cost_cutting_path
+    # The standalone /cost estimator was removed; no dead reference remains.
     assert_select ".led-cta", false
+    assert_no_match(%r{href="/cost(\?[^"]*)?"}, response.body)
   end
 
-  test "the learn index carries no live-data widget (only a decorative stat)" do
+  test "the learn index drops the vaporware stub concepts and series chrome" do
     get learn_url
-    # The hard rule: live-data widgets live inside explainers, never on the index.
-    assert_select ".led-feat .lw", false
-    assert_select ".led-feat-stat"
+    assert_no_match(/Prompt caching/, response.body)
+    assert_no_match(/Batch processing/, response.body)
+    assert_no_match(/Reasoning/, response.body)
+    assert_no_match(/What an AI agent actually costs/, response.body)
+    assert_no_match(/Next up/, response.body)
   end
 
   test "the feature-costs explainer has a live widget and no dead estimator CTA" do
