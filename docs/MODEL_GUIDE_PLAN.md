@@ -63,9 +63,9 @@ plumbing.
 
 | Surface | Disposition | Role |
 |---|---|---|
-| **Models** (`/`) | **KEEP — nav** | The price reference. Sort, filter, search. The homepage. |
+| **Models** (`/`) | **KEEP — nav** | The price reference. Sort, filter, search. The homepage. Carries a compact **Latest-update widget** (newest launches/price moves with real numbers, links to Trends) — kept deliberately; reads as a dev changelog, not marketing. |
 | **Guide** (new) | **BUILD — nav** | Where to start, per job. Pipeline-shaped, sensible options, per-call cost inline. Replaces `/which-model`. |
-| **Trends** (`/trends`) | **KEEP — signature** | Full price-history chart. Plus a slim market-event timeline teaser on the homepage that links to it. |
+| **Trends** (`/trends`) | **KEEP — signature** | Full price-history chart. The homepage links to it from the Latest-update widget (no separate timeline teaser). |
 | Model detail (`/models/:id`) | KEEP — drill-down | Per-model profile + its price history. Not in nav; reached from the table. |
 | Compare (`/compare`) | DEMOTE — generated view | Kept as a view/URL off the index for "X vs Y" intent. Out of primary nav. |
 | Provider (`/providers/:id`) | DEMOTE — generated view | Effectively `/?provider=x`. Kept for entity SEO, not a hand-built destination. |
@@ -220,8 +220,8 @@ to the guide. Add "Guide" to the nav.
 
 **Phase 2 — Wire education + homepage.**
 Build the "What an AI feature is actually made of" explainer from the same `FeaturePattern` data,
-and lead `feature-costs` with the call-chain. Cross-link explainer ↔ guide. Add the slim
-market-event timeline teaser to the homepage, linking to the Trends signature page.
+and lead `feature-costs` with the call-chain. Cross-link explainer ↔ guide. Keep the Latest-update
+widget as the homepage's link into the Trends signature page (no separate timeline teaser).
 
 **Phase 3 — Later, only if earned.**
 Modality expansion (TTS/image/embeddings data model) and per-step pipeline cost summation. Both
@@ -274,7 +274,7 @@ deliberately preserved (#3).
 |---|---|---|---|
 | 4 | Bug | A task with a cost-driver step but **no** capable-model step (summarization) rendered a broken takeaway — "…the steps that need the capable model (****) are different" with an empty name. | Branch the takeaway copy when there is no `capability` step; don't assert a driver≠capability contrast that doesn't exist. |
 | 5 | Weak | The RAG "embed query" step was priced as a chat completion. Embeddings are a **separate endpoint** with their own pricing the catalog doesn't carry, so the per-call cost was fabricated. | Drop the embed step from the *priced* pipeline (it's plumbing, like vector search), or label it "not priced here — separate embeddings endpoint." Reinforces the text-token-only launch scope (§7). |
-| 6 | IA | The homepage buried the price index under **two overlapping "recent activity" modules** (a changelog panel and the market-event strip), both funnelling to Trends — three Trends entry points and four hero CTAs before the table. The one place the tightening didn't land. | Keep the **slim market-event strip** as the single Trends teaser; demote the changelog panel to a one-line ribbon (or drop it). Trim hero CTAs to two (Guide + Learn). |
+| 6 | IA | The homepage buried the price index under **two overlapping "recent activity" modules** (a changelog panel and the market-event strip), both funnelling to Trends — three Trends entry points and four hero CTAs before the table. The one place the tightening didn't land. | **Decided:** keep the **Latest-update widget** (the substantive one — real numbers, links to Trends); **drop the market-event timeline strip** (thin, redundant). One Trends entry point. Keep the widget compact so the table isn't pushed far down; trim hero CTAs to two (Guide + Learn). |
 | 7 | Voice | ~5 marketing/chatbot/rhetorical slips, concentrated in the guide and Learn headers: a rhetorical question ("Want the model behind this?"), "No fluff, no funnel… it reframes how you think about cost", "The model guide that knows what it costs" (personification), two dramatic em-dashes, and "frontier-adjacent quality" (vague, unmeasurable). | Rewrite to plain declaratives per the CLAUDE.md copy rules. Headers say what's there; CTAs don't ask "Ready to…?"; name numbers instead of vague quality claims. |
 | 8 | Token | One price rendered in the sans UI font instead of mono/tabular; footer copy said "40+ models" while the catalog held 29. | Every price/date/count is mono + tabular. Keep marketed counts consistent with the data. |
 
