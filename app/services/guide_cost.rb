@@ -31,7 +31,9 @@
 # raises.
 class GuideCost
   # One option priced for one step's shape. `per_call` is USD or nil.
-  Result = Data.define(:slug, :per_call, :resolved) do
+  # `name` is the resolved catalog entry's display name (nil when unresolved),
+  # carried so the view shows the model's name without a second lookup.
+  Result = Data.define(:slug, :name, :per_call, :resolved) do
     def resolved? = resolved
     # Priceable means: resolved to a catalog entry AND a per-call figure exists.
     def priced? = !per_call.nil?
@@ -52,8 +54,8 @@ class GuideCost
     # to PriceCatalog.model(slug) (the original per-call DB path).
     def per_call(slug:, shape:, catalog: nil)
       entry = resolve(slug, catalog)
-      return Result.new(slug: slug, per_call: nil, resolved: false) if entry.nil?
-      return Result.new(slug: slug, per_call: nil, resolved: true) if entry.input.nil? || entry.output.nil?
+      return Result.new(slug: slug, name: nil, per_call: nil, resolved: false) if entry.nil?
+      return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true) if entry.input.nil? || entry.output.nil?
 
       profile = profile_for(shape)
       # cached: nil and cache: 0 — the deliberate no-discount basis (see header).
@@ -62,7 +64,7 @@ class GuideCost
         input: entry.input, output: entry.output, cached: nil, prof: profile
       )[:per_req]
 
-      Result.new(slug: slug, per_call: per_req, resolved: true)
+      Result.new(slug: slug, name: entry.name, per_call: per_req, resolved: true)
     end
 
     # Price every PRESENT option of a FeaturePattern::Step against the step's
@@ -79,8 +81,9 @@ class GuideCost
         if step.priced?
           per_call(slug: slug, shape: shape, catalog: catalog)
         else
-          # Resolve so the view can still link the model, but never price it.
-          Result.new(slug: slug, per_call: nil, resolved: !resolve(slug, catalog).nil?)
+          # Resolve so the view can still name and link the model, but never price it.
+          entry = resolve(slug, catalog)
+          Result.new(slug: slug, name: entry&.name, per_call: nil, resolved: !entry.nil?)
         end
       end
     end

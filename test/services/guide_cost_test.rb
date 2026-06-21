@@ -83,6 +83,54 @@ class GuideCostTest < ActiveSupport::TestCase
     assert_in_delta uncached_per_call(shape.to_h, input: 5.0, output: 25.0), result.per_call, 1e-12
   end
 
+  test "per_call carries the resolved entry's display name on the Result" do
+    # claude-haiku-4-5 resolves to the fixture entry "Guide Haiku Fixture".
+    result = GuideCost.per_call(slug: "claude-haiku-4-5", shape: GENERATE_SHAPE)
+    assert result.resolved?
+    assert_equal "Guide Haiku Fixture", result.name
+  end
+
+  test "per_call leaves name nil for an unresolved slug" do
+    result = GuideCost.per_call(slug: "no-such-model", shape: GENERATE_SHAPE)
+    refute result.resolved?
+    assert_nil result.name
+  end
+
+  test "for_step carries each resolved option's display name" do
+    step = FeaturePattern.find("rag").steps.last
+    catalog = PriceCatalog.models
+    results = GuideCost.for_step(step, catalog: catalog)
+
+    by_slug = results.index_by(&:slug)
+    assert_equal "Guide Haiku Fixture", by_slug["claude-haiku-4-5"].name
+    assert_equal "Guide Sonnet Fixture", by_slug["claude-sonnet-4-6"].name
+  end
+
+  test "for_step carries the name through the unpriced-step branch where the slug resolves" do
+    embed = FeaturePattern.find("rag").steps.first
+    refute embed.priced?, "fixture sanity: the RAG embed step is priced:false"
+    catalog = PriceCatalog.models
+    results = GuideCost.for_step(embed, catalog: catalog)
+
+    # Any option of the unpriced step that resolves carries its name; unresolved → nil.
+    results.each do |r|
+      if r.resolved?
+        assert r.name.present?, "a resolved unpriced option should carry its display name"
+      else
+        assert_nil r.name
+      end
+    end
+  end
+
+  test "name carried without an extra catalog load when a catalog is injected" do
+    step = FeaturePattern.find("rag").steps.last
+    catalog = PriceCatalog.models
+    assert_queries_count(0) do
+      results = GuideCost.for_step(step, catalog: catalog)
+      results.map(&:name) # force any lazy work
+    end
+  end
+
   test "unknown slug degrades to nil without raising" do
     result = assert_nothing_raised do
       GuideCost.per_call(slug: "no-such-model", shape: GENERATE_SHAPE)

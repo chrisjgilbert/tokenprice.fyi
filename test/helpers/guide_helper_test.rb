@@ -34,7 +34,7 @@ class GuideHelperTest < ActionView::TestCase
 
     out = guide_takeaway(pattern)
 
-    assert_includes out, "summarize"
+    assert_includes out, "summarise"
     assert_match(/no step here needs a frontier model/i, out)
     # The bug #4 names: an empty capable-model slot must never render.
     refute_includes out, "capable-model step is"

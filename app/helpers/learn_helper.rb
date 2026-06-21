@@ -12,7 +12,7 @@ module LearnHelper
         dek: "Tokens, the input/output split, cached reads, and why the same answer costs several times more to write than to read.",
         path: how_pricing_works_path },
       { title: "What drives the cost of common features", icon: :layers, tint: "#e11d48", read: "8 min",
-        dek: "RAG, chat, classification, summarization, a coding agent — each has a different cost shape. Here's why.",
+        dek: "RAG, chat, classification, summarisation, a coding agent — each has a different cost shape. Here's why.",
         path: learn_feature_costs_path },
       { title: "Cost-cutting strategies & savings", icon: :scissors, tint: "#0d9488", read: "6 min",
         dek: "Tiering, routing, caching, shorter outputs, batch. The levers that move a bill the most, and by how much.",
