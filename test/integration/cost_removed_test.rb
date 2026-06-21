@@ -32,4 +32,26 @@ class CostRemovedTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_no_match(%r{<loc>[^<]*/cost</loc>}, response.body)
   end
+
+  # The model-detail estimate embed (the req/month slider and its Turbo Frame)
+  # was removed — the last fabricated-volume surface. Its route is gone, so the
+  # frame endpoint must 404 and the model_estimate_path helper must not exist.
+  test "/models/:id/estimate is not routable" do
+    get "/models/claude-opus-4-8/estimate"
+    assert_response :not_found
+  end
+
+  test "model_estimate_path / model_estimate_url helpers no longer exist" do
+    assert_not Rails.application.routes.url_helpers.respond_to?(:model_estimate_path)
+    assert_not Rails.application.routes.url_helpers.respond_to?(:model_estimate_url)
+  end
+
+  test "the model detail page no longer mounts the estimate embed" do
+    get model_url("claude-opus-4-8")
+    assert_response :success
+    assert_select "section.embed-wrap", false
+    assert_select "[data-controller~='cost-form']", false
+    # Price history survives.
+    assert_select "h2", text: "Price history"
+  end
 end

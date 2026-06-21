@@ -19,9 +19,6 @@ Rails.application.routes.draw do
   get "guide/:task", to: "guide#show", as: :guide_task
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
-  # The compact model-page estimate embed (its own Turbo Frame).
-  get "models/:id/estimate", to: "embeds#show", as: :model_estimate
-
   # Education layer — directory index + explainers (each with live-data
   # widgets and an estimator CTA).
   get "learn", to: "learn#index", as: :learn
