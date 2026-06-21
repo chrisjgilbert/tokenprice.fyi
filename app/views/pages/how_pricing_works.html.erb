@@ -3,16 +3,14 @@
 <% content_for :canonical, how_pricing_works_url %>
 
 <% content_for :head do %>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": "How LLM pricing works",
-      "datePublished": "2026-06-11",
-      "publisher": { "@type": "Organization", "name": "tokenprice.fyi" },
-      "mainEntityOfPage": "<%= how_pricing_works_url %>"
-    }
-  </script>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: "How LLM pricing works",
+        datePublished: "2026-06-11",
+        publisher: { "@type": "Organization", name: "tokenprice.fyi" },
+        mainEntityOfPage: how_pricing_works_url
+      }) %>
 <% end %>
 
 <%= render "shared/explainer_styles" %>

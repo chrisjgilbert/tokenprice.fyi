@@ -18,4 +18,13 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "link[rel=canonical][href=?]", how_pricing_works_url
   end
+
+  test "how-pricing-works emits Article JSON-LD via the json_ld helper" do
+    get how_pricing_works_url
+    assert_response :success
+    assert_select "script[type='application/ld+json']", minimum: 1
+    # The json_ld helper emits compact (minified) JSON, unlike the old raw block.
+    assert_includes @response.body, "\"@type\":\"Article\""
+    assert_includes @response.body, "\"headline\":\"How LLM pricing works\""
+  end
 end
