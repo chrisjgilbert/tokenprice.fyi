@@ -249,11 +249,11 @@ class FeaturePattern
     # no-capability case must be representable AND present — so it is here.
     new(
       key: "summarization",
-      label: "Summarization",
+      label: "Summarisation",
       blurb: "A long document in, a short summary out. The most input-heavy shape.",
       steps: [
         step(
-          role: "summarize",
+          role: "summarise",
           purpose: "compress a long document into a short, faithful summary",
           tier: "small",
           shape: { sys: 300, in: 22_000, out: 600 },
