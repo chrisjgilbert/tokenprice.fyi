@@ -8,4 +8,12 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, model_url(ai_models(:opus))
     assert_includes @response.body, "<urlset"
   end
+
+  test "the sitemap advertises the guide and its task pages, not which-model" do
+    get sitemap_url
+    assert_response :success
+    assert_includes @response.body, guide_url
+    assert_includes @response.body, guide_task_url(FeaturePattern.all.first.key)
+    assert_not_includes @response.body, "/which-model"
+  end
 end

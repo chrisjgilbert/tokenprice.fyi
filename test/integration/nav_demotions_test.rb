@@ -15,10 +15,10 @@ class NavDemotionsTest < ActionDispatch::IntegrationTest
     assert_select "nav.tp-nav a[href=?]", trends_path
   end
 
-  test "primary nav has no Guide tab yet" do
+  test "primary nav now carries a Guide tab" do
     get root_path
     assert_response :success
-    assert_select "nav.tp-nav a", text: "Guide", count: 0
+    assert_select "nav.tp-nav a[href=?]", guide_path
   end
 
   test "compare still serves as a generated view" do

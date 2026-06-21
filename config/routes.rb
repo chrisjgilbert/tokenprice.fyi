@@ -11,7 +11,7 @@ Rails.application.routes.draw do
   get "compare", to: "comparisons#show", as: :compare
   get "trends",  to: "trends#index",     as: :trends
   get "sources", to: "sources#index",    as: :sources
-  get "which-model", to: "pages#which_model", as: :which_model
+  get "which-model", to: redirect("/guide", status: 301)
 
   # The Guide — browse-by-task model picker. Index is the task chooser; each
   # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.
