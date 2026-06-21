@@ -1,10 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drives the live estimator: a debounced Turbo-Frame submit while typing in the
-// token/volume fields, immediate on the cache slider / tier / baseline changes.
-// The form carries data-turbo-frame="cost_result" + data-turbo-action="replace",
-// so each submit refreshes the result frame and keeps the URL a shareable
-// permalink. A near-clone of filters_controller. The math is all server-side.
+// Drives the model-page estimate embed: a debounced Turbo-Frame submit while
+// typing in the token/volume fields, immediate on the slider / radio changes.
+// The form carries its embed frame id as data-turbo-frame + turbo-action
+// "replace", so each submit refreshes the result frame in place. A near-clone
+// of filters_controller. The math is all server-side.
 export default class extends Controller {
   static targets = ["cacheValue"]
   static values = { delay: { type: Number, default: 350 } }

@@ -118,9 +118,7 @@ module ApplicationHelper
   def primary_nav_items
     [
       ["Models", root_path],
-      ["Trends", trends_path],
-      ["Compare", compare_path],
-      ["Estimate", cost_path]
+      ["Trends", trends_path]
     ]
   end
 
@@ -130,9 +128,7 @@ module ApplicationHelper
       ["How pricing works", how_pricing_works_path],
       ["What drives feature cost", learn_feature_costs_path],
       ["Cost-cutting strategies", learn_cost_cutting_path],
-      ["Which model?", which_model_path],
-      ["Where do models come from?", map_path],
-      ["Why this exists", why_path]
+      ["Which model?", which_model_path]
     ]
   end
 

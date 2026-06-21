@@ -1,5 +1,5 @@
 <%# The embed result — the emb-out panel inside the model's estimate frame.
-    locals: entry, here, cheapest, fresh, out, req, in_pos, out_pos, deep_link %>
+    locals: entry, here, cheapest, fresh, out, req, in_pos, out_pos %>
 <%= turbo_frame_tag "estimate_embed_#{entry.slug}" do %>
   <div class="emb-out">
     <span class="emb-out-l">Estimated spend on <%= entry.name %></span>
@@ -17,7 +17,5 @@
     <% else %>
       <div class="emb-cheapest flat"><%= co_icon(:check) %><span><%= entry.name %> is already the cheapest model for this workload shape.</span></div>
     <% end %>
-
-    <%= link_to deep_link, class: "tp-btn tp-btn-primary emb-cta" do %><%= co_icon(:spark) %>Open in full estimator<%= co_icon(:arrow_right) %><% end %>
   </div>
 <% end %>
