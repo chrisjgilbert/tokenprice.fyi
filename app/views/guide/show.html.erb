@@ -118,6 +118,15 @@
     </ol>
   </section>
 
+  <%# ---- How to choose for this task. Unique editorial per task, grounded in
+       its real pipeline (the steps, the cost-driver vs capable-model split). ---- %>
+  <section class="gs-choose reveal">
+    <h2>How to choose for <%= @pattern.label %></h2>
+    <% guide_choosing_paras(@pattern).each do |para| %>
+      <p><%= para %></p>
+    <% end %>
+  </section>
+
   <%# ---- The takeaway. Computed from the steps; branches per AUDIT #4. ---- %>
   <section class="gs-takeaway reveal">
     <h2>The takeaway</h2>
@@ -133,8 +142,8 @@
           (its <h2> ids mirror the pattern keys), else the generic explainer. %>
       <%= link_to feature_costs_link(@pattern), class: "gs-link card" do %>
         <span class="gs-link-kind">Explainer</span>
-        <span class="gs-link-title">What drives the cost of common features</span>
-        <span class="gs-link-sub">The worked cost breakdown behind these shapes, with live prices.</span>
+        <span class="gs-link-title">See the full cost breakdown</span>
+        <span class="gs-link-sub">What this task costs and why, worked through line by line with live prices.</span>
       <% end %>
       <%= link_to root_path, class: "gs-link card" do %>
         <span class="gs-link-kind">Price table</span>

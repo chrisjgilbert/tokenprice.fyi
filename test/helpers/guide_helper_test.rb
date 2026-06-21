@@ -68,6 +68,37 @@ class GuideHelperTest < ActionView::TestCase
     assert_equal openings.size, openings.uniq.size, "lede openings must be distinct: #{openings.inspect}"
   end
 
+  # --- The deepened "how to choose" block: unique editorial per task, grounded
+  # in that task's real pipeline (the steps, the cost-driver vs capable-model
+  # distinction). Not boilerplate.
+
+  test "every pattern has a non-empty how-to-choose block that names its cost-driver step" do
+    FeaturePattern.all.each do |pattern|
+      prose = guide_choosing(pattern)
+      assert prose.present?, "#{pattern.key} produced a blank how-to-choose block"
+      driver = pattern.cost_driver_step
+      assert_includes prose, driver.role, "#{pattern.key} block should name its cost-driver step" if driver
+    end
+  end
+
+  test "the how-to-choose blocks are unique editorial per task, not boilerplate" do
+    blocks = FeaturePattern.all.map { |p| guide_choosing(p) }
+    assert_equal blocks.size, blocks.uniq.size, "how-to-choose blocks must differ per task"
+  end
+
+  test "a task with a distinct capable-model step names it in the how-to-choose block" do
+    # coding_agent: capable-model step = "plan", a different step from the driver.
+    prose = guide_choosing(FeaturePattern.find("coding_agent"))
+    assert_includes prose, "plan"
+    assert_includes prose, "capable-model step"
+  end
+
+  test "the no-capability task does not claim a capable-model step in the block" do
+    # summarization: no capability step, so the block must not assert one.
+    prose = guide_choosing(FeaturePattern.find("summarization"))
+    assert_match(/no step here needs a frontier model/i, prose)
+  end
+
   private
 
   # No empty-name artifact: the broken renders #4 warns about.

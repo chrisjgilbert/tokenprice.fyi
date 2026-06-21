@@ -108,6 +108,51 @@ module GuideHelper
     DRIVERS.fetch(pattern.key)
   end
 
+  # The deepened "how to choose for {task}" block — unique editorial per task,
+  # grounded in that task's real pipeline. Each is written to its own steps: the
+  # cost-driver step, the capable-model step (when there is one), and the
+  # specific lever that moves this shape. Distinct prose per task, not a
+  # template; that is what the guide pages need to out-rank the explainer.
+  # Voice: plain declaratives, "per call", "the guide" lowercase, locked terms
+  # "cost-driver step" / "capable-model step", no drama em-dashes.
+  CHOOSING = {
+    "rag" => [
+      "The chain is embed, retrieve, then generate answer. Almost the whole bill lands on the last step, where thousands of retrieved tokens go in for a short paragraph back, so generate answer is both the cost-driver step and the capable-model step.",
+      "Pick the cheapest model that answers your retrieved context faithfully and start there. Spend on retrieval precision before you spend on a bigger model: three relevant passages instead of ten cuts the input meter on every call, and a model swap rarely beats that. Move up a tier only when the answers miss something a human reading the same passages would catch."
+    ],
+    "coding_agent" => [
+      "Three steps, three jobs: plan decides what to change, edit / tool-call makes it across a looping context, and verify checks the result. The cost-driver step and the capable-model step are different here, and getting that split right is the whole game.",
+      "Put the capable model on plan, the step that decides the change. The spend piles up on edit / tool-call, where a long context is re-sent on every loop, so the lever there is cached input, not a bigger model. Keep verify on a small model. A frontier model across the whole loop pays frontier rates for steps that never needed it."
+    ],
+    "chatbot" => [
+      "Every turn runs intent / route, then retrieve, then generate reply, and the transcript grows each turn. The cost-driver step and the capable-model step are different: the cheap classify and retrieve steps run on every turn, while generate reply is the only one that needs a capable model.",
+      "Start generate reply on a small or mid model and reserve a step up for genuinely hard threads. Keep intent / route and retrieve small; they run constantly and should cost almost nothing per call. The stable prefix of the transcript is highly cacheable, which is the single biggest lever on this shape."
+    ],
+    "classification" => [
+      "One step, classify / extract, runs at volume: a document in, a label or small JSON object out. There is no capable-model step. Output is a rounding error, so the input rate times your volume is effectively the entire bill.",
+      "Tier choice is the only lever that moves it, and small models are purpose-built for this, so start small and let an eval tell you whether you can keep it. Watch cost per accepted result, not cost per call: a cheap model that mislabels and forces a human review is not cheap. These jobs rarely care about latency, so batch pricing often stacks on top."
+    ],
+    "summarization" => [
+      "One step, summarise: a long document in, a short summary out. No step here needs a frontier model. The input meter scaled by document length sets the cost, and the cost-driver step is summarise itself.",
+      "Cheap long-context models have made routine summarisation a small-tier task, so start there. The lever after tier choice is not over-sending: strip boilerplate, headers, and repeated front-matter before the document goes in, because every token you send is priced on every call. Pay for a higher tier only when missing a clause buried mid-document actually carries a cost."
+    ],
+    "agentic" => [
+      "An orchestrator delegates repeated work to cheap subagents, then a final step synthesises it. The cost-driver step and the capable-model step are different, and the mismatch is sharp: the money sits on the small, looping subagent search step, while the capability sits on the separate orchestrate / plan step.",
+      "Put the capable model on orchestrate / plan and keep subagent search on a small model, because it loops many times and carries most of the spend. Cutting the number of fan-out calls moves the bill more than upgrading any single model. Reach for a bigger subagent only when cheap exploration keeps coming back wrong."
+    ]
+  }.freeze
+
+  # Two short paragraphs of unique "how to choose for {task}" prose, joined for
+  # presence/uniqueness assertions and rendered paragraph-by-paragraph in the view.
+  def guide_choosing(pattern)
+    CHOOSING.fetch(pattern.key).join("\n\n")
+  end
+
+  # The paragraphs of the how-to-choose block, for the view.
+  def guide_choosing_paras(pattern)
+    CHOOSING.fetch(pattern.key)
+  end
+
   # The takeaway, computed from the steps (AUDIT #4). Three branches:
   #
   #   * different steps    → name both; "they are different", spend on the

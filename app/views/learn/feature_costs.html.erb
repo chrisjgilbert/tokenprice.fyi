@@ -10,11 +10,11 @@
 <article class="hp">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Feature cost shapes · June 2026</p>
   <h1>What drives the cost of common features</h1>
-  <p class="hp-subtitle">Most LLM features fall into a handful of shapes, each concentrating cost in a different place. Knowing where tells you which lever to pull — and when a cheaper tier is good enough.</p>
+  <p class="hp-subtitle">This page is the cost breakdown, not a model pick. It shows what each feature costs and why, shape by shape, so you know which lever moves the bill before you choose anything.</p>
 
-  <p>The sticker price — input and output per million tokens — is the same for every feature you build. What changes is the <strong>shape of the workload</strong>: how much you send, how much comes back, how often the same context repeats, and whether the task is hard enough to need a capable model. Two features on the same model can differ by 100× in cost per call purely because of shape.</p>
+  <p>The sticker price, input and output per million tokens, is the same for every feature you build. What changes is the <strong>shape of the workload</strong>: how much you send, how much comes back, how often the same context repeats, and whether the task is hard enough to need a capable model. Two features on the same model can differ by 100× in cost per call purely because of shape.</p>
 
-  <p>Five common shapes. For each: a worked example, where cost concentrates, the dominant lever, and the cheaper tier that often does the job. Tier calls are <strong>a cost comparison, not a quality verdict</strong> — validate against your own eval before you ship.</p>
+  <p>Five common shapes. For each: a worked cost breakdown, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. This is what each feature costs; for a starting model per step, the guide is the decision counterpart. Tier calls are <strong>a cost comparison, not a quality verdict</strong>. Validate against your own eval before you ship.</p>
 
   <%# Live-data widget — the input/output spread these shapes are multiplied against. %>
   <%= render "shared/io_ratio_widget", caption: "Live from the index — the per-1M spread every shape below is multiplied against." %>
@@ -116,7 +116,7 @@
     <%# The conceptual twin of this page: same shapes, applied to a specific job
         with a starting model and per-call cost per step. %>
     <%= link_to guide_path, class: "hp-cta-ghost" do %>
-      See starting options per step in the guide
+      See starting models per step in the guide
     <% end %>
   </div>
 </article>

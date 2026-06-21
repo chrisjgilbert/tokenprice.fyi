@@ -52,6 +52,24 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select "article.hp a[href=?]", guide_path
   end
 
+  # --- AUDIT #3: feature_costs holds the INFORMATIONAL "what X costs" intent so
+  # it stops competing with the guide's "best model for X" decision intent.
+
+  test "the feature-costs intro is reframed to a cost-breakdown angle, not best-model" do
+    get learn_feature_costs_url
+    assert_response :success
+    # The intent split: this page is about what features cost, not which model to pick.
+    assert_match(/what (each|a) feature costs/i, response.body)
+    assert_select "h1", /What (LLM features cost|drives the cost)/
+  end
+
+  test "the feature-costs guide cross-link points at the guide as the decision counterpart" do
+    get learn_feature_costs_url
+    assert_response :success
+    # The reciprocal "see starting models" link into the guide (decision intent).
+    assert_select "article.hp a[href=?]", guide_path, text: /starting model/i
+  end
+
   # AUDIT #3 regression guards: every explainer keeps its live io_ratio widget.
   # A future edit must not silently drop the credibility-anchoring live data.
   test "all four explainers render the live io_ratio widget (AUDIT #3 guard)" do

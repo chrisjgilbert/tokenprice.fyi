@@ -51,6 +51,39 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /Summarisation/, count: 0
   end
 
+  # --- AUDIT #3: each task page renders a unique deepened "how to choose" block.
+
+  test "every task renders a how-to-choose heading and its unique block" do
+    FeaturePattern.all.each do |pattern|
+      get guide_task_path(pattern.slug)
+      assert_response :success
+      assert_select "h2", text: /How to choose for #{Regexp.escape(pattern.label)}/
+    end
+  end
+
+  test "the coding agent how-to-choose block names both steps and the split" do
+    get guide_task_path("coding-agent")
+    assert_response :success
+    body = @response.body
+    # Task-specific strings from the deepened block.
+    assert_match(/Put the capable model on plan/, body)
+    assert_match(/cached input, not a bigger model/, body)
+  end
+
+  test "the rag how-to-choose block leads with retrieval precision" do
+    get guide_task_path("rag")
+    assert_response :success
+    assert_match(/Spend on retrieval precision before you spend on a bigger model/, @response.body)
+  end
+
+  # --- AUDIT #3: the guide cross-links to the feature_costs cost breakdown.
+
+  test "the guide cross-links to the full cost breakdown on feature_costs" do
+    get guide_task_path("rag")
+    assert_response :success
+    assert_select "a[href=?]", "#{learn_feature_costs_path}#rag", text: /cost breakdown/i
+  end
+
   # --- AUDIT #4: the takeaway branches on the data.
 
   test "summarization uses the no-capable-model takeaway with no empty-name artifact" do
