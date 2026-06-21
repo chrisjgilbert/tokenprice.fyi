@@ -76,8 +76,9 @@ class FeaturePattern
 
   # ---------------------------------------------------------------------------
   # The registry — the six launch tasks, ordered. Token shapes and tier/role
-  # assignments are mined from app/views/pages/which_model.html.erb and
-  # app/views/learn/feature_costs.html.erb, restructured into data.
+  # assignments are mined from the retired /which-model task→tier verdicts (now
+  # 301'd to the guide) and app/views/learn/feature_costs.html.erb, restructured
+  # into data.
   # ---------------------------------------------------------------------------
   REGISTRY = [
     # RAG support bot. Input-heavy: thousands of context tokens in, a paragraph
