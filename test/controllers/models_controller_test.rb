@@ -4,8 +4,48 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index lists models with the cheapest-frontier callout" do
     get root_url
     assert_response :success
-    assert_select "h1", /Compare token prices/
+    assert_select "h1", /Which model for what you're building/
     assert_select "tbody td", /Claude Opus 4.8/
+  end
+
+  test "hero is the decision-bridge with two CTAs" do
+    get root_url
+    assert_response :success
+    # Primary CTA into the guide.
+    assert_select ".hero-cta a[href=?]", guide_path, text: /Find a model/
+    # Secondary CTA scrolls to the on-page price table.
+    assert_select ".hero-cta a[href=?]", "#models", text: /Browse all prices/
+  end
+
+  test "hero subtitle renders the dynamic model count, never a static 40+" do
+    get root_url
+    assert_response :success
+    count = AiModel.listed.count
+    assert_select ".hero-sub", /priced per call against/
+    assert_select ".hero-sub .num", text: count.to_s
+    assert_select ".hero-sub", text: /40\+/, count: 0
+  end
+
+  test "latest-changes widget is present and the market-event timeline strip is gone" do
+    get root_url
+    assert_response :success
+    assert_select ".hero-card-tag", /Latest changes/
+    # Dropped per audit #6: the thin, redundant market-event strip.
+    assert_select ".hero-timeline", count: 0
+    assert_select ".hero-card", text: /Recent activity/, count: 0
+  end
+
+  test "hero has exactly one Trends entry point" do
+    get root_url
+    assert_response :success
+    assert_select ".hero-card a[href=?]", trends_path, count: 1
+  end
+
+  test "footer carries the deck sourcing disclaimer" do
+    get root_url
+    assert_response :success
+    assert_select ".tp-foot",
+      text: /sourced from provider price pages · costs are per-call estimates, never a monthly bill/
   end
 
   test "index can be filtered by tier" do
