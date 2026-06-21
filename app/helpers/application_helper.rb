@@ -118,8 +118,7 @@ module ApplicationHelper
   def primary_nav_items
     [
       ["Models", root_path],
-      ["Trends", trends_path],
-      ["Compare", compare_path]
+      ["Trends", trends_path]
     ]
   end
 
