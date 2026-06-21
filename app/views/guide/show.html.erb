@@ -72,12 +72,12 @@
             <span class="num gs-shape-v gs-shape-out"><%= co_kfmt(step.shape.out) %> out</span>
           </div>
 
+          <% results = GuideCost.for_step(step, catalog: @catalog) %>
           <% if step.priced? %>
             <div class="gs-opts">
-              <% labels = { 0 => "cheap default", 1 => "step-up for quality", 2 => "open-weight option" } %>
-              <% GuideCost.for_step(step, catalog: @catalog).each_with_index do |result, oi| %>
+              <% results.each do |result| %>
                 <div class="gs-opt">
-                  <span class="gs-opt-kind"><%= labels[oi] || "option" %></span>
+                  <span class="gs-opt-kind"><%= guide_option_label(result.kind) %></span>
                   <span class="gs-opt-model">
                     <% if result.resolved? %>
                       <%= link_to (result.name || result.slug), model_path(result.slug), class: "gs-opt-link" %>
@@ -105,9 +105,9 @@
             <div class="gs-opts gs-opts-unpriced">
               <p class="gs-unpriced-note">Not priced here. This runs on a separate embeddings endpoint with its own rates the price table doesn't carry.</p>
               <div class="gs-opt-slugs">
-                <%# Reuse for_step (now carrying names) so the unpriced models show
-                    their display name too, falling back to the slug when unresolved. %>
-                <% GuideCost.for_step(step, catalog: @catalog).each do |result| %>
+                <%# Reuse the already-computed results (carrying names) so the
+                    unpriced models show their display name, falling back to slug. %>
+                <% results.each do |result| %>
                   <span class="gs-opt-slug"><%= result.name || result.slug %></span>
                 <% end %>
               </div>
@@ -131,9 +131,7 @@
     <div class="gs-links-grid">
       <%# SPEC §3: land on the matching feature_costs section when one exists
           (its <h2> ids mirror the pattern keys), else the generic explainer. %>
-      <% fc_sections = %w[rag chatbot classification summarization coding_agent] %>
-      <% fc_href = fc_sections.include?(@pattern.key) ? "#{learn_feature_costs_path}##{@pattern.key}" : learn_feature_costs_path %>
-      <%= link_to fc_href, class: "gs-link card" do %>
+      <%= link_to feature_costs_link(@pattern), class: "gs-link card" do %>
         <span class="gs-link-kind">Explainer</span>
         <span class="gs-link-title">What drives the cost of common features</span>
         <span class="gs-link-sub">The worked cost breakdown behind these shapes, with live prices.</span>

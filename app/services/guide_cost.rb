@@ -32,8 +32,10 @@
 class GuideCost
   # One option priced for one step's shape. `per_call` is USD or nil.
   # `name` is the resolved catalog entry's display name (nil when unresolved),
-  # carried so the view shows the model's name without a second lookup.
-  Result = Data.define(:slug, :name, :per_call, :resolved) do
+  # carried so the view shows the model's name without a second lookup. `kind`
+  # is the option's role (:cheap / :quality / :open_weight) so the view labels
+  # it from data rather than from array position (nil for a bare #per_call).
+  Result = Data.define(:slug, :name, :per_call, :resolved, :kind) do
     def resolved? = resolved
     # Priceable means: resolved to a catalog entry AND a per-call figure exists.
     def priced? = !per_call.nil?
@@ -54,8 +56,8 @@ class GuideCost
     # to PriceCatalog.model(slug) (the original per-call DB path).
     def per_call(slug:, shape:, catalog: nil)
       entry = resolve(slug, catalog)
-      return Result.new(slug: slug, name: nil, per_call: nil, resolved: false) if entry.nil?
-      return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true) if entry.input.nil? || entry.output.nil?
+      return Result.new(slug: slug, name: nil, per_call: nil, resolved: false, kind: nil) if entry.nil?
+      return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true, kind: nil) if entry.input.nil? || entry.output.nil?
 
       profile = profile_for(shape)
       # cached: nil and cache: 0 — the deliberate no-discount basis (see header).
@@ -64,26 +66,29 @@ class GuideCost
         input: entry.input, output: entry.output, cached: nil, prof: profile
       )[:per_req]
 
-      Result.new(slug: slug, name: entry.name, per_call: per_req, resolved: true)
+      Result.new(slug: slug, name: entry.name, per_call: per_req, resolved: true, kind: nil)
     end
 
     # Price every PRESENT option of a FeaturePattern::Step against the step's
     # shape, in cheap → quality → open_weight order, skipping nil option slugs.
+    # Each Result carries its option `kind` so the view labels it from data, not
+    # array position (a step with a nil option would otherwise shift the labels).
     # An unpriced step (priced:false, AUDIT #5) yields unpriced markers — never a
     # fabricated number.
     #
     # `catalog:` is threaded through so every option of the step resolves
     # against the SAME injected catalog (one load per page).
     def for_step(step, catalog: nil)
-      slugs = step.options.to_h.values.compact
       shape = step.shape
-      slugs.map do |slug|
+      step.options.to_h.filter_map do |kind, slug|
+        next if slug.nil?
+
         if step.priced?
-          per_call(slug: slug, shape: shape, catalog: catalog)
+          per_call(slug: slug, shape: shape, catalog: catalog).with(kind: kind)
         else
           # Resolve so the view can still name and link the model, but never price it.
           entry = resolve(slug, catalog)
-          Result.new(slug: slug, name: entry&.name, per_call: nil, resolved: !entry.nil?)
+          Result.new(slug: slug, name: entry&.name, per_call: nil, resolved: !entry.nil?, kind: kind)
         end
       end
     end
@@ -102,7 +107,7 @@ class GuideCost
     # Build the Phase-0 profile from the step's representative shape. req: 1 and
     # cache: 0 — per-call, volume-free, no cache discount.
     def profile_for(shape)
-      h = shape.respond_to?(:to_h) ? shape.to_h : shape
+      h = shape.to_h
       CostEstimate.profile_from(
         sys: h[:sys], fresh: h[:in], out: h[:out], req: 1, cache: 0, tier: "any"
       )
