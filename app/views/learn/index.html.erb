@@ -30,3 +30,15 @@
     <% end %>
   </div>
 </section>
+
+<% upcoming = learn_upcoming %>
+<% if upcoming.any? %>
+  <section class="led-series">
+    <div class="led-eyebrow"><span class="tp-section-label">Coming soon</span></div>
+    <div class="led-grid">
+      <% upcoming.each_with_index do |c, i| %>
+        <%= learn_upcoming_card(c, delay: (0.04 * i).round(2)) %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

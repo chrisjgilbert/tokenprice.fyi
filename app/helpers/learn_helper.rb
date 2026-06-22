@@ -20,6 +20,21 @@ module LearnHelper
     ]
   end
 
+  # Roadmap explainers, not written yet. They render as muted, non-link "Next up"
+  # cards so the series shows where it's heading; the content lands later.
+  def learn_upcoming
+    [
+      { title: "Prompt caching", icon: :refresh, tint: "#0ea5e9", read: "5 min",
+        dek: "Reuse a big system prompt or document across calls and pay up to 90% less for the repeated part." },
+      { title: "Batch processing", icon: :grid, tint: "#10b981", read: "4 min",
+        dek: "Trade latency for around half off. When a job can wait minutes, the async batch endpoint cuts the bill." },
+      { title: "Reasoning & “thinking” tokens", icon: :brain, tint: "#7c3aed", read: "6 min",
+        dek: "Reasoning models bill the hidden thinking they do before answering, often the biggest line on the invoice." },
+      { title: "What an AI agent actually costs", icon: :bot, tint: "#d97706", read: "7 min",
+        dek: "An agent makes many model calls per task, each carrying a growing transcript. The cost compounds fast." }
+    ]
+  end
+
   # The line a call-chain teaches in the anatomy explainer, computed from the
   # FeaturePattern relationship (AUDIT #2/#4) — never a hardcoded per-pattern
   # string, and never a second copy of the find/branch the guide does. Mirrors
@@ -48,7 +63,11 @@ module LearnHelper
     coin:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9a2.5 2.5 0 0 0-2.3-1.4c-1.4 0-2.5.9-2.5 2s1 1.7 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2A2.5 2.5 0 0 1 9.2 15"/><path d="M12 6v1.6M12 16.4V18"/></svg>',
     blocks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>',
     scissors: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>',
-    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg>'
+    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
+    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 5 9a2.5 2.5 0 0 0 .5 4.5A2.5 2.5 0 0 0 8 18a2 2 0 0 0 2-2V4Z"/><path d="M14 4a2.5 2.5 0 0 1 2.5 2.5A2.5 2.5 0 0 1 19 9a2.5 2.5 0 0 1-.5 4.5A2.5 2.5 0 0 1 16 18a2 2 0 0 1-2-2V4Z"/></svg>',
+    bot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.3"/><path d="M9 13h.01M15 13h.01"/></svg>'
   }.freeze
 
   def learn_icon(name, size: 21)
@@ -71,5 +90,22 @@ module LearnHelper
       }
     end
     link_to inner, concept[:path], class: "card led-card reveal", style: style
+  end
+
+  # A muted, non-interactive "Next up" card for a roadmap explainer (no page yet).
+  def learn_upcoming_card(concept, delay: nil)
+    tint = concept[:tint]
+    style = delay ? "animation-delay:#{delay}s" : nil
+    content_tag(:div, class: "card led-card led-soon reveal", style: style) do
+      concat content_tag(:div, class: "led-card-top") {
+        content_tag(:span, learn_icon(concept[:icon]), class: "led-ico", style: "background:#{tint}1a;color:#{tint}") +
+          content_tag(:span, "Next up", class: "led-soon-tag")
+      }
+      concat content_tag(:h4, concept[:title])
+      concat content_tag(:p, concept[:dek])
+      concat content_tag(:div, class: "led-card-foot") {
+        content_tag(:span, "#{concept[:read]} read")
+      }
+    end
   end
 end

@@ -25,13 +25,17 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "the learn index drops the vaporware stub concepts and series chrome" do
+  test "the learn index shows roadmap explainers as muted, non-link Next up cards" do
     get learn_url
-    assert_no_match(/Prompt caching/, response.body)
-    assert_no_match(/Batch processing/, response.body)
-    assert_no_match(/Reasoning/, response.body)
-    assert_no_match(/What an AI agent actually costs/, response.body)
-    assert_no_match(/Next up/, response.body)
+    assert_response :success
+    # The four roadmap topics render as coming-soon cards so the series shows
+    # its breadth; content lands later.
+    assert_select "div.led-soon", 4
+    assert_select "a.led-soon", false              # not links — nothing to read yet
+    assert_select ".led-soon-tag", { minimum: 1, text: /Next up/i }
+    [ "Prompt caching", "Batch processing", "Reasoning", "What an AI agent actually costs" ].each do |topic|
+      assert_includes response.body, topic
+    end
   end
 
   test "the feature-costs explainer has a live widget and no dead estimator CTA" do
