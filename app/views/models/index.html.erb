@@ -319,26 +319,20 @@
   <% latest_event = @all_events.last %>
 
   <div class="hero-grid">
-    <%# Left column: the decision-bridge %>
+    <%# Left column: the price-index hero %>
     <div>
       <div class="hero-eyebrow">
         <span class="hero-eyebrow-dot"></span>
-        The price index
+        Live LLM API price index
       </div>
 
       <h1 class="hero-h1">
-        Which model for what you're building, and <span class="accent">what it costs.</span>
+        Compare token prices across <%= @providers_count %> LLM APIs.
       </h1>
 
       <p class="hero-sub">
-        Starting points for chatbots, RAG, and coding agents, priced per call against
-        <span class="num"><%= @all_models_count %></span> models, with full price history since 2023.
-      </p>
-
-      <%# Crawlable keyworded line so the body text matches the ranking target. %>
-      <p class="hero-sub" style="margin-top:-20px">
-        LLM API pricing for Claude, GPT-5, Gemini, Grok, and DeepSeek, with token prices per 1M
-        tokens for input, output, and cached reads. Updated daily.
+        <span class="num"><%= @all_models_count %></span> models across
+        <span class="num"><%= @providers_count %></span> providers. Prices tracked from launch.
       </p>
 
       <div class="hero-stats">
@@ -359,8 +353,8 @@
       </div>
 
       <div class="hero-cta">
-        <%= link_to guide_path, class: "tp-btn tp-btn-primary" do %>Find a model<% end %>
-        <%= link_to "#models", class: "tp-btn tp-btn-ghost" do %>Browse all prices<% end %>
+        <%= link_to guide_path, class: "tp-btn tp-btn-primary" do %>Find a model for your task<% end %>
+        <%= link_to how_pricing_works_path, class: "tp-btn tp-btn-ghost" do %>How pricing works<% end %>
       </div>
     </div>
 

@@ -4,24 +4,24 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index lists models with the cheapest-frontier callout" do
     get root_url
     assert_response :success
-    assert_select "h1", /Which model for what you're building/
+    assert_select "h1", /Compare token prices across/
     assert_select "tbody td", /Claude Opus 4.8/
   end
 
-  test "hero is the decision-bridge with two CTAs" do
+  test "hero is the price-index hero with a guide-primary CTA and a pricing-explainer CTA" do
     get root_url
     assert_response :success
-    # Primary CTA into the guide.
-    assert_select ".hero-cta a[href=?]", guide_path, text: /Find a model/
-    # Secondary CTA scrolls to the on-page price table.
-    assert_select ".hero-cta a[href=?]", "#models", text: /Browse all prices/
+    # Primary CTA into the guide — the pivot survives on a price-index hero.
+    assert_select ".hero-cta a[href=?]", guide_path, text: /Find a model for your task/
+    # Secondary CTA into the pricing explainer.
+    assert_select ".hero-cta a[href=?]", how_pricing_works_path, text: /How pricing works/
   end
 
-  test "hero subtitle renders the dynamic model count, never a static 40+" do
+  test "hero subtitle renders the dynamic model and provider counts, never a static 40+" do
     get root_url
     assert_response :success
     count = AiModel.listed.count
-    assert_select ".hero-sub", /priced per call against/
+    assert_select ".hero-sub", /models across/
     assert_select ".hero-sub .num", text: count.to_s
     assert_select ".hero-sub", text: /40\+/, count: 0
   end
@@ -59,12 +59,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "updated daily"
   end
 
-  test "index carries a crawlable keyworded intro matching the ranking target" do
+  test "the hero H1 carries the head term so the body matches the ranking target" do
     get root_url
     assert_response :success
-    # The body text must contain the head term so it matches the ranking target.
-    assert_match(/LLM API pricing/, response.body)
-    assert_match(/token prices per 1M/, response.body)
+    # The H1 itself carries the keywords (no bolted-on keyword line needed).
+    assert_select "h1.hero-h1", /token prices/
+    assert_select "h1.hero-h1", /LLM API/
   end
 
   test "latest-changes widget is present and the market-event timeline strip is gone" do
