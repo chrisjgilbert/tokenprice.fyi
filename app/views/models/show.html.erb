@@ -58,21 +58,33 @@
 </nav>
 
 <header class="mb-8 flex flex-wrap items-start justify-between gap-4">
-  <div>
-    <div class="flex items-center gap-2">
-      <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
-      <%= status_badge(@model.status) %>
+  <div class="flex items-start gap-4">
+    <%= link_to provider_path(@model.provider), class: "mt-1 shrink-0", aria: { label: @model.provider.name } do %>
+      <%= provider_square(@model.provider, size: :lg) %>
+    <% end %>
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
+        <%= status_badge(@model.status) %>
+      </div>
+      <p class="mt-1 flex items-center gap-2 text-slate-500">
+        <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
+        <% if @model.provider.flag_emoji %><span aria-hidden="true"><%= @model.provider.flag_emoji %></span><% end %>
+        <span>·</span>
+        <%= tier_badge(@model.tier) %>
+      </p>
     </div>
-    <p class="mt-1 flex items-center gap-2 text-slate-500">
-      <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
-      <span>·</span>
-      <%= tier_badge(@model.tier) %>
-    </p>
   </div>
-  <%= link_to "Compare →", compare_path(a: @model.slug), class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" %>
+  <%= link_to compare_path(a: @model.slug), class: "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" do %>
+    <%= icon(:swap, size: 15) %> Compare
+  <% end %>
 </header>
 
-<% editorial = { "Strengths" => @model.strengths, "Best for" => @model.best_for, "Limitations" => @model.limitations }.select { |_, v| v.present? } %>
+<% editorial = {
+     "Strengths"   => [ @model.strengths,   :bolt ],
+     "Best for"    => [ @model.best_for,    :target ],
+     "Limitations" => [ @model.limitations, :warn ]
+   }.select { |_, (v, _)| v.present? } %>
 <% if @model.description.present? || editorial.any? %>
   <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
     <% if @model.description.present? %>
@@ -80,9 +92,11 @@
     <% end %>
     <% if editorial.any? %>
       <dl class="<%= "mt-5" if @model.description.present? %> grid gap-4 sm:grid-cols-3">
-        <% editorial.each do |label, value| %>
+        <% editorial.each do |label, (value, ic)| %>
           <div>
-            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= label %></dt>
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span class="text-slate-400" aria-hidden="true"><%= icon(ic, size: 14) %></span><%= label %>
+            </dt>
             <dd class="mt-1 text-sm text-slate-700"><%= value %></dd>
           </div>
         <% end %>
@@ -93,13 +107,16 @@
 
 <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
   <% [
-       ["Input / 1M", usd(@model.current_input)],
-       ["Output / 1M", usd(@model.current_output)],
-       ["Cached input / 1M", usd(@model.current_cached_input)],
-       ["Context window", tokens_short(@model.context_window)]
-     ].each do |label, value| %>
+       ["Input / 1M", usd(@model.current_input), :arrow_in],
+       ["Output / 1M", usd(@model.current_output), :arrow_out],
+       ["Cached input / 1M", usd(@model.current_cached_input), :cache],
+       ["Context window", tokens_short(@model.context_window), :brackets]
+     ].each do |label, value, ic| %>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+      <div class="flex items-center justify-between">
+        <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
+      </div>
       <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
     </div>
   <% end %>

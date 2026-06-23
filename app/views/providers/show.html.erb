@@ -16,13 +16,16 @@
   <%= link_to "← All models", root_path, class: "hover:text-indigo-600" %>
 </nav>
 
-<header class="mb-8 flex items-center gap-3">
-  <span class="h-8 w-8 rounded-lg" style="background: <%= safe_hex(@provider.accent) %>"></span>
+<header class="mb-8 flex items-center gap-4">
+  <%= provider_square(@provider, size: :lg) %>
   <div>
     <h1 class="text-3xl font-bold tracking-tight"><%= @provider.name %></h1>
-    <% if @provider.website %>
-      <%= link_to @provider.website.sub(%r{\Ahttps?://}, ""), @provider.website, class: "text-sm text-slate-500 hover:underline" %>
-    <% end %>
+    <p class="mt-1 flex items-center gap-2 text-sm text-slate-500">
+      <% if @provider.flag_emoji %><span aria-hidden="true"><%= @provider.flag_emoji %></span><% end %>
+      <% if @provider.website %>
+        <%= link_to @provider.website.sub(%r{\Ahttps?://}, ""), @provider.website, class: "hover:underline" %>
+      <% end %>
+    </p>
   </div>
 </header>
 
