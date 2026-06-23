@@ -23,7 +23,7 @@ Rails.application.routes.draw do
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
   # Education layer — directory index + explainers (each with live-data
-  # widgets and an estimator CTA).
+  # widgets).
   get "learn", to: "learn#index", as: :learn
   get "learn/anatomy", to: "learn#anatomy", as: :learn_anatomy
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs

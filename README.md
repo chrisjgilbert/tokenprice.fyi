@@ -16,8 +16,9 @@ It answers questions like:
 - **Rails 8** (Ruby 3.3), server-rendered ERB — fast and SEO-friendly.
 - **SQLite** (Rails 8's production-grade setup) for storage.
 - **Tailwind CSS** (`tailwindcss-rails`, standalone CLI — no Node build).
-- **Solid Queue / Solid Cache / Solid Cable** — ready for the background jobs below.
-- **Inline SVG charts** rendered server-side (`ChartsHelper`) — zero JS, no chart CDN dependency.
+- **Solid Queue / Solid Cache / Solid Cable** — backs the recurring jobs (OpenRouter sync, news pipeline).
+- **SVG charts, no chart library or CDN** — the model-history chart renders server-side
+  (`ChartsHelper`, zero JS); the `/trends` explorer is a client-rendered SVG chart (Stimulus).
 
 ## Data model
 
@@ -112,15 +113,24 @@ bin/rails 'admin:set_password[your-password]'   # writes admin_password_digest t
 Then sign in at `/admin/login`. In production, supply `RAILS_MASTER_KEY` so credentials
 decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
 
+## Trends and model-news
+
+`/trends` is an interactive client-rendered SVG chart (Stimulus, no CDN, no chart library) of
+every model's price history, with presets, time ranges, and the **market events** that moved
+prices marked on the timeline alongside each model's launch.
+
+The market events are fed by a news pipeline: `ReleaseWatchJob` polls provider feeds and
+`NewsScanJob` searches Hacker News, both classifying items with Claude; `NewsDigestJob` posts a
+daily Slack digest; and `EventCurationJob` asks Claude to draft `MarketEvent` candidates for a
+human to approve in the admin (nothing automated publishes an event or appends a `PricePoint`).
+All four are scheduled in `config/recurring.yml`, production only.
+
 ## Roadmap
 
 The schema and Solid Queue are set up for where this is heading:
 
-- **Scraper job** — the OpenRouter sync above is the first of these. More provider-specific
-  sources (checking pricing pages directly) can append `PricePoint`s the same way.
-- **Model-news context** — pull release announcements (e.g. "Opus 4.8 released") and surface
-  them alongside the price timeline.
-- Interactive charts (Chartkick/Chart.js or Inertia) once deployed somewhere with CDN access.
+- **More price sources** — the OpenRouter sync above is the first automated source. More
+  provider-specific sources (checking pricing pages directly) can append `PricePoint`s the same way.
 
 ## Data accuracy
 
