@@ -15,7 +15,7 @@
         {
           "@type": "AggregateOffer",
           priceCurrency: "USD",
-          availability: "https://schema.org/InStock",
+          availability: @model.suspended? ? "https://schema.org/Discontinued" : "https://schema.org/InStock",
           lowPrice: prices.min.to_s,
           highPrice: prices.max.to_s,
           offerCount: prices.size,
@@ -105,7 +105,7 @@
   <% end %>
 </div>
 
-<% if @catalog_entry %>
+<% if @catalog_entry && !@model.suspended? %>
   <section class="mb-8">
     <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
           payload: "model=#{@model.slug}",
@@ -125,7 +125,7 @@
         </div>
       <% end %>
     </div>
-    <p class="mt-3 text-xs text-slate-400">Computed live from current prices — updates as prices move.</p>
+    <p class="mt-3 text-xs text-slate-400">Computed from current prices<%= " — updates as prices move" unless @model.suspended? %>.</p>
   </section>
 <% end %>
 
