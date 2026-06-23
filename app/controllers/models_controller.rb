@@ -1,14 +1,14 @@
 class ModelsController < ApplicationController
   SORTS = {
-    "blended"  => ->(m) { m.blended_per_mtok || Float::INFINITY },
-    "change"   => ->(m) { m.blended_change_since_launch || 0 },
-    "input"    => ->(m) { m.current_input  || Float::INFINITY },
-    "output"   => ->(m) { m.current_output || Float::INFINITY },
-    "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },
-    "context"  => ->(m) { m.context_window || 0 },
+    "blended" => ->(m) { m.blended_per_mtok || Float::INFINITY },
+    "change" => ->(m) { m.blended_change_since_launch || 0 },
+    "input" => ->(m) { m.current_input || Float::INFINITY },
+    "output" => ->(m) { m.current_output || Float::INFINITY },
+    "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
+    "context" => ->(m) { m.context_window || 0 },
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
-    "name"     => ->(m) { m.name.to_s.downcase },
-    "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
+    "name" => ->(m) { m.name.to_s.downcase },
+    "tier" => ->(m) { {"frontier" => 0, "mid" => 1, "small" => 2}.fetch(m.tier, 3) }
   }.freeze
 
   def index
@@ -23,7 +23,7 @@ class ModelsController < ApplicationController
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
     @sort = params[:sort].presence_in(SORTS.keys) || "blended"
-    @dir  = params[:dir].presence_in(%w[asc desc]) || (@sort == "blended" ? "desc" : "asc")
+    @dir = params[:dir].presence_in(%w[asc desc]) || ((@sort == "blended") ? "desc" : "asc")
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
@@ -31,7 +31,7 @@ class ModelsController < ApplicationController
     # Conditional GET. The page varies by every filter/sort param, so they MUST
     # ride in the etag — otherwise a conditional request for one filtered view
     # would 304 off a different view's cache. Renders 304 and halts on a match.
-    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query ])
+    return if catalog_fresh?(etag: [:index, @tier, @provider_slugs.sort, @sort, @dir, @query])
 
     models = scope.to_a
     if @query.match?(/[a-z0-9]/i)
@@ -50,17 +50,6 @@ class ModelsController < ApplicationController
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
     unless request.headers["Turbo-Frame"] == "models"
       @all_events = helpers.build_all_events
-      @all_models_count = AiModel.listed.count
-      @providers_count = Provider.count
-
-      # The genuine minimum simple in+out average across the priced catalog,
-      # so the "cheapest, in+out avg /1M" stat's value truly is the minimum its
-      # label claims. nil when nothing is priced.
-      @cheapest_io_avg = AiModel.listed.includes(:price_points)
-                                .filter_map { |m|
-                                  next unless m.current_input && m.current_output
-                                  (m.current_input + m.current_output) / 2.0
-                                }.min
     end
   end
 
@@ -71,15 +60,15 @@ class ModelsController < ApplicationController
     # effective_on) so a same-day in-place price correction still busts the cache.
     # The timestamp rides the ETag too, so an If-None-Match alone invalidates.
     price_updated_at = @model.current_price&.updated_at
-    return if catalog_fresh?(etag: [ :model_show, @model.slug, price_updated_at ],
-                             last_modified: price_updated_at)
+    return if catalog_fresh?(etag: [:model_show, @model.slug, price_updated_at],
+      last_modified: price_updated_at)
 
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
     @catalog_entry = PriceCatalog.model(@model.slug)
     @insights = ModelInsights.new(@model)
     @related = AiModel.listed.where(provider: @model.provider)
-                      .where.not(id: @model.id)
-                      .includes(:price_points, :provider).by_release.limit(4)
+      .where.not(id: @model.id)
+      .includes(:price_points, :provider).by_release.limit(4)
   end
 end

@@ -4,7 +4,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index lists models with the cheapest-frontier callout" do
     get root_url
     assert_response :success
-    assert_select "h1", /Compare token prices across/
+    assert_select "h1", /Compare pricing across/
     assert_select "tbody td", /Claude Opus 4.8/
   end
 
@@ -26,30 +26,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-sub", text: /40\+/, count: 0
   end
 
-  test "the cheapest in+out avg hero stat shows the true minimum average, not the blended-cheapest model's" do
-    get root_url
-    assert_response :success
-
-    priced = AiModel.listed.includes(:price_points)
-                    .select { |m| m.current_input && m.current_output }
-    # The genuine minimum simple in+out average across the priced catalog.
-    min_io_avg = priced.map { |m| (m.current_input + m.current_output) / 2.0 }.min
-    expected = "$#{PriceFormat.usd_amount(min_io_avg)}"
-
-    # On the fixtures the blended-cheapest model (DeepSeek V4 Pro, avg $0.6525)
-    # is NOT the model with the lowest simple in+out average (Lopri Mid, $0.60),
-    # so the displayed value must be the true minimum, not the blended pick.
-    blended_cheapest = priced.min_by { |m| m.blended_per_mtok }
-    blended_avg = (blended_cheapest.current_input + blended_cheapest.current_output) / 2.0
-    assert_not_equal min_io_avg, blended_avg,
-      "fixtures must distinguish true-min-average from blended-cheapest's average"
-
-    assert_in_delta 0.60, min_io_avg, 1e-9 # guards the fixture math (Lopri Mid)
-    assert_select ".hero-stat", text: /cheapest, in\+out avg \/1M/ do
-      assert_select ".hero-stat-val", text: expected
-    end
-  end
-
   test "index emits an owned meta description targeting the head term and providers" do
     get root_url
     assert_response :success
@@ -57,14 +33,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "LLM API token prices"
     assert_select "meta[name=description][content*=?]", "Claude"
     assert_select "meta[name=description][content*=?]", "updated daily"
-  end
-
-  test "the hero H1 carries the head term so the body matches the ranking target" do
-    get root_url
-    assert_response :success
-    # The H1 itself carries the keywords (no bolted-on keyword line needed).
-    assert_select "h1.hero-h1", /token prices/
-    assert_select "h1.hero-h1", /LLM API/
   end
 
   test "latest-changes widget is present and the market-event timeline strip is gone" do
@@ -108,14 +76,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index can be filtered to a single provider" do
-    get root_url(providers: [ "anthropic" ])
+    get root_url(providers: ["anthropic"])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek/, count: 0
   end
 
   test "index can be filtered to multiple providers" do
-    get root_url(providers: [ "anthropic", "deepseek" ])
+    get root_url(providers: ["anthropic", "deepseek"])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek V4 Pro/
@@ -129,14 +97,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index ignores a hash-shaped providers param" do
-    get root_url(providers: { evil: "payload" })
+    get root_url(providers: {evil: "payload"})
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
   test "index ignores unknown provider slugs" do
-    get root_url(providers: [ "not-a-provider" ])
+    get root_url(providers: ["not-a-provider"])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
   end
@@ -157,7 +125,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sort links carry the active filters and sort state rides in the form" do
-    get root_url(q: "claude", providers: [ "anthropic" ], sort: "input", dir: "desc")
+    get root_url(q: "claude", providers: ["anthropic"], sort: "input", dir: "desc")
     assert_response :success
     assert_select "thead a[href*='q=claude']"
     assert_select "thead a[href*='providers%5B%5D=anthropic']"
@@ -202,7 +170,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "search and provider filters combine" do
-    get root_url(q: "opus", providers: [ "deepseek" ])
+    get root_url(q: "opus", providers: ["deepseek"])
     assert_select "td", /No models match your filters/
   end
 

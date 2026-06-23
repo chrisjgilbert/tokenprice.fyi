@@ -327,30 +327,13 @@
       </div>
 
       <h1 class="hero-h1">
-        Compare token prices across <%= @providers_count %> LLM APIs.
+        Compare pricing across <%= @providers_count %> LLM APIs.
       </h1>
 
       <p class="hero-sub">
         <span class="num"><%= @all_models_count %></span> models across
         <span class="num"><%= @providers_count %></span> providers. Prices tracked from launch.
       </p>
-
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <span class="hero-stat-val num"><%= @all_models_count %></span>
-          <span class="hero-stat-label">models</span>
-        </div>
-        <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
-          <span class="hero-stat-val num"><%= @providers_count %></span>
-          <span class="hero-stat-label">Providers</span>
-        </div>
-        <% if @cheapest_io_avg %>
-          <div class="hero-stat" style="padding-left:20px;border-left:1px solid var(--color-slate-200)">
-            <span class="hero-stat-val num"><%= usd(@cheapest_io_avg) %></span>
-            <span class="hero-stat-label">cheapest, in+out avg /1M</span>
-          </div>
-        <% end %>
-      </div>
 
       <div class="hero-cta">
         <%= link_to guide_path, class: "tp-btn tp-btn-primary" do %>Find a model for your task<% end %>
