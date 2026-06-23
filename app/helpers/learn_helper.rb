@@ -24,14 +24,14 @@ module LearnHelper
   # cards so the series shows where it's heading; the content lands later.
   def learn_upcoming
     [
-      { title: “Prompt caching”, icon: :refresh, tint: “#0ea5e9”,
-        dek: “Reuse a big system prompt or document across calls and pay up to 90% less for the repeated part.” },
-      { title: “Batch processing”, icon: :grid, tint: “#10b981”,
-        dek: “Trade latency for around half off. When a job can wait minutes, the async batch endpoint cuts the bill.” },
-      { title: “Reasoning & “thinking” tokens”, icon: :brain, tint: “#7c3aed”,
-        dek: “Reasoning models bill the hidden thinking they do before answering, often the biggest line on the invoice.” },
-      { title: “What an AI agent actually costs”, icon: :bot, tint: “#d97706”,
-        dek: “An agent makes many model calls per task, each carrying a growing transcript. The cost compounds fast.” }
+      { title: "Prompt caching", icon: :refresh, tint: "#0ea5e9",
+        dek: "Reuse a big system prompt or document across calls and pay up to 90% less for the repeated part." },
+      { title: "Batch processing", icon: :grid, tint: "#10b981",
+        dek: "Trade latency for around half off. When a job can wait minutes, the async batch endpoint cuts the bill." },
+      { title: "Reasoning & \"thinking\" tokens", icon: :brain, tint: "#7c3aed",
+        dek: "Reasoning models bill the hidden thinking they do before answering, often the biggest line on the invoice." },
+      { title: "What an AI agent actually costs", icon: :bot, tint: "#d97706",
+        dek: "An agent makes many model calls per task, each carrying a growing transcript. The cost compounds fast." }
     ]
   end
 
