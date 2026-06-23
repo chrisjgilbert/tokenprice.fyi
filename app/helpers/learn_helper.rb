@@ -1,6 +1,6 @@
 module LearnHelper
-  # The four built explainers. Each entry drives an index card and its own
-  # page header. All four have a live page; the index links straight to them.
+  # The five built explainers. Each entry drives an index card and its own
+  # page header. All five have a live page; the index links straight to them.
   # The anatomy explainer is foundational — the concept the guide layer stands
   # on — so it orders first.
   def learn_concepts
@@ -11,8 +11,8 @@ module LearnHelper
       { title: "How LLM API pricing works", icon: :coin, tint: "#6366f1", read: "6 min",
         dek: "Tokens, the input/output split, cached reads, and why the same answer costs several times more to write than to read.",
         path: how_pricing_works_path },
-      { title: "Reasoning & “thinking” tokens", icon: :brain, tint: "#7c3aed", read: "6 min",
-        dek: "Reasoning models bill the hidden thinking they do before answering — at the output rate, often the biggest line on the invoice. Why effort is a volume dial, not a price dial.",
+      { title: "Reasoning & \"thinking\" tokens", icon: :brain, tint: "#7c3aed", read: "6 min",
+        dek: "Reasoning models bill the hidden thinking they do before answering, at the output rate, and it is often the biggest line on the invoice. Effort dials the volume of that thinking, not the price per token.",
         path: learn_reasoning_path },
       { title: "What drives the cost of common features", icon: :layers, tint: "#e11d48", read: "8 min",
         dek: "RAG, chat, classification, summarisation, a coding agent — each has a different cost shape. Here's why.",

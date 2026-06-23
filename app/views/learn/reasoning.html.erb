@@ -9,7 +9,7 @@
 
 <article class="hp">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Reasoning tokens · June 2026</p>
-  <h1>Reasoning &amp; “thinking” tokens.</h1>
+  <h1>Reasoning &amp; "thinking" tokens.</h1>
   <p class="hp-subtitle">Reasoning models think before they answer, and that thinking bills at the output rate. It's usually the biggest line on the invoice and the easiest one to misjudge.</p>
 
   <p>A standard model reads your prompt and writes a reply. A reasoning model adds a step in between: before it answers, it generates an internal chain of thought — planning, working through cases, checking itself. Those are <strong>thinking tokens</strong>, and they're billed as output, at the output rate, exactly like the visible reply. The difference is you mostly don't see them. The answer is 200 tokens; the thinking behind it might be 4,000.</p>
@@ -38,14 +38,14 @@
     </div>
   </div>
 
-  <p>The thing to hold onto: <strong>none of these change the price per token</strong>. They change how many output tokens the model spends. Effort is a volume control on the most expensive meter you have. That's also why it bills at the output rate and not some separate "reasoning rate" — to the invoice, a thinking token is just an output token.</p>
+  <p>None of these change the price per token. They change how many output tokens the model spends, which is why reasoning bills at the output rate rather than some separate reasoning rate. To the invoice, a thinking token is an output token like any other. Effort is a volume control on the most expensive meter there is.</p>
 
   <%# Live-data widget — thinking bills at the output rate, so the output:input
       spread below IS the reasoning tax, live from the index. %>
   <%= render "shared/io_ratio_widget", models: @catalog, last_modified: @catalog_last_modified,
         caption: "Live from the index — thinking bills at the output rate, so this spread is the reasoning tax." %>
 
-  <h2>What the dial actually costs</h2>
+  <h2>What the dial costs</h2>
 
   <% if @frontier_example&.output %>
     <p>Take the cheapest frontier model on the index today, <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.output) %></span> output per 1M tokens. Hold the visible answer at 300 tokens and move only the thinking:</p>
@@ -69,27 +69,27 @@
     <p>Hold the visible answer fixed and move only the thinking, and the bill tracks the thinking directly: a high-effort call generating 7,000 thinking tokens costs roughly nine times a low-effort one that thinks for 500, even though both return the same 300-token answer. The visible output is identical; the gap is thinking you never read.</p>
   <% end %>
 
-  <h2>Why it's so often the biggest line</h2>
+  <h2>Why it's often the biggest line</h2>
 
-  <p>Output is already the expensive meter — it runs <%= link_to "several times the input rate", how_pricing_works_path %> because the model generates each token sequentially. Reasoning multiplies that expensive meter specifically. A reasoning-heavy call can spend more on invisible thinking than on its entire input plus visible answer combined.</p>
+  <p>Output is already the expensive meter. It runs <%= link_to "several times the input rate", how_pricing_works_path %> because the model generates each token sequentially. Reasoning multiplies that meter specifically, so a reasoning-heavy call can spend more on thinking the reader never sees than on its entire input and visible answer combined.</p>
 
-  <p>It compounds hardest in <%= link_to "agent loops", guide_task_path("coding-agent") %>: an agent makes many calls per task, and if each step reasons, you pay the thinking tax on every step, on top of a transcript that grows each turn. Reasoning and loop length stack.</p>
+  <p>The effect is largest in <%= link_to "agent loops", guide_task_path("coding-agent") %>. An agent makes many calls per task, and when each step reasons, the thinking tax lands on every step, on top of a transcript that grows each turn. The per-step reasoning and the lengthening transcript compound, so the cost of a reasoning agent climbs faster than either effect would on its own.</p>
 
   <h2>There's no fixed multiplier per model</h2>
 
-  <p>The obvious next question is "so how much more does high effort cost on a given model?" — and the honest answer is that it depends on the task, not just the model. The same model might spend 2× its baseline thinking on a lookup and 8× on a hard proof. Effort sets a ceiling and a tendency; the prompt decides where inside that range you land.</p>
+  <p>How much more high effort costs on a given model depends on the task, not on the model alone. The same model might spend twice its baseline thinking on a simple lookup and eight times as much on a hard proof. Effort sets a ceiling and a tendency, and the prompt decides where within that range a given call lands.</p>
 
   <p>That's why this site prices what it can verify — the published per-token rates — and doesn't publish a per-model "effort multiplier." Any single number would be wrong for most workloads. The reliable way to know your multiplier is to measure it: run a representative sample of your own prompts at each effort level and read the output-token counts back from the API's usage field. Once you have that ratio, the cost is just that token count times the rate above.</p>
 
   <h2>Turning it down</h2>
 
-  <p>Reasoning effort is one of the largest levers on a bill, because thinking tokens routinely outnumber the visible answer by <span class="num">10–20×</span>. The moves:</p>
+  <p>Reasoning effort is one of the largest levers on a bill, because thinking tokens routinely outnumber the visible answer by <span class="num">10–20×</span>. There are a few ways to bring it down:</p>
 
   <ul style="font-size:16.5px; line-height:1.7; color:var(--color-slate-700); margin:0 0 20px; padding-left:22px;">
     <li><strong>Turn it off for easy work.</strong> Classification, extraction, formatting, and routing rarely need deliberation. Run them with thinking disabled or at the minimum.</li>
     <li><strong>Set effort per task, not per app.</strong> Reserve high effort for the calls where correctness pays for the tokens, and dial the rest down.</li>
     <li><strong>Cap the budget.</strong> Where the provider takes a token budget, a ceiling stops a hard prompt from running the meter unbounded.</li>
-    <li><strong>Route.</strong> Send the easy share of traffic to a cheaper or non-reasoning model entirely.</li>
+    <li><strong>Route the easy share.</strong> Send high-volume, low-difficulty traffic to a cheaper or non-reasoning model entirely.</li>
   </ul>
 
   <p>The catch is the same one that applies to every cost lever: hard tasks genuinely benefit from reasoning, and turning it down too far costs accuracy on exactly the problems you reached for a reasoning model to solve. The decision is per-task, and only your eval settles it.</p>
