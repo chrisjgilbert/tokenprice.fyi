@@ -29,23 +29,41 @@ Practical consequences:
 
 ## Copy style
 
-Voice: a developer who built this tool and uses it themselves, writing for peers.
-Not a marketing team. Not a chatbot.
+Voice: a developer who built this tool and uses it themselves, writing for peers who are also
+trying to figure something out. The learn section is the reference register — explanatory,
+methodical, unhurried. Everything else should feel like the same person wrote it.
 
-Rules:
-- **Cut filler.** If a sentence restates what the user can already see, delete it.
-- **Don't explain the obvious.** "Compare LLM prices" as a description of a table of LLM prices adds nothing.
-- **Be specific.** "Updated daily" beats "up-to-date". "40+ models" beats "comprehensive". If you can name the number, name it.
-- **No em-dashes for drama.** No rhetorical questions. No "Whether you're a startup or an enterprise…" constructions.
-- **Plain declaratives.** Short sentences are fine. Fragments are fine if they carry weight.
-- **Trust the reader.** This is a reference tool, not a landing page. Copy should inform, not persuade.
+### Principles
 
-What this looks like in practice:
-- Hero subtitle: one specific sentence, not a paragraph selling the idea
-- Section headers: say what's there, not what the user will "discover" or "learn"
-- CTAs: `"Price your workload"` not `"Ready to price your workload?"`
-- Empty/loading states: functional, not cute
-- Tooltips: the fact, not an intro to the fact
+- **Describe; don't prescribe.** Tell the reader what's here, not what their situation is.
+  The tool doesn't know their job. "Most AI features run as a chain of calls" is fine;
+  "Your job is a pipeline" is not.
+- **Specific over punchy.** Precision is more useful than rhythm. Write the number, not the mood.
+  "Updated daily" beats "up-to-date". "40+ models" beats "comprehensive".
+- **Calm starting points.** When the guide suggests a model, frame it as a starting point —
+  not because of hedging instinct, but because it's true. Avoid "best", "perfect", or
+  implied certainty about choices.
+- **Give the reader room.** Ideas should unfold rather than compress. Resist shorthand that
+  performs expertise instead of conveying it. If unpacking a concept takes two sentences,
+  use two sentences.
+- **Earn technical vocabulary.** Terms like "cost-driver step" are fine when they're doing
+  real work. Cut them when they're just flavor or atmosphere.
+- **No rhetorical devices.** No "Your X is Y." No fragments for drama. No questions that are
+  actually statements. No "No fabricated X, no Y" disclaimers that double as marketing.
+- **Cut filler.** If a sentence restates what the reader can already see, delete it. Section
+  headers should say what's there, not what the reader will "discover" or "learn".
+
+### What this looks like in practice
+
+- **Hero:** state what the thing is and what it covers — not a tagline selling the idea.
+  "LLM API pricing, tracked from launch" over "Compare pricing across N LLM APIs".
+- **Guide headings:** "Starting models for [task], with per-call cost estimates" over
+  "Best starting models for [task], priced per call".
+- **CTAs:** `"Find a model for your task"` not `"Ready to find the perfect model?"`.
+- **Cross-links:** say what the destination contains — "For model suggestions broken down by
+  step, see the guide" — not shorthand that assumes the reader knows the product.
+- **Empty/loading states:** functional, not cute.
+- **Tooltips:** the fact, not an intro to the fact.
 
 ## Testing
 
