@@ -26,6 +26,7 @@ Rails.application.routes.draw do
   # widgets).
   get "learn", to: "learn#index", as: :learn
   get "learn/anatomy", to: "learn#anatomy", as: :learn_anatomy
+  get "learn/reasoning", to: "learn#reasoning", as: :learn_reasoning
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
   get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
 
