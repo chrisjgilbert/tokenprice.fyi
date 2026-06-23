@@ -46,10 +46,12 @@ class ModelsController < ApplicationController
     models.reverse! if @dir == "desc"
     @models = models
 
-    # Hero events timeline (loaded once; lives outside the Turbo Frame).
+    # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
     unless request.headers["Turbo-Frame"] == "models"
       @all_events = helpers.build_all_events
+      @all_models_count = AiModel.listed.count
+      @providers_count = Provider.count
     end
   end
 
