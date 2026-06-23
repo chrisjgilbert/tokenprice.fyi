@@ -1,7 +1,8 @@
 # tokenprice.fyi
 
-Track and compare the price of LLM API tokens — Claude, GPT, Gemini, Grok, DeepSeek — and
-see how prices change over time.
+**[tokenprice.fyi](https://tokenprice.fyi)** — track and compare LLM API token prices across
+10+ providers (Anthropic, OpenAI, Google, xAI, DeepSeek, Meta, Mistral, Cohere, Alibaba,
+Moonshot AI) and see how prices change over time.
 
 It answers questions like:
 
@@ -126,3 +127,7 @@ The schema and Solid Queue are set up for where this is heading:
 Anthropic figures are authoritative. Other providers are best-effort from public pricing pages
 (as of June 2026) and may lag — each `PricePoint` records its `source`. Not affiliated with any
 provider.
+
+## License
+
+MIT
