@@ -1,12 +1,12 @@
-<% title = "Best starting models for #{@pattern.label}, priced per call · tokenprice.fyi" %>
+<% title = "Starting models for #{@pattern.label} · tokenprice.fyi" %>
 <% content_for :title, title %>
-<% content_for :description, "#{@pattern.label}: the pipeline broken into steps, a starting model per step, and a per-call cost. No fabricated bills, no rankings." %>
+<% content_for :description, "#{@pattern.label} broken into steps, with a starting model and estimated per-call cost for each." %>
 <% content_for :canonical, guide_task_url(@pattern.slug) %>
 <% content_for :head do %>
   <%= json_ld({
         "@context": "https://schema.org",
         "@type": "HowTo",
-        name: "Starting models for #{@pattern.label}, priced per call",
+        name: "Starting models for #{@pattern.label}",
         description: @pattern.blurb,
         step: @pattern.steps.each_with_index.map { |s, i|
           { "@type": "HowToStep", position: i + 1, name: s.role, text: s.purpose }
@@ -22,7 +22,7 @@
       <span class="nav-dot"></span>
       <span class="tp-section-label"><%= link_to "Guide", guide_path, style: "color:inherit;text-decoration:none" %></span>
     </div>
-    <h1>Best starting models for <%= @pattern.label %>, priced per call.</h1>
+    <h1>Starting models for <%= @pattern.label %>, with per-call cost estimates.</h1>
 
     <% guide_lede(@pattern).each do |para| %>
       <p><%= para %></p>
@@ -131,7 +131,6 @@
   <section class="gs-takeaway reveal">
     <h2>The takeaway</h2>
     <p><%= guide_takeaway(@pattern) %></p>
-    <p class="gs-takeaway-foot">No fabricated bills, no rankings.</p>
   </section>
 
   <%# ---- Cross-links. Labels, not questions. ---- %>
