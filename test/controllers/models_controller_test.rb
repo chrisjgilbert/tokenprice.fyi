@@ -57,6 +57,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
       text: /sourced from provider price pages · costs are per-call estimates, never a monthly bill/
   end
 
+  test "the beta flag is gone from the chrome" do
+    get root_url
+    assert_response :success
+    assert_select ".tp-beta", count: 0
+    assert_select ".tp-foot-beta", count: 0
+    assert_no_match(/data is still being sense-checked/, response.body)
+  end
+
   test "index can be filtered by tier" do
     get root_url(tier: "frontier")
     assert_response :success
