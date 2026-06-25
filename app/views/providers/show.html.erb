@@ -20,12 +20,14 @@
   <%= provider_square(@provider, size: :lg) %>
   <div>
     <h1 class="text-3xl font-bold tracking-tight"><%= @provider.name %></h1>
-    <p class="mt-1 flex items-center gap-2 text-sm text-slate-500">
-      <% if @provider.flag_emoji %><span aria-hidden="true"><%= @provider.flag_emoji %></span><% end %>
-      <% if @provider.website %>
-        <%= link_to @provider.website.sub(%r{\Ahttps?://}, ""), @provider.website, class: "hover:underline" %>
-      <% end %>
-    </p>
+    <% if @provider.website || @provider.flag_emoji %>
+      <p class="mt-1 flex items-center gap-2 text-sm text-slate-500">
+        <% if @provider.flag_emoji %><span aria-hidden="true"><%= @provider.flag_emoji %></span><% end %>
+        <% if @provider.website %>
+          <%= link_to @provider.website.sub(%r{\Ahttps?://}, ""), @provider.website, class: "hover:underline" %>
+        <% end %>
+      </p>
+    <% end %>
   </div>
 </header>
 
