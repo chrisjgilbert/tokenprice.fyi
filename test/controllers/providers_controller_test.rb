@@ -26,11 +26,11 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /updated daily/
   end
 
-  test "links to the guide and to trends with descriptive anchors" do
+  test "links to the guide and to the events timeline with descriptive anchors" do
     get provider_url(providers(:anthropic))
     assert_response :success
     assert_select "a[href=?]", guide_path
-    assert_select "a[href=?]", trends_path
+    assert_select "a[href=?]", events_path
   end
 
   test "emits a Home to Provider BreadcrumbList JSON-LD" do

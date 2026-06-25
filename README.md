@@ -18,7 +18,7 @@ It answers questions like:
 - **Tailwind CSS** (`tailwindcss-rails`, standalone CLI — no Node build).
 - **Solid Queue / Solid Cache / Solid Cable** — backs the recurring jobs (OpenRouter sync, news pipeline).
 - **SVG charts, no chart library or CDN** — the model-history chart renders server-side
-  (`ChartsHelper`, zero JS); the `/trends` explorer is a client-rendered SVG chart (Stimulus).
+  (`ChartsHelper`, zero JS).
 
 ## Data model
 
@@ -113,11 +113,11 @@ bin/rails 'admin:set_password[your-password]'   # writes admin_password_digest t
 Then sign in at `/admin/login`. In production, supply `RAILS_MASTER_KEY` so credentials
 decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
 
-## Trends and model-news
+## Market events and model-news
 
-`/trends` is an interactive client-rendered SVG chart (Stimulus, no CDN, no chart library) of
-every model's price history, with presets, time ranges, and the **market events** that moved
-prices marked on the timeline alongside each model's launch.
+`/events` is a timeline of the LLM market, newest first: the curated **market events** that moved
+prices alongside every model launch, filterable by kind (`EventsHelper#build_all_events` merges
+the two streams). `/trends` 301-redirects here.
 
 The market events are fed by a news pipeline: `ReleaseWatchJob` polls provider feeds and
 `NewsScanJob` searches Hacker News, both classifying items with Claude; `NewsDigestJob` posts a
