@@ -60,7 +60,6 @@ class ModelsController < ApplicationController
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
     @catalog_entry = PriceCatalog.model(@model.slug)
-    @insights = ModelInsights.new(@model)
     @related = AiModel.listed.where(provider: @model.provider)
                       .where.not(id: @model.id)
                       .includes(:price_points, :provider).by_release.limit(4)

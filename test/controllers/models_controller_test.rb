@@ -150,13 +150,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "\"@type\":\"Product\""
   end
 
-  test "show renders the computed insights section" do
-    get model_url(ai_models(:deepseek_v4))
-    assert_response :success
-    assert_select "h2", text: "Where it sits"
-    assert_select "p", text: /Cheapest frontier model/
-  end
-
   test "show renders editorial facets when present" do
     ai_models(:opus).update!(
       strengths: "Highly autonomous agentic work",
