@@ -62,7 +62,7 @@
                   <div class="ev-body">
                     <div class="ev-meta">
                       <time class="ev-date" datetime="<%= event.date.iso8601 %>"><%= fmt_date_full(event.date) %></time>
-                      <span class="ev-chip ev-chip-<%= event.kind %>"><%= event_kind_label(event.kind) %></span>
+                      <span class="tp-badge tp-kind-<%= event.kind %>"><%= event_kind_label(event.kind) %></span>
                     </div>
 
                     <h3 class="ev-title">
@@ -252,21 +252,6 @@
   letter-spacing: -0.01em;
   color: var(--color-slate-400);
 }
-.ev-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-}
-.ev-chip-market { color: var(--color-rose-700);    background: var(--color-rose-50);    border-color: var(--color-rose-100); }
-.ev-chip-launch { color: var(--color-emerald-700); background: var(--color-emerald-50); border-color: var(--color-emerald-100); }
-
 .ev-title {
   font-size: 16.5px;
   font-weight: 600;

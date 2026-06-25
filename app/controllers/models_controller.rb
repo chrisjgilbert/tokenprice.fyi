@@ -34,7 +34,11 @@ class ModelsController < ApplicationController
     # Conditional GET. The page varies by every filter/sort param, so they MUST
     # ride in the etag — otherwise a conditional request for one filtered view
     # would 304 off a different view's cache. Renders 304 and halts on a match.
-    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query ])
+    # last_modified spans the catalog AND the market events + model rows the hero
+    # renders (helpers.build_all_events), so editing a market event or a model
+    # busts the cache instead of serving a stale hero. Renders 304 on a match.
+    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query ],
+      last_modified: helpers.timeline_last_modified)
 
     models = scope.to_a
     if @query.match?(/[a-z0-9]/i)
