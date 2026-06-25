@@ -4,7 +4,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index lists models with the cheapest-frontier callout" do
     get root_url
     assert_response :success
-    assert_select "h1", /Compare pricing across/
+    assert_select "h1", /LLM API pricing, tracked from launch/
     assert_select "tbody td", /Claude Opus 4.8/
   end
 
