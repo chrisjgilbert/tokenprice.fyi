@@ -10,22 +10,23 @@ Rails.application.routes.draw do
 
   get "compare", to: "comparisons#show", as: :compare
   get "trends",  to: "trends#index",     as: :trends
-  get "map",     to: "map#index",        as: :map
-  get "why",     to: "pages#why",        as: :why
   get "sources", to: "sources#index",    as: :sources
-  get "which-model", to: "pages#which_model", as: :which_model
+  get "which-model", to: redirect("/guide", status: 301)
+
+  # The Guide — browse-by-task model picker. Index is the task chooser; each
+  # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.
+  get "guide", to: "guide#index", as: :guide
+  # The coding-agent slug shipped with an underscore; 301 the legacy URL to the
+  # hyphenated one to preserve link equity. Must precede the generic task route.
+  get "guide/coding_agent", to: redirect("/guide/coding-agent", status: 301)
+  get "guide/:task", to: "guide#show", as: :guide_task
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
-  # The single-workload estimator. State lives in query params (shareable,
-  # indexable); the result renders into a Turbo Frame.
-  get "cost", to: "costs#show", as: :cost
-
-  # The compact model-page estimate embed (its own Turbo Frame).
-  get "models/:id/estimate", to: "embeds#show", as: :model_estimate
-
   # Education layer — directory index + explainers (each with live-data
-  # widgets and an estimator CTA).
+  # widgets).
   get "learn", to: "learn#index", as: :learn
+  get "learn/anatomy", to: "learn#anatomy", as: :learn_anatomy
+  get "learn/reasoning", to: "learn#reasoning", as: :learn_reasoning
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
   get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
 

@@ -40,13 +40,4 @@ module CostsHelper
         co_icon(:trend_down, size: 13) + " #{down ? '−' : '+'}#{pct.abs}%"
     end
   end
-
-  # A pre-filled /cost link for an education CTA. Clamps via the engine, and
-  # omits `base` unless the caller set one so the estimator injects a sensible
-  # catalog default (a real cheapest-equivalent comparison on landing).
-  def cost_cta_path(attrs)
-    query = CostEstimate.profile_from(attrs).to_query
-    query.delete(:base) unless attrs.key?(:base) || attrs.key?("base")
-    cost_path(query)
-  end
 end

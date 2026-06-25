@@ -1,6 +1,38 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
 <% content_for :description, "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
+<% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
+  <%
+    parts = {
+      "input" => @model.current_input,
+      "output" => @model.current_output,
+      "cached input" => @model.current_cached_input
+    }.compact
+    prices = parts.values
+    price_breakdown = parts.map { |label, value| "#{label} #{usd_plain(value)}" }.join(", ")
+    aggregate_offer =
+      if prices.any?
+        {
+          "@type": "AggregateOffer",
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          lowPrice: prices.min.to_s,
+          highPrice: prices.max.to_s,
+          offerCount: prices.size,
+          description: "List price per 1M tokens — #{price_breakdown}.",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            priceCurrency: "USD",
+            unitText: "per 1M tokens",
+            referenceQuantity: {
+              "@type": "QuantitativeValue",
+              value: 1_000_000,
+              unitText: "tokens"
+            }
+          }
+        }
+      end
+  %>
   <%= json_ld({
         "@context": "https://schema.org",
         "@type": "Product",
@@ -9,13 +41,7 @@
         description: @model.long_description,
         brand: { "@type": "Brand", name: @model.provider.name },
         releaseDate: @model.released_on&.iso8601,
-        offers: ([ @model.current_input, @model.current_output ].compact.min && {
-          "@type": "Offer",
-          priceCurrency: "USD",
-          price: @model.current_input&.to_s,
-          description: "Per 1M input tokens (output #{usd_plain(@model.current_output)} / 1M)",
-          availability: "https://schema.org/InStock"
-        })
+        offers: aggregate_offer
       }.compact) %>
   <%= json_ld({
         "@context": "https://schema.org",
@@ -32,21 +58,33 @@
 </nav>
 
 <header class="mb-8 flex flex-wrap items-start justify-between gap-4">
-  <div>
-    <div class="flex items-center gap-2">
-      <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
-      <%= status_badge(@model.status) %>
+  <div class="flex items-start gap-4">
+    <%= link_to provider_path(@model.provider), class: "mt-1 shrink-0", aria: { label: @model.provider.name } do %>
+      <%= provider_square(@model.provider, size: :lg) %>
+    <% end %>
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
+        <%= status_badge(@model.status) %>
+      </div>
+      <p class="mt-1 flex items-center gap-2 text-slate-500">
+        <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
+        <% if @model.provider.flag_emoji %><span aria-hidden="true"><%= @model.provider.flag_emoji %></span><% end %>
+        <span>·</span>
+        <%= tier_badge(@model.tier) %>
+      </p>
     </div>
-    <p class="mt-1 flex items-center gap-2 text-slate-500">
-      <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
-      <span>·</span>
-      <%= tier_badge(@model.tier) %>
-    </p>
   </div>
-  <%= link_to "Compare →", compare_path(a: @model.slug), class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" %>
+  <%= link_to compare_path(a: @model.slug), class: "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" do %>
+    <%= icon(:swap, size: 15) %> Compare
+  <% end %>
 </header>
 
-<% editorial = { "Strengths" => @model.strengths, "Best for" => @model.best_for, "Limitations" => @model.limitations }.select { |_, v| v.present? } %>
+<% editorial = {
+     "Strengths"   => [ @model.strengths,   :bolt ],
+     "Best for"    => [ @model.best_for,    :target ],
+     "Limitations" => [ @model.limitations, :warn ]
+   }.select { |_, (v, _)| v.present? } %>
 <% if @model.description.present? || editorial.any? %>
   <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
     <% if @model.description.present? %>
@@ -54,9 +92,11 @@
     <% end %>
     <% if editorial.any? %>
       <dl class="<%= "mt-5" if @model.description.present? %> grid gap-4 sm:grid-cols-3">
-        <% editorial.each do |label, value| %>
+        <% editorial.each do |label, (value, ic)| %>
           <div>
-            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= label %></dt>
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span class="text-slate-400" aria-hidden="true"><%= icon(ic, size: 14) %></span><%= label %>
+            </dt>
             <dd class="mt-1 text-sm text-slate-700"><%= value %></dd>
           </div>
         <% end %>
@@ -67,66 +107,27 @@
 
 <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
   <% [
-       ["Input / 1M", usd(@model.current_input)],
-       ["Output / 1M", usd(@model.current_output)],
-       ["Cached input / 1M", usd(@model.current_cached_input)],
-       ["Context window", tokens_short(@model.context_window)]
-     ].each do |label, value| %>
+       ["Input / 1M", usd(@model.current_input), :arrow_in],
+       ["Output / 1M", usd(@model.current_output), :arrow_out],
+       ["Cached input / 1M", usd(@model.current_cached_input), :cache],
+       ["Context window", tokens_short(@model.context_window), :brackets]
+     ].each do |label, value, ic| %>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+      <div class="flex items-center justify-between">
+        <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
+      </div>
       <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
     </div>
   <% end %>
 </div>
 
-<%# ── Estimate embed: a compact mini-estimator pre-filled with this model as
-    the baseline, riding the model page's traffic into /cost. ── %>
 <% if @catalog_entry %>
-  <% frame_id = "estimate_embed_#{@model.slug}" %>
-  <% in0 = CostEstimate.embed_slider(1500) %>
-  <% out0 = CostEstimate.embed_slider(600) %>
-  <section class="embed-wrap">
-    <div class="card emb-card">
-      <div class="emb-head">
-        <span class="emb-tag"><%= co_icon(:spark, size: 14) %>Estimate your monthly cost</span>
-        <h3>What would <span class="emb-model"><%= provider_square(@model.provider) %><%= @model.name %></span> cost you?</h3>
-        <p class="emb-sub">Live pricing for this model. Open the full estimator for caching, reused context, and capability filtering.</p>
-      </div>
-      <%= form_with url: model_estimate_path(@model), method: :get,
-            data: { controller: "cost-form", turbo_frame: frame_id, turbo_action: "replace" } do %>
-        <div class="emb-grid">
-          <div class="emb-controls">
-            <div class="emb-field">
-              <label for="in_pos">Input tokens / request <span class="emb-v num"><%= co_kfmt(1500) %></span></label>
-              <%= range_field_tag :in_pos, in0, min: 0, max: 100, id: "in_pos", class: "emb-range", data: { action: "input->cost-form#token input->cost-form#edit" } %>
-            </div>
-            <div class="emb-field">
-              <label for="out_pos">Output tokens / request <span class="emb-v num"><%= co_kfmt(600) %></span></label>
-              <%= range_field_tag :out_pos, out0, min: 0, max: 100, id: "out_pos", class: "emb-range", data: { action: "input->cost-form#token input->cost-form#edit" } %>
-            </div>
-            <div class="emb-field">
-              <label>Requests / month</label>
-              <div class="emb-presets" role="radiogroup" aria-label="Requests per month">
-                <% [["10K", 10_000], ["100K", 100_000], ["500K", 500_000], ["2M", 2_000_000]].each do |lbl, v| %>
-                  <label class="emb-chip <%= 'on' if v == 100_000 %>">
-                    <%= radio_button_tag :req, v, v == 100_000, class: "sr-only", data: { action: "change->cost-form#submit" } %><%= lbl %>
-                  </label>
-                <% end %>
-              </div>
-            </div>
-          </div>
-          <%= turbo_frame_tag frame_id, src: model_estimate_path(@model, in_pos: in0, out_pos: out0, req: 100_000), loading: "eager" do %>
-            <div class="emb-out"><span class="emb-out-l">Pricing…</span></div>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-    <div>
-      <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
-            payload: "model=#{@model.slug}",
-            title: "Alert me when #{@model.name}'s price changes",
-            body: "Get an email when #{@model.name}'s price changes. No dashboard to check — we watch every provider.", error: nil %>
-    </div>
+  <section class="mb-8">
+    <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
+          payload: "model=#{@model.slug}",
+          title: "Alert me when #{@model.name}'s price changes",
+          body: "Get an email when #{@model.name}'s price changes. No dashboard to check — we watch every provider.", error: nil %>
   </section>
 <% end %>
 

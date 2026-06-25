@@ -1,0 +1,155 @@
+<% title = "Starting models for #{@pattern.label} · tokenprice.fyi" %>
+<% content_for :title, title %>
+<% content_for :description, "#{@pattern.label} broken into steps, with a starting model and estimated per-call cost for each." %>
+<% content_for :canonical, guide_task_url(@pattern.slug) %>
+<% content_for :head do %>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: "Starting models for #{@pattern.label}",
+        description: @pattern.blurb,
+        step: @pattern.steps.each_with_index.map { |s, i|
+          { "@type": "HowToStep", position: i + 1, name: s.role, text: s.purpose }
+        }
+      }) %>
+<% end %>
+
+<%= render "guide/show_styles" %>
+
+<div class="guide-show">
+  <header class="led-head reveal">
+    <div class="led-eyebrow">
+      <span class="nav-dot"></span>
+      <span class="tp-section-label"><%= link_to "Guide", guide_path, style: "color:inherit;text-decoration:none" %></span>
+    </div>
+    <h1>Starting models for <%= @pattern.label %>, with per-call cost estimates.</h1>
+
+    <% guide_lede(@pattern).each do |para| %>
+      <p><%= para %></p>
+    <% end %>
+
+    <ul class="gs-drivers">
+      <% guide_drivers(@pattern).each do |driver| %>
+        <li><%= driver %></li>
+      <% end %>
+    </ul>
+  </header>
+
+  <%# ---- The pipeline. A feature is a chain of calls; each step shows its
+       role, purpose, starting tier, whether it repeats, its token shape, and
+       its starting options with a per-call cost. ---- %>
+  <section class="gs-pipe reveal">
+    <div class="gs-pipe-head">
+      <h2>The pipeline</h2>
+      <p>A feature is a chain of calls, each with a different job. Steps run top to bottom.</p>
+    </div>
+
+    <ol class="gs-steps">
+      <% @pattern.steps.each_with_index do |step, i| %>
+        <li class="gs-step card">
+          <div class="gs-step-head">
+            <span class="gs-step-no num"><%= format("%02d", i + 1) %></span>
+            <div class="gs-step-id">
+              <h3 class="gs-step-role"><%= step.role %></h3>
+              <p class="gs-step-purpose"><%= step.purpose %></p>
+            </div>
+            <div class="gs-step-tags">
+              <%= tier_badge(step.tier) %>
+              <% if step.loops? %>
+                <span class="gs-flag" title="this step repeats">repeats</span>
+              <% end %>
+              <% if step.cost_driver? %><span class="gs-flag gs-flag-cost">cost-driver step</span><% end %>
+              <% if step.capability? %><span class="gs-flag gs-flag-cap">capable-model step</span><% end %>
+            </div>
+          </div>
+
+          <div class="gs-shape">
+            <span class="gs-shape-label">per-call shape</span>
+            <span class="num gs-shape-v"><%= co_kfmt(step.shape.sys) %> sys</span>
+            <span class="gs-shape-plus">+</span>
+            <span class="num gs-shape-v gs-shape-in"><%= co_kfmt(step.shape.in) %> in</span>
+            <span class="gs-shape-plus">+</span>
+            <span class="num gs-shape-v gs-shape-out"><%= co_kfmt(step.shape.out) %> out</span>
+          </div>
+
+          <% results = GuideCost.for_step(step, catalog: @catalog) %>
+          <% if step.priced? %>
+            <div class="gs-opts">
+              <% results.each do |result| %>
+                <div class="gs-opt">
+                  <span class="gs-opt-kind"><%= guide_option_label(result.kind) %></span>
+                  <span class="gs-opt-model">
+                    <% if result.resolved? %>
+                      <%= link_to (result.name || result.slug), model_path(result.slug), class: "gs-opt-link" %>
+                    <% else %>
+                      <span class="gs-opt-slug"><%= result.name || result.slug %></span>
+                    <% end %>
+                  </span>
+                  <span class="gs-opt-cost num">
+                    <% if result.priced? %>
+                      &asymp; <%= co_per_call(result.per_call) %> per call
+                    <% else %>
+                      <span class="tp-muted-dash">&mdash;</span>
+                    <% end %>
+                  </span>
+                </div>
+              <% end %>
+              <%= link_to root_path(tier: step.tier), class: "gs-opt-more" do %>
+                <%= safe_join([ "See all #{step.tier}-tier models in the price table", co_icon(:arrow_right, size: 13) ]) %>
+              <% end %>
+            </div>
+          <% else %>
+            <%# AUDIT #5: the embed step is a separate embeddings endpoint the
+                catalog doesn't carry. Render the step, name the models, but show
+                NO per-call cost. Never a fabricated $ figure here. %>
+            <div class="gs-opts gs-opts-unpriced">
+              <p class="gs-unpriced-note">Not priced here. This runs on a separate embeddings endpoint with its own rates the price table doesn't carry.</p>
+              <div class="gs-opt-slugs">
+                <%# Reuse the already-computed results (carrying names) so the
+                    unpriced models show their display name, falling back to slug. %>
+                <% results.each do |result| %>
+                  <span class="gs-opt-slug"><%= result.name || result.slug %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+
+  <%# ---- How to choose for this task. Unique editorial per task, grounded in
+       its real pipeline (the steps, the cost-driver vs capable-model split). ---- %>
+  <section class="gs-choose reveal">
+    <h2>How to choose for <%= @pattern.label %></h2>
+    <% guide_choosing_paras(@pattern).each do |para| %>
+      <p><%= para %></p>
+    <% end %>
+  </section>
+
+  <%# ---- The takeaway. Computed from the steps; branches per AUDIT #4. ---- %>
+  <section class="gs-takeaway reveal">
+    <h2>The takeaway</h2>
+    <p><%= guide_takeaway(@pattern) %></p>
+  </section>
+
+  <%# ---- Cross-links. Labels, not questions. ---- %>
+  <section class="gs-links reveal">
+    <h2>Go deeper</h2>
+    <div class="gs-links-grid">
+      <%# SPEC §3: land on the matching feature_costs section when one exists
+          (its <h2> ids mirror the pattern keys), else the generic explainer. %>
+      <%= link_to feature_costs_link(@pattern), class: "gs-link card" do %>
+        <span class="gs-link-kind">Explainer</span>
+        <span class="gs-link-title">See the full cost breakdown</span>
+        <span class="gs-link-sub">What this task costs and why, worked through line by line with live prices.</span>
+      <% end %>
+      <%= link_to root_path, class: "gs-link card" do %>
+        <span class="gs-link-kind">Price table</span>
+        <span class="gs-link-title">Every model, priced per 1M tokens</span>
+        <span class="gs-link-sub">Sort and filter the full catalog the options above link into.</span>
+      <% end %>
+    </div>
+    <p class="gs-back"><%= link_to safe_join([ "All tasks in the guide", co_icon(:arrow_right, size: 13) ]), guide_path %></p>
+  </section>
+</div>

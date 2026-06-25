@@ -1,4 +1,6 @@
 <% content_for :title, "Compare #{@left&.name} vs #{@right&.name} — tokenprice.fyi" %>
+<%# Collapse every ?a=&b= permutation onto one param-free URL. %>
+<% content_for :canonical, compare_url %>
 
 <%# ── Page-specific styles ──────────────────────────────────────────────── %>
 <style>

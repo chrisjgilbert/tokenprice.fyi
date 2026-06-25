@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc><%= root_url %></loc></url>
-  <url><loc><%= cost_url %></loc></url>
   <url><loc><%= trends_url %></loc></url>
   <url><loc><%= compare_url %></loc></url>
   <url><loc><%= sources_url %></loc></url>
   <url><loc><%= learn_url %></loc></url>
+  <url><loc><%= learn_anatomy_url %></loc></url>
   <url><loc><%= how_pricing_works_url %></loc></url>
+  <url><loc><%= learn_reasoning_url %></loc></url>
   <url><loc><%= learn_feature_costs_url %></loc></url>
   <url><loc><%= learn_cost_cutting_url %></loc></url>
-  <url><loc><%= which_model_url %></loc></url>
-  <url><loc><%= why_url %></loc></url>
+  <url><loc><%= guide_url %></loc></url>
+  <% FeaturePattern.all.each do |pattern| %>
+    <url><loc><%= guide_task_url(pattern.slug) %></loc></url>
+  <% end %>
   <% @providers.each do |provider| %>
     <url><loc><%= provider_url(provider) %></loc></url>
   <% end %>

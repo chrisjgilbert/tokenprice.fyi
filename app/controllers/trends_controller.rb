@@ -1,5 +1,7 @@
 class TrendsController < ApplicationController
   def index
+    return if catalog_fresh?(etag: [ :trends ])
+
     models = AiModel.listed.includes(:provider, :price_points).to_a
 
     @models_json = models.map do |m|

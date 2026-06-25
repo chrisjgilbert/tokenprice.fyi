@@ -7,55 +7,23 @@
         "@type": "ItemList",
         name: "LLM pricing explainers",
         itemListElement: learn_concepts.each_with_index.map { |c, i|
-          { "@type": "ListItem", position: i + 1, name: c[:title] }.merge(c[:path] ? { url: url_for(c[:path]) } : {})
+          { "@type": "ListItem", position: i + 1, name: c[:title], url: url_for(c[:path]) }
         }
       }) %>
 <% end %>
 
 <% concepts = learn_concepts %>
-<% feat = concepts.find { |c| c[:live] } %>
 
 <header class="led-head reveal">
   <div class="led-eyebrow">
     <span class="nav-dot"></span>
     <span class="tp-section-label">Learn</span>
-    <span class="led-pill">the index, explained</span>
   </div>
   <h1>Understand what you're paying for.</h1>
-  <p>How LLM API billing actually works — explained, with live prices and a direct jump into the estimator.</p>
+  <p>Five explainers on what an LLM feature costs and why: the call chain a feature runs, how an API bill reads, what reasoning tokens add, where the tokens go, and which levers cut it.</p>
 </header>
 
-<%# FEATURED · the foundation explainer (prose left, compact live widget right) %>
-<section class="card led-feat reveal" style="animation-delay:.06s">
-  <div class="led-feat-l">
-    <span class="led-feat-tag"><%= co_icon(:spark, size: 14) %>Start here · the foundation</span>
-    <h2><%= feat[:title] %></h2>
-    <p><%= feat[:dek] %></p>
-    <div class="led-feat-meta">
-      <span><%= feat[:num] %> / <%= format('%02d', concepts.size) %></span>
-      <span class="sep"></span><span><%= feat[:read] %> read</span>
-      <span class="sep"></span><span>live data inside</span>
-    </div>
-    <%= link_to feat[:path], class: "tp-btn tp-btn-primary led-feat-cta" do %>Read the explainer <%= co_icon(:arrow_right) %><% end %>
-  </div>
-  <%# A single decorative stat — the index is a directory; the live-data widget
-      itself lives inside the explainer, not here. %>
-  <div class="led-feat-r">
-    <div class="led-feat-deco">
-      <span class="lw-live"><%= co_icon(:live, size: 12) %>Live data inside</span>
-      <% if (mult = live_output_input_multiple) %>
-        <div class="led-feat-stat num"><%= mult %>×</div>
-        <p>output-to-input price ratio, live, across all tracked models.</p>
-      <% else %>
-        <p>Every explainer is paired with today's live prices from the index.</p>
-      <% end %>
-    </div>
-  </div>
-</section>
-
-<%# THE SERIES %>
 <section class="led-series">
-  <div class="led-series-h"><h3>The series</h3><span class="line"></span></div>
   <div class="led-grid">
     <% concepts.each_with_index do |c, i| %>
       <%= learn_concept_card(c, delay: (0.04 * i).round(2)) %>
@@ -63,11 +31,14 @@
   </div>
 </section>
 
-<%# CLOSING CTA → estimator, pre-filled for the foundation concept %>
-<section class="card led-cta reveal">
-  <div class="led-cta-t">
-    <h3>Price your own workload.</h3>
-    <p>Describe your workload in a sentence and see the bill across every model — cheapest equivalent included.</p>
-  </div>
-  <%= link_to concept_cta_path(feat), class: "tp-btn tp-btn-primary" do %><%= co_icon(:spark) %>Open the estimator <%= co_icon(:arrow_right) %><% end %>
-</section>
+<% upcoming = learn_upcoming %>
+<% if upcoming.any? %>
+  <section class="led-series">
+    <div class="led-eyebrow"><span class="tp-section-label">Coming soon</span></div>
+    <div class="led-grid">
+      <% upcoming.each_with_index do |c, i| %>
+        <%= learn_upcoming_card(c, delay: (0.04 * i).round(2)) %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

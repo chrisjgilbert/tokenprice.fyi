@@ -7,6 +7,12 @@ class SourcesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /Where the numbers come from/
   end
 
+  test "emits a self-canonical link that ignores query params" do
+    get sources_url(ref: "twitter")
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", sources_url
+  end
+
   test "lists each distinct price point source as an https link with its counts" do
     get sources_url
 

@@ -1,6 +1,6 @@
 # Polls provider news feeds every ~6 hours, stores new entries in news_items,
 # and classifies each with Claude Haiku. Relevant items join the daily Slack digest
-# via the notified_at IS NULL pending pool flushed by OpenRouterSyncJob.
+# via the notified_at IS NULL pending pool flushed by NewsDigestJob.
 class ReleaseWatchJob < ApplicationJob
   queue_as :default
 

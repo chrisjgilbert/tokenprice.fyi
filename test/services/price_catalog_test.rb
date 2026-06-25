@@ -49,6 +49,24 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil PriceCatalog.as_of("deepseek-v4-pro", Date.new(2026, 1, 1)) # pre-launch
   end
 
+  test "cheapest returns the lowest current-input listed entry of a tier" do
+    result = PriceCatalog.cheapest(tier: "frontier")
+    frontier_inputs = PriceCatalog.models.select { |e| e.tier == "frontier" }.map(&:input)
+
+    assert_equal "frontier", result.tier
+    assert_equal "deepseek-v4-pro", result.slug # cheapest frontier by input (0.435)
+    assert_in_delta frontier_inputs.min, result.input, 1e-9
+  end
+
+  test "cheapest reuses an injected catalog and returns nil when none qualify" do
+    # Entry is identity-compared, so match on slug: the injected catalog yields
+    # the same model as the default load.
+    assert_equal PriceCatalog.cheapest(tier: "frontier").slug,
+                 PriceCatalog.cheapest(tier: "frontier", among: PriceCatalog.models).slug
+    assert_nil PriceCatalog.cheapest(tier: "frontier", among: [])
+    assert_nil PriceCatalog.cheapest(tier: "nonexistent")
+  end
+
   test "change_dates are the distinct price dates ascending" do
     dates = PriceCatalog.change_dates
 

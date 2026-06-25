@@ -3,7 +3,7 @@
   <head>
     <title><%= content_for(:title) || "tokenprice.fyi — LLM API price tracker" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and 40+ others — updated daily with full history.' %>">
+    <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and more LLM APIs. Updated daily, with full price history.' %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
@@ -17,7 +17,14 @@
     <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <%# Non-render-blocking webfonts: load as print media (off the critical path),
+        then flip to all media on load. <noscript> covers JS-disabled clients.
+        Weight list (400;500;600;700 per family) matches actual usage in
+        app/assets/tailwind/application.css — every weight is in use, so none can
+        be dropped without a visual regression. %>
+    <% fonts_href = "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" %>
+    <link href="<%= fonts_href %>" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="<%= fonts_href %>" rel="stylesheet"></noscript>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -39,7 +46,6 @@
             <%= brand_mark(28) %>
             <span>tokenprice<span class="fyi">.fyi</span></span>
           <% end %>
-          <span class="tp-beta" title="Beta — data is still being sense-checked and verified, so figures may change.">beta</span>
         </div>
         <div class="tp-nav-links">
           <% primary_nav_items.each do |label, path| %>
@@ -104,9 +110,10 @@
         <% end %>
         <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
         <span>List prices · USD per 1M tokens</span>
+        <span>Independent price record, not affiliated with any provider</span>
+        <span>sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
-        <span class="tp-foot-beta">Beta — data is still being sense-checked and verified, so figures may change.</span>
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->

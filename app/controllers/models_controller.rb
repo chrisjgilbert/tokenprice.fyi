@@ -1,12 +1,12 @@
 class ModelsController < ApplicationController
   SORTS = {
-    "input"    => ->(m) { m.current_input  || Float::INFINITY },
-    "output"   => ->(m) { m.current_output || Float::INFINITY },
-    "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },
-    "change"   => ->(m) { m.input_change_since_launch || 0 },
-    "context"  => ->(m) { m.context_window || 0 },
-    "name"     => ->(m) { m.name.to_s.downcase },
-    "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
+    "input" => ->(m) { m.current_input || Float::INFINITY },
+    "output" => ->(m) { m.current_output || Float::INFINITY },
+    "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
+    "change" => ->(m) { m.input_change_since_launch || 0 },
+    "context" => ->(m) { m.context_window || 0 },
+    "name" => ->(m) { m.name.to_s.downcase },
+    "tier" => ->(m) { {"frontier" => 0, "mid" => 1, "small" => 2}.fetch(m.tier, 3) }
   }.freeze
 
   # Cheapest input first. The view omits these from filter URLs to keep them
@@ -26,10 +26,15 @@ class ModelsController < ApplicationController
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
     @sort = params[:sort].presence_in(SORTS.keys) || DEFAULT_SORT
-    @dir  = params[:dir].presence_in(%w[asc desc]) || DEFAULT_DIR
+    @dir = params[:dir].presence_in(%w[asc desc]) || DEFAULT_DIR
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
+
+    # Conditional GET. The page varies by every filter/sort param, so they MUST
+    # ride in the etag — otherwise a conditional request for one filtered view
+    # would 304 off a different view's cache. Renders 304 and halts on a match.
+    return if catalog_fresh?(etag: [:index, @tier, @provider_slugs.sort, @sort, @dir, @query])
 
     models = scope.to_a
     if @query.match?(/[a-z0-9]/i)
@@ -44,28 +49,30 @@ class ModelsController < ApplicationController
     models.reverse! if @dir == "desc"
     @models = models
 
-    # Headline stat: cheapest frontier model by input price.
-    @cheapest_frontier = AiModel.listed.frontier.includes(:price_points, :provider)
-                                .min_by { |m| m.current_input || Float::INFINITY }
-
-    # Hero events timeline (loaded once; lives outside the Turbo Frame).
+    # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
     unless request.headers["Turbo-Frame"] == "models"
       @all_events = helpers.build_all_events
       @all_models_count = AiModel.listed.count
       @providers_count = Provider.count
-      @cheapest_model = AiModel.listed.includes(:price_points, :provider)
-                               .min_by { |m| m.current_input || Float::INFINITY }
     end
   end
 
   def show
     @model = AiModel.includes(:provider, :price_points).find_by!(slug: params[:id])
+
+    # Conditional GET keyed on this model's latest price write (updated_at, not
+    # effective_on) so a same-day in-place price correction still busts the cache.
+    # The timestamp rides the ETag too, so an If-None-Match alone invalidates.
+    price_updated_at = @model.current_price&.updated_at
+    return if catalog_fresh?(etag: [:model_show, @model.slug, price_updated_at],
+      last_modified: price_updated_at)
+
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
     @catalog_entry = PriceCatalog.model(@model.slug)
     @related = AiModel.listed.where(provider: @model.provider)
-                      .where.not(id: @model.id)
-                      .includes(:price_points, :provider).by_release.limit(4)
+      .where.not(id: @model.id)
+      .includes(:price_points, :provider).by_release.limit(4)
   end
 end

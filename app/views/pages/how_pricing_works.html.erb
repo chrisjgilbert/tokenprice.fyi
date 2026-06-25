@@ -1,17 +1,16 @@
 <% content_for :title, "How LLM pricing works — tokenprice.fyi" %>
 <% content_for :description, "A visual guide to LLM API pricing: tokens, input vs output, cached input, batch discounts, thinking tokens — with worked cost calculations." %>
+<% content_for :canonical, how_pricing_works_url %>
 
 <% content_for :head do %>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": "How LLM pricing works",
-      "datePublished": "2026-06-11",
-      "publisher": { "@type": "Organization", "name": "tokenprice.fyi" },
-      "mainEntityOfPage": "<%= how_pricing_works_url %>"
-    }
-  </script>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: "How LLM pricing works",
+        datePublished: "2026-06-11",
+        publisher: { "@type": "Organization", name: "tokenprice.fyi" },
+        mainEntityOfPage: how_pricing_works_url
+      }) %>
 <% end %>
 
 <%= render "shared/explainer_styles" %>
@@ -73,11 +72,12 @@
   <p>Output almost always costs more — typically <span class="num">2–5×</span> input price. Why? The model reads input tokens in parallel (fast, efficient), but <strong>generates output tokens one at a time</strong>, each requiring a full forward pass through the model. Generation is computationally harder than comprehension.</p>
 
   <% if @frontier_example %>
-    <p>For example, <%= @frontier_example.name %> charges <span class="num"><%= usd_plain(@frontier_example.current_input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.current_output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.current_output && @frontier_example.current_input && @frontier_example.current_input > 0 ? "#{(@frontier_example.current_output / @frontier_example.current_input).round(1)}×" : "—" %></span> the input price.</p>
+    <p>For example, <%= @frontier_example.name %> charges <span class="num"><%= usd_plain(@frontier_example.input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.output && @frontier_example.input && @frontier_example.input > 0 ? "#{(@frontier_example.output / @frontier_example.input).round(1)}×" : "—" %></span> the input price.</p>
   <% end %>
 
   <%# Live-data widget — today's output:input spread across models. %>
-  <%= render "shared/io_ratio_widget", caption: "Live from the index — updates whenever a provider changes a price." %>
+  <%= render "shared/io_ratio_widget", last_modified: @catalog_last_modified,
+        caption: "Live from the index — updates whenever a provider changes a price." %>
 
   <h3>Where your money actually goes</h3>
 
@@ -278,11 +278,11 @@
   <p>When a provider changes their prices, we don't overwrite — we add a new snapshot. The <%= link_to "trends chart", trends_path %> shows the full history, and every price point on a model's detail page carries the date it was recorded and where it came from.</p>
 
   <div class="hp-cta">
-    <%= link_to concept_cta_path(learn_concept("pricing")), class: "hp-cta-primary" do %>
-      Price a workload in the estimator →
-    <% end %>
     <%= link_to root_path, class: "hp-cta-ghost" do %>
       Browse models &amp; prices
+    <% end %>
+    <%= link_to guide_path, class: "hp-cta-ghost" do %>
+      Starting models per task in the guide
     <% end %>
   </div>
 </article>

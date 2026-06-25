@@ -1,7 +1,8 @@
 # tokenprice.fyi
 
-Track and compare the price of LLM API tokens — Claude, GPT, Gemini, Grok, DeepSeek — and
-see how prices change over time.
+**[tokenprice.fyi](https://tokenprice.fyi)** — track and compare LLM API token prices across
+10+ providers (Anthropic, OpenAI, Google, xAI, DeepSeek, Meta, Mistral, Cohere, Alibaba,
+Moonshot AI) and see how prices change over time.
 
 It answers questions like:
 
@@ -15,8 +16,9 @@ It answers questions like:
 - **Rails 8** (Ruby 3.3), server-rendered ERB — fast and SEO-friendly.
 - **SQLite** (Rails 8's production-grade setup) for storage.
 - **Tailwind CSS** (`tailwindcss-rails`, standalone CLI — no Node build).
-- **Solid Queue / Solid Cache / Solid Cable** — ready for the background jobs below.
-- **Inline SVG charts** rendered server-side (`ChartsHelper`) — zero JS, no chart CDN dependency.
+- **Solid Queue / Solid Cache / Solid Cable** — backs the recurring jobs (OpenRouter sync, news pipeline).
+- **SVG charts, no chart library or CDN** — the model-history chart renders server-side
+  (`ChartsHelper`, zero JS); the `/trends` explorer is a client-rendered SVG chart (Stimulus).
 
 ## Data model
 
@@ -29,18 +31,8 @@ Provider ──< AiModel ──< PricePoint
 ```
 
 Each `Provider` records the country its lab is headquartered in (`country` name +
-`country_code`, an ISO 3166-1 alpha-2 code like `US`/`CN`/`FR`). The **Map** page
-(`/map`) uses that code to shade a server-rendered SVG world map by how many providers
-each country hosts — a practical reference for where the providers behind your models are
-headquartered. Per-country cards break down model counts and the **median input price** (plus the
-cheapest model) of their models. The map geometry is a static, equirectangular-projected dataset vendored
-at `lib/data/world_map.json` (derived from Natural Earth 110m); `WorldMapHelper` loads it
-and `Provider#flag_emoji` derives the flag from the country code.
-
-The map stays true to the zero-JS house style: each country shape is a real `<a>` link
-into the filtered price table (`/?providers[]=…`), so clicking a country works without
-JavaScript. A small Stimulus controller (`map_controller.js`) layers a rich hover/focus
-card on top as progressive enhancement — no map engine or tile CDN.
+`country_code`, an ISO 3166-1 alpha-2 code like `US`/`CN`/`FR`), and
+`Provider#flag_emoji` derives the flag from the country code.
 
 - `AiModel#current_price` — the most recent snapshot.
 - `AiModel#launch_price` — the earliest snapshot.
@@ -121,18 +113,31 @@ bin/rails 'admin:set_password[your-password]'   # writes admin_password_digest t
 Then sign in at `/admin/login`. In production, supply `RAILS_MASTER_KEY` so credentials
 decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
 
+## Trends and model-news
+
+`/trends` is an interactive client-rendered SVG chart (Stimulus, no CDN, no chart library) of
+every model's price history, with presets, time ranges, and the **market events** that moved
+prices marked on the timeline alongside each model's launch.
+
+The market events are fed by a news pipeline: `ReleaseWatchJob` polls provider feeds and
+`NewsScanJob` searches Hacker News, both classifying items with Claude; `NewsDigestJob` posts a
+daily Slack digest; and `EventCurationJob` asks Claude to draft `MarketEvent` candidates for a
+human to approve in the admin (nothing automated publishes an event or appends a `PricePoint`).
+All four are scheduled in `config/recurring.yml`, production only.
+
 ## Roadmap
 
 The schema and Solid Queue are set up for where this is heading:
 
-- **Scraper job** — the OpenRouter sync above is the first of these. More provider-specific
-  sources (checking pricing pages directly) can append `PricePoint`s the same way.
-- **Model-news context** — pull release announcements (e.g. "Opus 4.8 released") and surface
-  them alongside the price timeline.
-- Interactive charts (Chartkick/Chart.js or Inertia) once deployed somewhere with CDN access.
+- **More price sources** — the OpenRouter sync above is the first automated source. More
+  provider-specific sources (checking pricing pages directly) can append `PricePoint`s the same way.
 
 ## Data accuracy
 
 Anthropic figures are authoritative. Other providers are best-effort from public pricing pages
 (as of June 2026) and may lag — each `PricePoint` records its `source`. Not affiliated with any
 provider.
+
+## License
+
+MIT

@@ -1,8 +1,22 @@
 <%# Live-data widget: "output costs N× input — today's spread across models".
     Server-rendered from PriceCatalog so the education layer is always current.
-    locals: compact (default false), caption (optional). %>
+    locals: compact (default false), caption (optional), models (optional — an
+    already-loaded catalog to reuse so the page loads it once). %>
 <% compact = local_assigns.fetch(:compact, false) %>
-<% priced = PriceCatalog.models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
+<% models_local = local_assigns[:models] %>
+<%# Cache the widget body on the latest catalog price update (+ the compact/caption
+    variants, which change the markup) — it's pure live-price content, identical
+    across every page that embeds it until a price moves. A model-set fingerprint
+    (the passed-in local's slugs, nil for the default catalog) discriminates a
+    caller that hands us a different set. The PriceCatalog.models fallback lives
+    INSIDE the block so a cache hit skips that AiModel.listed.includes(...) load. %>
+<% set_key = models_local&.map(&:slug) %>
+<%# Reuse a caller-supplied freshness timestamp when given, so a page that
+    already resolved PriceCatalog.last_modified doesn't issue a second query. %>
+<% last_modified = local_assigns[:last_modified] || PriceCatalog.last_modified %>
+<% cache [ :io_ratio_widget, last_modified, set_key, compact, local_assigns[:caption] ] do %>
+<% models = models_local || PriceCatalog.models %>
+<% priced = models.select { |m| m.status != "legacy" && m.input.to_f.positive? && m.output } %>
 <% if priced.any? %>
   <% ratios = priced.map { |m| m.output / m.input }.sort %>
   <% median = ratios[ratios.size / 2] %>
@@ -41,4 +55,5 @@
     </div>
   </div>
   <% if local_assigns[:caption] %><p class="lw-cap"><%= caption %></p><% end %>
+<% end %>
 <% end %>
