@@ -1,15 +1,18 @@
 class ModelsController < ApplicationController
   SORTS = {
-    "blended" => ->(m) { m.blended_per_mtok || Float::INFINITY },
-    "change" => ->(m) { m.blended_change_since_launch || 0 },
     "input" => ->(m) { m.current_input || Float::INFINITY },
     "output" => ->(m) { m.current_output || Float::INFINITY },
     "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
+    "change" => ->(m) { m.input_change_since_launch || 0 },
     "context" => ->(m) { m.context_window || 0 },
-    "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
     "name" => ->(m) { m.name.to_s.downcase },
     "tier" => ->(m) { {"frontier" => 0, "mid" => 1, "small" => 2}.fetch(m.tier, 3) }
   }.freeze
+
+  # Cheapest input first. The view omits these from filter URLs to keep them
+  # clean, so it reads the same constants rather than repeating the literals.
+  DEFAULT_SORT = "input"
+  DEFAULT_DIR  = "asc"
 
   def index
     @providers = Provider.order(:name).to_a
@@ -22,8 +25,8 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || "blended"
-    @dir = params[:dir].presence_in(%w[asc desc]) || ((@sort == "blended") ? "desc" : "asc")
+    @sort = params[:sort].presence_in(SORTS.keys) || DEFAULT_SORT
+    @dir = params[:dir].presence_in(%w[asc desc]) || DEFAULT_DIR
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
@@ -68,7 +71,6 @@ class ModelsController < ApplicationController
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
     @catalog_entry = PriceCatalog.model(@model.slug)
-    @insights = ModelInsights.new(@model)
     @related = AiModel.listed.where(provider: @model.provider)
       .where.not(id: @model.id)
       .includes(:price_points, :provider).by_release.limit(4)

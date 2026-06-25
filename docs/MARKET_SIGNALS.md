@@ -60,7 +60,7 @@ surface through Honeybadger as usual.
 `created` / `repriced` / `enriched` / `skipped` but keeps only counts in its
 `Result` struct. Extend `Result` to also collect the records:
 
-- **repriced** — model, old → new input/output/cached, % blended change
+- **repriced** — model, old → new input/output/cached, % input change
 - **created** — model name, provider, price, whether the provider is new
 
 After the daily 6am run, `OpenRouterSyncJob` posts one Slack message if

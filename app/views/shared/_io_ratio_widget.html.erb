@@ -21,7 +21,7 @@
   <% ratios = priced.map { |m| m.output / m.input }.sort %>
   <% median = ratios[ratios.size / 2] %>
   <% lo, hi = ratios.minmax %>
-  <%# one representative (cheapest-blended) model per provider, capped at 6 %>
+  <%# one representative (cheapest by input+output) model per provider, capped at 6 %>
   <% rows = priced.group_by(&:provider_slug).map { |_, ms| ms.min_by { |m| m.input + m.output } }
                   .sort_by { |m| m.input + m.output }.first(6) %>
   <% max_out = rows.map(&:output).max %>

@@ -78,7 +78,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index can be sorted by change since launch and renders delta badges" do
     get root_url(sort: "change", dir: "asc")
     assert_response :success
-    assert_select "th.sort-active", text: /since launch/i
+    assert_select "th.sort-active", text: /Δ input/i
     # DeepSeek V4 Pro's 75% cut renders as a delta pill in the new column.
     assert_select ".tp-delta", minimum: 1
   end
@@ -133,11 +133,11 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sort links carry the active filters and sort state rides in the form" do
-    get root_url(q: "claude", providers: ["anthropic"], sort: "input", dir: "desc")
+    get root_url(q: "claude", providers: ["anthropic"], sort: "output", dir: "desc")
     assert_response :success
     assert_select "thead a[href*='q=claude']"
     assert_select "thead a[href*='providers%5B%5D=anthropic']"
-    assert_select "input[type=hidden][name=sort][value=input][form=filters]", count: 1
+    assert_select "input[type=hidden][name=sort][value=output][form=filters]", count: 1
     assert_select "input[type=hidden][name=dir][value=desc][form=filters]", count: 1
   end
 
@@ -150,7 +150,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 9
+    assert_select "thead a[data-turbo-frame=models]", count: 7
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
@@ -259,13 +259,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     # No em-dash placeholder for a nil price value in the breakdown text.
     assert_not_includes json_ld, "input —"
     assert_not_includes json_ld, "—\""
-  end
-
-  test "show renders the computed insights section" do
-    get model_url(ai_models(:deepseek_v4))
-    assert_response :success
-    assert_select "h2", text: "Where it sits"
-    assert_select "p", text: /Cheapest frontier model/
   end
 
   test "show renders editorial facets when present" do

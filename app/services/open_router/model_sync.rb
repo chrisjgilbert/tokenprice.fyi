@@ -111,7 +111,7 @@ module OpenRouter
     RepricedRecord = Data.define(:model_name, :provider_name, :model_slug,
                                  :old_input, :old_output, :old_cached,
                                  :new_input, :new_output, :new_cached,
-                                 :pct_blended_change)
+                                 :pct_input_change)
 
     Result = Struct.new(:created, :enriched, :repriced, :skipped,
                         :created_records, :repriced_records,
@@ -184,9 +184,8 @@ module OpenRouter
         )
         :created
       elsif repriced_from   # Hash of old pricing — truthy only when repriced
-        old_blended = blended(repriced_from[:input], repriced_from[:output])
-        new_blended = blended(pricing[:input], pricing[:output])
-        pct = old_blended.nonzero? ? ((new_blended - old_blended) / old_blended * 100).round(1) : 0.0
+        old_input = repriced_from[:input].to_f
+        pct = old_input.nonzero? ? ((pricing[:input] - old_input) / old_input * 100).round(1) : 0.0
 
         @result.repriced_records << RepricedRecord.new(
           model_name:    model.name,
@@ -198,7 +197,7 @@ module OpenRouter
           new_input:     pricing[:input],
           new_output:    pricing[:output],
           new_cached:    pricing[:cached],
-          pct_blended_change: pct
+          pct_input_change: pct
         )
         :repriced
       else
@@ -430,12 +429,6 @@ module OpenRouter
         n += 1
       end
       slug
-    end
-
-    def blended(input, output)
-      w_in  = AiModel::BLEND_INPUT_WEIGHT
-      w_out = AiModel::BLEND_OUTPUT_WEIGHT
-      ((w_in * input + w_out * output) / (w_in + w_out).to_f).round(6)
     end
   end
 end

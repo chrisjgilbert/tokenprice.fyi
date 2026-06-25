@@ -22,7 +22,7 @@ module EventsHelper
         date: m.released_on,
         title: "#{m.name} released",
         kind: "launch",
-        note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.blended_per_mtok)} I/O avg /1M.",
+        note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M.",
         model: m,
         provider: m.provider
       )

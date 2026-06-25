@@ -13,7 +13,7 @@ module OpenRouter
         new_input:          overrides.fetch(:new_input,   12.0),
         new_output:         overrides.fetch(:new_output,  60.0),
         new_cached:         overrides.fetch(:new_cached,  nil),
-        pct_blended_change: overrides.fetch(:pct_blended_change, -20.0)
+        pct_input_change: overrides.fetch(:pct_input_change, -20.0)
       )
     end
 
@@ -65,7 +65,7 @@ module OpenRouter
                         model_slug: "anthropic-claude-opus-4-8",
                         old_input: 15.0, old_output: 75.0,
                         new_input: 12.0, new_output: 60.0,
-                        pct_blended_change: -20.0)
+                        pct_input_change: -20.0)
       payload = digest(make_result(repriced_records: [ r ])).to_slack_payload
       section_text = payload[:blocks].find { |b| b[:type] == "section" }&.dig(:text, :text)
       assert_includes section_text, "Claude Opus 4.8"
@@ -76,7 +76,7 @@ module OpenRouter
     end
 
     test "shows positive sign for price increase" do
-      r = make_repriced(pct_blended_change: 10.0)
+      r = make_repriced(pct_input_change: 10.0)
       payload = digest(make_result(repriced_records: [ r ])).to_slack_payload
       section_text = payload[:blocks].find { |b| b[:type] == "section" }&.dig(:text, :text)
       assert_includes section_text, "+10.0%"

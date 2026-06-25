@@ -87,10 +87,9 @@ uncached_mid:
   status: active
   description: Active model with input/output but NO cached rate — exercises the cache-null path.
 
-# Lowest simple (input+output)/2 average in the catalog (0.60), but NOT the
-# cheapest by the 3:1 input-weighted blend (its high input pushes blended to
-# 0.65, above DeepSeek's 0.54375). Pins the "cheapest, in+out avg" hero stat to
-# the TRUE minimum average rather than the blended-cheapest model's average.
+# High input, low output: lowest simple (input+output)/2 average in the catalog
+# but NOT the cheapest by input price alone (DeepSeek's input is lower). Keeps a
+# model in the catalog whose input and average rankings diverge.
 lopri_mid:
   provider: deepseek
   name: Lopri Mid

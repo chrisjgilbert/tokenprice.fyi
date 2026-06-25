@@ -18,7 +18,7 @@ const TIME_RANGES = {
   "all": { label: "All", days: null }
 }
 
-const METRIC_LABEL = { blended: "I/O avg", input: "Input", output: "Output" }
+const METRIC_LABEL = { input: "Input", output: "Output" }
 
 // ── Presets ──────────────────────────────────────────────────────────────────
 const PRESETS = {
@@ -177,7 +177,7 @@ export default class extends Controller {
   // ── Lifecycle ────────────────────────────────────────────────────────────────
   connect() {
     this.selected = new Map()   // slug → color
-    this.metric = "blended"
+    this.metric = "input"
     this.showEvents = true
     this.showAvg = true
     this.activePreset = null
@@ -761,10 +761,8 @@ export default class extends Controller {
   }
 
   _metricValue(pp) {
-    if (this.metric === "input") return pp.input
     if (this.metric === "output") return pp.output
-    if (pp.input == null || pp.output == null) return null
-    return (3 * pp.input + pp.output) / 4
+    return pp.input
   }
 
   // ── Line emphasis (dim/focus) ────────────────────────────────────────────────
