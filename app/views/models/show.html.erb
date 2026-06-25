@@ -141,18 +141,16 @@
     <div class="mt-5 border-t border-slate-100 pt-4">
       <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Price change</p>
       <dl class="flex flex-wrap gap-x-8 gap-y-3">
-        <% @model.price_changes.each do |label, in_pct, out_pct| %>
+        <% @model.price_changes.each do |change| %>
           <div>
-            <dt class="mb-1 text-xs text-slate-400"><%= label %></dt>
+            <dt class="mb-1 text-xs text-slate-400"><%= change.label %></dt>
             <dd class="flex flex-col gap-1.5">
-              <span class="flex items-center gap-1.5 text-xs">
-                <span class="w-7 text-slate-400">in</span>
-                <% if in_pct %><%= price_change_badge(in_pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
-              </span>
-              <span class="flex items-center gap-1.5 text-xs">
-                <span class="w-7 text-slate-400">out</span>
-                <% if out_pct %><%= price_change_badge(out_pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
-              </span>
+              <% [ [ "in", change.input ], [ "out", change.output ] ].each do |dim, pct| %>
+                <span class="flex items-center gap-1.5 text-xs">
+                  <span class="w-7 text-slate-400"><%= dim %></span>
+                  <% if pct %><%= price_change_badge(pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
+                </span>
+              <% end %>
             </dd>
           </div>
         <% end %>

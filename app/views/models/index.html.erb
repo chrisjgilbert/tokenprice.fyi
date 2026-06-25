@@ -509,8 +509,8 @@
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
 <p class="tp-section-label mb-4">Price table</p>
 
-<% default_dir = "asc" %>
-<% sort_params = { sort: (@sort unless @sort == "input"), dir: (@dir unless @dir == default_dir) }.compact %>
+<% sort_params = { sort: (@sort unless @sort == ModelsController::DEFAULT_SORT),
+                   dir:  (@dir  unless @dir  == ModelsController::DEFAULT_DIR) }.compact %>
 
 <%= form_with url: root_path, method: :get, id: "filters", role: "search", "aria-label": "Filter models",
       data: { controller: "filters",

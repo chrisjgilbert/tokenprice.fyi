@@ -9,6 +9,11 @@ class ModelsController < ApplicationController
     "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
+  # Cheapest input first. The view omits these from filter URLs to keep them
+  # clean, so it reads the same constants rather than repeating the literals.
+  DEFAULT_SORT = "input"
+  DEFAULT_DIR  = "asc"
+
   def index
     @providers = Provider.order(:name).to_a
 
@@ -20,8 +25,8 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || "input"
-    @dir  = params[:dir].presence_in(%w[asc desc]) || "asc"
+    @sort = params[:sort].presence_in(SORTS.keys) || DEFAULT_SORT
+    @dir  = params[:dir].presence_in(%w[asc desc]) || DEFAULT_DIR
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]

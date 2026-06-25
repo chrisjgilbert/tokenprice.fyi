@@ -69,22 +69,6 @@ class AiModel < ApplicationRecord
   def current_output = current_price&.output_per_mtok
   def current_cached_input = current_price&.cached_input_per_mtok
 
-  # How many times more expensive output tokens are than input (5.0 == 5×).
-  # nil when either side is missing or input is free.
-  def output_to_input_ratio
-    return nil if current_input.nil? || current_output.nil? || current_input.zero?
-
-    (current_output / current_input).to_f
-  end
-
-  # Fractional saving of cached vs fresh input (0.9 == 90% cheaper).
-  # nil when the model has no cached price to compare.
-  def cached_input_discount
-    return nil if current_input.nil? || current_cached_input.nil? || current_input.zero?
-
-    1 - (current_cached_input / current_input).to_f
-  end
-
   # A fuller descriptive paragraph for meta tags and structured data, folding
   # the editorial facets into the lede when they're present.
   def long_description
@@ -102,6 +86,10 @@ class AiModel < ApplicationRecord
     price_points.select { |pp| pp.effective_on <= date }.max_by(&:effective_on)
   end
 
+  # One window's price move, both dimensions. Either percent is nil where
+  # there's nothing to report.
+  PriceChange = Data.define(:label, :input, :output)
+
   # Percentage change in a price dimension (:input or :output) over a trailing
   # window (an ActiveSupport::Duration like 30.days) or since launch (:launch).
   # Negative means it got cheaper. The window is clamped to the model's history:
@@ -109,14 +97,7 @@ class AiModel < ApplicationRecord
   # nil when there's nothing to report — a single snapshot, or a flat price
   # across the window.
   def price_change_over(dimension, window)
-    reference =
-      if window == :launch
-        launch_price
-      else
-        price_as_of(Date.current - window) || launch_price
-      end
-
-    price_change_between(dimension, reference, current_price)
+    price_change_between(dimension, reference_price(window), current_price)
   end
 
   # Percentage change between launch and now (negative = cheaper). Input leads
@@ -125,12 +106,16 @@ class AiModel < ApplicationRecord
   def input_change_since_launch  = price_change_over(:input, :launch)
   def output_change_since_launch = price_change_over(:output, :launch)
 
-  # Per-window change for both dimensions, in display order:
-  # [label, input_pct, output_pct]. Either percent is nil where there's nothing
-  # to report for that window.
+  # One PriceChange per CHANGE_WINDOWS entry, in display order. The reference
+  # snapshot is resolved once per window and shared across both dimensions.
   def price_changes
     CHANGE_WINDOWS.map do |label, window|
-      [ label, price_change_over(:input, window), price_change_over(:output, window) ]
+      reference = reference_price(window)
+      PriceChange.new(
+        label:  label,
+        input:  price_change_between(:input, reference, current_price),
+        output: price_change_between(:output, reference, current_price)
+      )
     end
   end
 
@@ -150,6 +135,15 @@ class AiModel < ApplicationRecord
   end
 
   private
+
+  # The snapshot a window is measured against: the launch price for :launch or
+  # a window that reaches back before launch, otherwise the price in effect that
+  # long ago.
+  def reference_price(window)
+    return launch_price if window == :launch
+
+    price_as_of(Date.current - window) || launch_price
+  end
 
   # Shared core of the price-change figures: % move in one dimension from one
   # snapshot to another, or nil when the move is undefined or zero (missing

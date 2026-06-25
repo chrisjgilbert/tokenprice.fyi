@@ -77,8 +77,8 @@ class AiModelTest < ActiveSupport::TestCase
   test "price_changes returns input and output percentages for every window in order" do
     travel_to Date.new(2026, 6, 11) do
       changes = ai_models(:deepseek_v4).price_changes
-      assert_equal [ "30d", "90d", "1y", "Since launch" ], changes.map(&:first)
-      assert changes.all? { |_, in_pct, out_pct| in_pct.present? && out_pct.present? }
+      assert_equal [ "30d", "90d", "1y", "Since launch" ], changes.map(&:label)
+      assert changes.all? { |c| c.input.present? && c.output.present? }
     end
   end
 
@@ -141,26 +141,6 @@ class AiModelTest < ActiveSupport::TestCase
     assert ai_models(:opus).matches?(nil)
   end
 
-  test "output_to_input_ratio expresses output as a multiple of input" do
-    # Opus: $25 out / $5 in = 5×
-    assert_in_delta 5.0, ai_models(:opus).output_to_input_ratio, 0.0001
-  end
-
-  test "output_to_input_ratio is nil without a price" do
-    assert_nil ai_models(:no_price).output_to_input_ratio
-  end
-
-  test "cached_input_discount is the fractional saving vs fresh input" do
-    # Opus: cached $0.50 vs input $5 = 90% off
-    assert_in_delta 0.9, ai_models(:opus).cached_input_discount, 0.0001
-  end
-
-  test "cached_input_discount is nil without a cached price" do
-    model = ai_models(:opus)
-    model.current_price.update!(cached_input_per_mtok: nil)
-    model.forget_price_cache!
-    assert_nil model.cached_input_discount
-  end
 
   test "long_description folds editorial facets into the lede" do
     model = ai_models(:opus)
