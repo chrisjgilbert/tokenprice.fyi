@@ -316,7 +316,11 @@
 
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
-  <% latest_event = @all_events.last %>
+  <%
+    recent_events = @all_events.last(2).reverse
+    primary_event = recent_events[0]
+    secondary_event = recent_events[1]
+  %>
 
   <div class="hero-grid">
     <%# Left column: the price-index hero %>
@@ -350,26 +354,28 @@
           Latest changes
         </div>
 
-        <% if latest_event %>
+        <% if primary_event %>
           <div class="hero-card-headline">
             <div>
-              <span class="hero-card-kind-chip <%= latest_event.kind == 'launch' ? 'launch' : 'market' %>">
-                <%= latest_event.kind == "launch" ? "New model" : "Price change" %>
+              <span class="hero-card-kind-chip <%= primary_event.kind == 'launch' ? 'launch' : 'market' %>">
+                <%= primary_event.kind == "launch" ? "New model" : "Market event" %>
               </span>
             </div>
             <div class="hero-card-title">
-              <% if latest_event.model %>
-                <%= link_to latest_event.title, model_path(latest_event.model) %>
+              <% if primary_event.kind == "launch" && primary_event.model %>
+                <%= link_to primary_event.title, model_path(primary_event.model) %>
+              <% elsif primary_event.source_url.present? %>
+                <%= link_to primary_event.title, primary_event.source_url, target: "_blank", rel: "noopener" %>
               <% else %>
-                <%= latest_event.title %>
+                <%= primary_event.title %>
               <% end %>
             </div>
-            <div class="hero-card-date"><%= fmt_date_full(latest_event.date) %></div>
-            <% if latest_event.note.present? %>
-              <div class="hero-card-note"><%= latest_event.note %></div>
+            <div class="hero-card-date"><%= fmt_date_full(primary_event.date) %></div>
+            <% if primary_event.note.present? %>
+              <div class="hero-card-note"><%= primary_event.note %></div>
             <% end %>
-            <% if latest_event.kind == "launch" && latest_event.model %>
-              <% m = latest_event.model %>
+            <% if primary_event.kind == "launch" && primary_event.model %>
+              <% m = primary_event.model %>
               <div class="hero-card-chips">
                 <%= tier_badge(m.tier) %>
                 <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>
@@ -381,9 +387,37 @@
           </div>
         <% end %>
 
-        <div style="margin-top:20px">
-          <%= link_to events_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-            See all market events →
+        <% if secondary_event %>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+            <span class="hero-card-kind-chip <%= secondary_event.kind == 'launch' ? 'launch' : 'market' %>" style="font-size:10px;padding:2px 7px">
+              <%= secondary_event.kind == "launch" ? "New model" : "Market event" %>
+            </span>
+            <span style="font-size:13px;font-weight:500;color:#e8eaf0;flex:1;min-width:0">
+              <% if secondary_event.kind == "launch" && secondary_event.model %>
+                <%= link_to secondary_event.title, model_path(secondary_event.model), style: "color:inherit;text-decoration:none" %>
+              <% elsif secondary_event.source_url.present? %>
+                <%= link_to secondary_event.title, secondary_event.source_url, target: "_blank", rel: "noopener", style: "color:inherit;text-decoration:none" %>
+              <% else %>
+                <%= secondary_event.title %>
+              <% end %>
+            </span>
+            <span style="font-size:11px;color:rgba(200,205,220,.5);white-space:nowrap"><%= fmt_date_full(secondary_event.date) %></span>
+          </div>
+        <% end %>
+
+        <div style="margin-top:16px">
+          <% if primary_event&.kind == "launch" && primary_event.model %>
+            <%= link_to model_path(primary_event.model), class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+              Full price history →
+            <% end %>
+          <% elsif primary_event&.source_url.present? %>
+            <%= link_to primary_event.source_url, class: "tp-btn tp-btn-ghost tp-btn-sm", target: "_blank", rel: "noopener", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+              Read more →
+            <% end %>
+          <% else %>
+            <%= link_to events_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+              All changes →
+            <% end %>
           <% end %>
         </div>
       </div>
