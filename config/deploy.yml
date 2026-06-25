@@ -96,3 +96,6 @@ builder:
 # Use a different ssh user than root
 # ssh:
 #   user: app
+
+ssh:
+  known_hosts: false
