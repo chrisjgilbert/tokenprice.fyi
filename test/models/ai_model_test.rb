@@ -9,17 +9,15 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal price_points(:deepseek_launch), ai_models(:deepseek_v4).launch_price
   end
 
-  test "blended price uses the 3:1 input:output weighting" do
-    # Opus: (5*3 + 25) / 4 = 10
-    assert_in_delta 10.0, ai_models(:opus).blended_per_mtok, 0.0001
-  end
-
-  test "blended_change_since_launch reflects the DeepSeek 75% cut" do
-    assert_in_delta(-75.0, ai_models(:deepseek_v4).blended_change_since_launch, 0.1)
+  test "input/output change since launch reflects the DeepSeek 75% cut" do
+    # Both dimensions were cut 75% (1.74→0.435 in, 3.48→0.87 out).
+    assert_in_delta(-75.0, ai_models(:deepseek_v4).input_change_since_launch, 0.1)
+    assert_in_delta(-75.0, ai_models(:deepseek_v4).output_change_since_launch, 0.1)
   end
 
   test "single-snapshot model reports no change" do
-    assert_nil ai_models(:opus).blended_change_since_launch
+    assert_nil ai_models(:opus).input_change_since_launch
+    assert_nil ai_models(:opus).output_change_since_launch
     assert_not ai_models(:opus).price_changed?
   end
 
@@ -32,56 +30,55 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal price_points(:deepseek_cut),    ds.price_as_of(Date.new(2026, 6, 1))
   end
 
-  test "blended_change_over since launch matches blended_change_since_launch" do
+  test "price_change_over since launch matches input_change_since_launch" do
     ds = ai_models(:deepseek_v4)
-    assert_in_delta(-75.0, ds.blended_change_over(:launch), 0.1)
-    assert_in_delta ds.blended_change_since_launch, ds.blended_change_over(:launch), 0.0001
+    assert_in_delta(-75.0, ds.price_change_over(:input, :launch), 0.1)
+    assert_in_delta ds.input_change_since_launch, ds.price_change_over(:input, :launch), 0.0001
   end
 
-  test "blended_change_over trailing window captures a move within it" do
+  test "price_change_over trailing window captures a move within it" do
     travel_to Date.new(2026, 6, 11) do
       ds = ai_models(:deepseek_v4)
       # The 75% cut (2026-05-31) falls inside all of these windows.
-      assert_in_delta(-75.0, ds.blended_change_over(30.days), 0.1)
-      assert_in_delta(-75.0, ds.blended_change_over(90.days), 0.1)
-      assert_in_delta(-75.0, ds.blended_change_over(1.year), 0.1)
+      assert_in_delta(-75.0, ds.price_change_over(:input, 30.days), 0.1)
+      assert_in_delta(-75.0, ds.price_change_over(:input, 90.days), 0.1)
+      assert_in_delta(-75.0, ds.price_change_over(:input, 1.year), 0.1)
     end
   end
 
-  test "blended_change_over is nil when the price is flat across the window" do
+  test "price_change_over is nil when the price is flat across the window" do
     travel_to Date.new(2026, 6, 11) do
       # A window starting after the cut sees only the post-cut price — no move.
-      assert_nil ai_models(:deepseek_v4).blended_change_over(2.days)
+      assert_nil ai_models(:deepseek_v4).price_change_over(:input, 2.days)
       # Single-snapshot model never has a move to report.
-      assert_nil ai_models(:opus).blended_change_over(30.days)
+      assert_nil ai_models(:opus).price_change_over(:input, 30.days)
     end
   end
 
-  test "blended_change_over resolves each window to its own reference and signs both ways" do
+  test "price_change_over resolves each window to its own reference and signs both ways" do
     travel_to Date.new(2026, 6, 11) do
       model = providers(:anthropic).ai_models.create!(name: "Window Probe", tier: "mid")
-      # Equal in/out keeps blended == the raw figure. Launched long ago at 10,
-      # hiked to 20 (Apr), trimmed to 15 (Jun) — the current price.
+      # Launched long ago at 10, hiked to 20 (Apr), trimmed to 15 (Jun) — current.
       model.price_points.create!(effective_on: Date.new(2025, 1, 1),  input_per_mtok: 10, output_per_mtok: 10)
       model.price_points.create!(effective_on: Date.new(2026, 4, 12), input_per_mtok: 20, output_per_mtok: 20)
       model.price_points.create!(effective_on: Date.new(2026, 6, 1),  input_per_mtok: 15, output_per_mtok: 15)
       model.forget_price_cache!
 
       # 30d → reference is the Apr hike (20): 20→15 = −25% (distinguishes the window).
-      assert_in_delta(-25.0, model.blended_change_over(30.days), 0.1)
+      assert_in_delta(-25.0, model.price_change_over(:input, 30.days), 0.1)
       # 90d and launch reach back past the hike to the original 10: 10→15 = +50% (positive delta).
-      assert_in_delta(50.0,  model.blended_change_over(90.days), 0.1)
-      assert_in_delta(50.0,  model.blended_change_over(:launch), 0.1)
+      assert_in_delta(50.0,  model.price_change_over(:input, 90.days), 0.1)
+      assert_in_delta(50.0,  model.price_change_over(:input, :launch), 0.1)
       # A window older than the model clamps to launch, matching :launch exactly.
-      assert_equal model.blended_change_over(:launch), model.blended_change_over(10.years)
+      assert_equal model.price_change_over(:input, :launch), model.price_change_over(:input, 10.years)
     end
   end
 
-  test "blended_changes returns a percentage for every window in order" do
+  test "price_changes returns input and output percentages for every window in order" do
     travel_to Date.new(2026, 6, 11) do
-      labels = ai_models(:deepseek_v4).blended_changes.map(&:first)
-      assert_equal [ "30d", "90d", "1y", "Since launch" ], labels
-      assert ai_models(:deepseek_v4).blended_changes.all? { |_, pct| pct.present? }
+      changes = ai_models(:deepseek_v4).price_changes
+      assert_equal [ "30d", "90d", "1y", "Since launch" ], changes.map(&:label)
+      assert changes.all? { |c| c.input.present? && c.output.present? }
     end
   end
 
@@ -144,26 +141,6 @@ class AiModelTest < ActiveSupport::TestCase
     assert ai_models(:opus).matches?(nil)
   end
 
-  test "output_to_input_ratio expresses output as a multiple of input" do
-    # Opus: $25 out / $5 in = 5×
-    assert_in_delta 5.0, ai_models(:opus).output_to_input_ratio, 0.0001
-  end
-
-  test "output_to_input_ratio is nil without a price" do
-    assert_nil ai_models(:no_price).output_to_input_ratio
-  end
-
-  test "cached_input_discount is the fractional saving vs fresh input" do
-    # Opus: cached $0.50 vs input $5 = 90% off
-    assert_in_delta 0.9, ai_models(:opus).cached_input_discount, 0.0001
-  end
-
-  test "cached_input_discount is nil without a cached price" do
-    model = ai_models(:opus)
-    model.current_price.update!(cached_input_per_mtok: nil)
-    model.forget_price_cache!
-    assert_nil model.cached_input_discount
-  end
 
   test "long_description folds editorial facets into the lede" do
     model = ai_models(:opus)
@@ -186,7 +163,7 @@ class AiModelTest < ActiveSupport::TestCase
     assert_queries_count(0) do
       model.current_price
       model.launch_price
-      model.blended_per_mtok
+      model.input_change_since_launch
     end
   end
 

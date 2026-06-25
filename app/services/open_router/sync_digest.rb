@@ -34,14 +34,14 @@ module OpenRouter
       lines = @result.repriced_records.map do |r|
         model_link = slack_link("#{BASE_URL}/models/#{r.model_slug}", r.model_name)
         edit_link  = slack_link("#{BASE_URL}/admin/models/#{r.model_slug}/edit", "edit")
-        pct        = r.pct_blended_change
+        pct        = r.pct_input_change
         sign       = pct >= 0 ? "+" : ""
         cached_str = (r.old_cached || r.new_cached) ?
           ", $#{fmt(r.old_cached)}→$#{fmt(r.new_cached)} cached" : ""
         "• #{model_link} (#{r.provider_name}) — " \
           "$#{fmt(r.old_input)}→$#{fmt(r.new_input)} in, " \
           "$#{fmt(r.old_output)}→$#{fmt(r.new_output)} out#{cached_str} · " \
-          "#{sign}#{pct}% blended · #{edit_link}"
+          "#{sign}#{pct}% input · #{edit_link}"
       end
       mrkdwn_section("*💰 Price moves (#{lines.size})*\n#{lines.join("\n")}")
     end

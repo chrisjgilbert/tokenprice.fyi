@@ -1,5 +1,5 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
-<% content_for :description, [ "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens.", @insights.summary_sentence ].compact.join(" ") %>
+<% content_for :description, "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
   <%
@@ -58,21 +58,33 @@
 </nav>
 
 <header class="mb-8 flex flex-wrap items-start justify-between gap-4">
-  <div>
-    <div class="flex items-center gap-2">
-      <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
-      <%= status_badge(@model.status) %>
+  <div class="flex items-start gap-4">
+    <%= link_to provider_path(@model.provider), class: "mt-1 shrink-0", aria: { label: @model.provider.name } do %>
+      <%= provider_square(@model.provider, size: :lg) %>
+    <% end %>
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold tracking-tight"><%= @model.name %></h1>
+        <%= status_badge(@model.status) %>
+      </div>
+      <p class="mt-1 flex items-center gap-2 text-slate-500">
+        <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
+        <% if @model.provider.flag_emoji %><span aria-hidden="true"><%= @model.provider.flag_emoji %></span><% end %>
+        <span>·</span>
+        <%= tier_badge(@model.tier) %>
+      </p>
     </div>
-    <p class="mt-1 flex items-center gap-2 text-slate-500">
-      <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
-      <span>·</span>
-      <%= tier_badge(@model.tier) %>
-    </p>
   </div>
-  <%= link_to "Compare →", compare_path(a: @model.slug), class: "rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" %>
+  <%= link_to compare_path(a: @model.slug), class: "inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500" do %>
+    <%= icon(:swap, size: 15) %> Compare
+  <% end %>
 </header>
 
-<% editorial = { "Strengths" => @model.strengths, "Best for" => @model.best_for, "Limitations" => @model.limitations }.select { |_, v| v.present? } %>
+<% editorial = {
+     "Strengths"   => [ @model.strengths,   :bolt ],
+     "Best for"    => [ @model.best_for,    :target ],
+     "Limitations" => [ @model.limitations, :warn ]
+   }.select { |_, (v, _)| v.present? } %>
 <% if @model.description.present? || editorial.any? %>
   <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
     <% if @model.description.present? %>
@@ -80,9 +92,11 @@
     <% end %>
     <% if editorial.any? %>
       <dl class="<%= "mt-5" if @model.description.present? %> grid gap-4 sm:grid-cols-3">
-        <% editorial.each do |label, value| %>
+        <% editorial.each do |label, (value, ic)| %>
           <div>
-            <dt class="text-xs font-medium uppercase tracking-wide text-slate-500"><%= label %></dt>
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span class="text-slate-400" aria-hidden="true"><%= icon(ic, size: 14) %></span><%= label %>
+            </dt>
             <dd class="mt-1 text-sm text-slate-700"><%= value %></dd>
           </div>
         <% end %>
@@ -93,13 +107,16 @@
 
 <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
   <% [
-       ["Input / 1M", usd(@model.current_input)],
-       ["Output / 1M", usd(@model.current_output)],
-       ["Cached input / 1M", usd(@model.current_cached_input)],
-       ["Context window", tokens_short(@model.context_window)]
-     ].each do |label, value| %>
+       ["Input / 1M", usd(@model.current_input), :arrow_in],
+       ["Output / 1M", usd(@model.current_output), :arrow_out],
+       ["Cached input / 1M", usd(@model.current_cached_input), :cache],
+       ["Context window", tokens_short(@model.context_window), :brackets]
+     ].each do |label, value, ic| %>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
-      <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+      <div class="flex items-center justify-between">
+        <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
+      </div>
       <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
     </div>
   <% end %>
@@ -114,21 +131,6 @@
   </section>
 <% end %>
 
-<% if @insights.facts.any? %>
-  <section class="mb-8">
-    <h2 class="mb-3 text-lg font-semibold">Where it sits</h2>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <% @insights.facts.each do |fact| %>
-        <div class="rounded-xl border border-slate-200 bg-white p-4">
-          <p class="text-sm font-semibold text-slate-900"><%= fact.label %></p>
-          <p class="mt-1 text-xs text-slate-500"><%= fact.detail %></p>
-        </div>
-      <% end %>
-    </div>
-    <p class="mt-3 text-xs text-slate-400">Computed live from current prices — updates as prices move.</p>
-  </section>
-<% end %>
-
 <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
   <div class="mb-4 flex items-center justify-between">
     <h2 class="text-lg font-semibold">Price history</h2>
@@ -138,19 +140,17 @@
 
   <% if @model.price_changed? %>
     <div class="mt-5 border-t border-slate-100 pt-4">
-      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Blended price change
-        <span class="ml-1 font-normal normal-case tracking-normal text-slate-400">(3:1 I/O mix)</span>
-      </p>
+      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Price change</p>
       <dl class="flex flex-wrap gap-x-8 gap-y-3">
-        <% @model.blended_changes.each do |label, pct| %>
+        <% @model.price_changes.each do |change| %>
           <div>
-            <dt class="mb-1 text-xs text-slate-400"><%= label %></dt>
-            <dd>
-              <% if pct %>
-                <%= price_change_badge(pct) %>
-              <% else %>
-                <span class="tp-muted-dash">—</span>
+            <dt class="mb-1 text-xs text-slate-400"><%= change.label %></dt>
+            <dd class="flex flex-col gap-1.5">
+              <% [ [ "in", change.input ], [ "out", change.output ] ].each do |dim, pct| %>
+                <span class="flex items-center gap-1.5 text-xs">
+                  <span class="w-7 text-slate-400"><%= dim %></span>
+                  <% if pct %><%= price_change_badge(pct) %><% else %><span class="tp-muted-dash">—</span><% end %>
+                </span>
               <% end %>
             </dd>
           </div>

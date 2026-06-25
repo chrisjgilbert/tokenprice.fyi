@@ -25,7 +25,7 @@ class OpenRouterSyncJobTest < ActiveJob::TestCase
       model_slug: "anthropic-claude-opus-4-8",
       old_input: 15.0, old_output: 75.0, old_cached: nil,
       new_input: 12.0, new_output: 60.0, new_cached: nil,
-      pct_blended_change: -20.0
+      pct_input_change: -20.0
     )
     result = OpenRouter::ModelSync::Result.new(
       created: 0, enriched: 1, repriced: 1, skipped: 0,

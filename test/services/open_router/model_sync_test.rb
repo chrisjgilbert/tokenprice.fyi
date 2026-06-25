@@ -366,19 +366,18 @@ module OpenRouter
       assert_equal 5.0,                rec.new_output
     end
 
-    test "pct_blended_change is calculated correctly for a price drop" do
+    test "pct_input_change is calculated correctly for a price drop" do
       id = "anthropic/claude-haiku-4.5"
-      # old: input=1, output=5  => blended = (3*1 + 5)/4 = 2.0
+      # old: input=1
       sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
                       prompt: "0.000001", completion: "0.000005") ])
-      # new: input=0.5, output=5 => blended = (3*0.5 + 5)/4 = 1.625
-      # pct = (1.625 - 2.0) / 2.0 * 100 = -18.75 → -18.8 (rounded to 1 dp)
+      # new: input=0.5 => pct = (0.5 - 1) / 1 * 100 = -50.0
       result = sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
                                prompt: "0.0000005", completion: "0.000005") ],
                     today: Date.current + 1)
 
       rec = result.repriced_records.first
-      assert_in_delta(-18.8, rec.pct_blended_change, 0.05)
+      assert_in_delta(-50.0, rec.pct_input_change, 0.05)
     end
 
     test "unchanged price does not populate repriced_records" do
