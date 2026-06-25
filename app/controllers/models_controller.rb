@@ -5,7 +5,6 @@ class ModelsController < ApplicationController
     "cached"   => ->(m) { m.current_cached_input || Float::INFINITY },
     "change"   => ->(m) { m.input_change_since_launch || 0 },
     "context"  => ->(m) { m.context_window || 0 },
-    "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) },
     "name"     => ->(m) { m.name.to_s.downcase },
     "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze

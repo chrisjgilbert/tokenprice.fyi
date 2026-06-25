@@ -633,15 +633,12 @@
             <th scope="col" class="numeric <%= th_cls.('change') %>" aria-sort="<%= aria_sort_for('change', current_sort: @sort, current_dir: @dir) %>" title="Change in input price from launch to now">
               <%= sort_link "Δ input", "change", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
-            <th scope="col" class="numeric <%= th_cls.('released') %>" aria-sort="<%= aria_sort_for('released', current_sort: @sort, current_dir: @dir) %>">
-              <%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, filters: filter_params %>
-            </th>
           </tr>
         </thead>
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="8">
+              <td colspan="7">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -694,9 +691,6 @@
                   <% else %>
                     <span class="tp-muted-dash">—</span>
                   <% end %>
-                </td>
-                <td class="numeric <%= sort_col == 'released' ? 'tp-col-highlight' : '' %>">
-                  <%= fmt_date(model.released_on) %>
                 </td>
               </tr>
             <% end %>
