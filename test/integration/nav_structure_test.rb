@@ -1,11 +1,10 @@
 require "test_helper"
 
-class NavDemotionsTest < ActionDispatch::IntegrationTest
-  test "primary nav no longer carries a Compare tab" do
+class NavStructureTest < ActionDispatch::IntegrationTest
+  test "primary nav carries a Compare tab" do
     get root_path
     assert_response :success
-    assert_select "nav.tp-nav a[href=?]", compare_path, false,
-      "Compare should be demoted out of the primary nav"
+    assert_select "nav.tp-nav a[href=?]", compare_path
   end
 
   test "primary nav still carries Models and Trends" do
