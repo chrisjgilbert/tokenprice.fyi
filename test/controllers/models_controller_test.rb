@@ -84,14 +84,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index can be filtered to a single provider" do
-    get root_url(providers: ["anthropic"])
+    get root_url(providers: [ "anthropic" ])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek/, count: 0
   end
 
   test "index can be filtered to multiple providers" do
-    get root_url(providers: ["anthropic", "deepseek"])
+    get root_url(providers: [ "anthropic", "deepseek" ])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek V4 Pro/
@@ -105,14 +105,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index ignores a hash-shaped providers param" do
-    get root_url(providers: {evil: "payload"})
+    get root_url(providers: { evil: "payload" })
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
   test "index ignores unknown provider slugs" do
-    get root_url(providers: ["not-a-provider"])
+    get root_url(providers: [ "not-a-provider" ])
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
   end
@@ -133,7 +133,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sort links carry the active filters and sort state rides in the form" do
-    get root_url(q: "claude", providers: ["anthropic"], sort: "output", dir: "desc")
+    get root_url(q: "claude", providers: [ "anthropic" ], sort: "output", dir: "desc")
     assert_response :success
     assert_select "thead a[href*='q=claude']"
     assert_select "thead a[href*='providers%5B%5D=anthropic']"
@@ -178,7 +178,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "search and provider filters combine" do
-    get root_url(q: "opus", providers: ["deepseek"])
+    get root_url(q: "opus", providers: [ "deepseek" ])
     assert_select "td", /No models match your filters/
   end
 

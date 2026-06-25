@@ -45,6 +45,11 @@ class MarketEventTest < ActiveSupport::TestCase
     assert_not MarketEvent.new(valid_attrs.merge(source_url: "javascript:alert(1)")).valid?
   end
 
+  test "invalid when a newline smuggles a second scheme past the http(s) prefix" do
+    # \A-only anchoring would accept this; \z + \S close the bypass.
+    assert_not MarketEvent.new(valid_attrs.merge(source_url: "https://ok.test\njavascript:alert(1)")).valid?
+  end
+
   # --- scopes ----------------------------------------------------------------
 
   test "published scope returns only published events" do
