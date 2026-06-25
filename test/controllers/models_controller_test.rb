@@ -44,10 +44,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card", text: /Recent activity/, count: 0
   end
 
-  test "hero has exactly one events-timeline entry point" do
+  test "hero card has exactly one primary call to action" do
     get root_url
     assert_response :success
-    assert_select ".hero-card a[href=?]", events_path, count: 1
+    # The CTA links to the primary event's destination (its model page or source
+    # URL), falling back to the events timeline; there is always exactly one.
+    assert_select ".hero-card a.tp-btn", count: 1
   end
 
   test "footer carries the deck sourcing disclaimer" do
