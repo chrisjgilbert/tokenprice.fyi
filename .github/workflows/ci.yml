@@ -152,6 +152,9 @@ jobs:
         run: |
           ssh-keygen -R 46.224.179.132 2>/dev/null || true
           ssh-keyscan -H 46.224.179.132 >> ~/.ssh/known_hosts
+          # Tell Net::SSH (used internally by Kamal) not to reject the host key
+          # if no prior known_hosts entry exists in this ephemeral CI environment.
+          printf 'Host 46.224.179.132\n  StrictHostKeyChecking accept-new\n' >> ~/.ssh/config
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

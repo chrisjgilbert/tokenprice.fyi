@@ -97,5 +97,5 @@ builder:
 # ssh:
 #   user: app
 
-ssh:
-  verify_host_key: never
+# Net::SSH host key verification is handled in CI by writing ~/.ssh/config
+# with StrictHostKeyChecking accept-new before running kamal deploy.
