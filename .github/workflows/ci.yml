@@ -131,6 +131,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [scan_ruby, scan_js, lint, test, system-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -148,10 +149,14 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add server to known hosts
+      - name: Trust the deploy host
         run: |
-          ssh-keygen -R 46.224.179.132 2>/dev/null || true
-          ssh-keyscan -H 46.224.179.132 >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Show loaded SSH key fingerprint
+        run: ssh-add -l
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

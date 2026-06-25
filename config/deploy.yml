@@ -97,5 +97,6 @@ builder:
 # ssh:
 #   user: app
 
+# Prevent Net::SSH from falling back to password auth in CI (no TTY → Errno::ENOTTY).
 ssh:
-  verify_host_key: never
+  keys_only: true
