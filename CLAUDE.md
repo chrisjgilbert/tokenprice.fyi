@@ -14,8 +14,14 @@ Two kinds of secrets, two homes:
 
 - **Deploy-only secrets** — secrets only Kamal needs and the app never reads
   (e.g. `RAILS_MASTER_KEY`, `KAMAL_REGISTRY_PASSWORD`) — go in the gitignored
-  **`.kamal/secrets.local`**. The committed `.kamal/secrets` is documentation
-  only and must never contain real values.
+  **`.kamal/secrets.local`** (dotenv format, unquoted values). The committed
+  `.kamal/secrets` must never contain real values, but it is not just
+  documentation: Kamal only loads `.kamal/secrets-common` and `.kamal/secrets`,
+  **not** `.kamal/secrets.local`, so the committed file resolves each value
+  itself — preferring an exported env var (how CI injects them) and otherwise
+  falling back to `.kamal/secrets.local` (and `config/master.key` for the master
+  key). Note Kamal's dotenv does not support `${VAR:-default}`, so the fallback
+  is written explicitly with a command substitution.
 
 Practical consequences:
 
