@@ -15,13 +15,13 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(%r{href="/cost(\?[^"]*)?"}, response.body)
   end
 
-  test "the learn index renders the locked five-explainer intro line" do
+  test "the learn index renders the locked intro line" do
     get learn_url
     assert_response :success
     assert_select "h1", /Understand what you're paying for/
     assert_match(
-      "Five explainers on what an LLM feature costs and why: the call chain a feature runs, " \
-      "how an API bill reads, what reasoning tokens add, where the tokens go, and which levers cut it.",
+      "What an LLM feature actually costs, and why: the chain of calls it runs, " \
+      "how the bill reads, what reasoning tokens add, where the tokens go, and which levers cut it.",
       response.body
     )
   end
