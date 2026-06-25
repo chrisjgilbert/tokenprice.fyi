@@ -39,11 +39,10 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the feature-costs explainer has a live widget and no dead estimator CTA" do
+  test "the feature-costs explainer renders and has no dead estimator CTA" do
     get learn_feature_costs_url
     assert_response :success
     assert_select "h1", /What drives the cost of common features/
-    assert_select ".lw"                                # embedded live-data widget
     # The /cost estimator was removed; its CTA is gone, the ghost cross-link stays.
     assert_no_dead_cost_cta
     assert_select ".hp-cta a"
@@ -75,30 +74,33 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select "article.hp a[href=?]", guide_path, text: /starting model/i
   end
 
-  # AUDIT #3 regression guards: every explainer keeps its live io_ratio widget.
-  # A future edit must not silently drop the credibility-anchoring live data.
-  test "all five explainers render the live io_ratio widget (AUDIT #3 guard)" do
-    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url, learn_anatomy_url, learn_reasoning_url ].each do |url|
+  # The io_ratio widget was removed from the explainers as awkward, except on the
+  # reasoning page, where the output:input spread IS the reasoning tax. Guard both
+  # halves: present on reasoning, absent everywhere else.
+  test "the io_ratio widget renders only on the reasoning explainer" do
+    get learn_reasoning_url
+    assert_response :success
+    assert_select ".lw", { minimum: 1 }, "expected the live io_ratio widget on the reasoning explainer"
+    assert_match(/prices today/, response.body)
+
+    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url, learn_anatomy_url ].each do |url|
       get url
       assert_response :success
-      assert_select ".lw", { minimum: 1 }, "expected the live io_ratio widget on #{url}"
-      assert_match(/prices today/, response.body, "expected the widget's live marker on #{url}")
+      assert_select ".lw", false, "the io_ratio widget should be gone from #{url}"
     end
   end
 
-  test "the cost-cutting explainer renders with a live widget and no dead estimator CTA" do
+  test "the cost-cutting explainer renders and has no dead estimator CTA" do
     get learn_cost_cutting_url
     assert_response :success
     assert_select "h1", /Cost-cutting strategies/
-    assert_select ".lw"
     assert_no_dead_cost_cta
     assert_select ".hp-cta a"
   end
 
-  test "how-pricing-works has a live widget and no dead estimator CTA" do
+  test "how-pricing-works renders and has no dead estimator CTA" do
     get how_pricing_works_url
     assert_response :success
-    assert_select ".lw"
     assert_no_dead_cost_cta
     assert_select ".hp-cta a"
   end
@@ -136,11 +138,9 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/smart step/, response.body)
   end
 
-  test "the anatomy explainer carries live data: the io_ratio widget and a frontier example" do
+  test "the anatomy explainer carries live data: a cheapest-frontier example" do
     get learn_anatomy_url
     assert_response :success
-    assert_select ".lw"                       # the live io_ratio widget
-    assert_match(/prices today/, response.body)
     # A live frontier-model example price (mono): the cheapest frontier model's rate.
     fm = AiModel.listed.where(tier: "frontier").select(&:current_input).min_by(&:current_input)
     assert fm, "expected a priced frontier model in fixtures"

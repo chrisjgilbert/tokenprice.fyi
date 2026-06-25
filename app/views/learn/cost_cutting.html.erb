@@ -16,9 +16,6 @@
 
   <p>All figures state their assumptions. Every cross-tier swap is <strong>a cost comparison, not a quality verdict</strong> — validate the cheaper path against your own eval before you rely on it.</p>
 
-  <%# Live-data widget — the output/input gap that output-side levers exploit. %>
-  <%= render "shared/io_ratio_widget", caption: "Live from the index — output is the pricey meter these levers target." %>
-
   <hr>
   <h2>Prompt caching <span class="hp-mult hp-mult-green">50–90% off cached input</span></h2>
   <p><strong>Mechanism:</strong> if you send the same prefix on every request — a system prompt, a fixed instruction block, a set of retrieved documents, a few-shot example set — the provider can serve those tokens from a KV cache instead of reprocessing them. You pay a steep discount on the repeated portion.</p>

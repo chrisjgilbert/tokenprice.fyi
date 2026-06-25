@@ -1,7 +1,7 @@
 class PagesController < ApplicationController
   def how_pricing_works
-    # Resolved once and reused for both the conditional-GET key and the embedded
-    # io_ratio widget's cache key, so the page issues a single freshness query.
+    # The catalog freshness timestamp drives the conditional-GET key below, so
+    # the page issues a single freshness query.
     @catalog_last_modified = PriceCatalog.last_modified
     return if catalog_fresh?(etag: [ :how_pricing_works ], last_modified: @catalog_last_modified)
 

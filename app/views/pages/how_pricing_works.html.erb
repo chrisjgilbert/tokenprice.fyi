@@ -75,10 +75,6 @@
     <p>For example, <%= @frontier_example.name %> charges <span class="num"><%= usd_plain(@frontier_example.input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.output && @frontier_example.input && @frontier_example.input > 0 ? "#{(@frontier_example.output / @frontier_example.input).round(1)}×" : "—" %></span> the input price.</p>
   <% end %>
 
-  <%# Live-data widget — today's output:input spread across models. %>
-  <%= render "shared/io_ratio_widget", last_modified: @catalog_last_modified,
-        caption: "Live from the index — updates whenever a provider changes a price." %>
-
   <h3>Where your money actually goes</h3>
 
   <p>Most workloads are input-heavy. A RAG query might send 4,000 tokens of context and get back 200. A classification call sends a document and gets back one word. The ratio matters because it determines which price to optimise:</p>

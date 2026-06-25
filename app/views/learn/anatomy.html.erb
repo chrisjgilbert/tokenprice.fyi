@@ -50,11 +50,8 @@
 
   <p>The fix is to read the chain step by step. Below are four common shapes, each rendered from the same data the guide uses. For each, the cost-driver step and the capable-model step are named from the chain itself.</p>
 
-  <%# Live-data widget — the per-1M spread every chain below is multiplied against. %>
-  <%= render "shared/io_ratio_widget", models: @catalog, caption: "Live from the index — the per-1M spread every chain below is multiplied against." %>
-
   <% if @frontier_example&.input && @frontier_example&.output %>
-    <p>That spread sets the stakes for the capable-model step. Today the cheapest frontier model on the index is <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.input) %></span> in / <span class="num"><%= usd_plain(@frontier_example.output) %></span> out per 1M tokens. Put that rate on one step that needs it, not on every step that doesn't.</p>
+    <p>The capable-model step is where a frontier price is worth paying. Today the cheapest frontier model on the index is <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.input) %></span> in / <span class="num"><%= usd_plain(@frontier_example.output) %></span> out per 1M tokens. Put that rate on one step that needs it, not on every step that doesn't.</p>
   <% end %>
 
   <% @patterns.each do |pattern| %>

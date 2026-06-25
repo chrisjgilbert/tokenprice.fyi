@@ -16,9 +16,6 @@
 
   <p>Five common shapes. For each: a worked cost breakdown, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. This is what each feature costs; for a starting model per step, the guide is the decision counterpart. Tier calls are <strong>a cost comparison, not a quality verdict</strong>. Validate against your own eval before you ship.</p>
 
-  <%# Live-data widget — the input/output spread these shapes are multiplied against. %>
-  <%= render "shared/io_ratio_widget", caption: "Live from the index — the per-1M spread every shape below is multiplied against." %>
-
   <hr>
   <h2 id="rag">RAG / question-over-documents</h2>
   <p>You retrieve a handful of documents, send them as context, and the model answers in a paragraph. The retrieval does the hard part; the model mostly reads carefully and declines to invent. This shape is <strong>overwhelmingly input-heavy</strong> — thousands of tokens go in to get a couple of hundred back.</p>

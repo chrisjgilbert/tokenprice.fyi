@@ -98,52 +98,11 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The io_ratio widget now lives only on /learn/reasoning, embedded with an
+  # explicit `models:` local. Its cached render must be byte-identical to the
+  # uncached one — the catalog load inside the cache block doesn't change output.
   test "io ratio widget page is byte-identical with caching on vs off" do
-    assert_equal body_without_caching(how_pricing_works_url),
-                 body_with_caching(how_pricing_works_url)
-  end
-
-  # The widget is embedded on /learn/anatomy with an explicit `models:` local,
-  # and on /how-pricing-works with the default (lazy-loaded) catalog. Both paths
-  # must render byte-identically with caching on vs off — proving the catalog
-  # load moved inside the cache block didn't change output and the key still
-  # discriminates the model set passed via the local.
-  test "io ratio widget with an explicit models local is byte-identical cached vs not" do
-    assert_equal body_without_caching(learn_anatomy_url),
-                 body_with_caching(learn_anatomy_url)
-  end
-
-  # Counts PriceCatalog.models invocations across the block, with the override
-  # neutralized afterwards so it can't leak into later tests.
-  def counting_price_catalog_models
-    calls = 0
-    counting = Module.new do
-      define_method(:models) { calls += 1; super() }
-    end
-    PriceCatalog.singleton_class.prepend(counting)
-    begin
-      yield -> { calls }
-    ensure
-      counting.send(:define_method, :models) { super() }
-    end
-  end
-
-  test "io ratio widget skips its PriceCatalog.models load on a cache hit" do
-    # The widget's fallback (PriceCatalog.models — the expensive
-    # AiModel.listed.includes(...) load) must run INSIDE the cache block, so a
-    # warm render skips it. The how-pricing-works action also loads the catalog
-    # once via PriceCatalog.cheapest, so a cold render loads it more times than
-    # a warm one: the difference is the widget's now-cached load.
-    with_fragment_caching do
-      counting_price_catalog_models do |count|
-        get how_pricing_works_url   # cold: action + widget both load .models
-        cold = count.call
-        get how_pricing_works_url   # warm: widget served from cache
-        warm = count.call - cold
-
-        assert_operator warm, :<, cold,
-          "a warm widget render must load PriceCatalog.models fewer times than a cold one"
-      end
-    end
+    assert_equal body_without_caching(learn_reasoning_url),
+                 body_with_caching(learn_reasoning_url)
   end
 end

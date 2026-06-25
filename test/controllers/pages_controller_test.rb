@@ -20,9 +20,9 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "how-pricing-works resolves the catalog last_modified once per request" do
-    # The conditional-GET key and the embedded io_ratio widget's cache key both
-    # need the catalog freshness timestamp; it must be resolved a single time per
-    # request, not once for each, so the page issues one PricePoint.maximum query.
+    # The conditional-GET key needs the catalog freshness timestamp; it must be
+    # resolved a single time per request, so the page issues one
+    # PricePoint.maximum query rather than several.
     calls = 0
     counting = Module.new do
       define_method(:last_modified) { calls += 1; super() }
