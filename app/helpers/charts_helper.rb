@@ -1,23 +1,28 @@
 module ChartsHelper
-  # Server-rendered SVG line chart of a model's input/output price history.
-  # No JS, no external libs — renders identically for crawlers and users.
+  # Line chart of a model's input/output price history, rendered as SVG on the
+  # server so it's identical for crawlers, no-JS clients, and screen readers.
+  # A Stimulus controller (price_chart) progressively enhances it with a
+  # cursor-tracking crosshair and a floating tooltip — the static chart stands
+  # on its own if that JS never runs.
   #
   # Accessibility: the SVG carries a <title>/<desc> summary (via aria-labelledby
   # / aria-describedby) and the two series are distinguished by line style
   # (output is dashed) and text labels, not colour alone. The page also renders
   # the underlying numbers in the "Snapshots" table beneath the chart.
   #
-  # `points` is an array of PricePoint ordered chronologically.
+  # `points` is an array of PricePoint ordered chronologically. The chart always
+  # renders given at least one point (a lone point shows as a centred marker).
   def price_history_chart(points, width: 720, height: 240)
-    if points.size < 2
-      return content_tag(:p, "Only one price on record so far — the history chart appears once a price changes.",
-                         class: "text-sm text-slate-500")
+    if points.empty?
+      return content_tag(:p, "No price on record yet.", class: "text-sm text-slate-500")
     end
 
-    pad = { l: 14, r: 96, t: 18, b: 30 }
+    # Left gutter leaves room for the dollar axis labels.
+    pad = { l: 44, r: 96, t: 18, b: 30 }
     plot_w = width - pad[:l] - pad[:r]
     plot_h = height - pad[:t] - pad[:b]
 
+    single = points.size == 1
     xs = points.map { |p| p.effective_on.to_time.to_i }
     xmin, xmax = xs.minmax
     xspan = [ xmax - xmin, 1 ].max
@@ -26,7 +31,8 @@ module ChartsHelper
     ymax = values.max * 1.15
     ymax = 1.0 if ymax.zero?
 
-    sx = ->(t) { pad[:l] + ((t - xmin).to_f / xspan) * plot_w }
+    # A single point has no time span to spread across, so centre it.
+    sx = ->(t) { single ? (pad[:l] + plot_w / 2.0) : (pad[:l] + ((t - xmin).to_f / xspan) * plot_w) }
     sy = ->(v) { pad[:t] + (1 - (v.to_f / ymax)) * plot_h }
 
     series = [
@@ -37,22 +43,36 @@ module ChartsHelper
     uid     = "chart-#{points.first.ai_model_id}"
     first_p = points.first
     last_p  = points.last
-    desc = series.map do |s|
-      "#{s[:label]} went from #{usd_plain(first_p.public_send(s[:key]))} to #{usd_plain(last_p.public_send(s[:key]))}"
-    end.join("; ") + " between #{first_p.effective_on.strftime('%b %Y')} and #{last_p.effective_on.strftime('%b %Y')}."
+    desc =
+      if single
+        series.map { |s| "#{s[:label]} #{usd_plain(first_p.public_send(s[:key]))}" }.join("; ") +
+          " as of #{first_p.effective_on.strftime('%b %Y')}."
+      else
+        series.map do |s|
+          "#{s[:label]} went from #{usd_plain(first_p.public_send(s[:key]))} to #{usd_plain(last_p.public_send(s[:key]))}"
+        end.join("; ") + " between #{first_p.effective_on.strftime('%b %Y')} and #{last_p.effective_on.strftime('%b %Y')}."
+      end
 
     svg = []
-    svg << %(<svg viewBox="0 0 #{width} #{height}" class="w-full h-auto" role="img" aria-labelledby="#{uid}-title #{uid}-desc">)
+    svg << %(<svg viewBox="0 0 #{width} #{height}" class="w-full h-auto" role="img" aria-labelledby="#{uid}-title #{uid}-desc" data-price-chart-target="svg">)
     svg << %(<title id="#{uid}-title">Price per 1M tokens over time</title>)
     svg << %(<desc id="#{uid}-desc">#{ERB::Util.html_escape(desc)}</desc>)
 
-    # Baseline
-    svg << %(<line x1="#{pad[:l]}" y1="#{sy.(0)}" x2="#{pad[:l] + plot_w}" y2="#{sy.(0)}" stroke="#e2e8f0" stroke-width="1"/>)
+    # Horizontal gridlines at round dollar values, each with a mono $ label in
+    # the left gutter (the design's "$/1M" axis). The step is chosen so ~4–6
+    # lines land on clean numbers across every price scale (cents to tens).
+    chart_gridlines(ymax).each do |v|
+      gy = sy.(v).round(1)
+      svg << %(<line x1="#{pad[:l]}" y1="#{gy}" x2="#{pad[:l] + plot_w}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>)
+      svg << %(<text x="#{pad[:l] - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{usd_plain(v)}</text>)
+    end
 
     series.each do |s|
       dash = s[:dash] ? %( stroke-dasharray="#{s[:dash]}") : ""
-      pts = points.map { |p| "#{sx.(p.effective_on.to_time.to_i).round(1)},#{sy.(p.public_send(s[:key])).round(1)}" }
-      svg << %(<polyline points="#{pts.join(' ')}" fill="none" stroke="#{s[:color]}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"#{dash}/>)
+      unless single
+        pts = points.map { |p| "#{sx.(p.effective_on.to_time.to_i).round(1)},#{sy.(p.public_send(s[:key])).round(1)}" }
+        svg << %(<polyline points="#{pts.join(' ')}" fill="none" stroke="#{s[:color]}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"#{dash}/>)
+      end
 
       points.each do |p|
         cx = sx.(p.effective_on.to_time.to_i).round(1)
@@ -66,12 +86,66 @@ module ChartsHelper
       svg << %(<text x="#{(pad[:l] + plot_w + 6).round(1)}" y="#{ly + 4}" font-size="12" font-weight="600" fill="#{s[:color]}">#{s[:short]} #{usd_plain(last_p.public_send(s[:key]))}</text>)
     end
 
-    # X-axis date labels (first + last)
-    svg << %(<text x="#{pad[:l]}" y="#{height - 8}" font-size="11" fill="#475569">#{first_p.effective_on.strftime('%b %Y')}</text>)
-    svg << %(<text x="#{(pad[:l] + plot_w).round(1)}" y="#{height - 8}" font-size="11" fill="#475569" text-anchor="end">#{last_p.effective_on.strftime('%b %Y')}</text>)
+    # X-axis date labels (first + last). With a single point both collapse to one.
+    if single
+      svg << %(<text x="#{(pad[:l] + plot_w / 2.0).round(1)}" y="#{height - 8}" font-size="11" fill="#475569" text-anchor="middle">#{first_p.effective_on.strftime('%b %Y')}</text>)
+    else
+      svg << %(<text x="#{pad[:l]}" y="#{height - 8}" font-size="11" fill="#475569">#{first_p.effective_on.strftime('%b %Y')}</text>)
+      svg << %(<text x="#{(pad[:l] + plot_w).round(1)}" y="#{height - 8}" font-size="11" fill="#475569" text-anchor="end">#{last_p.effective_on.strftime('%b %Y')}</text>)
+    end
+
+    # Interactive layer (hidden until the controller moves it). Crosshair line +
+    # one hover marker per series. A transparent overlay on top catches pointer
+    # events across the whole plot. These are inert without JS.
+    svg << %(<line data-price-chart-target="crosshair" x1="0" y1="#{pad[:t]}" x2="0" y2="#{(pad[:t] + plot_h).round(1)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>)
+    series.each do |s|
+      svg << %(<circle data-price-chart-target="#{s[:key] == :input_per_mtok ? 'inputDot' : 'outputDot'}" cx="0" cy="0" r="4.5" fill="#{s[:color]}" stroke="#fff" stroke-width="2" visibility="hidden"/>)
+    end
+    svg << %(<rect data-price-chart-target="overlay" data-action="pointermove->price-chart#move pointerleave->price-chart#leave pointerdown->price-chart#move" x="#{pad[:l]}" y="#{pad[:t]}" width="#{plot_w}" height="#{plot_h}" fill="#fff" fill-opacity="0" style="pointer-events:all"/>)
 
     svg << "</svg>"
-    svg.join.html_safe
+
+    data_points = points.map do |p|
+      {
+        x: sx.(p.effective_on.to_time.to_i).round(1),
+        date: p.effective_on.strftime("%-d %b %Y"),
+        input: { y: sy.(p.input_per_mtok).round(1), label: usd_plain(p.input_per_mtok) },
+        output: { y: sy.(p.output_per_mtok).round(1), label: usd_plain(p.output_per_mtok) }
+      }
+    end
+
+    content_tag(:div, class: "relative", data: {
+      controller: "price-chart",
+      price_chart_points_value: data_points.to_json,
+      price_chart_geometry_value: { width: width, height: height }.to_json
+    }) do
+      safe_join([
+        svg.join.html_safe,
+        content_tag(:div, "", role: "status", "aria-hidden": "true",
+          class: "pointer-events-none absolute left-0 top-0 z-10 hidden whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg",
+          data: { price_chart_target: "tooltip" })
+      ])
+    end
+  end
+
+  # Round dollar values to draw gridlines at, from 0 up to (but not past) the
+  # plot ceiling. The step is the 1/2/5 × 10ⁿ value nearest ymax/4, so labels
+  # stay clean whether prices are in cents or tens of dollars.
+  def chart_gridlines(ymax)
+    return [ 0.0 ] if ymax <= 0
+
+    raw = ymax / 4.0
+    base = 10.0**Math.log10(raw).floor
+    frac = raw / base
+    step = (frac < 1.5 ? 1 : frac < 3 ? 2 : frac < 7 ? 5 : 10) * base
+
+    values = []
+    v = 0.0
+    while v <= ymax + step * 0.001 && values.size < 12
+      values << v.round(6)
+      v += step
+    end
+    values
   end
 
   # Area sparkline of a workload's monthly cost across historical price-change

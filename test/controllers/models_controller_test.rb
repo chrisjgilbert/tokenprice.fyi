@@ -191,6 +191,32 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg"
   end
 
+  test "show mounts the interactive price-chart controller with its data" do
+    # The chart is progressively enhanced: the controller plus the serialized
+    # price points (for the hover crosshair/tooltip) ride on the container.
+    get model_url(ai_models(:deepseek_v4))
+    assert_response :success
+    assert_select "[data-controller~='price-chart']" do
+      assert_select "[data-price-chart-target='overlay']"
+      assert_select "[data-price-chart-target='tooltip']"
+    end
+    # The points value carries the dated price labels the tooltip renders.
+    assert_select "[data-price-chart-points-value*='date']"
+  end
+
+  test "show always renders the chart, even with a single price on record" do
+    # Opus has one price point. The chart must still render as an SVG rather
+    # than falling back to a 'appears once a price changes' message.
+    model = ai_models(:opus)
+    assert_equal 1, model.price_points.size, "fixture should have a lone price point"
+    get model_url(model)
+    assert_response :success
+    assert_select "svg"
+    assert_no_match(/appears once a price changes/, @response.body)
+    # The legend is shown alongside the chart.
+    assert_select "span", text: /Input \(solid\)/
+  end
+
   test "show emits a self-canonical link that ignores query params" do
     get model_url(ai_models(:opus), ref: "twitter")
     assert_response :success
