@@ -8,6 +8,7 @@ on:
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -20,12 +21,13 @@ jobs:
 
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
-      
+
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
-      
+
   scan_js:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -41,6 +43,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
@@ -67,6 +70,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     # services:
     #  redis:
@@ -95,6 +99,7 @@ jobs:
 
   system-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     # services:
     #  redis:
@@ -131,6 +136,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [scan_ruby, scan_js, lint, test, system-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -143,18 +149,11 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Install SSH key and known hosts
+        uses: shimataro/ssh-key-action@v2
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known hosts
-        run: |
-          ssh-keygen -R 46.224.179.132 2>/dev/null || true
-          ssh-keyscan -H 46.224.179.132 >> ~/.ssh/known_hosts
-          # Tell Net::SSH (used internally by Kamal) not to reject the host key
-          # if no prior known_hosts entry exists in this ephemeral CI environment.
-          printf 'Host 46.224.179.132\n  StrictHostKeyChecking accept-new\n' >> ~/.ssh/config
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
