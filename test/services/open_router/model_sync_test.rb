@@ -20,9 +20,12 @@ module OpenRouter
       }
     end
 
-    def sync(rows, today: Date.current)
+    # `describer: nil` keeps generation off for the bulk of the suite (it would
+    # otherwise reach for the Anthropic API on every created row); the
+    # description-generation tests pass an explicit fake describer.
+    def sync(rows, today: Date.current, describer: nil)
       ModelSync.new(client: FakeClient.new(rows), today: today,
-                    logger: ActiveSupport::Logger.new(nil)).call
+                    describer: describer, logger: ActiveSupport::Logger.new(nil)).call
     end
 
     test "creates new models, skips curated duplicates and free/non-text rows" do
@@ -387,6 +390,90 @@ module OpenRouter
       result = sync(rows, today: Date.current + 1)
       assert_equal 0, result.repriced_records.size
       assert_equal 0, result.created_records.size
+    end
+
+    # --- editorial generation ----------------------------------------------
+
+    # A describer test double standing in for ModelDescriptionGenerator. Records
+    # the kwargs it was called with and returns a fixed editorial hash (or a
+    # caller-supplied one), so we never touch the Anthropic API.
+    class FakeDescriber
+      attr_reader :calls
+
+      def initialize(copy: nil, &block)
+        @copy  = copy
+        @block = block
+        @calls = []
+      end
+
+      def generate(**kwargs)
+        @calls << kwargs
+        return @block.call(**kwargs) if @block
+
+        @copy || {
+          description: "A generated one-liner.",
+          strengths:   "Generated strengths.",
+          best_for:    "Generated best-for.",
+          limitations: "Generated limitations."
+        }
+      end
+    end
+
+    test "a newly created model gets generated editorial copy, replacing the upstream blurb" do
+      describer = FakeDescriber.new
+      sync([ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                      prompt: "0.0000001", completion: "0.0000004",
+                      description: "Upstream blurb that is probably truncated and…") ],
+           describer: describer)
+
+      model = AiModel.find_by!(openrouter_id: "newlab/wonder-1")
+      assert_equal "A generated one-liner.", model.description
+      assert_equal "Generated strengths.",   model.strengths
+      assert_equal "Generated best-for.",     model.best_for
+      assert_equal "Generated limitations.",  model.limitations
+
+      # Called once, with the model facts and the upstream blurb as a hint.
+      assert_equal 1, describer.calls.size
+      call = describer.calls.first
+      assert_equal "Wonder 1", call[:name]
+      assert_equal "NewLab",   call[:provider]
+      assert_match "Upstream blurb", call[:source_text]
+    end
+
+    test "editorial copy is generated only on first import, not on re-sync" do
+      describer = FakeDescriber.new
+      rows = [ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                        prompt: "0.0000001", completion: "0.0000004") ]
+
+      sync(rows, describer: describer)
+      sync(rows, today: Date.current + 1, describer: describer)
+
+      assert_equal 1, describer.calls.size, "re-sync of an existing model must not regenerate"
+    end
+
+    test "a generation failure falls back to the upstream description" do
+      raising = FakeDescriber.new { |**| raise "boom" }
+
+      assert_nothing_raised do
+        sync([ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                        prompt: "0.0000001", completion: "0.0000004",
+                        description: "Plain upstream description.") ],
+             describer: raising)
+      end
+
+      model = AiModel.find_by!(openrouter_id: "newlab/wonder-1")
+      assert_equal "Plain upstream description.", model.description
+      assert_nil model.strengths
+    end
+
+    test "curated duplicates are never sent to the describer" do
+      describer = FakeDescriber.new
+      # Duplicates curated `opus` (Claude Opus 4.8) -> skipped, never created.
+      sync([ or_model(id: "anthropic/claude-opus-4.8", name: "Anthropic: Claude Opus 4.8",
+                      prompt: "0.000005", completion: "0.000025") ],
+           describer: describer)
+
+      assert_empty describer.calls
     end
   end
 end

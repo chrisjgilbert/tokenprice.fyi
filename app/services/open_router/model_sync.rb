@@ -124,12 +124,14 @@ module OpenRouter
 
     def self.call(...) = new(...).call
 
-    def initialize(client: Client.new, today: Date.current, logger: Rails.logger)
-      @client = client
-      @today  = today
-      @logger = logger
-      @result = Result.new(created: 0, enriched: 0, repriced: 0, skipped: 0,
-                           created_records: [], repriced_records: [])
+    def initialize(client: Client.new, today: Date.current,
+                   describer: ModelDescriptionGenerator.new, logger: Rails.logger)
+      @client    = client
+      @today     = today
+      @describer = describer
+      @logger    = logger
+      @result    = Result.new(created: 0, enriched: 0, repriced: 0, skipped: 0,
+                              created_records: [], repriced_records: [])
     end
 
     def call
@@ -169,6 +171,7 @@ module OpenRouter
 
       created = model.new_record?
       enrich(model, row)
+      generate_editorial(model, row) if created
       model.save!
 
       repriced_from = record_price(model, pricing)
@@ -342,6 +345,34 @@ module OpenRouter
       # `created` is when OpenRouter listed the model, only an approximation of
       # the release date, so set it once and never churn it.
       model.released_on ||= released
+    end
+
+    # On first import, replace the (often truncated) upstream blurb with a
+    # generated editorial write-up in the catalogue's own voice — the same
+    # description + strengths/best-for/limitations shape as the curated rows.
+    # Only newly-created rows we own are touched, so the daily sync never
+    # re-spends on a model it has already written up. Best-effort: a generation
+    # failure leaves the upstream description in place rather than failing the
+    # import (which would skip the model entirely).
+    def generate_editorial(model, row)
+      return unless @describer
+      return unless model.source == AiModel::OPENROUTER_SOURCE
+
+      copy = @describer.generate(
+        name:           model.name,
+        provider:       model.provider.name,
+        context_window: model.context_window,
+        source_text:    row["description"].presence
+      )
+      return if copy.blank?
+
+      model.description = copy[:description] if copy[:description].present?
+      model.strengths   = copy[:strengths]
+      model.best_for    = copy[:best_for]
+      model.limitations = copy[:limitations]
+    rescue => e
+      @logger.warn("OpenRouter sync: description generation failed for " \
+                   "#{model.openrouter_id.inspect} — #{e.class}: #{e.message}")
     end
 
     # --- naming & dedup ----------------------------------------------------
