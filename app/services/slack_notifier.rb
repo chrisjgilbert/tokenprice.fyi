@@ -36,7 +36,8 @@ class SlackNotifier
       # redirects (wrong URL/host). Surface the Location instead of reading the
       # body, which on a redirect isn't available outside the request block.
       detail = if response.is_a?(Net::HTTPRedirection)
-                 "redirect to #{response["location"]}"
+                 location = response["location"]
+                 location.present? ? "redirect to #{location}" : "redirect (no Location header — webhook URL is likely deactivated)"
       else
                  response.body
       end

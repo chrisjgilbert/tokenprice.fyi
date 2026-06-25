@@ -88,7 +88,10 @@ class NewsFeedFetcher
                     open_timeout: TIMEOUT, read_timeout: TIMEOUT) do |http|
       response = http.get(uri.request_uri, "User-Agent" => "tokenprice-release-watch/1.0")
       return nil unless response.is_a?(Net::HTTPSuccess)
-      response.body
+
+      body = response.body
+      charset = response.type_params["charset"] || "UTF-8"
+      body.encode("UTF-8", charset, invalid: :replace, undef: :replace)
     end
   rescue URI::InvalidURIError => e
     Rails.logger.warn("NewsFeedFetcher(#{@name}): invalid URL #{url} — #{e.message}")
