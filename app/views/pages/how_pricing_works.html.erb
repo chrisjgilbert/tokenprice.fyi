@@ -271,7 +271,7 @@
 
   <p>Every model on <%= link_to "the table", root_path %> shows normalised pricing in <strong>USD per 1M tokens</strong> — input, output, and cached where available. It sorts on <strong>input price</strong> by default, since most workloads are input-heavy; sort by output or cached input when your mix differs.</p>
 
-  <p>When a provider changes their prices, we don't overwrite — we add a new snapshot. The <%= link_to "trends chart", trends_path %> shows the full history, and every price point on a model's detail page carries the date it was recorded and where it came from.</p>
+  <p>When a provider changes their prices, we don't overwrite — we add a new snapshot. Every price point on a model's detail page carries the date it was recorded and where it came from, and the <%= link_to "market-events timeline", events_path %> tracks the launches and price moves across the market.</p>
 
   <div class="hp-cta">
     <%= link_to root_path, class: "hp-cta-ghost" do %>

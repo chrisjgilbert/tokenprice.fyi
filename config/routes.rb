@@ -9,9 +9,12 @@ Rails.application.routes.draw do
   resources :providers, only: [ :show ]
 
   get "compare", to: "comparisons#show", as: :compare
-  get "trends",  to: "trends#index",     as: :trends
+  get "events",  to: "events#index",     as: :events
   get "sources", to: "sources#index",    as: :sources
   get "which-model", to: redirect("/guide", status: 301)
+  # The market-events timeline replaced the old price-trends chart; 301 the
+  # retired URL to preserve inbound links and bookmarks.
+  get "trends", to: redirect("/events", status: 301)
 
   # The Guide — browse-by-task model picker. Index is the task chooser; each
   # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.

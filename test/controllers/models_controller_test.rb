@@ -44,10 +44,10 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card", text: /Recent activity/, count: 0
   end
 
-  test "hero has exactly one Trends entry point" do
+  test "hero has exactly one events-timeline entry point" do
     get root_url
     assert_response :success
-    assert_select ".hero-card a[href=?]", trends_path, count: 1
+    assert_select ".hero-card a[href=?]", events_path, count: 1
   end
 
   test "footer carries the deck sourcing disclaimer" do

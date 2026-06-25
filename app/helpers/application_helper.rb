@@ -127,7 +127,7 @@ module ApplicationHelper
       [ "Models", root_path ],
       [ "Compare", compare_path ],
       [ "Guide", guide_path ],
-      [ "Trends", trends_path ]
+      [ "Events", events_path ]
     ]
   end
 
