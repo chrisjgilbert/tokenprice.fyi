@@ -98,4 +98,4 @@ builder:
 #   user: app
 
 ssh:
-  known_hosts: false
+  verify_host_key: never
