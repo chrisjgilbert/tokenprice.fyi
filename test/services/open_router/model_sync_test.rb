@@ -440,7 +440,7 @@ module OpenRouter
       assert_match "Upstream blurb", call[:source_text]
     end
 
-    test "editorial copy is generated only on first import, not on re-sync" do
+    test "a written-up model is not regenerated on re-sync" do
       describer = FakeDescriber.new
       rows = [ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
                         prompt: "0.0000001", completion: "0.0000004") ]
@@ -448,7 +448,43 @@ module OpenRouter
       sync(rows, describer: describer)
       sync(rows, today: Date.current + 1, describer: describer)
 
-      assert_equal 1, describer.calls.size, "re-sync of an existing model must not regenerate"
+      assert_equal 1, describer.calls.size,
+                   "a model that already has editorial copy must not regenerate"
+    end
+
+    test "a model whose first generation failed is retried on a later sync" do
+      rows = [ or_model(id: "newlab/wonder-1", name: "NewLab: Wonder 1",
+                        prompt: "0.0000001", completion: "0.0000004") ]
+
+      # Day one: generation raises, so the model is created without editorial copy.
+      sync(rows, describer: FakeDescriber.new { |**| raise "boom" })
+      model = AiModel.find_by!(openrouter_id: "newlab/wonder-1")
+      assert_nil model.strengths
+
+      # Day two: generation works, so the still-blank model gets written up.
+      good = FakeDescriber.new
+      sync(rows, today: Date.current + 1, describer: good)
+
+      assert_equal 1, good.calls.size
+      assert_equal "Generated strengths.", model.reload.strengths
+    end
+
+    test "generation is capped per sync run, leaving the overflow for later" do
+      over = ModelSync::MAX_GENERATED_PER_RUN + 3
+      rows = (1..over).map do |i|
+        or_model(id: "newlab/wonder-#{i}", name: "NewLab: Wonder #{i}",
+                 prompt: "0.0000001", completion: "0.0000004")
+      end
+      describer = FakeDescriber.new
+
+      sync(rows, describer: describer)
+
+      assert_equal ModelSync::MAX_GENERATED_PER_RUN, describer.calls.size
+      # Every model is still created — only the write-up is deferred.
+      assert_equal over, AiModel.from_openrouter.where("openrouter_id LIKE 'newlab/wonder-%'").count
+      assert_equal over - ModelSync::MAX_GENERATED_PER_RUN,
+                   AiModel.from_openrouter.where("openrouter_id LIKE 'newlab/wonder-%'")
+                          .where(strengths: [ nil, "" ]).count
     end
 
     test "a generation failure falls back to the upstream description" do

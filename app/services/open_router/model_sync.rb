@@ -32,6 +32,15 @@ module OpenRouter
     # Defensive cap on the free-text description we copy from an untrusted API.
     DESCRIPTION_LIMIT = 10_000
 
+    # Description generation is a blocking, per-model Anthropic call. Capping how
+    # many run per sync keeps the first run after deploy — when every OpenRouter
+    # model is new — from firing hundreds of serial API calls on the daily job's
+    # critical path. Models over the cap (and any whose generation fails) are
+    # left without editorial copy and picked up on later runs, since
+    # `generate_editorial` re-attempts any owned row still missing it. For a bulk
+    # one-off, the `openrouter:backfill_descriptions` rake task ignores this cap.
+    MAX_GENERATED_PER_RUN = 25
+
     # Patterns for OpenRouter variant models that duplicate a versioned entry.
     LATEST_NAME_RE = /\blatest\b/i
     LATEST_ID_RE   = /:latest\b/i
@@ -130,6 +139,7 @@ module OpenRouter
       @today     = today
       @describer = describer
       @logger    = logger
+      @generated = 0
       @result    = Result.new(created: 0, enriched: 0, repriced: 0, skipped: 0,
                               created_records: [], repriced_records: [])
     end
@@ -171,7 +181,7 @@ module OpenRouter
 
       created = model.new_record?
       enrich(model, row)
-      generate_editorial(model, row) if created
+      generate_editorial(model)
       model.save!
 
       repriced_from = record_price(model, pricing)
@@ -347,22 +357,27 @@ module OpenRouter
       model.released_on ||= released
     end
 
-    # On first import, replace the (often truncated) upstream blurb with a
-    # generated editorial write-up in the catalogue's own voice — the same
-    # description + strengths/best-for/limitations shape as the curated rows.
-    # Only newly-created rows we own are touched, so the daily sync never
-    # re-spends on a model it has already written up. Best-effort: a generation
-    # failure leaves the upstream description in place rather than failing the
-    # import (which would skip the model entirely).
-    def generate_editorial(model, row)
+    # Replace the (often truncated) upstream blurb with a generated editorial
+    # write-up in the catalogue's own voice — the same description +
+    # strengths/best-for/limitations shape as the curated rows. Runs for any row
+    # we own that is still missing editorial copy (its `strengths` facet), so a
+    # model whose generation failed on a previous run is retried on the next one
+    # rather than keeping the truncated blurb forever. A `strengths` facet means
+    # it has already been written up, so the work happens once per model.
+    # Best-effort: a generation failure leaves the upstream description in place
+    # rather than failing the import (which would skip the model entirely).
+    def generate_editorial(model)
       return unless @describer
       return unless model.source == AiModel::OPENROUTER_SOURCE
+      return if model.strengths.present?
+      return if generation_capped?
 
+      @generated += 1
       copy = @describer.generate(
         name:           model.name,
         provider:       model.provider.name,
         context_window: model.context_window,
-        source_text:    row["description"].presence
+        source_text:    model.description.presence
       )
       return if copy.blank?
 
@@ -373,6 +388,19 @@ module OpenRouter
     rescue => e
       @logger.warn("OpenRouter sync: description generation failed for " \
                    "#{model.openrouter_id.inspect} — #{e.class}: #{e.message}")
+    end
+
+    # Whether this run has hit its description-generation cap. Logs once when the
+    # cap is first reached so a backlog is visible without spamming the log.
+    def generation_capped?
+      return false if @generated < MAX_GENERATED_PER_RUN
+
+      unless @generation_cap_logged
+        @logger.info("OpenRouter sync: reached the #{MAX_GENERATED_PER_RUN}/run " \
+                     "description-generation cap; remaining models will be written up on later runs")
+        @generation_cap_logged = true
+      end
+      true
     end
 
     # --- naming & dedup ----------------------------------------------------
