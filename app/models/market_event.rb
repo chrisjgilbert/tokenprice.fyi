@@ -5,7 +5,9 @@ class MarketEvent < ApplicationRecord
   validates :event_date, presence: true
   validates :kind,       presence: true, inclusion: { in: %w[market] }
   validates :status,     presence: true, inclusion: { in: %w[draft published] }
-  validates :source_url, format: { with: /\Ahttps?:\/\//i, message: "must be an http(s) URL" },
+  # Anchored at both ends with \z (not \Z) and \S so a newline can't smuggle
+  # content past the scheme check — a value like "https://ok\njavascript:…".
+  validates :source_url, format: { with: /\Ahttps?:\/\/\S+\z/i, message: "must be an http(s) URL" },
                          allow_blank: true
 
   scope :chronological, -> { order(event_date: :asc) }

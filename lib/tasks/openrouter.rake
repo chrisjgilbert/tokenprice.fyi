@@ -47,4 +47,3 @@ namespace :openrouter do
     puts "Done: #{updated} updated, #{failed} failed."
   end
 end
-

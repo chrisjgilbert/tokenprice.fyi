@@ -1,4 +1,11 @@
 module ApplicationHelper
+  # An external URL safe to drop into an href: returned only when it's a plain
+  # http(s) link, so a stored value can't smuggle a `javascript:`/`data:` scheme
+  # into a link target. Returns nil (render no link) for anything else.
+  def external_href(url)
+    url if url.to_s.match?(%r{\Ahttps?://\S+\z}i)
+  end
+
   # Format a USD-per-million-tokens figure. The numeric rule lives in PriceFormat
   # so the insight services format identically; this layer adds HTML/em-dash.
   def usd(value)
@@ -117,21 +124,21 @@ module ApplicationHelper
   # mobile drawer so the two can't drift. Each item is [label, path].
   def primary_nav_items
     [
-      ["Models", root_path],
-      ["Compare", compare_path],
-      ["Guide", guide_path],
-      ["Trends", trends_path]
+      [ "Models", root_path ],
+      [ "Compare", compare_path ],
+      [ "Guide", guide_path ],
+      [ "Trends", trends_path ]
     ]
   end
 
   def learn_nav_items
     [
-      ["All explainers", learn_path],
-      ["What a feature is made of", learn_anatomy_path],
-      ["How pricing works", how_pricing_works_path],
-      ["Reasoning tokens", learn_reasoning_path],
-      ["What drives feature cost", learn_feature_costs_path],
-      ["Cost-cutting strategies", learn_cost_cutting_path]
+      [ "All explainers", learn_path ],
+      [ "What a feature is made of", learn_anatomy_path ],
+      [ "How pricing works", how_pricing_works_path ],
+      [ "Reasoning tokens", learn_reasoning_path ],
+      [ "What drives feature cost", learn_feature_costs_path ],
+      [ "Cost-cutting strategies", learn_cost_cutting_path ]
     ]
   end
 
