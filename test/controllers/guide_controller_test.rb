@@ -5,7 +5,8 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     get guide_path
     assert_response :success
 
-    assert_select "h1", text: /Most AI features run as a chain of calls, each with a different job\./
+    assert_select "h1", text: /Starting models, by task\./
+    assert_select "header p", text: /Most AI features run as a chain of calls, each with a different job\./
 
     FeaturePattern.all.each do |pattern|
       assert_select "a[href=?]", guide_task_path(pattern.slug), text: /#{Regexp.escape(pattern.label)}/
