@@ -1,4 +1,6 @@
 class NewsItem < ApplicationRecord
+  include Classifiable
+
   belongs_to :market_event, optional: true
 
   validates :url,    presence: true

@@ -11,15 +11,23 @@ unless defined?(Anthropic::Errors::Error)
   end
 end
 
-class NewsClassifierTest < ActiveSupport::TestCase
+class NewsItem::ClassificationTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
 
-  def make_classifier(fake_client)
-    classifier = NewsClassifier.new
-    classifier.instance_variable_set(:@client, fake_client)
-    classifier
+  def make_classification(fake_client, news_item)
+    NewsItem::Classification.new(news_item, client: fake_client)
+  end
+
+  # A plain stand-in for a persisted NewsItem responding to the attributes the
+  # classification reads. body is optional and absent by default.
+  def stub_news_item(title:, source:, body: nil)
+    item = Object.new
+    item.define_singleton_method(:title)  { title }
+    item.define_singleton_method(:source) { source }
+    item.define_singleton_method(:body)   { body }
+    item
   end
 
   # Build a fake tool_use response block whose .type returns the Symbol :tool_use.
@@ -69,9 +77,10 @@ class NewsClassifierTest < ActiveSupport::TestCase
 
   test "returns relevant: true for a relevant headline" do
     input = { relevant: true, kind: "release", rationale: "New LLM model announcement." }
-    classifier = make_classifier(fake_client(stub_tool_response(input)))
+    item = stub_news_item(title: "OpenAI releases GPT-5", source: "openai.com")
+    classification = make_classification(fake_client(stub_tool_response(input)), item)
 
-    result = classifier.classify(title: "OpenAI releases GPT-5", source: "openai.com")
+    result = classification.run
 
     assert_equal true,      result[:relevant]
     assert_equal "release", result[:kind]
@@ -80,38 +89,41 @@ class NewsClassifierTest < ActiveSupport::TestCase
 
   test "returns relevant: false for an irrelevant headline" do
     input = { relevant: false, kind: "other", rationale: "Sports news, not related to LLM pricing." }
-    classifier = make_classifier(fake_client(stub_tool_response(input)))
+    item = stub_news_item(title: "Team wins championship", source: "sports.com")
+    classification = make_classification(fake_client(stub_tool_response(input)), item)
 
-    result = classifier.classify(title: "Team wins championship", source: "sports.com")
+    result = classification.run
 
     assert_equal false,   result[:relevant]
     assert_equal "other", result[:kind]
     assert_includes result[:rationale], "Sports news"
   end
 
-  test "raises ClassifyError when Anthropic API raises an error" do
+  test "raises Error when Anthropic API raises an error" do
     api_error = Anthropic::Errors::Error.new("rate limited")
-    classifier = make_classifier(error_client(api_error))
+    item = stub_news_item(title: "Any headline", source: "any.com")
+    classification = make_classification(error_client(api_error), item)
 
-    error = assert_raises(NewsClassifier::ClassifyError) do
-      classifier.classify(title: "Any headline", source: "any.com")
+    error = assert_raises(NewsItem::Classification::Error) do
+      classification.run
     end
 
     assert_match "Anthropic API error", error.message
     assert_match "rate limited", error.message
   end
 
-  test "raises ClassifyError when response contains no tool_use block" do
-    classifier = make_classifier(fake_client(stub_text_only_response))
+  test "raises Error when response contains no tool_use block" do
+    item = stub_news_item(title: "Any headline", source: "any.com")
+    classification = make_classification(fake_client(stub_text_only_response), item)
 
-    error = assert_raises(NewsClassifier::ClassifyError) do
-      classifier.classify(title: "Any headline", source: "any.com")
+    error = assert_raises(NewsItem::Classification::Error) do
+      classification.run
     end
 
     assert_equal "No tool_use block in response", error.message
   end
 
-  test "includes body context in the message when provided" do
+  test "includes body context in the message when the item has a body" do
     received_content = nil
 
     messages = Object.new
@@ -129,13 +141,15 @@ class NewsClassifierTest < ActiveSupport::TestCase
 
     client = Object.new
     client.define_singleton_method(:messages) { messages }
-    classifier = make_classifier(client)
 
-    classifier.classify(
+    item = stub_news_item(
       title:  "Some headline",
       source: "some.com",
       body:   "This is a detailed article body that provides context."
     )
+    classification = make_classification(client, item)
+
+    classification.run
 
     assert_not_nil received_content
     assert_includes received_content, "Context:"
@@ -145,14 +159,15 @@ class NewsClassifierTest < ActiveSupport::TestCase
   test "truncates rationale to 200 characters" do
     long_rationale = "A" * 250
     input = { relevant: true, kind: "market", rationale: long_rationale }
-    classifier = make_classifier(fake_client(stub_tool_response(input)))
+    item = stub_news_item(title: "Some headline", source: "some.com")
+    classification = make_classification(fake_client(stub_tool_response(input)), item)
 
-    result = classifier.classify(title: "Some headline", source: "some.com")
+    result = classification.run
 
     assert result[:rationale].length <= 200
   end
 
-  test ".classify delegates to instance classify" do
+  test "builds the Anthropic client via AnthropicClient.build when none is injected" do
     stub_anthropic_key!
     input = { relevant: true, kind: "price", rationale: "Price cut." }
     response = stub_tool_response(input)
@@ -163,7 +178,8 @@ class NewsClassifierTest < ActiveSupport::TestCase
     Anthropic::Client.define_singleton_method(:new) { |**_| fake }
 
     begin
-      result = NewsClassifier.classify(title: "GPT-4 price cut", source: "openai.com")
+      item = stub_news_item(title: "GPT-4 price cut", source: "openai.com")
+      result = NewsItem::Classification.new(item).run
       assert_equal true,    result[:relevant]
       assert_equal "price", result[:kind]
     ensure

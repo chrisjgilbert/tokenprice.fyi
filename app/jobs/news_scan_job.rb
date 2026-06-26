@@ -43,13 +43,13 @@ class NewsScanJob < ApplicationJob
   end
 
   def classify(item)
-    result = NewsClassifier.classify(title: item.title, source: item.source)
+    result = item.classify
     item.update!(
       relevant:  result[:relevant],
       kind:      result[:kind],
       rationale: result[:rationale]
     )
-  rescue NewsClassifier::ClassifyError => e
+  rescue NewsItem::Classification::Error => e
     Rails.logger.warn("NewsScanJob: classifier error for #{item.url} — #{e.message}")
   end
 end

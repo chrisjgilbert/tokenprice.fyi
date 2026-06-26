@@ -27,10 +27,8 @@ class NewsScanJobTest < ActiveJob::TestCase
     elsif HnAlgoliaFetcher.singleton_class.instance_methods(false).include?(:fetch)
       HnAlgoliaFetcher.singleton_class.remove_method(:fetch)
     end
-    if @classifier_original
-      NewsClassifier.singleton_class.define_method(:classify, @classifier_original)
-    elsif NewsClassifier.singleton_class.instance_methods(false).include?(:classify)
-      NewsClassifier.singleton_class.remove_method(:classify)
+    if NewsItem.instance_methods(false).include?(:classify)
+      NewsItem.remove_method(:classify)
     end
   end
 
@@ -130,7 +128,7 @@ class NewsScanJobTest < ActiveJob::TestCase
   end
 
   test "classifier error leaves item unclassified but does not prevent other items" do
-    stub_classifier_raising(NewsClassifier::ClassifyError, "API error")
+    stub_classifier_raising(NewsItem::Classification::Error, "API error")
 
     assert_difference "NewsItem.count", 2 do
       NewsScanJob.perform_now
@@ -154,12 +152,11 @@ class NewsScanJobTest < ActiveJob::TestCase
   end
 
   def stub_classifier(result)
-    @classifier_original = NewsClassifier.singleton_class.instance_method(:classify) rescue nil
-    NewsClassifier.define_singleton_method(:classify) { |**| result }
+    NewsItem.define_method(:classify) { result }
   end
 
   def stub_classifier_raising(error_class, message)
-    NewsClassifier.define_singleton_method(:classify) { |**| raise error_class, message }
+    NewsItem.define_method(:classify) { raise error_class, message }
   end
 
   def with_memory_cache
