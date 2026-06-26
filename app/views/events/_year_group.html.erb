@@ -1,6 +1,6 @@
 <%# One year's worth of timeline entries. data-year lets the infinite-scroll
     controller merge a year that straddles a page boundary into a single group. %>
-<section class="ev-year-group" data-year="<%= year %>">
+<section class="ev-year-group" data-year="<%= year %>" data-events-infinite-target="yearGroup">
   <h2 class="ev-year"><%= year %></h2>
   <ol class="ev-list">
     <% events.each do |event| %>
