@@ -1,0 +1,15 @@
+<%# Sits below the timeline. With JS, the infinite-scroll controller observes it
+    and loads the next page as it nears the viewport; the "Load more" link is the
+    no-JS fallback (a plain navigation to the cumulative next page). When there's
+    nothing left, it renders an end cap with no next URL to load. %>
+<% if has_more %>
+  <% next_url = events_path(page: next_page, kind: kind) %>
+  <div id="ev-sentinel" class="ev-sentinel" data-events-infinite-target="sentinel" data-next-url="<%= next_url %>">
+    <%= link_to "Load more events", next_url, class: "ev-more", data: { turbo: false } %>
+    <span class="ev-spinner" aria-hidden="true"></span>
+  </div>
+<% else %>
+  <div id="ev-sentinel" class="ev-sentinel ev-sentinel-end">
+    <p class="ev-end">No more events.</p>
+  </div>
+<% end %>

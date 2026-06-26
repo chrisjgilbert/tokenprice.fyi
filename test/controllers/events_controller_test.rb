@@ -1,6 +1,8 @@
 require "test_helper"
 
 class EventsControllerTest < ActionDispatch::IntegrationTest
+  PER_PAGE = EventsController::PER_PAGE
+
   test "renders the market-events timeline" do
     get events_url
     assert_response :success
@@ -8,7 +10,9 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "lists curated market events and model launches" do
-    MarketEvent.create!(title: "The DeepSeek moment", event_date: Date.new(2025, 1, 20),
+    # Dated today so it lands on the first page regardless of how many events
+    # the catalog accumulates ahead of it.
+    MarketEvent.create!(title: "The DeepSeek moment", event_date: Date.current,
                         kind: "market", status: "published", note: "Markets jolt.")
 
     get events_url
@@ -20,8 +24,6 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "orders year groups and the events within them newest-first" do
-    MarketEvent.create!(title: "Older milestone", event_date: Date.new(2024, 1, 1),
-                        kind: "market", status: "published")
     # A market event mixed in among the 2026 launches, so within-year ordering
     # is exercised across both kinds, not just at year boundaries.
     MarketEvent.create!(title: "Mid-year milestone", event_date: Date.new(2026, 1, 15),
@@ -42,7 +44,8 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "excludes draft market events" do
-    MarketEvent.create!(title: "Unpublished draft event", event_date: Date.new(2025, 6, 1),
+    # Dated today: were drafts wrongly included, this would surface on page one.
+    MarketEvent.create!(title: "Unpublished draft event", event_date: Date.current,
                         kind: "market", status: "draft")
 
     get events_url
@@ -50,12 +53,62 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".ev-title", text: /Unpublished draft event/, count: 0
   end
 
-  test "renders a kind filter with per-kind counts" do
+  test "renders a kind filter linking to each server-side view" do
     get events_url
     assert_response :success
-    assert_select ".tp-seg button[data-kind=all]"
-    assert_select ".tp-seg button[data-kind=market]"
-    assert_select ".tp-seg button[data-kind=launch]"
+    assert_select ".tp-seg a[data-kind=all][href=?]", events_path
+    assert_select ".tp-seg a[data-kind=market][href=?]", events_path(kind: "market")
+    assert_select ".tp-seg a[data-kind=launch][href=?]", events_path(kind: "launch")
+    # No filter active → the "All" tab is the selected one.
+    assert_select ".tp-seg a.on[data-kind=all]"
+  end
+
+  test "caps the first page and offers a load-more sentinel when more remain" do
+    seed_market_events(PER_PAGE + 5)
+
+    get events_url
+    assert_response :success
+    assert_equal PER_PAGE, css_select(".ev-item").size,
+      "the first page should hold exactly PER_PAGE events when more remain"
+    assert_select "#ev-sentinel[data-next-url=?]", events_path(page: 2)
+  end
+
+  test "a direct page hit renders cumulatively so no-JS paging stays coherent" do
+    seed_market_events(PER_PAGE + 5)
+
+    page_one = (get(events_url) && css_select(".ev-item").size)
+    page_two = (get(events_url(page: 2)) && css_select(".ev-item").size)
+    assert_operator page_two, :>, page_one,
+      "page two (HTML) should include page one's events plus the next batch"
+  end
+
+  test "a turbo-stream request appends only the requested page" do
+    seed_market_events(PER_PAGE + 5)
+
+    get events_url(page: 2), as: :turbo_stream
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", @response.media_type
+    assert_select "turbo-stream[action=append][target=ev-timeline]"
+    assert_select "turbo-stream[action=replace][target=ev-sentinel]"
+    # Only the second page's slice, not a cumulative render — and not empty.
+    appended = css_select("turbo-stream[target=ev-timeline] .ev-item").size
+    assert_operator appended, :>, 0
+    assert_operator appended, :<=, PER_PAGE
+  end
+
+  test "the kind filter restricts the timeline server-side" do
+    get events_url(kind: "launch")
+    assert_response :success
+    assert_select ".tp-seg a.on[data-kind=launch]"
+    assert_operator css_select(".ev-item[data-kind=launch]").size, :>, 0
+    assert_select ".ev-item[data-kind=market]", count: 0
+  end
+
+  test "exhausting the timeline renders an end cap instead of a sentinel" do
+    get events_url(page: 999)
+    assert_response :success
+    assert_select ".ev-sentinel-end"
+    assert_select "#ev-sentinel[data-next-url]", count: 0
   end
 
   test "emits a self-canonical link that ignores query params" do
@@ -68,5 +121,16 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     get "/trends"
     assert_response :moved_permanently
     assert_redirected_to "/events"
+  end
+
+  private
+
+  # Publish n market events on distinct, descending recent dates — enough to push
+  # the timeline past a single page so the pagination paths have data to exercise.
+  def seed_market_events(count)
+    count.times do |i|
+      MarketEvent.create!(title: "Seeded event #{i}", event_date: Date.current - i,
+                          kind: "market", status: "published")
+    end
   end
 end

@@ -38,14 +38,15 @@ module EventsHelper
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year
-  # first, and within each year newest event first. Relies on build_all_events
-  # returning a deterministic ascending order — group_by preserves it within
-  # each year, so a plain reverse yields newest-first without re-sorting.
+  # first, and within each year newest event first. Order-independent of the
+  # input — it sorts both the years and each group itself — so it produces the
+  # same display whether handed the full ascending list or a pre-reversed page
+  # slice (the events controller paginates on the reversed list).
   def events_by_year(events)
     events
       .group_by { |e| e.date.year }
       .sort_by { |year, _| -year }
-      .map { |year, group| [ year, group.reverse ] }
+      .map { |year, group| [ year, group.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse ] }
   end
 
   # Freshness timestamp for everything build_all_events renders — used as the
