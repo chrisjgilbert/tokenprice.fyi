@@ -12,7 +12,7 @@ namespace :openrouter do
   # Set LIMIT to cap how many are processed in one run (handy for a cheap trial).
   desc "Generate editorial copy for existing OpenRouter models that lack it"
   task backfill_descriptions: :environment do
-    generator = ModelDescriptionGenerator.new
+    generator = AiModel::Description.new
 
     scope = AiModel.from_openrouter.includes(:provider).where(strengths: [ nil, "" ])
     scope = scope.limit(Integer(ENV["LIMIT"])) if ENV["LIMIT"].present?

@@ -11,13 +11,13 @@ unless defined?(Anthropic::Errors::Error)
   end
 end
 
-class ModelDescriptionGeneratorTest < ActiveSupport::TestCase
+class AiModel::DescriptionTest < ActiveSupport::TestCase
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
 
   def make_generator(fake_client)
-    generator = ModelDescriptionGenerator.new
+    generator = AiModel::Description.new
     generator.instance_variable_set(:@client, fake_client)
     generator
   end
@@ -91,7 +91,7 @@ class ModelDescriptionGeneratorTest < ActiveSupport::TestCase
     api_error = Anthropic::Errors::Error.new("rate limited")
     generator = make_generator(error_client(api_error))
 
-    error = assert_raises(ModelDescriptionGenerator::GenerateError) do
+    error = assert_raises(AiModel::Description::GenerateError) do
       generator.generate(name: "Wonder 1", provider: "NewLab")
     end
 
@@ -102,7 +102,7 @@ class ModelDescriptionGeneratorTest < ActiveSupport::TestCase
   test "raises GenerateError when the response contains no tool_use block" do
     generator = make_generator(fake_client(stub_text_only_response))
 
-    error = assert_raises(ModelDescriptionGenerator::GenerateError) do
+    error = assert_raises(AiModel::Description::GenerateError) do
       generator.generate(name: "Wonder 1", provider: "NewLab")
     end
 
@@ -117,8 +117,8 @@ class ModelDescriptionGeneratorTest < ActiveSupport::TestCase
 
     result = generator.generate(name: "Wonder 1", provider: "NewLab")
 
-    assert_operator result[:description].length, :<=, ModelDescriptionGenerator::DESCRIPTION_LIMIT
-    assert_operator result[:strengths].length,   :<=, ModelDescriptionGenerator::FACET_LIMIT
+    assert_operator result[:description].length, :<=, AiModel::Description::DESCRIPTION_LIMIT
+    assert_operator result[:strengths].length,   :<=, AiModel::Description::FACET_LIMIT
   end
 
   test "blank fields collapse to nil" do
