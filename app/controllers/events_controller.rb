@@ -36,7 +36,7 @@ class EventsController < ApplicationController
     # Newest first for display, filtered to the active kind.
     timeline = all.reverse
     timeline = timeline.select { |e| e.kind == @kind } if @kind
-    @filtered_count = timeline.size
+    filtered_count = timeline.size
 
     # The Turbo Stream response appends only the requested page; a direct HTML
     # hit (no JS, or the "Load more" link) renders everything up to and including
@@ -44,7 +44,7 @@ class EventsController < ApplicationController
     upper = @page * PER_PAGE
     lower = request.format.turbo_stream? ? (@page - 1) * PER_PAGE : 0
     @events = timeline[lower...upper] || []
-    @has_more  = upper < @filtered_count
+    @has_more  = upper < filtered_count
     @next_page = @page + 1
     @events_by_year = helpers.events_by_year(@events)
 

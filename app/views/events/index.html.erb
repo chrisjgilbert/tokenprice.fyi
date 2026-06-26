@@ -272,8 +272,9 @@
 
 /* ── Infinite-scroll sentinel ────────────────────────────────────────── */
 /* Sits below the timeline; the controller loads the next page as it nears the
-   viewport. The "Load more" link is the no-JS fallback and is hidden once the
-   controller takes over (it adds .js so the observer is the only trigger). */
+   viewport. The "Load more" link is the no-JS fallback, hidden once the
+   controller connects (it sets data-events-infinite-connected, which the
+   selector below keys off) so the observer is the only trigger. */
 .ev-sentinel {
   display: flex;
   align-items: center;
