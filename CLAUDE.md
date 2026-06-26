@@ -43,21 +43,21 @@ the reference codebase is
 [once-campfire](https://github.com/basecamp/once-campfire). When a convention
 below is unclear, read how Campfire does it.
 
-This is a **target, not the current state.** The repo today has an
-`app/services/` directory — exactly the generic bucket the style rejects — so
-this section doubles as the map for emptying it. New code follows the target;
-touched code migrates toward it. It is a **starting point, not dogma** — deviate
-when the convention genuinely doesn't fit, but say so in the PR or a one-line
-comment. Don't deviate silently.
+The generic `app/services/` bucket the style rejects has been emptied: transport
+moved to `lib/`, domain objects and operations to `app/models/`. Only the two
+small formatting modules (`cost_format.rb`, `price_format.rb`) remain there,
+pending the deferred decision below. New code follows the style; don't add to
+`app/services/`. It is a **starting point, not dogma** — deviate when the
+convention genuinely doesn't fit, but say so in the PR or a one-line comment.
+Don't deviate silently.
 
 ### Core principles
 
 1. **MVC, for real.** Logic lives on rich models — both Active Record models
    *and* plain Ruby objects in `app/models/`. "Model" means *any* domain object,
    not just `ActiveRecord::Base`. `FeaturePattern`, `CostEstimate`, and
-   `PriceCatalog` are already the right shape: plain-Ruby domain POROs (often
-   `Data.define` + a frozen registry) that happen to live under `app/services/`
-   today and belong in `app/models/`.
+   `PriceCatalog` are the model of the right shape: plain-Ruby domain POROs
+   (often `Data.define` + a frozen registry) living in `app/models/`.
 
 2. **Controllers stay thin.** They authenticate, load a record, call one method
    on it, and render. The read controllers (`models`, `providers`, `guide`,
@@ -77,7 +77,7 @@ comment. Don't deviate silently.
 5. **`lib/` is for generic, non-domain transport** — HTTP clients and
    infrastructure glue with no domain shape. `AnthropicClient`,
    `OpenRouter::Client`, `HnAlgoliaFetcher`, `NewsFeedFetcher`, and
-   `SlackNotifier` are all transport and belong in `lib/`, not `app/services/`.
+   `SlackNotifier` are all transport and live in `lib/`, not `app/`.
 
 Note on side effects: the Campfire style has records broadcast their own changes
 over Turbo. This is a read-mostly data site whose writes happen in background
@@ -112,9 +112,12 @@ Plain association CRUD straight from a controller stays as-is
 (`current_account.things.create!`); only wrap it in a model method when the
 operation means more than `create!`.
 
-### Migration map for today's `app/services/`
+### Where the former `app/services/` classes live now
 
-| Current (`app/services/…`)            | Target                                               | Why                                              |
+This is the record of the migration (see `docs/ARCHITECTURE_REFACTOR_PLAN.md`),
+kept as a map of where each class went and why.
+
+| Was (`app/services/…`)                | Now                                                  | Why                                              |
 |---------------------------------------|------------------------------------------------------|--------------------------------------------------|
 | `anthropic_client.rb`                 | `lib/anthropic_client.rb`                            | generic transport, no domain shape               |
 | `open_router/client.rb`               | `lib/open_router/client.rb`                          | generic HTTP wrapper                             |
@@ -123,7 +126,7 @@ operation means more than `create!`.
 | `slack_notifier.rb`                   | `lib/slack_notifier.rb`                              | generic webhook transport                        |
 | `cost_estimate.rb`                    | `app/models/cost_estimate.rb`                        | domain value object (already a PORO)             |
 | `price_catalog.rb`                    | `app/models/price_catalog.rb`                        | domain read-model facade over value objects      |
-| `cost_format.rb`, `price_format.rb`   | `app/models/` POROs (or view helpers)               | shared formatting value modules                  |
+| `cost_format.rb`, `price_format.rb`   | still in `app/services/` (deferred, see plan doc)    | shared formatting value modules                  |
 | `guide_cost.rb`                       | `app/models/feature_pattern/cost.rb` (operation)     | prices a (slug, shape) pair for a FeaturePattern |
 | `news_classifier.rb`                  | `app/models/news_item/classification.rb` (operation) | reached via `news_item.classify`                 |
 | `model_description_generator.rb`      | `app/models/ai_model/description.rb` (operation)     | reached via an `AiModel` method                  |

@@ -7,6 +7,11 @@ packages a sub-agent can pick up one at a time.
 Read the `CLAUDE.md` Architecture section first — it has the rationale and the
 full migration map. This file is the *how* and the *order*.
 
+> **Status:** Group A (A1, A2, A3) and Group B (B1, B2, B3) are **done and merged
+> to `main`**. `app/services/` now holds only `cost_format.rb` and
+> `price_format.rb` — the deferred decision below. The package sections are kept
+> as the record of what each change did.
+
 ---
 
 ## The one rule that makes this safe

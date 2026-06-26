@@ -2,7 +2,7 @@
 # pure money math. All cost math lives here, server-side and tested.
 #
 # Scope after the /cost estimator and model-page embed were removed: this is now
-# consumed only by GuideCost, which needs exactly `price_with`, a `Profile`
+# consumed only by FeaturePattern::Cost, which needs exactly `price_with`, a `Profile`
 # (built via `profile_from`), and their internals. The ranking/recommendation/
 # retrospective/strategy surface those callers used is gone.
 #
