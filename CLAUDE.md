@@ -29,7 +29,7 @@ Practical consequences:
   from credentials instead. The only entry that belongs there is
   `RAILS_MASTER_KEY` (which unlocks everything else).
 - When code needs the Anthropic API, build the client via
-  `AnthropicClient.build` (`app/services/anthropic_client.rb`). It reads the key
+  `AnthropicClient.build` (`lib/anthropic_client.rb`). It reads the key
   from credentials and fails fast with a clear error if it's missing or blank,
   rather than sending a blank key and surfacing a confusing 401.
 
