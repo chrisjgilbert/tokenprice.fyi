@@ -66,6 +66,41 @@ class NewsDigestJobTest < ActiveJob::TestCase
     assert_includes text, "⚠ unclassified"
   end
 
+  # --- Slack block size limits -----------------------------------------------
+
+  # Slack rejects a message ("invalid_blocks", HTTP 400) when a single section
+  # block's text exceeds 3000 chars. A digest backlog can blow past that, so the
+  # lines must be split across multiple section blocks.
+  test "splits long digests across multiple section blocks under Slack's limit" do
+    50.times do |i|
+      make_item(url: "https://anthropic.com/news/item-#{i}",
+                title: "Release #{i} — #{"x" * 80}",
+                rationale: "Rationale #{i} — #{"y" * 80}")
+    end
+
+    NewsDigestJob.perform_now
+
+    sections = @posted.first[:blocks].select { |b| b[:type] == "section" }
+    assert_operator sections.size, :>, 1, "expected the digest to span multiple section blocks"
+    sections.each do |block|
+      assert_operator block.dig(:text, :text).length, :<=, 3000,
+                      "each section block must stay within Slack's 3000-char limit"
+    end
+  end
+
+  test "truncates a single line that exceeds the section limit" do
+    make_item(title: "z" * 4000)
+
+    NewsDigestJob.perform_now
+
+    sections = @posted.first[:blocks].select { |b| b[:type] == "section" }
+    sections.each do |block|
+      assert_operator block.dig(:text, :text).length, :<=, 3000
+    end
+    text = sections.map { |b| b.dig(:text, :text) }.join("\n")
+    assert_includes text, "…", "an over-long line should be truncated with an ellipsis"
+  end
+
   # --- notified_at stamping --------------------------------------------------
 
   test "stamps notified_at on items after successful post" do
