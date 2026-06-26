@@ -1,8 +1,10 @@
-# GuideCost — the per-call cost lens for the model Guide (T1.2).
+# FeaturePattern::Cost — the per-call cost lens for the model Guide (T1.2).
 #
 # The Guide shows, for each pipeline step's starting options, a volume-free
-# `≈ $X per call` for that step's representative token shape. This service
-# computes that figure by pricing a (model slug, token shape) pair.
+# `≈ $X per call` for that step's representative token shape. This operation
+# computes that figure by pricing a (model slug, token shape) pair. It is owned
+# by FeaturePattern and reached through FeaturePattern::Step#cost — never called
+# directly from a view or controller.
 #
 # It does NOT do money math itself: it resolves the slug through PriceCatalog,
 # builds a Phase-0 CostEstimate::Profile from the shape, and delegates to
@@ -29,7 +31,7 @@
 # Graceful degradation. An unknown slug, a nil slug, or a model with no current
 # price returns an unpriced result (per_call: nil) — the view renders "—". Never
 # raises.
-class GuideCost
+class FeaturePattern::Cost
   # One option priced for one step's shape. `per_call` is USD or nil.
   # `name` is the resolved catalog entry's display name (nil when unresolved),
   # carried so the view shows the model's name without a second lookup. `kind`
@@ -54,7 +56,7 @@ class GuideCost
     # already-loaded catalog so the slug resolves in-memory — a guide page loads
     # the catalog ONCE and prices every option against it. When nil, falls back
     # to PriceCatalog.model(slug) (the original per-call DB path).
-    def per_call(slug:, shape:, catalog: nil, kind: nil)
+    def for(slug:, shape:, catalog: nil, kind: nil)
       entry = resolve(slug, catalog)
       return Result.new(slug: slug, name: nil, per_call: nil, resolved: false, kind: kind) if entry.nil?
       return Result.new(slug: slug, name: entry.name, per_call: nil, resolved: true, kind: kind) if entry.input.nil? || entry.output.nil?
@@ -84,7 +86,7 @@ class GuideCost
         next if slug.nil?
 
         if step.priced?
-          per_call(slug: slug, shape: shape, catalog: catalog, kind: kind)
+          self.for(slug: slug, shape: shape, catalog: catalog, kind: kind)
         else
           # Resolve so the view can still name and link the model, but never price it.
           entry = resolve(slug, catalog)

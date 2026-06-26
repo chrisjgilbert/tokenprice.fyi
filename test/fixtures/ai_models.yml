@@ -52,7 +52,7 @@ haiku:
   max_output_tokens: 64000
   released_on: 2026-04-01
   status: active
-  description: Cheap small-tier model — a Guide starting option. Name kept distinct from the OpenRouter sync test's "Claude Haiku 4.5" so dedup-by-name stays unaffected; the slug is what GuideCost resolves.
+  description: Cheap small-tier model — a Guide starting option. Name kept distinct from the OpenRouter sync test's "Claude Haiku 4.5" so dedup-by-name stays unaffected; the slug is what FeaturePattern::Cost resolves.
 
 sonnet:
   provider: anthropic
@@ -63,7 +63,7 @@ sonnet:
   max_output_tokens: 128000
   released_on: 2026-04-01
   status: active
-  description: Mid-tier step-up model — a Guide starting option. Name kept distinct from the sync test's Sonnet rows; the slug is what GuideCost resolves.
+  description: Mid-tier step-up model — a Guide starting option. Name kept distinct from the sync test's Sonnet rows; the slug is what FeaturePattern::Cost resolves.
 
 deepseek_v4:
   provider: deepseek

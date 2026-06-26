@@ -72,7 +72,7 @@
             <span class="num gs-shape-v gs-shape-out"><%= co_kfmt(step.shape.out) %> out</span>
           </div>
 
-          <% results = GuideCost.for_step(step, catalog: @catalog) %>
+          <% results = step.cost(catalog: @catalog) %>
           <% if step.priced? %>
             <div class="gs-opts">
               <% results.each do |result| %>
