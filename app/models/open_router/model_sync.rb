@@ -134,7 +134,7 @@ module OpenRouter
     def self.call(...) = new(...).call
 
     def initialize(client: Client.new, today: Date.current,
-                   describer: ModelDescriptionGenerator.new, logger: Rails.logger)
+                   describer: AiModel::Description.new, logger: Rails.logger)
       @client    = client
       @today     = today
       @describer = describer

@@ -6,16 +6,21 @@ require "anthropic"
 # write-up as the hand-curated catalogue, instead of the truncated upstream
 # description that OpenRouter serves for many models.
 #
-# Mirrors NewsClassifier: a single cheap Haiku tool-call via AnthropicClient,
-# returning a plain hash. Raises GenerateError on API failure so the caller can
-# fall back rather than persist a half-written record.
+# It runs during import on *unpersisted* attributes (name / provider /
+# context_window / source_text), so it is a class-level operation rather than an
+# instance facade on a persisted record. `OpenRouter::ModelSync` injects it as a
+# `describer:` collaborator and calls `#generate` on it.
 #
-#   ModelDescriptionGenerator.generate(
+# Mirrors NewsItem::Classification: a single cheap Haiku tool-call via
+# AnthropicClient, returning a plain hash. Raises GenerateError on API failure so
+# the caller can fall back rather than persist a half-written record.
+#
+#   AiModel::Description.generate(
 #     name: "Gemini 3.5 Flash", provider: "Google",
 #     context_window: 1_000_000, source_text: "Google's fast multimodal model…"
 #   )
 #   #=> { description:, strengths:, best_for:, limitations: }
-class ModelDescriptionGenerator
+class AiModel::Description
   class GenerateError < StandardError; end
 
   MODEL = "claude-haiku-4-5-20251001"

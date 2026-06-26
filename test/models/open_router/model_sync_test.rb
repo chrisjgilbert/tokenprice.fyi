@@ -393,7 +393,7 @@ module OpenRouter
 
     # --- editorial generation ----------------------------------------------
 
-    # A describer test double standing in for ModelDescriptionGenerator. Records
+    # A describer test double standing in for AiModel::Description. Records
     # the kwargs it was called with and returns a fixed editorial hash (or a
     # caller-supplied one), so we never touch the Anthropic API.
     class FakeDescriber
