@@ -1,5 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
+// Lighter (400-level) shades of the chart's indigo/rose series lines, tuned for
+// legibility on the dark tooltip background.
+const SWATCH = { input: "#818cf8", output: "#fb7185" }
+
 // Progressively enhances the server-rendered price-history SVG (ChartsHelper#
 // price_history_chart) with hover interactivity: a vertical crosshair, a marker
 // on each series, and a floating tooltip that snaps to the nearest price point.
@@ -8,7 +12,7 @@ import { Controller } from "@hotwired/stimulus"
 // static SVG and the Snapshots table below it. This only adds pointer affordances.
 export default class extends Controller {
   static targets = ["svg", "overlay", "crosshair", "inputDot", "outputDot", "tooltip"]
-  static values = { points: Array, geometry: Object }
+  static values = { points: Array }
 
   connect() {
     // The overlay ships inert so the points' native <title> tooltips work with
@@ -18,7 +22,9 @@ export default class extends Controller {
   }
 
   move(event) {
-    const point = this.nearest(this.svgX(event.clientX))
+    // One layout read per pointer event, shared by the hit-test and the tooltip.
+    const rect = this.svgTarget.getBoundingClientRect()
+    const point = this.nearest(this.svgX(event.clientX, rect))
     if (!point) return
 
     this.crosshairTarget.setAttribute("x1", point.x)
@@ -27,7 +33,7 @@ export default class extends Controller {
     this.placeDot(this.outputDotTarget, point.x, point.output.y)
     this.crosshairTarget.setAttribute("visibility", "visible")
 
-    this.renderTooltip(point)
+    this.renderTooltip(point, rect)
   }
 
   leave() {
@@ -43,10 +49,15 @@ export default class extends Controller {
     dot.setAttribute("visibility", "visible")
   }
 
+  // The SVG's own viewBox is the coordinate system the server drew the points
+  // in — no need for a separate geometry attribute to echo width/height.
+  get viewBox() {
+    return this.svgTarget.viewBox.baseVal
+  }
+
   // Client X (pixels) → SVG user-space X, accounting for the chart's responsive scaling.
-  svgX(clientX) {
-    const rect = this.svgTarget.getBoundingClientRect()
-    return ((clientX - rect.left) / rect.width) * this.geometryValue.width
+  svgX(clientX, rect) {
+    return ((clientX - rect.left) / rect.width) * this.viewBox.width
   }
 
   nearest(x) {
@@ -54,19 +65,18 @@ export default class extends Controller {
       best === null || Math.abs(p.x - x) < Math.abs(best.x - x) ? p : best, null)
   }
 
-  renderTooltip(point) {
+  renderTooltip(point, rect) {
     const tip = this.tooltipTarget
     tip.innerHTML =
       `<div class="mb-1 font-medium text-slate-300">${point.date}</div>` +
-      this.row("#818cf8", "Input", point.input.label) +
-      this.row("#fb7185", "Output", point.output.label)
+      this.row(SWATCH.input, "Input", point.input.label) +
+      this.row(SWATCH.output, "Output", point.output.label)
     tip.classList.remove("hidden")
 
     // Position above the higher of the two markers, centred on the crosshair,
     // clamped to the chart so it never spills past an edge.
-    const rect = this.svgTarget.getBoundingClientRect()
-    const scaleX = rect.width / this.geometryValue.width
-    const scaleY = rect.height / this.geometryValue.height
+    const scaleX = rect.width / this.viewBox.width
+    const scaleY = rect.height / this.viewBox.height
     const half = tip.offsetWidth / 2
     const left = Math.max(half, Math.min(rect.width - half, point.x * scaleX))
     const top = Math.min(point.input.y, point.output.y) * scaleY

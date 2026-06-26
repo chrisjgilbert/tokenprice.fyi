@@ -40,16 +40,28 @@ module ChartsHelper
       { key: :input_per_mtok,  short: "In",  label: "Input",  color: "#4f46e5", dash: nil, target: "inputDot" }
     ]
 
+    # Each point's screen position and formatted price, computed once. The
+    # gridlines aside, every drawn element — polylines, markers, end labels, the
+    # <desc>, and the JS hover data — reads its coordinates and labels from here.
+    coords = points.each_with_index.map do |p, i|
+      row = { x: sx.(xs[i]).round(1), date: p.effective_on.strftime("%-d %b %Y") }
+      series.each do |s|
+        v = p.public_send(s[:key])
+        row[s[:key]] = { y: sy.(v).round(1), label: usd_plain(v) }
+      end
+      row
+    end
+
     uid     = "chart-#{points.first.ai_model_id}"
     first_p = points.first
     last_p  = points.last
     desc =
       if single
-        series.map { |s| "#{s[:label]} #{usd_plain(first_p.public_send(s[:key]))}" }.join("; ") +
+        series.map { |s| "#{s[:label]} #{coords.first[s[:key]][:label]}" }.join("; ") +
           " as of #{first_p.effective_on.strftime('%b %Y')}."
       else
         series.map do |s|
-          "#{s[:label]} went from #{usd_plain(first_p.public_send(s[:key]))} to #{usd_plain(last_p.public_send(s[:key]))}"
+          "#{s[:label]} went from #{coords.first[s[:key]][:label]} to #{coords.last[s[:key]][:label]}"
         end.join("; ") + " between #{first_p.effective_on.strftime('%b %Y')} and #{last_p.effective_on.strftime('%b %Y')}."
       end
 
@@ -70,20 +82,18 @@ module ChartsHelper
     series.each do |s|
       dash = s[:dash] ? %( stroke-dasharray="#{s[:dash]}") : ""
       unless single
-        pts = points.map { |p| "#{sx.(p.effective_on.to_time.to_i).round(1)},#{sy.(p.public_send(s[:key])).round(1)}" }
+        pts = coords.map { |c| "#{c[:x]},#{c[s[:key]][:y]}" }
         svg << %(<polyline points="#{pts.join(' ')}" fill="none" stroke="#{s[:color]}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"#{dash}/>)
       end
 
-      points.each do |p|
-        cx = sx.(p.effective_on.to_time.to_i).round(1)
-        cy = sy.(p.public_send(s[:key])).round(1)
-        svg << %(<circle cx="#{cx}" cy="#{cy}" r="3.5" fill="#fff" stroke="#{s[:color]}" stroke-width="2"><title>#{s[:label]} on #{p.effective_on.strftime('%-d %b %Y')}: #{usd_plain(p.public_send(s[:key]))}</title></circle>)
+      coords.each do |c|
+        svg << %(<circle cx="#{c[:x]}" cy="#{c[s[:key]][:y]}" r="3.5" fill="#fff" stroke="#{s[:color]}" stroke-width="2"><title>#{s[:label]} on #{c[:date]}: #{c[s[:key]][:label]}</title></circle>)
       end
 
       # End-of-line label, prefixed with the series name so the lines are
       # identifiable without relying on colour.
-      ly = sy.(last_p.public_send(s[:key])).round(1)
-      svg << %(<text x="#{(pad[:l] + plot_w + 6).round(1)}" y="#{ly + 4}" font-size="12" font-weight="600" fill="#{s[:color]}">#{s[:short]} #{usd_plain(last_p.public_send(s[:key]))}</text>)
+      last = coords.last[s[:key]]
+      svg << %(<text x="#{(pad[:l] + plot_w + 6).round(1)}" y="#{last[:y] + 4}" font-size="12" font-weight="600" fill="#{s[:color]}">#{s[:short]} #{last[:label]}</text>)
     end
 
     # X-axis date labels (first + last). With a single point both collapse to one.
@@ -107,19 +117,13 @@ module ChartsHelper
 
     svg << "</svg>"
 
-    data_points = points.map do |p|
-      {
-        x: sx.(p.effective_on.to_time.to_i).round(1),
-        date: p.effective_on.strftime("%-d %b %Y"),
-        input: { y: sy.(p.input_per_mtok).round(1), label: usd_plain(p.input_per_mtok) },
-        output: { y: sy.(p.output_per_mtok).round(1), label: usd_plain(p.output_per_mtok) }
-      }
+    data_points = coords.map do |c|
+      { x: c[:x], date: c[:date], input: c[:input_per_mtok], output: c[:output_per_mtok] }
     end
 
     content_tag(:div, class: "relative", data: {
       controller: "price-chart",
-      price_chart_points_value: data_points.to_json,
-      price_chart_geometry_value: { width: width, height: height }.to_json
+      price_chart_points_value: data_points.to_json
     }) do
       safe_join([
         svg.join.html_safe,
@@ -141,13 +145,7 @@ module ChartsHelper
     frac = raw / base
     step = (frac < 1.5 ? 1 : frac < 3 ? 2 : frac < 7 ? 5 : 10) * base
 
-    values = []
-    v = 0.0
-    while v <= ymax + step * 0.001 && values.size < 12
-      values << v.round(6)
-      v += step
-    end
-    values
+    (0..(ymax / step).floor).map { |i| (i * step).round(6) }
   end
 
   # Area sparkline of a workload's monthly cost across historical price-change
