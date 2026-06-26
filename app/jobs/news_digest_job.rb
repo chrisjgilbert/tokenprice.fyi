@@ -52,7 +52,7 @@ class NewsDigestJob < ApplicationJob
 
     payload = { text: "Token Price news — #{Date.current.strftime('%-d %b %Y')}",
                 blocks: blocks }
-    [payload, items.first(shown_count)]
+    [ payload, items.first(shown_count) ]
   end
 
   def digest_line(item)
@@ -80,7 +80,7 @@ class NewsDigestJob < ApplicationJob
       added = current.empty? ? line.length : line.length + 1
       if current.any? && length + added > SECTION_TEXT_LIMIT
         chunks << current
-        current = [line]
+        current = [ line ]
         length  = line.length
       else
         current << line
