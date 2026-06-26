@@ -11,8 +11,10 @@ export default class extends Controller {
   static values = { points: Array, geometry: Object }
 
   connect() {
-    // A single point has nothing to scrub between; leave it as a static marker.
-    if (this.pointsValue.length < 2) this.overlayTarget.style.pointerEvents = "none"
+    // The overlay ships inert so the points' native <title> tooltips work with
+    // no JS. Enable pointer capture only once we're here to drive the crosshair,
+    // and only when there's more than one point to scrub between.
+    if (this.pointsValue.length > 1) this.overlayTarget.style.pointerEvents = "all"
   }
 
   move(event) {

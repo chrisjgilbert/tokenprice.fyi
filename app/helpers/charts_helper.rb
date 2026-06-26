@@ -36,8 +36,8 @@ module ChartsHelper
     sy = ->(v) { pad[:t] + (1 - (v.to_f / ymax)) * plot_h }
 
     series = [
-      { key: :output_per_mtok, short: "Out", label: "Output", color: "#e11d48", dash: "6 4" },
-      { key: :input_per_mtok,  short: "In",  label: "Input",  color: "#4f46e5", dash: nil }
+      { key: :output_per_mtok, short: "Out", label: "Output", color: "#e11d48", dash: "6 4", target: "outputDot" },
+      { key: :input_per_mtok,  short: "In",  label: "Input",  color: "#4f46e5", dash: nil, target: "inputDot" }
     ]
 
     uid     = "chart-#{points.first.ai_model_id}"
@@ -99,9 +99,11 @@ module ChartsHelper
     # events across the whole plot. These are inert without JS.
     svg << %(<line data-price-chart-target="crosshair" x1="0" y1="#{pad[:t]}" x2="0" y2="#{(pad[:t] + plot_h).round(1)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>)
     series.each do |s|
-      svg << %(<circle data-price-chart-target="#{s[:key] == :input_per_mtok ? 'inputDot' : 'outputDot'}" cx="0" cy="0" r="4.5" fill="#{s[:color]}" stroke="#fff" stroke-width="2" visibility="hidden"/>)
+      svg << %(<circle data-price-chart-target="#{s[:target]}" cx="0" cy="0" r="4.5" fill="#{s[:color]}" stroke="#fff" stroke-width="2" visibility="hidden"/>)
     end
-    svg << %(<rect data-price-chart-target="overlay" data-action="pointermove->price-chart#move pointerleave->price-chart#leave pointerdown->price-chart#move" x="#{pad[:l]}" y="#{pad[:t]}" width="#{plot_w}" height="#{plot_h}" fill="#fff" fill-opacity="0" style="pointer-events:all"/>)
+    # Starts inert so the data points' native <title> tooltips work without JS;
+    # the controller turns pointer capture on once it connects (multi-point only).
+    svg << %(<rect data-price-chart-target="overlay" data-action="pointermove->price-chart#move pointerleave->price-chart#leave pointerdown->price-chart#move" x="#{pad[:l]}" y="#{pad[:t]}" width="#{plot_w}" height="#{plot_h}" fill="#fff" fill-opacity="0" style="pointer-events:none"/>)
 
     svg << "</svg>"
 

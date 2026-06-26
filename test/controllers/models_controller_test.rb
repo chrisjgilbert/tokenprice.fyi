@@ -213,8 +213,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "svg"
     assert_no_match(/appears once a price changes/, @response.body)
-    # The legend is shown alongside the chart.
-    assert_select "span", text: /Input \(solid\)/
+    # With a single point no lines are drawn, so the solid/dashed legend is
+    # withheld — it would describe line styles that aren't on the chart.
+    assert_select "span", text: /Input \(solid\)/, count: 0
   end
 
   test "show emits a self-canonical link that ignores query params" do

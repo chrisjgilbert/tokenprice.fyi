@@ -134,7 +134,7 @@
 <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
   <div class="mb-4 flex items-center justify-between">
     <h2 class="text-lg font-semibold">Price history</h2>
-    <% if @price_points.any? %><div><%= chart_legend %></div><% end %>
+    <% if @price_points.size > 1 %><div><%= chart_legend %></div><% end %>
   </div>
   <%= price_history_chart(@price_points) %>
 
