@@ -101,6 +101,28 @@ class NewsDigestJobTest < ActiveJob::TestCase
     assert_includes text, "…", "an over-long line should be truncated with an ellipsis"
   end
 
+  # Slack also rejects a message with more than 50 blocks. A backlog large
+  # enough to need 49+ section blocks must not blow that limit, and the items
+  # that don't fit must stay unnotified so the next run picks them up.
+  test "caps blocks at Slack's limit and holds the overflow for the next digest" do
+    # Each item's line exceeds the per-section budget, so it gets its own
+    # section block — 49 items would need 49 sections, one past the budget.
+    items = 49.times.map do |i|
+      make_item(url: "https://anthropic.com/news/big-#{i}", title: "Big #{i} #{"x" * 3000}")
+    end
+
+    NewsDigestJob.perform_now
+
+    blocks = @posted.first[:blocks]
+    assert_operator blocks.size, :<=, 50, "Slack rejects messages with more than 50 blocks"
+
+    held_back = items.select { |it| it.reload.notified_at.nil? }
+    assert_not_empty held_back, "expected overflow items to remain unnotified for the next run"
+
+    summary = blocks.filter_map { |b| b.dig(:text, :text) }.find { |t| t&.include?("item") }
+    assert_includes summary, "more in the next digest"
+  end
+
   # --- notified_at stamping --------------------------------------------------
 
   test "stamps notified_at on items after successful post" do

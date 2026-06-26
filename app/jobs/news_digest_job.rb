@@ -10,34 +10,49 @@ class NewsDigestJob < ApplicationJob
     pending = NewsItem.pending_digest.to_a
     return Rails.logger.info("NewsDigestJob: no pending news items, skipping") if pending.empty?
 
-    SlackNotifier.post(slack_payload(pending))
-    NewsItem.where(id: pending.map(&:id)).update_all(notified_at: Time.current)
+    payload, notified = slack_payload(pending)
+    SlackNotifier.post(payload)
+    NewsItem.where(id: notified.map(&:id)).update_all(notified_at: Time.current)
   end
 
   private
 
-  # Slack rejects a message with "invalid_blocks" (HTTP 400) when a single
-  # section block's text exceeds 3000 characters. This digest accumulates every
-  # unnotified item, so a backlog or a busy day can push the combined lines past
-  # that limit. Keep a little headroom for safety.
+  # Slack rejects a message ("invalid_blocks", HTTP 400) once a section block's
+  # text exceeds 3000 characters, and separately once a message has more than 50
+  # blocks. SECTION_TEXT_LIMIT keeps each section under the first limit (with a
+  # little headroom); MAX_ITEM_SECTIONS keeps the whole message under the second,
+  # leaving room for the header and summary blocks (50 - 2 = 48).
   SECTION_TEXT_LIMIT = 2900
+  MAX_ITEM_SECTIONS  = 48
 
+  # Returns [payload, items_included]. When a backlog overflows the block limit,
+  # only the items that fit are posted; the rest keep notified_at = nil and roll
+  # into the next run rather than being dropped silently.
   def slack_payload(items)
-    count = items.size
-    summary = "*#{count} item#{"s" unless count == 1}*"
-    lines   = items.map { |item| digest_line(item) }
+    lines  = items.map { |item| digest_line(item) }
+    chunks = pack_lines(lines)
+
+    shown_chunks = chunks.first(MAX_ITEM_SECTIONS)
+    shown_count  = shown_chunks.sum(&:size)
+    held_back    = items.size - shown_count
+
+    summary = +"*#{shown_count} item#{"s" unless shown_count == 1}*"
+    summary << " — #{held_back} more in the next digest" if held_back.positive?
 
     blocks = [
       { type: "header",
         text: { type: "plain_text",
-                text: "📰 News · #{Date.current.strftime('%-d %b %Y')}" } }
+                text: "📰 News · #{Date.current.strftime('%-d %b %Y')}" } },
+      { type: "section",
+        text: { type: "mrkdwn", text: summary } }
     ]
-    section_texts([summary, *lines]).each do |text|
-      blocks << { type: "section", text: { type: "mrkdwn", text: text } }
+    shown_chunks.each do |chunk|
+      blocks << { type: "section", text: { type: "mrkdwn", text: chunk.join("\n") } }
     end
 
-    { text: "Token Price news — #{Date.current.strftime('%-d %b %Y')}",
-      blocks: blocks }
+    payload = { text: "Token Price news — #{Date.current.strftime('%-d %b %Y')}",
+                blocks: blocks }
+    [payload, items.first(shown_count)]
   end
 
   def digest_line(item)
@@ -49,10 +64,12 @@ class NewsDigestJob < ApplicationJob
     end
   end
 
-  # Pack newline-joined lines into chunks no longer than SECTION_TEXT_LIMIT so
-  # each becomes a section block within Slack's limit. A single line longer than
-  # the limit (e.g. a very long title) is truncated rather than dropped.
-  def section_texts(lines)
+  # Pack lines into groups whose newline-joined length stays under
+  # SECTION_TEXT_LIMIT, so each group becomes a section block within Slack's
+  # limit. Returns an array of line-arrays (one per section); each input line is
+  # one item, so a group's size is the number of items it covers. A single line
+  # longer than the limit (e.g. a very long title) is truncated rather than dropped.
+  def pack_lines(lines)
     chunks  = []
     current = []
     length  = 0
@@ -62,7 +79,7 @@ class NewsDigestJob < ApplicationJob
       # +1 accounts for the "\n" that joins this line to the previous one.
       added = current.empty? ? line.length : line.length + 1
       if current.any? && length + added > SECTION_TEXT_LIMIT
-        chunks << current.join("\n")
+        chunks << current
         current = [line]
         length  = line.length
       else
@@ -70,7 +87,7 @@ class NewsDigestJob < ApplicationJob
         length  += added
       end
     end
-    chunks << current.join("\n") if current.any?
+    chunks << current if current.any?
     chunks
   end
 
