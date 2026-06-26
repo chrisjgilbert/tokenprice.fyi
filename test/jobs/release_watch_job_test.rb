@@ -1,13 +1,5 @@
 require "test_helper"
 
-# The real NewsClassifier is built by a parallel agent; define the minimal
-# interface here so these tests don't depend on that file being present.
-unless defined?(NewsClassifier)
-  class NewsClassifier
-    class ClassifyError < StandardError; end
-  end
-end
-
 class ReleaseWatchJobTest < ActiveJob::TestCase
   FAKE_SOURCES = [
     { "name" => "openai", "type" => "rss", "url" => "https://openai.com/news/rss" }
@@ -94,7 +86,7 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
   # --- classifier errors leave item unclassified ----------------------------
 
   test "classifier error leaves item with relevant=nil (unclassified)" do
-    stub_classifier_raising(NewsClassifier::ClassifyError, "API rate limit")
+    stub_classifier_raising(NewsItem::Classification::Error, "API rate limit")
 
     ReleaseWatchJob.perform_now
 
@@ -105,7 +97,7 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
   end
 
   test "classifier error does not prevent other items from being created" do
-    stub_classifier_raising(NewsClassifier::ClassifyError, "timeout")
+    stub_classifier_raising(NewsItem::Classification::Error, "timeout")
 
     assert_difference "NewsItem.count", 2 do
       ReleaseWatchJob.perform_now
@@ -129,22 +121,18 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
   end
 
   def stub_classifier(result)
-    original = NewsClassifier.singleton_class.instance_method(:classify) rescue nil
-    NewsClassifier.define_singleton_method(:classify) { |**_kwargs| result }
-    @classifier_original = original
+    NewsItem.define_method(:classify) { result }
   end
 
   def stub_classifier_capturing(captured_urls)
-    NewsClassifier.define_singleton_method(:classify) do |title:, source:|
-      # Find the NewsItem that was just created for this title/source
-      item = NewsItem.find_by(title: title, source: source)
-      captured_urls << item&.url
+    NewsItem.define_method(:classify) do
+      captured_urls << url
       { relevant: true, kind: "release", rationale: "captured" }
     end
   end
 
   def stub_classifier_raising(error_class, message)
-    NewsClassifier.define_singleton_method(:classify) { |**_| raise error_class, message }
+    NewsItem.define_method(:classify) { raise error_class, message }
   end
 
   teardown do
@@ -154,10 +142,8 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
     if @fetcher_original
       NewsFeedFetcher.singleton_class.define_method(:fetch, @fetcher_original)
     end
-    if @classifier_original
-      NewsClassifier.singleton_class.define_method(:classify, @classifier_original)
-    elsif NewsClassifier.singleton_class.method_defined?(:classify)
-      NewsClassifier.singleton_class.remove_method(:classify)
+    if NewsItem.instance_methods(false).include?(:classify)
+      NewsItem.remove_method(:classify)
     end
   end
 end

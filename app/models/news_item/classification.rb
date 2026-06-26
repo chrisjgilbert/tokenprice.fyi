@@ -1,12 +1,10 @@
 require "anthropic"
 
-# Classifies a news headline as relevant to LLM token pricing using Claude Haiku.
-# Returns { relevant:, kind:, rationale: } or raises ClassifyError on API failure.
-#
-#   NewsClassifier.classify(title: "OpenAI cuts GPT-4o prices 50%", source: "openai")
-#   #=> { relevant: true, kind: "price", rationale: "Direct LLM API price cut announcement" }
-class NewsClassifier
-  class ClassifyError < StandardError; end
+# Classifies a persisted NewsItem as relevant to LLM token pricing using Claude Haiku.
+# Reached through NewsItem#classify; returns { relevant:, kind:, rationale: } or
+# raises Error on API failure.
+class NewsItem::Classification
+  class Error < StandardError; end
 
   MODEL = "claude-haiku-4-5-20251001"
 
@@ -34,12 +32,14 @@ class NewsClassifier
     Be concise in rationale (one sentence).
   PROMPT
 
-  def self.classify(title:, source:, body: nil)
-    new.classify(title: title, source: source, body: body)
+  def initialize(news_item, client: nil)
+    @news_item = news_item
+    @client    = client
   end
 
-  def classify(title:, source:, body: nil)
-    content = "Headline: #{title}\nSource: #{source}"
+  def run
+    body = news_item.try(:body)
+    content = "Headline: #{news_item.title}\nSource: #{news_item.source}"
     content += "\n\nContext: #{body.first(500)}" if body.present?
 
     response = client.messages.create(
@@ -52,7 +52,7 @@ class NewsClassifier
     )
 
     tool_use = response.content.find { |block| block.type == :tool_use }
-    raise ClassifyError, "No tool_use block in response" unless tool_use
+    raise Error, "No tool_use block in response" unless tool_use
 
     input = tool_use.input
     {
@@ -61,10 +61,12 @@ class NewsClassifier
       rationale: input[:rationale].to_s.truncate(200)
     }
   rescue Anthropic::Errors::Error => e
-    raise ClassifyError, "Anthropic API error: #{e.message}"
+    raise Error, "Anthropic API error: #{e.message}"
   end
 
   private
+
+  attr_reader :news_item
 
   def client
     @client ||= AnthropicClient.build
