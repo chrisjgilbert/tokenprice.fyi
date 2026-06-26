@@ -12,7 +12,7 @@
       }) %>
 <% end %>
 
-<div class="events-page" data-controller="events-filter">
+<div class="events-page">
   <%# ── Header ─────────────────────────────────────────────────────────── %>
   <header class="events-header">
     <h1 class="events-h1">Market events</h1>
@@ -25,89 +25,43 @@
   </header>
 
   <%# ── Filter ─────────────────────────────────────────────────────────── %>
+  <%# Each tab is a link to that kind's first page — filtering happens on the
+      server, so the count reflects the whole timeline, not just what's loaded. %>
   <div class="events-toolbar">
     <div class="tp-seg events-seg" role="group" aria-label="Filter events by kind">
-      <button class="on" type="button" data-kind="all" aria-pressed="true"
-              data-events-filter-target="tab"
-              data-action="events-filter#select">
-        All <span class="events-seg-n"><%= @events.size %></span>
-      </button>
-      <button type="button" data-kind="market" aria-pressed="false"
-              data-events-filter-target="tab"
-              data-action="events-filter#select">
+      <%= link_to events_path, class: ("on" if @kind.nil?), data: { kind: "all" },
+            "aria-current": ("page" if @kind.nil?) do %>
+        All <span class="events-seg-n"><%= @total_count %></span>
+      <% end %>
+      <%= link_to events_path(kind: "market"), class: ("on" if @kind == "market"), data: { kind: "market" },
+            "aria-current": ("page" if @kind == "market") do %>
         Market <span class="events-seg-n"><%= @market_count %></span>
-      </button>
-      <button type="button" data-kind="launch" aria-pressed="false"
-              data-events-filter-target="tab"
-              data-action="events-filter#select">
+      <% end %>
+      <%= link_to events_path(kind: "launch"), class: ("on" if @kind == "launch"), data: { kind: "launch" },
+            "aria-current": ("page" if @kind == "launch") do %>
         Launches <span class="events-seg-n"><%= @launch_count %></span>
-      </button>
+      <% end %>
     </div>
-    <p class="events-status" role="status" aria-live="polite" data-events-filter-target="status"></p>
   </div>
 
   <%# ── Timeline ───────────────────────────────────────────────────────── %>
   <div class="tp-card events-card">
     <% if @events.any? %>
-      <div class="events-timeline" data-events-filter-target="timeline">
-        <% @events_by_year.each do |year, events| %>
-          <section class="ev-year-group" data-events-filter-target="yearGroup">
-            <h2 class="ev-year"><%= year %></h2>
-            <ol class="ev-list">
-              <% events.each do |event| %>
-                <li class="ev-item" data-kind="<%= event.kind %>" data-events-filter-target="item">
-                  <span class="ev-node ev-<%= event.kind %>" aria-hidden="true">
-                    <%= icon(event_kind_icon(event.kind), size: 14) %>
-                  </span>
-                  <div class="ev-body">
-                    <div class="ev-meta">
-                      <time class="ev-date" datetime="<%= event.date.iso8601 %>"><%= fmt_date_full(event.date) %></time>
-                      <span class="tp-badge tp-kind-<%= event.kind %>"><%= event_kind_label(event.kind) %></span>
-                    </div>
-
-                    <h3 class="ev-title">
-                      <% if event.model %>
-                        <%= link_to event.title, model_path(event.model) %>
-                      <% else %>
-                        <%= event.title %>
-                      <% end %>
-                    </h3>
-
-                    <% if event.note.present? %>
-                      <p class="ev-note"><%= event.note %></p>
-                    <% end %>
-
-                    <% if event.kind == "launch" && (m = event.model) %>
-                      <div class="ev-tags">
-                        <%= link_to provider_path(event.provider), class: "ev-provider" do %>
-                          <%= provider_square(event.provider, size: :sm) %>
-                          <span><%= event.provider.name %></span>
-                        <% end %>
-                        <%= tier_badge(m.tier) %>
-                        <span class="ev-tag"><%= io_price(m, tag: true) %></span>
-                        <% if m.context_window %>
-                          <span class="ev-tag num"><%= tokens_short(m.context_window) %> ctx</span>
-                        <% end %>
-                      </div>
-                    <% elsif event.source_url.present? %>
-                      <%= link_to event.source_url, class: "ev-source", target: "_blank", rel: "noopener" do %>
-                        Source <%= icon(:external, size: 13) %>
-                      <% end %>
-                    <% end %>
-                  </div>
-                </li>
-              <% end %>
-            </ol>
-          </section>
-        <% end %>
-
-        <%# Shown by the filter controller only when a filter hides everything. %>
-        <div class="ev-empty" data-events-filter-target="empty" hidden>
-          <div class="tp-empty">
-            <div class="tp-empty-icon"><%= icon(:calendar, size: 26) %></div>
-            <p class="font-medium">No events of this kind yet.</p>
-          </div>
+      <div data-controller="events-infinite">
+        <div class="events-timeline" id="ev-timeline" data-events-infinite-target="timeline">
+          <% @events_by_year.each do |year, events| %>
+            <%= render "events/year_group", year: year, events: events %>
+          <% end %>
         </div>
+        <%= render "events/sentinel", has_more: @has_more, next_page: @next_page, kind: @kind %>
+      </div>
+    <% elsif @kind %>
+      <div class="tp-empty">
+        <div class="tp-empty-icon"><%= icon(:calendar, size: 26) %></div>
+        <p class="font-medium">No <%= @kind == "market" ? "market events" : "launches" %> tracked.</p>
+        <p class="text-sm mt-1" style="color:var(--color-slate-400)">
+          <%= link_to "See all events", events_path, class: "text-indigo-600 hover:underline" %>.
+        </p>
       </div>
     <% else %>
       <div class="tp-empty">
@@ -157,12 +111,7 @@
   margin-left: 5px;
   opacity: .55;
 }
-.tp-seg button.on .events-seg-n { opacity: .8; }
-.events-status {
-  font-size: 13px;
-  color: var(--color-slate-500);
-  font-weight: 500;
-}
+.tp-seg .on .events-seg-n { opacity: .8; }
 
 /* ── Timeline card ───────────────────────────────────────────────────── */
 /* No `overflow` here on purpose: a clipping context would become the scroll
@@ -321,7 +270,46 @@
 }
 .ev-source:hover { color: var(--color-indigo-700); text-decoration: underline; text-underline-offset: 2px; }
 
-/* Hidden by the filter (kept out of layout + a11y tree). */
-.ev-item[hidden], .ev-year-group[hidden] { display: none; }
-.ev-empty { padding: 8px 0 20px; }
+/* ── Infinite-scroll sentinel ────────────────────────────────────────── */
+/* Sits below the timeline; the controller loads the next page as it nears the
+   viewport. The "Load more" link is the no-JS fallback, hidden once the
+   controller connects (it sets data-events-infinite-connected, which the
+   selector below keys off) so the observer is the only trigger. */
+.ev-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 0 10px;
+  min-height: 24px;
+}
+.ev-more {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-indigo-600);
+  text-decoration: none;
+}
+.ev-more:hover { color: var(--color-indigo-700); text-decoration: underline; text-underline-offset: 2px; }
+
+/* The spinner shows only while a fetch is in flight (controller toggles
+   .is-loading); the fallback link hides once the controller has connected. */
+.ev-spinner { display: none; }
+[data-events-infinite-connected] .ev-more { display: none; }
+[data-events-infinite-connected] .ev-sentinel.is-loading .ev-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-slate-200);
+  border-top-color: var(--color-indigo-500);
+  border-radius: 50%;
+  animation: tp-spin .7s linear infinite;
+}
+@keyframes tp-spin { to { transform: rotate(360deg); } }
+
+.ev-sentinel-end { padding: 24px 0 8px; }
+.ev-end {
+  font-size: 12.5px;
+  color: var(--color-slate-400);
+  font-weight: 500;
+}
 </style>

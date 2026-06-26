@@ -1,0 +1,11 @@
+<%# Appends the next page of year groups to the timeline, then swaps the sentinel
+    for the next one (or the end cap). The controller merges year groups that
+    straddle the page boundary after the append lands. %>
+<%= turbo_stream.append "ev-timeline" do %>
+  <% @events_by_year.each do |year, events| %>
+    <%= render "events/year_group", year: year, events: events %>
+  <% end %>
+<% end %>
+<%= turbo_stream.replace "ev-sentinel" do %>
+  <%= render "events/sentinel", has_more: @has_more, next_page: @next_page, kind: @kind %>
+<% end %>
