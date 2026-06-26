@@ -66,6 +66,30 @@ class NewsDigestJobTest < ActiveJob::TestCase
     assert_includes text, "⚠ unclassified"
   end
 
+  test "splits a large backlog across section blocks under Slack's 3000-char limit" do
+    # A backlog this size used to produce one section block far over Slack's
+    # limit, which Slack rejects with 400 invalid_blocks on every run.
+    40.times do |i|
+      make_item(url: "https://anthropic.com/news/item-#{i}",
+                title: "A reasonably long news item title number #{i} about model pricing",
+                rationale: "Detailed rationale explaining why item #{i} is relevant to readers")
+    end
+    NewsDigestJob.perform_now
+
+    blocks = @posted.first[:blocks]
+    sections = blocks.select { |b| b[:type] == "section" }
+    assert sections.size > 1, "expected the backlog to span multiple section blocks"
+    sections.each do |b|
+      assert b.dig(:text, :text).length <= 3000,
+             "section text must stay under Slack's 3000-char limit"
+    end
+
+    # Every item still appears across the combined section text.
+    text = sections.map { |b| b.dig(:text, :text) }.join("\n")
+    assert_includes text, "item-0"
+    assert_includes text, "item-39"
+  end
+
   # --- notified_at stamping --------------------------------------------------
 
   test "stamps notified_at on items after successful post" do

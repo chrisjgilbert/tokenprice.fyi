@@ -16,24 +16,56 @@ class NewsDigestJob < ApplicationJob
 
   private
 
+  # Slack rejects (400 invalid_blocks) any section block whose text exceeds
+  # 3000 characters. Stay safely under that so a large backlog of items — which
+  # is exactly what builds up when an earlier digest failed and notified_at was
+  # never stamped — doesn't produce a payload Slack refuses on every run.
+  SECTION_TEXT_LIMIT = 2900
+
   def slack_payload(items)
-    lines = items.map do |item|
-      link = "<#{item.url}|#{item.title}>"
-      if item.relevant.nil?
-        "• #{link} (#{item.source}) — ⚠ unclassified"
+    count = items.size
+    summary = "*#{count} item#{"s" unless count == 1}*"
+    lines = items.map { |item| item_line(item) }
+
+    blocks = [
+      { type: "header",
+        text: { type: "plain_text",
+                text: "📰 News · #{Date.current.strftime('%-d %b %Y')}" } }
+    ]
+    section_texts([summary, *lines]).each do |text|
+      blocks << { type: "section", text: { type: "mrkdwn", text: text } }
+    end
+
+    { text: "Token Price news — #{Date.current.strftime('%-d %b %Y')}",
+      blocks: blocks }
+  end
+
+  def item_line(item)
+    link = "<#{item.url}|#{item.title}>"
+    if item.relevant.nil?
+      "• #{link} (#{item.source}) — ⚠ unclassified"
+    else
+      "• #{link} (#{item.source}) — #{item.kind || "unknown"} · #{item.rationale || "—"}"
+    end
+  end
+
+  # Pack lines into the fewest section texts that each stay under the Slack
+  # limit. A single line longer than the limit is truncated so it can't wedge
+  # the digest.
+  def section_texts(lines)
+    chunks = []
+    current = +""
+    lines.each do |line|
+      line = "#{line[0, SECTION_TEXT_LIMIT - 1]}…" if line.length > SECTION_TEXT_LIMIT
+      candidate = current.empty? ? line : "#{current}\n#{line}"
+      if candidate.length > SECTION_TEXT_LIMIT
+        chunks << current unless current.empty?
+        current = line
       else
-        "• #{link} (#{item.source}) — #{item.kind || "unknown"} · #{item.rationale || "—"}"
+        current = candidate
       end
     end
-    count = items.size
-    { text: "Token Price news — #{Date.current.strftime('%-d %b %Y')}",
-      blocks: [
-        { type: "header",
-          text: { type: "plain_text",
-                  text: "📰 News · #{Date.current.strftime('%-d %b %Y')}" } },
-        { type: "section",
-          text: { type: "mrkdwn",
-                  text: "*#{count} item#{"s" unless count == 1}*\n#{lines.join("\n")}" } }
-      ] }
+    chunks << current unless current.empty?
+    chunks
   end
 end
