@@ -54,6 +54,15 @@ class FeaturePattern
     def capability?  = !!capability
     def loops?       = !!loops
     def priced?      = priced != false
+
+    # Price this step's present starting options against its own token shape:
+    # one FeaturePattern::Cost::Result per option (cheap → quality → open_weight,
+    # nil slugs skipped, an unpriced step yielding unpriced markers). The step
+    # carries the shape, so pricing is the step's own operation; it delegates to
+    # the FeaturePattern::Cost operation object rather than being called directly.
+    # `catalog:` injects an already-loaded PriceCatalog so a guide page resolves
+    # every option in-memory off one load (see FeaturePattern::Cost).
+    def cost(catalog: nil) = FeaturePattern::Cost.for_step(self, catalog:)
   end
 
   attr_reader :key, :label, :blurb, :steps

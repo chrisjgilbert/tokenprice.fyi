@@ -15,8 +15,8 @@ class GuideController < ApplicationController
 
     return if catalog_fresh?(etag: [ :guide_show, @pattern.key ])
 
-    # Load the price catalog once for the whole page; GuideCost prices every
-    # step's options against this injected catalog instead of re-loading it.
+    # Load the price catalog once for the whole page; each step prices its
+    # options against this injected catalog instead of re-loading it.
     @catalog = PriceCatalog.models
   end
 end

@@ -1,10 +1,12 @@
 require "test_helper"
 
-# T1.2 — the per-call cost service that powers the Guide. It prices a (slug,
-# shape) pair by delegating to the Phase-0 CostEstimate#price_with, on a single
-# NO-cache basis so every option for a step is compared fairly (AUDIT #1), and
-# refuses to price plumbing steps (AUDIT #5).
-class GuideCostTest < ActiveSupport::TestCase
+# T1.2 — the per-call cost operation that powers the Guide. FeaturePattern::Cost
+# prices a (slug, shape) pair by delegating to the Phase-0 CostEstimate#price_with,
+# on a single NO-cache basis so every option for a step is compared fairly
+# (AUDIT #1), and refuses to price plumbing steps (AUDIT #5). The step-level seam
+# is FeaturePattern::Step#cost; the bare (slug, shape) entry is
+# FeaturePattern::Cost.for.
+class FeaturePattern::CostTest < ActiveSupport::TestCase
   # The RAG "generate answer" step's representative shape.
   GENERATE_SHAPE = { sys: 500, in: 4_550, out: 250 }.freeze
 
@@ -18,7 +20,7 @@ class GuideCostTest < ActiveSupport::TestCase
     # claude-opus-4-8 HAS a cached rate (0.50). It must NOT be used: the headline
     # per-call figure is the full-input uncached formula. This proves the cache
     # discount did not secretly reduce the figure.
-    result = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    result = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
 
     assert result.resolved?
     assert result.priced?
@@ -37,8 +39,8 @@ class GuideCostTest < ActiveSupport::TestCase
     # uncached-mid has NO cached rate (input 2, output 8). claude-opus-4-8 HAS one.
     # Priced for the same shape, each equals its own full-input uncached formula —
     # so any difference is purely input/output rates, never cache asymmetry.
-    opus = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
-    mid  = GuideCost.per_call(slug: "uncached-mid", shape: GENERATE_SHAPE)
+    opus = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    mid  = FeaturePattern::Cost.for(slug: "uncached-mid", shape: GENERATE_SHAPE)
 
     assert_in_delta uncached_per_call(GENERATE_SHAPE, input: 5.0, output: 25.0), opus.per_call, 1e-12
     assert_in_delta uncached_per_call(GENERATE_SHAPE, input: 2.0, output: 8.0),  mid.per_call,  1e-12
@@ -46,7 +48,7 @@ class GuideCostTest < ActiveSupport::TestCase
 
   test "cached-null model prices at full input with no phantom discount and never raises" do
     result = assert_nothing_raised do
-      GuideCost.per_call(slug: "uncached-mid", shape: GENERATE_SHAPE)
+      FeaturePattern::Cost.for(slug: "uncached-mid", shape: GENERATE_SHAPE)
     end
     assert result.priced?
     assert_in_delta uncached_per_call(GENERATE_SHAPE, input: 2.0, output: 8.0), result.per_call, 1e-12
@@ -59,15 +61,15 @@ class GuideCostTest < ActiveSupport::TestCase
     )
     expected = CostEstimate.new(profile).price_with(input: 5.0, output: 25.0, cached: nil)[:per_req]
 
-    result = GuideCost.per_call(slug: "claude-opus-4-8", shape: shape)
+    result = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: shape)
     assert_in_delta expected, result.per_call, 1e-15
   end
 
   test "the per-call figure is independent of monthly volume" do
     # Two different req values must yield the same per-call figure — it is a
     # property of the shape and rates alone.
-    a = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
-    b = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    a = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    b = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
     assert_in_delta a.per_call, b.per_call, 1e-15
     # And it matches the seam at req: 1 explicitly.
     profile = CostEstimate.profile_from(
@@ -79,38 +81,38 @@ class GuideCostTest < ActiveSupport::TestCase
 
   test "accepts a FeaturePattern::Shape as well as a hash" do
     shape = FeaturePattern::Shape.new(sys: 500, in: 4_550, out: 250)
-    result = GuideCost.per_call(slug: "claude-opus-4-8", shape: shape)
+    result = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: shape)
     assert_in_delta uncached_per_call(shape.to_h, input: 5.0, output: 25.0), result.per_call, 1e-12
   end
 
-  test "per_call carries the resolved entry's display name on the Result" do
+  test "for carries the resolved entry's display name on the Result" do
     # claude-haiku-4-5 resolves to the fixture entry "Guide Haiku Fixture".
-    result = GuideCost.per_call(slug: "claude-haiku-4-5", shape: GENERATE_SHAPE)
+    result = FeaturePattern::Cost.for(slug: "claude-haiku-4-5", shape: GENERATE_SHAPE)
     assert result.resolved?
     assert_equal "Guide Haiku Fixture", result.name
   end
 
-  test "per_call leaves name nil for an unresolved slug" do
-    result = GuideCost.per_call(slug: "no-such-model", shape: GENERATE_SHAPE)
+  test "for leaves name nil for an unresolved slug" do
+    result = FeaturePattern::Cost.for(slug: "no-such-model", shape: GENERATE_SHAPE)
     refute result.resolved?
     assert_nil result.name
   end
 
-  test "for_step carries each resolved option's display name" do
+  test "Step#cost carries each resolved option's display name" do
     step = FeaturePattern.find("rag").steps.last
     catalog = PriceCatalog.models
-    results = GuideCost.for_step(step, catalog: catalog)
+    results = step.cost(catalog: catalog)
 
     by_slug = results.index_by(&:slug)
     assert_equal "Guide Haiku Fixture", by_slug["claude-haiku-4-5"].name
     assert_equal "Guide Sonnet Fixture", by_slug["claude-sonnet-4-6"].name
   end
 
-  test "for_step carries the name through the unpriced-step branch where the slug resolves" do
+  test "Step#cost carries the name through the unpriced-step branch where the slug resolves" do
     embed = FeaturePattern.find("rag").steps.first
     refute embed.priced?, "fixture sanity: the RAG embed step is priced:false"
     catalog = PriceCatalog.models
-    results = GuideCost.for_step(embed, catalog: catalog)
+    results = embed.cost(catalog: catalog)
 
     # Any option of the unpriced step that resolves carries its name; unresolved → nil.
     results.each do |r|
@@ -126,14 +128,14 @@ class GuideCostTest < ActiveSupport::TestCase
     step = FeaturePattern.find("rag").steps.last
     catalog = PriceCatalog.models
     assert_queries_count(0) do
-      results = GuideCost.for_step(step, catalog: catalog)
+      results = step.cost(catalog: catalog)
       results.map(&:name) # force any lazy work
     end
   end
 
   test "unknown slug degrades to nil without raising" do
     result = assert_nothing_raised do
-      GuideCost.per_call(slug: "no-such-model", shape: GENERATE_SHAPE)
+      FeaturePattern::Cost.for(slug: "no-such-model", shape: GENERATE_SHAPE)
     end
     refute result.resolved?
     refute result.priced?
@@ -144,13 +146,13 @@ class GuideCostTest < ActiveSupport::TestCase
   test "a resolvable model with no current price degrades to nil" do
     # claude-no-price is active but has no price points → excluded from the
     # catalog, so it resolves like an unknown slug: nil, no raise.
-    result = GuideCost.per_call(slug: "claude-no-price", shape: GENERATE_SHAPE)
+    result = FeaturePattern::Cost.for(slug: "claude-no-price", shape: GENERATE_SHAPE)
     refute result.priced?
     assert_nil result.per_call
   end
 
   test "a nil slug degrades to nil without raising" do
-    result = assert_nothing_raised { GuideCost.per_call(slug: nil, shape: GENERATE_SHAPE) }
+    result = assert_nothing_raised { FeaturePattern::Cost.for(slug: nil, shape: GENERATE_SHAPE) }
     refute result.resolved?
     assert_nil result.per_call
   end
@@ -159,27 +161,27 @@ class GuideCostTest < ActiveSupport::TestCase
     embed = FeaturePattern.find("rag").steps.first
     refute embed.priced?, "fixture sanity: the RAG embed step is priced:false"
 
-    results = GuideCost.for_step(embed)
+    results = embed.cost
     assert results.all? { |r| !r.priced? }, "no option of an unpriced step gets a number"
     assert results.all? { |r| r.per_call.nil? }
   end
 
-  test "for_step prices each present option in stable order, skipping nil slugs" do
+  test "Step#cost prices each present option in stable order, skipping nil slugs" do
     # The RAG generate step: cheap/quality/open_weight all present.
     step = FeaturePattern.find("rag").steps.last
     assert step.priced?
 
-    results = GuideCost.for_step(step)
+    results = step.cost
     # One result per PRESENT option slug, in cheap → quality → open_weight order.
     present = step.options.to_h.compact
     assert_equal present.values, results.map(&:slug)
   end
 
-  test "for_step skips a nil option slug" do
+  test "Step#cost skips a nil option slug" do
     # The RAG embed step has quality: nil — but it is unpriced anyway; use the
     # priced generate step and confirm nil options never produce a result.
     step = FeaturePattern.find("rag").steps.last
-    results = GuideCost.for_step(step)
+    results = step.cost
     refute_includes results.map(&:slug), nil
   end
 
@@ -190,21 +192,21 @@ class GuideCostTest < ActiveSupport::TestCase
     catalog = PriceCatalog.models # the single load the page performs
 
     assert_queries_count(0) do
-      GuideCost.for_step(step, catalog: catalog)
+      step.cost(catalog: catalog)
     end
   end
 
-  test "per_call with an injected catalog runs no catalog queries" do
+  test "for with an injected catalog runs no catalog queries" do
     catalog = PriceCatalog.models
     assert_queries_count(0) do
-      GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
+      FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
     end
   end
 
-  test "injected and non-injected per_call produce identical numbers" do
+  test "injected and non-injected for produce identical numbers" do
     catalog = PriceCatalog.models
-    injected = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
-    plain    = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
+    injected = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: catalog)
+    plain    = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE)
     assert_in_delta plain.per_call, injected.per_call, 1e-15
   end
 
@@ -215,8 +217,8 @@ class GuideCostTest < ActiveSupport::TestCase
     only_opus = PriceCatalog.models.select { |e| e.slug == "claude-opus-4-8" }
     assert_equal 1, only_opus.size, "fixture sanity"
 
-    hit  = GuideCost.per_call(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: only_opus)
-    miss = GuideCost.per_call(slug: "uncached-mid", shape: GENERATE_SHAPE, catalog: only_opus)
+    hit  = FeaturePattern::Cost.for(slug: "claude-opus-4-8", shape: GENERATE_SHAPE, catalog: only_opus)
+    miss = FeaturePattern::Cost.for(slug: "uncached-mid", shape: GENERATE_SHAPE, catalog: only_opus)
 
     assert hit.priced?
     refute miss.resolved?, "a slug absent from the injected catalog must not fall back to the DB"

@@ -15,8 +15,9 @@
 # ladder small / mid / frontier; no drama em-dashes; no "=" in prose; no
 # rhetorical questions.
 module GuideHelper
-  # The label for each starting-option role, keyed by the `kind` GuideCost::Result
-  # carries — so the view names options from data, never from array position.
+  # The label for each starting-option role, keyed by the `kind` a
+  # FeaturePattern::Cost::Result carries — so the view names options from data,
+  # never from array position.
   OPTION_KIND_LABELS = {
     cheap: "cheap default", quality: "step-up for quality", open_weight: "open-weight option"
   }.freeze
