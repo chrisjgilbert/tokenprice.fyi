@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bin/rails test:*)",
+      "Bash(bin/rails db:*)",
+      "Bash(bin/rails runner:*)",
+      "Bash(bin/rails routes:*)",
+      "Bash(bin/rubocop:*)",
+      "Bash(bin/brakeman:*)",
+      "Bash(bin/bundler-audit:*)",
+      "Bash(bin/importmap audit:*)",
+      "Bash(bin/ci:*)",
+      "Bash(bundle check:*)",
+      "Bash(bundle install:*)",
+      "Bash(bundle exec:*)",
+      "Bash(bundle info:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)"
+    ]
+  }
+}
