@@ -46,5 +46,11 @@
 /.kamal/secrets.local
 /.kamal/secrets.*.local
 
-# Claude Code internal state (worktree tracking, local session data)
-/.claude/
+# Claude Code: ignore local/personal state but keep shared config (hooks,
+# skills, settings.json, commands) versioned so every session/machine gets it.
+/.claude/*
+!/.claude/hooks/
+!/.claude/skills/
+!/.claude/commands/
+!/.claude/settings.json
+/.claude/settings.local.json
