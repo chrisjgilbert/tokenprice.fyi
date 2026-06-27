@@ -66,6 +66,13 @@ bin/rails test
 
 Covers the pricing domain logic and every public route.
 
+## Contributing
+
+`main` is protected: changes land via a squash-merged pull request that's up to
+date with `main` and has green CI. The policy is codified in
+[`script/protect-main.sh`](script/protect-main.sh) (run it to apply or change the
+rules) and documented in [docs/GITHUB_BRANCH_PROTECTION.md](docs/GITHUB_BRANCH_PROTECTION.md).
+
 ## Updating prices
 
 Curated prices live in `db/seeds.rb` (idempotent — safe to re-run). Edit a model's `prices:`
