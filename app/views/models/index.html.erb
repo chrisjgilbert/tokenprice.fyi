@@ -632,15 +632,23 @@
                 <td class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
                   <%= tier_badge(model.tier) %>
                 </td>
-                <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_input) %>
-                </td>
-                <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_output) %>
-                </td>
-                <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_cached_input) %>
-                </td>
+                <% if directory_row?(model) %>
+                  <%# A price-less directory row: one honest note spanning the
+                      three price columns, instead of repeating it per cell. %>
+                  <td class="numeric <%= 'tp-col-highlight' if %w[input output cached].include?(sort_col) %>" colspan="3">
+                    <%= price_cell(nil, model, compact: false) %>
+                  </td>
+                <% else %>
+                  <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_input) %>
+                  </td>
+                  <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_output) %>
+                  </td>
+                  <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_cached_input) %>
+                  </td>
+                <% end %>
                 <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
                 </td>

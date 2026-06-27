@@ -18,6 +18,48 @@ module ApplicationHelper
     value.nil? ? "—" : "$#{PriceFormat.usd_amount(value)}"
   end
 
+  # Per-modality billing units for the directory rows Phase 2 admits without a
+  # per-token price (image-gen, TTS, video, …). Phase 3 will quote these in their
+  # native unit; until then the cell names the unit and says it's not tracked yet,
+  # never a misleading $0. Classes priced per token (text/multimodal/embedding)
+  # aren't here — a price-less text row isn't even listed.
+  DIRECTORY_PRICE_UNITS = {
+    image_generation: "per image",
+    image_editing:    "per image",
+    text_to_audio:    "per second",
+    audio_to_text:    "per second",
+    speech_to_speech: "per second",
+    video_generation: "per second",
+    any_to_any:       nil
+  }.freeze
+
+  # True for a listed model with no per-token price — a Phase 2 directory row.
+  def directory_row?(model)
+    model.current_price.nil?
+  end
+
+  # A price cell: the USD figure when priced, otherwise an honest "not yet tracked"
+  # note — never $0 or a bare dash that could read as "free". `compact:` (the dense
+  # listing tables, where the note repeats across three columns) shows the short
+  # "Not yet tracked"; the full form names the native unit, for the roomier model
+  # page. Used everywhere a price-table cell renders so a directory row degrades
+  # the same way across surfaces.
+  def price_cell(value, model, compact: true)
+    return usd(value) unless directory_row?(model)
+
+    content_tag(:span, untracked_price_note(model, compact: compact), class: "tp-price-untracked")
+  end
+
+  # The wording for a directory row's missing price. The full form names the
+  # native billing unit ("Priced per image — not yet tracked") where one reads
+  # naturally; the compact form is just "Not yet tracked".
+  def untracked_price_note(model, compact: false)
+    return "Not yet tracked" if compact
+
+    unit = DIRECTORY_PRICE_UNITS[model.modality_class.to_sym]
+    unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
+  end
+
   # I/O shorthand: "$3 / $15" — the primary at-a-glance price
   def io_price(model, tag: false, big: false, light: false)
     classes = "tp-io num"

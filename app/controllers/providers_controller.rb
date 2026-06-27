@@ -8,6 +8,10 @@ class ProvidersController < ApplicationController
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) }
   }.freeze
 
+  # Price sorts a price-less directory row must always sink below, in either
+  # direction (see ModelsController::PRICE_SORTS for the rationale).
+  PRICE_SORTS = %w[input output].freeze
+
   def show
     @provider = Provider.find_by!(slug: params[:id])
 
@@ -21,6 +25,10 @@ class ProvidersController < ApplicationController
     models = @provider.ai_models.includes(:price_points).to_a
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"
+    if PRICE_SORTS.include?(@sort)
+      priced, priceless = models.partition(&:current_price)
+      models = priced + priceless
+    end
     @models = models
   end
 end

@@ -9,6 +9,12 @@ class ModelsController < ApplicationController
     "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
+  # Price-based sorts that a price-less directory row (image-gen/TTS/etc., admitted
+  # without a per-token price in Phase 2) must always sink to the bottom of —
+  # regardless of direction, so it never floats above a priced row when the list
+  # is reversed. Name/tier/context/change still sort it normally: it has those.
+  PRICE_SORTS = %w[input output cached].freeze
+
   # Most expensive output first. The view omits these from filter URLs to keep
   # them clean, so it reads the same constants rather than repeating the literals.
   DEFAULT_SORT = "output"
@@ -60,9 +66,7 @@ class ModelsController < ApplicationController
     # applied so switching between classes stays possible.
     @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
     models.select! { |m| m.modality_class.to_s == @modality } if @modality
-    models.sort_by!(&SORTS.fetch(@sort))
-    models.reverse! if @dir == "desc"
-    @models = models
+    @models = sort_models(models, @sort, @dir)
 
     # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
@@ -92,5 +96,20 @@ class ModelsController < ApplicationController
     @related = AiModel.listed.where(provider: @model.provider)
       .where.not(id: @model.id)
       .includes(:price_points, :provider).by_release.limit(4)
+  end
+
+  private
+
+  # Sort, then sink price-less directory rows to the bottom on a price sort. They
+  # have no per-token rate to rank by, so the chosen key + reverse would otherwise
+  # float them above priced rows in one direction — the partition keeps them last
+  # in both. Non-price sorts (name/tier/context/change) need no special handling.
+  def sort_models(models, sort, dir)
+    sorted = models.sort_by(&SORTS.fetch(sort))
+    sorted.reverse! if dir == "desc"
+    return sorted unless PRICE_SORTS.include?(sort)
+
+    priced, priceless = sorted.partition { |m| m.current_price }
+    priced + priceless
   end
 end

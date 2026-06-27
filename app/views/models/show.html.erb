@@ -109,22 +109,43 @@
   </section>
 <% end %>
 
-<div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-  <% [
-       ["Input / 1M", usd(@model.current_input), :arrow_in],
-       ["Output / 1M", usd(@model.current_output), :arrow_out],
-       ["Cached input / 1M", usd(@model.current_cached_input), :cache],
-       ["Context window", tokens_short(@model.context_window), :brackets]
-     ].each do |label, value, ic| %>
+<% if directory_row?(@model) %>
+  <%# A price-less directory row (Phase 2): no per-token rate exists yet, so name
+      the native unit honestly rather than rendering $0 across three cards. %>
+  <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-xl border border-slate-200 bg-white p-4 sm:col-span-3">
+      <div class="flex items-center justify-between">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Price</p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(:arrow_in, size: 15) %></span>
+      </div>
+      <p class="mt-1 text-lg font-semibold tp-price-untracked"><%= untracked_price_note(@model) %></p>
+    </div>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
       <div class="flex items-center justify-between">
-        <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
-        <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Context window</p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(:brackets, size: 15) %></span>
       </div>
-      <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
+      <p class="mt-1 text-2xl font-semibold tabular-nums"><%= tokens_short(@model.context_window) %></p>
     </div>
-  <% end %>
-</div>
+  </div>
+<% else %>
+  <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <% [
+         ["Input / 1M", usd(@model.current_input), :arrow_in],
+         ["Output / 1M", usd(@model.current_output), :arrow_out],
+         ["Cached input / 1M", usd(@model.current_cached_input), :cache],
+         ["Context window", tokens_short(@model.context_window), :brackets]
+       ].each do |label, value, ic| %>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+          <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
+        </div>
+        <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
+      </div>
+    <% end %>
+  </div>
+<% end %>
 
 <% if @catalog_entry %>
   <section class="mb-8">

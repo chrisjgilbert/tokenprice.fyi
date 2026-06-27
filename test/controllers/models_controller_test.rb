@@ -362,6 +362,56 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes json_ld, "—\""
   end
 
+  test "a price-less directory row sinks below priced rows on output desc (the default)" do
+    get root_url(sort: "output", dir: "desc")
+    assert_response :success
+    names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
+    forge_at = names.index { |n| n.include?("Pixel Forge 1") }
+    last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+    assert forge_at, "the price-less image-gen row should be listed"
+    assert forge_at > last_priced,
+      "a price-less row must sort below every priced row on output desc"
+  end
+
+  test "a price-less directory row sinks below priced rows on output asc" do
+    get root_url(sort: "output", dir: "asc")
+    assert_response :success
+    names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
+    forge_at = names.index { |n| n.include?("Pixel Forge 1") }
+    last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+    assert forge_at > last_priced,
+      "a price-less row must sort below every priced row on output asc"
+  end
+
+  test "a price-less directory row sinks below priced rows on input in both directions" do
+    %w[asc desc].each do |dir|
+      get root_url(sort: "input", dir: dir)
+      assert_response :success
+      names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
+      forge_at = names.index { |n| n.include?("Pixel Forge 1") }
+      last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+      assert forge_at > last_priced,
+        "a price-less row must sort below every priced row on input #{dir}"
+    end
+  end
+
+  test "index renders a price-less row as not-yet-tracked, never $0" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "tbody td", text: /Pixel Forge 1/
+    assert_match(/not yet tracked/i, @response.body)
+    # The row must never read as a free model.
+    assert_no_match(/\$0\b/, css_select("tbody").to_s)
+  end
+
+  test "show renders an honest not-yet-tracked note for a price-less directory row" do
+    get model_url(ai_models(:image_gen))
+    assert_response :success
+    assert_select "h1", "Pixel Forge 1"
+    assert_match(/not yet tracked/i, @response.body)
+    assert_no_match(/\$0\b/, @response.body)
+  end
+
   test "show renders editorial facets when present" do
     ai_models(:opus).update!(
       strengths: "Highly autonomous agentic work",

@@ -68,6 +68,17 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_in_delta frontier_inputs.min, result.input, 1e-9
   end
 
+  test "cheapest never picks a price-less directory row of its tier" do
+    # pixel-forge-1 is a mid-tier directory row with no current input price. The
+    # cheapest-frontier/mid headline reads `e.input` to rank, so a nil-priced row
+    # must be filtered out — never returned (a nil .input would otherwise crash
+    # min_by or surface as a blank/$0 in the worked example).
+    result = PriceCatalog.cheapest(tier: "mid")
+    assert result, "a priced mid-tier model should still win the headline"
+    refute_equal "pixel-forge-1", result.slug
+    refute_nil result.input, "the cheapest example must carry a real input price"
+  end
+
   test "cheapest reuses an injected catalog and returns nil when none qualify" do
     # Entry is identity-compared, so match on slug: the injected catalog yields
     # the same model as the default load.
