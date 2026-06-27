@@ -218,9 +218,11 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index only offers modality facets present among listed models" do
     get root_url
     assert_response :success
-    # text and multimodal are present in fixtures; image generation is not.
+    # text, multimodal, and the price-less image-generation directory row are
+    # present in fixtures; a class absent from listed models is not offered.
     assert_select "input[name=modality][value=multimodal]"
-    assert_select "input[name=modality][value=image_generation]", count: 0
+    assert_select "input[name=modality][value=image_generation]"
+    assert_select "input[name=modality][value=video_generation]", count: 0
   end
 
   test "index renders a modality badge on multimodal rows only" do

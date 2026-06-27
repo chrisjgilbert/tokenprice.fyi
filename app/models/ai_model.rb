@@ -37,8 +37,17 @@ class AiModel < ApplicationRecord
 
   before_validation :set_slug, on: :create
   before_validation :normalize_openrouter_id
+  before_save :assign_modality_class
 
-  scope :listed, -> { where.not(status: "retired").where(id: PricePoint.select(:ai_model_id)) }
+  # Visible in the public directory: not retired, and either priced or a non-text
+  # directory row. A priced model (any class) lists as it always has; a price-less
+  # image-gen/TTS/etc. row (class != "text") is now admitted as a directory entry
+  # whose price reads as "not yet tracked" (Phase 2, directory-first); a price-less
+  # plain-text row stays hidden — we have no data on it.
+  scope :listed, -> {
+    where.not(status: "retired")
+      .where("ai_models.id IN (SELECT ai_model_id FROM price_points) OR ai_models.modality_class <> 'text'")
+  }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
@@ -86,11 +95,14 @@ class AiModel < ApplicationRecord
     super
   end
 
-  # The single filterable class derived from the signature. An empty/unknown
-  # signature degrades to :text, so existing text rows are unaffected. Memoized
-  # like the other derived readers here; the writers above clear it.
+  # The single filterable class, as a Symbol. The string column is the queryable
+  # store (kept in sync by the before_save below, so `listed` can filter on it in
+  # SQL); reading reconciles it with the signature: a blank column — an unsaved
+  # record, or one written before this column existed — derives from the live
+  # signature so callers always get the right symbol. An empty/unknown signature
+  # degrades to :text, so existing text rows are unaffected.
   def modality_class
-    @modality_class ||= ModalityClass.for(input: input_modalities, output: output_modalities)
+    @modality_class ||= derived_modality_class
   end
 
   # Accepts a non-text input modality (image, audio, video, file, …) — i.e. the
@@ -236,6 +248,22 @@ class AiModel < ApplicationRecord
     i = 0
     haystack.each_char { |c| i += 1 if c == needle[i] }
     i == needle.length
+  end
+
+  # Prefer the stored column (queryable, kept in sync on save); fall back to the
+  # live signature when it's blank so an unsaved record still reads correctly.
+  def derived_modality_class
+    stored = read_attribute(:modality_class)
+    return stored.to_sym if stored.present?
+
+    ModalityClass.for(input: input_modalities, output: output_modalities)
+  end
+
+  # Keep the queryable column in lockstep with the signature on every save, and
+  # drop the memo so a later read reflects the freshly stored value.
+  def assign_modality_class
+    self[:modality_class] = ModalityClass.for(input: input_modalities, output: output_modalities).to_s
+    @modality_class = nil
   end
 
   def set_slug

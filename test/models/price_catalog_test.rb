@@ -11,6 +11,16 @@ class PriceCatalogTest < ActiveSupport::TestCase
     refute_includes slugs, "claude-instant-1" # retired
   end
 
+  test "a price-less non-text directory model appears with its class and nil prices" do
+    e = PriceCatalog.model("pixel-forge-1")
+
+    assert_not_nil e, "price-less image-gen directory row should be listed"
+    assert_equal :image_generation, e.modality_class
+    assert_nil e.input
+    assert_nil e.output
+    assert_nil e.cached
+  end
+
   test "an entry exposes current prices, context, tier, and provider" do
     e = PriceCatalog.model("claude-opus-4-8")
 
