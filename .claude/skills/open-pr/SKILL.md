@@ -6,9 +6,9 @@ description: Review, clean up, and verify the current branch, then open the pull
 # Open PR
 
 Run the review and verification passes against the branch *before* opening the
-pull request, so any fixes land first and CI starts on reviewed code. This is the
-local, fix-first half of review; the managed Code Review App (if enabled) covers
-the PR again server-side once it opens.
+pull request, so any fixes land first and CI starts on reviewed code. Review
+happens entirely in this local session — there is no server-side review step, so
+this flow is the whole of it.
 
 Hooks can't invoke skills, so this is a command you run explicitly rather than an
 automatic trigger. Run the steps in order and don't open the PR until the review
