@@ -170,14 +170,16 @@ module OpenRouter
 
     # Returns the outcome symbol: :created, :enriched, :repriced or :skipped.
     #
-    # Three pricing cases (the gate is on priceability, never on output
-    # modality — see MULTIMODAL_PRICING_PLAN.md Phase 2, directory-first):
-    #   - text-priced: `parse_pricing` returns a price; behaves as it always has,
-    #     writing a per-token PricePoint.
-    #   - priced only in a non-text dimension (image/audio/…): admitted as a
-    #     catalogue entry — its signature and class are recorded — but with no
-    #     PricePoint, since we can't price those units until Phase 3.
-    #   - un-priceable (free / malformed, no positive price anywhere): skipped.
+    # Three cases (see MULTIMODAL_PRICING_PLAN.md Phase 2, directory-first):
+    #   - text-output + a per-token price: behaves as it always has, writing a
+    #     per-token PricePoint.
+    #   - a directory class (image-gen/TTS/…) priced in a non-text dimension:
+    #     admitted as a catalogue entry — its signature and class are recorded —
+    #     but with NO PricePoint, since we can't price those units until Phase 3.
+    #   - anything else (free / malformed, or a non-text-output model we can't yet
+    #     price like an embedding, or a token-priced row with no token price):
+    #     skipped. A per-token PricePoint is NEVER written for a non-text-output
+    #     model — it would read as a misleading $0.
     def import(row)
       pricing = parse_pricing(row["pricing"])
       return :skipped unless pricing || any_positive_price?(row["pricing"])
@@ -190,10 +192,20 @@ module OpenRouter
 
       created = model.new_record?
       enrich(model, row)
+
+      # A per-token price only describes a text-output model; a non-text-output
+      # row is admitted price-less only when it's a directory class we can price
+      # in its own unit later, and otherwise skipped. A missing/blank output
+      # modality is treated as text (the lenient default the old gate used), so a
+      # normal model whose architecture OpenRouter omitted is still priced.
+      outputs_text = model.output_modalities.empty? || model.output_modalities.include?("text")
+      write_price  = pricing && outputs_text
+      return :skipped unless write_price || ModalityClass.directory_class?(model.modality_class)
+
       generate_editorial(model)
       model.save!
 
-      repriced_from = pricing ? record_price(model, pricing) : false
+      repriced_from = write_price ? record_price(model, pricing) : false
 
       if created
         @result.created_records << CreatedRecord.new(
@@ -201,8 +213,8 @@ module OpenRouter
           provider_name:   provider.name,
           model_slug:      model.slug,
           new_provider:    new_provider,
-          input_per_mtok:  pricing&.fetch(:input),
-          output_per_mtok: pricing&.fetch(:output)
+          input_per_mtok:  write_price ? pricing[:input] : nil,
+          output_per_mtok: write_price ? pricing[:output] : nil
         )
         :created
       elsif repriced_from   # Hash of old pricing — truthy only when repriced
@@ -265,7 +277,7 @@ module OpenRouter
     # (input_cache_read/write, internal_reasoning) and web_search: a row priced
     # ONLY on those isn't a model you'd price or list on its own, so it stays
     # skipped. Non-numeric / missing values parse to nil and are ignored.
-    PRICEABLE_KEYS = %w[image audio request].freeze
+    PRICEABLE_KEYS = %w[image audio video request].freeze
 
     def any_positive_price?(pricing)
       return false unless pricing.is_a?(Hash)

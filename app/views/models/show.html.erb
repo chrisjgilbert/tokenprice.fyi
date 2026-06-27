@@ -1,5 +1,7 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
-<% content_for :description, "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
+<% content_for :description, directory_row?(@model) ?
+     "#{@model.name} (#{@model.provider.name}) — #{ModalityClass.label(@model.modality_class)} model. Pricing not yet tracked." :
+     "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
   <%

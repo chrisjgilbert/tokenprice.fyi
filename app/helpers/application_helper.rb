@@ -18,28 +18,11 @@ module ApplicationHelper
     value.nil? ? "—" : "$#{PriceFormat.usd_amount(value)}"
   end
 
-  # Per-modality billing units for the directory rows Phase 2 admits without a
-  # per-token price (image-gen, TTS, video, …). Phase 3 will quote these in their
-  # native unit; until then the cell names the unit and says it's not tracked yet,
-  # never a misleading $0. Classes priced per token (text/multimodal/embedding)
-  # aren't here — a price-less text row isn't even listed.
-  DIRECTORY_PRICE_UNITS = {
-    image_generation: "per image",
-    image_editing:    "per image",
-    text_to_audio:    "per second",
-    audio_to_text:    "per second",
-    speech_to_speech: "per second",
-    video_generation: "per second",
-    any_to_any:       nil
-  }.freeze
-
-  # True for a Phase 2 directory row: a non-text model with no per-token price,
-  # whose price reads "not yet tracked". A price-less *text* model (no data, not a
-  # directory entry — and not even `listed`) is excluded, so on the unscoped
-  # provider page it still renders a plain "—" rather than implying tracking.
-  def directory_row?(model)
-    model.current_price.nil? && model.modality_class != :text
-  end
+  # True for a Phase 2 directory row — delegated to the model so the "render as
+  # 'not yet tracked'" rule (live, price-less, non-token-billed class) has one
+  # home. A price-less text/multimodal row (no data, not a directory class) and a
+  # retired one are excluded, so on the unscoped provider page they render "—".
+  def directory_row?(model) = model.directory_listing?
 
   # A price cell: the USD figure when priced, otherwise an honest "not yet tracked"
   # note — never $0 or a bare dash that could read as "free". `compact:` (the dense
@@ -54,12 +37,12 @@ module ApplicationHelper
   end
 
   # The wording for a directory row's missing price. The full form names the
-  # native billing unit ("Priced per image — not yet tracked") where one reads
-  # naturally; the compact form is just "Not yet tracked".
+  # native billing unit ("Priced per image — not yet tracked") from ModalityClass
+  # (the one home for the taxonomy); the compact form is just "Not yet tracked".
   def untracked_price_note(model, compact: false)
     return "Not yet tracked" if compact
 
-    unit = DIRECTORY_PRICE_UNITS[model.modality_class.to_sym]
+    unit = ModalityClass.price_unit(model.modality_class)
     unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
   end
 

@@ -8,7 +8,7 @@ module OpenRouter
     # Build an OpenRouter-shaped model hash. Prices are USD *per token* strings,
     # exactly as the real API returns them.
     def or_model(id:, name:, prompt:, completion:, cache_read: "0",
-                 image: nil, audio: nil, request: nil,
+                 image: nil, audio: nil, video: nil, request: nil,
                  context: 200_000, max_out: 8_192, created: 1_700_000_000,
                  input_modalities: [ "text" ], output_modalities: [ "text" ],
                  description: "An OpenRouter model.")
@@ -16,6 +16,7 @@ module OpenRouter
                   "input_cache_read" => cache_read }
       pricing["image"]   = image   unless image.nil?
       pricing["audio"]   = audio   unless audio.nil?
+      pricing["video"]   = video   unless video.nil?
       pricing["request"] = request unless request.nil?
 
       {
@@ -511,6 +512,32 @@ module OpenRouter
 
       model = AiModel.find_by!(openrouter_id: "google/imagen-4")
       assert_equal :image_generation, model.modality_class
+      assert_equal 0, model.price_points.count
+    end
+
+    test "an embedding row priced on prompt tokens is skipped, never written as a $0-output priced row" do
+      # Embeddings carry a real prompt price with completion 0, so parse_pricing
+      # returns a price — but output isn't text, so no per-token PricePoint may be
+      # written (it would render a misleading $0 output). Embedding isn't a
+      # directory class, so the row is skipped entirely.
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "openai/text-embedding-3", name: "OpenAI: Text Embedding 3",
+                        prompt: "0.00000002", completion: "0",
+                        input_modalities: [ "text" ], output_modalities: [ "embedding" ]) ])
+      end
+
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "openai/text-embedding-3")
+    end
+
+    test "a video-generation row priced per video is admitted price-less, classed video_generation" do
+      result = sync([ or_model(id: "google/veo-3", name: "Google: Veo 3",
+                               prompt: "0", completion: "0", video: "0.5",
+                               input_modalities: [ "text" ], output_modalities: [ "video" ]) ])
+
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "google/veo-3")
+      assert_equal :video_generation, model.modality_class
       assert_equal 0, model.price_points.count
     end
 

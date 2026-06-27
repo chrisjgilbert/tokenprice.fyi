@@ -19,7 +19,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_130000) do
     t.json "input_modalities", default: [], null: false
     t.text "limitations"
     t.integer "max_output_tokens"
-    t.string "modality_class"
+    t.string "modality_class", default: "text", null: false
     t.string "name", null: false
     t.string "openrouter_id"
     t.json "output_modalities", default: [], null: false

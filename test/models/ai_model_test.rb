@@ -113,6 +113,24 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal ids.uniq, ids
   end
 
+  test "listed excludes a price-less multimodal row (token-priced, not a directory class)" do
+    # Multimodal bills per token, so a price-less one is just missing data, not a
+    # directory entry to surface "not yet tracked".
+    model = ai_models(:no_price)
+    model.update!(input_modalities: %w[text image], output_modalities: %w[text])
+    assert_equal :multimodal, model.modality_class
+    assert_not_includes AiModel.listed, model
+  end
+
+  test "directory_listing? is true only for a live, price-less, directory-class row" do
+    assert ai_models(:image_gen).directory_listing?, "price-less image-gen row"
+    assert_not ai_models(:no_price).directory_listing?, "price-less text row is not a directory listing"
+    assert_not ai_models(:opus).directory_listing?, "a priced row is not a directory listing"
+
+    ai_models(:image_gen).update!(status: "retired")
+    assert_not ai_models(:image_gen).reload.directory_listing?, "a retired row is not a directory listing"
+  end
+
   test "modality_class is stored on save and matches the derived value" do
     model = providers(:anthropic).ai_models.create!(
       name: "Stored Class Probe", tier: "mid",
