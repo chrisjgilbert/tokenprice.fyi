@@ -11,13 +11,13 @@
         ]
       }
     ],
-    "PostToolUse": [
+    "PreToolUse": [
       {
         "matcher": "mcp__github__create_pull_request",
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pr-review-nudge.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pr-review-gate.sh"
           }
         ]
       }
