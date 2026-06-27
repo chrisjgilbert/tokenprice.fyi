@@ -69,6 +69,23 @@ class AiModel < ApplicationRecord
   def current_output = current_price&.output_per_mtok
   def current_cached_input = current_price&.cached_input_per_mtok
 
+  # The modality signature. JSON columns can read back nil (or a non-array on
+  # some adapters); coerce so callers always get a string array, never nil.
+  def input_modalities  = Array(super)
+  def output_modalities = Array(super)
+
+  # The single filterable class derived from the signature. An empty/unknown
+  # signature degrades to :text, so existing text rows are unaffected.
+  def modality_class
+    ModalityClass.for(input: input_modalities, output: output_modalities)
+  end
+
+  # Accepts a non-text input modality (image, audio, video, file, …) — i.e. the
+  # input spans beyond plain text.
+  def multimodal?
+    input_modalities.any? { |m| m != "text" }
+  end
+
   # A fuller descriptive paragraph for meta tags and structured data, folding
   # the editorial facets into the lede when they're present.
   def long_description
