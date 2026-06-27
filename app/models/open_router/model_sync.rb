@@ -251,6 +251,14 @@ module OpenRouter
       modalities.blank? || Array(modalities).include?("text")
     end
 
+    # Reads one side of a row's modality signature from `architecture`, through
+    # the same normalisation the classifier uses, so the stored order is
+    # deterministic. A missing/blank architecture yields [], which downstream
+    # degrades to the `text` class.
+    def modality_signature(row, key)
+      ModalityClass.normalize(row.dig("architecture", key))
+    end
+
     # Append a snapshot only when the price moved. If it moved twice in one day,
     # today's snapshot is updated in place (the [model, date] index is unique).
     #
@@ -340,15 +348,23 @@ module OpenRouter
       context  = row.dig("top_provider", "context_length") || row["context_length"]
       max_out  = row.dig("top_provider", "max_completion_tokens")
       released = (Time.at(row["created"].to_i).utc.to_date if row["created"].present?)
+      inputs   = modality_signature(row, "input_modalities")
+      outputs  = modality_signature(row, "output_modalities")
 
       if model.source == AiModel::OPENROUTER_SOURCE
         model.description    = desc if desc
         model.context_window = context if context
         model.max_output_tokens = max_out if max_out
+        # Guarded like the fields above: a payload that omits `architecture`
+        # mustn't wipe a previously-recorded signature to [].
+        model.input_modalities  = inputs  if inputs.present?
+        model.output_modalities = outputs if outputs.present?
       else
         model.description    ||= desc
         model.context_window ||= context
         model.max_output_tokens ||= max_out
+        model.input_modalities  = inputs  if model.input_modalities.blank?
+        model.output_modalities = outputs if model.output_modalities.blank?
       end
 
       # `created` is when OpenRouter listed the model, only an approximation of

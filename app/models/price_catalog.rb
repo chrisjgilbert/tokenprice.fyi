@@ -20,7 +20,8 @@ class PriceCatalog
   # the retrospective can be computed without going back to the catalog.
   class Entry
     attr_reader :slug, :name, :tier, :context_window, :released_on, :status,
-                :provider_name, :provider_slug, :provider_accent, :snapshots
+                :provider_name, :provider_slug, :provider_accent, :snapshots,
+                :input_modalities, :output_modalities, :modality_class
 
     def initialize(model)
       @slug           = model.slug
@@ -29,6 +30,9 @@ class PriceCatalog
       @context_window = model.context_window
       @released_on    = model.released_on
       @status         = model.status
+      @input_modalities  = model.input_modalities
+      @output_modalities = model.output_modalities
+      @modality_class    = model.modality_class
       @provider_name  = model.provider.name
       @provider_slug  = model.provider.slug
       @provider_accent = model.provider.accent

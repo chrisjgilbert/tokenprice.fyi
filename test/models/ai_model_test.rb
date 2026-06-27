@@ -220,4 +220,36 @@ class AiModelTest < ActiveSupport::TestCase
     refute dup.valid?
     assert_includes dup.errors[:openrouter_id], "has already been taken"
   end
+
+  test "modalities read back as arrays, defaulting to empty for untouched rows" do
+    model = ai_models(:opus)
+    assert_equal [], model.input_modalities
+    assert_equal [], model.output_modalities
+  end
+
+  test "a model with empty modalities degrades to the text class" do
+    assert_equal :text, ai_models(:opus).modality_class
+    assert_not ai_models(:opus).multimodal?
+  end
+
+  test "modality_class derives from the recorded signature" do
+    model = ai_models(:opus)
+    model.update!(input_modalities: %w[image text], output_modalities: %w[text])
+    assert_equal :multimodal, model.modality_class
+
+    model.update!(input_modalities: %w[text], output_modalities: %w[image])
+    assert_equal :image_generation, model.modality_class
+  end
+
+  test "multimodal? is true when input accepts a non-text modality" do
+    model = ai_models(:opus)
+    model.update!(input_modalities: %w[image text], output_modalities: %w[text])
+    assert model.multimodal?
+
+    model.update!(input_modalities: %w[text], output_modalities: %w[text])
+    assert_not model.multimodal?
+
+    model.update!(input_modalities: [], output_modalities: [])
+    assert_not model.multimodal?
+  end
 end

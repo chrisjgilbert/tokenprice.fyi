@@ -15,4 +15,31 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes status_badge("legacy"), "tp-status-legacy"
     assert_includes status_badge("retired"), "tp-status-retired"
   end
+
+  test "modality_signature renders a multimodal signature in reading order" do
+    model = AiModel.new(input_modalities: %w[text image], output_modalities: %w[text])
+    assert_equal "Text, image in → text out", modality_signature(model)
+  end
+
+  test "modality_signature is suppressed for a plain text model" do
+    model = AiModel.new(input_modalities: %w[text], output_modalities: %w[text])
+    assert_nil modality_signature(model)
+  end
+
+  test "modality_signature is suppressed when only one side is recorded" do
+    model = AiModel.new(input_modalities: %w[text image], output_modalities: [])
+    assert_nil modality_signature(model)
+  end
+
+  test "modality_signature agrees with the badge: a cased text-only signature stays suppressed" do
+    model = AiModel.new(input_modalities: %w[TEXT], output_modalities: %w[Text])
+    assert_nil modality_badge(model)
+    assert_nil modality_signature(model)
+  end
+
+  test "modality_badge names the class for a multimodal model and is nil for text" do
+    multimodal = AiModel.new(input_modalities: %w[text image], output_modalities: %w[text])
+    assert_includes modality_badge(multimodal), "Multimodal"
+    assert_nil modality_badge(AiModel.new(input_modalities: %w[text], output_modalities: %w[text]))
+  end
 end

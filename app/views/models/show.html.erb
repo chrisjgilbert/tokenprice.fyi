@@ -72,6 +72,10 @@
         <% if @model.provider.flag_emoji %><span aria-hidden="true"><%= @model.provider.flag_emoji %></span><% end %>
         <span>·</span>
         <%= tier_badge(@model.tier) %>
+        <% if (signature = modality_signature(@model)) %>
+          <span>·</span>
+          <span class="tp-modality-signature font-mono text-sm text-slate-500"><%= signature %></span>
+        <% end %>
       </p>
     </div>
   </div>
