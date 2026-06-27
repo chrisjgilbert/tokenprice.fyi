@@ -32,6 +32,17 @@
           <span class="ev-tag num"><%= tokens_short(m.context_window) %> ctx</span>
         <% end %>
       </div>
+    <% elsif event.kind == "reprice" && (mv = event.move) %>
+      <div class="ev-tags">
+        <%= link_to provider_path(event.provider), class: "ev-provider" do %>
+          <%= provider_square(event.provider, size: :sm) %>
+          <span><%= event.provider.name %></span>
+        <% end %>
+        <%= price_change_badge(mv.input) %>
+        <%= price_change_badge(mv.output) %>
+        <span class="ev-tag num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
+        <span class="ev-tag num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
+      </div>
     <% elsif event.source_url.present? %>
       <%= link_to event.source_url, class: "ev-source", target: "_blank", rel: "noopener" do %>
         Source <%= icon(:external, size: 13) %>

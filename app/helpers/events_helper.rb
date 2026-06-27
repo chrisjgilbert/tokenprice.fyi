@@ -1,5 +1,5 @@
 module EventsHelper
-  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url)
+  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move)
 
   def build_all_events(models: AiModel.listed.includes(:provider, :price_points), market_events: MarketEvent.listed)
     events = []
@@ -12,7 +12,8 @@ module EventsHelper
         note: me.note,
         model: nil,
         provider: nil,
-        source_url: me.source_url
+        source_url: me.source_url,
+        move: nil
       )
     end
 
@@ -26,7 +27,28 @@ module EventsHelper
         note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M.",
         model: m,
         provider: m.provider,
-        source_url: nil
+        source_url: nil,
+        move: nil
+      )
+    end
+
+    # A price change is two consecutive price points, so this surfaces moves
+    # from any source — the daily OpenRouter sync and hand-entered admin prices
+    # alike. One row per model (its latest move); full history lives on the
+    # model page.
+    models.each do |m|
+      move = m.latest_price_move
+      next unless move
+
+      events << Event.new(
+        date: move.date,
+        title: "#{m.name} repriced",
+        kind: "reprice",
+        note: nil,
+        model: m,
+        provider: m.provider,
+        source_url: nil,
+        move: move
       )
     end
 
@@ -70,11 +92,25 @@ module EventsHelper
   # human label and node icon live here.
   EVENT_KINDS = {
     "market" => { label: "Market", icon: :bolt },
-    "launch" => { label: "Launch", icon: :spark }
+    "launch" => { label: "Launch", icon: :spark },
+    "reprice" => { label: "Price change", icon: :swap }
   }.freeze
 
   def event_kind_label(kind)
     EVENT_KINDS.dig(kind, :label) || kind.to_s.titleize
+  end
+
+  # The homepage hero's kind chip uses product-facing wording ("New model")
+  # rather than the timeline's terser label ("Launch"); the chip's colour class
+  # is the kind itself (.hero-card-kind-chip.launch/.market/.reprice).
+  HERO_KIND_CHIPS = {
+    "launch"  => "New model",
+    "market"  => "Market event",
+    "reprice" => "Price change"
+  }.freeze
+
+  def hero_kind_chip_label(kind)
+    HERO_KIND_CHIPS.fetch(kind, kind.to_s.titleize)
   end
 
   def event_kind_icon(kind)
