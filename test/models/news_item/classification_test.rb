@@ -21,12 +21,11 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
   end
 
   # A plain stand-in for a persisted NewsItem responding to the attributes the
-  # classification reads. body is optional and absent by default.
-  def stub_news_item(title:, source:, body: nil)
+  # classification reads.
+  def stub_news_item(title:, source:)
     item = Object.new
     item.define_singleton_method(:title)  { title }
     item.define_singleton_method(:source) { source }
-    item.define_singleton_method(:body)   { body }
     item
   end
 
@@ -121,39 +120,6 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
     end
 
     assert_equal "No tool_use block in response", error.message
-  end
-
-  test "includes body context in the message when the item has a body" do
-    received_content = nil
-
-    messages = Object.new
-    messages.define_singleton_method(:create) do |**kwargs|
-      received_content = kwargs[:messages].first[:content]
-      # Return a valid tool response so the method completes
-      input = { relevant: false, kind: "other", rationale: "Not relevant." }
-      tool_block = Object.new
-      tool_block.define_singleton_method(:type)  { :tool_use }
-      tool_block.define_singleton_method(:input) { input }
-      response = Object.new
-      response.define_singleton_method(:content) { [ tool_block ] }
-      response
-    end
-
-    client = Object.new
-    client.define_singleton_method(:messages) { messages }
-
-    item = stub_news_item(
-      title:  "Some headline",
-      source: "some.com",
-      body:   "This is a detailed article body that provides context."
-    )
-    classification = make_classification(client, item)
-
-    classification.run
-
-    assert_not_nil received_content
-    assert_includes received_content, "Context:"
-    assert_includes received_content, "This is a detailed article body"
   end
 
   test "truncates rationale to 200 characters" do

@@ -135,12 +135,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sort links carry the active filters and sort state rides in the form" do
-    get root_url(q: "claude", providers: [ "anthropic" ], sort: "output", dir: "desc")
+    get root_url(q: "claude", providers: [ "anthropic" ], sort: "input", dir: "asc")
     assert_response :success
     assert_select "thead a[href*='q=claude']"
     assert_select "thead a[href*='providers%5B%5D=anthropic']"
-    assert_select "input[type=hidden][name=sort][value=output][form=filters]", count: 1
-    assert_select "input[type=hidden][name=dir][value=desc][form=filters]", count: 1
+    assert_select "input[type=hidden][name=sort][value=input][form=filters]", count: 1
+    assert_select "input[type=hidden][name=dir][value=asc][form=filters]", count: 1
   end
 
   test "default sort state is omitted from the filter form" do
