@@ -713,7 +713,7 @@ footer.tp-foot {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   V1 — Estimator · Education · Demand probes
+   V1 — Estimator · Education
    Ported from the Claude Design V1 artifact (design_handoff_v1_rescope).
    The prototype CSS uses short token names; this aliases them onto the
    existing Tailwind @theme tokens so the component rules port near-verbatim.
@@ -965,69 +965,6 @@ footer.tp-foot {
   .co-assume ul { columns: 1; }
   .co-hero-per { align-items: flex-start; text-align: left; }
 }
-
-/* ──────────────────────────────────────────── DEMAND PROBES */
-.probe-form { margin-top: 2px; }
-.probe.is-done .probe-form { display: none; }
-.probe-field { display: flex; gap: 9px; flex-wrap: wrap; }
-.probe-email { flex: 1; min-width: 200px; height: 44px; border-radius: var(--r-md); padding: 0 14px;
-  font-family: var(--sans); font-size: 14.5px; border: 1px solid var(--border-strong);
-  background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs); transition: border-color .16s var(--ease), box-shadow .16s var(--ease); }
-.probe-email::placeholder { color: var(--text-mute); }
-.probe-email:focus-visible { outline: none; border-color: var(--indigo-400); box-shadow: 0 0 0 4px var(--indigo-100); }
-.probe-err { margin: 9px 0 0; font-size: 12.5px; color: var(--rose-600); font-weight: 500; }
-.probe-ok { display: none; align-items: center; gap: 12px; }
-.probe.is-done .probe-ok { display: flex; }
-.probe-ok-ic { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; }
-.probe-ok-ic svg { width: 18px; height: 18px; }
-.probe-ok strong { font-weight: 600; }
-.probe-ok [data-probe-email] { font-family: var(--mono); font-weight: 600; }
-
-.probe-measure { position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 26px 26px 22px; color: #fff;
-  background: radial-gradient(120% 130% at 8% 0%, rgba(99,102,241,.22), transparent 52%), linear-gradient(165deg, #14163a 0%, #1c1f4a 55%, #2a2f6e 100%);
-  border: 1px solid rgba(99,102,241,.3); box-shadow: var(--shadow-lg); }
-.probe-measure::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background-image: linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
-  background-size: 30px 30px; -webkit-mask-image: radial-gradient(circle at 92% 8%, #000, transparent 66%); mask-image: radial-gradient(circle at 92% 8%, #000, transparent 66%); }
-.probe-measure > * { position: relative; }
-.probe-measure .probe-glow { position: absolute; top: -60px; right: -40px; width: 220px; height: 220px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(129,140,248,.35), transparent 68%); filter: blur(8px); z-index: 0; }
-.probe-head { display: flex; align-items: flex-start; gap: 15px; }
-.probe-lock { width: 46px; height: 46px; flex: none; border-radius: 13px; display: grid; place-items: center;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #c7d2fe; }
-.probe-lock svg { width: 22px; height: 22px; }
-.probe-tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--indigo-200); }
-.probe-tag svg { width: 13px; height: 13px; }
-.probe-head-t h3 { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; margin-top: 7px; }
-.probe-head-t h3 em { font-style: normal; color: #a5b4fc; }
-.probe-lede { margin: 16px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--slate-300); max-width: 46em; }
-.probe-lede strong { color: #fff; font-weight: 600; }
-.probe-feats { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 18px; }
-.probe-feat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: var(--r-pill);
-  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font-family: var(--mono); font-size: 11.5px; font-weight: 500; color: var(--slate-300); }
-.probe-feat svg { width: 14px; height: 14px; color: #a5b4fc; }
-.probe-measure .probe-email { background: rgba(255,255,255,.94); border-color: transparent; }
-.probe-measure .tp-btn-primary { background: #fff; color: var(--indigo-700); box-shadow: none; }
-.probe-measure .tp-btn-primary:hover { background: var(--indigo-50); transform: translateY(-1px); }
-.probe-measure .probe-err { color: #fda4af; }
-.probe-fine { margin: 13px 0 0; font-size: 12px; color: var(--slate-400); }
-.probe-measure .probe-ok-ic { background: rgba(16,185,129,.2); color: #6ee7b7; }
-.probe-measure .probe-ok { color: var(--slate-200); }
-.probe-measure .probe-ok strong { color: #fff; }
-.probe-measure.is-done .probe-fine { display: none; }
-.probe-measure.is-done .probe-feats { margin-bottom: 0; }
-
-.probe-alert { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 20px 22px; }
-.probe-alert-head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 15px; }
-.probe-bell { width: 40px; height: 40px; flex: none; border-radius: 11px; display: grid; place-items: center; background: var(--indigo-50); border: 1px solid var(--indigo-100); color: var(--indigo-600); }
-.probe-bell svg { width: 19px; height: 19px; }
-.probe-alert-head h4 { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
-.probe-alert-head p { margin: 5px 0 0; font-size: 13px; color: var(--text-soft); line-height: 1.5; }
-.probe-alert .probe-ok-ic { background: var(--emerald-50); color: var(--emerald-600); border: 1px solid var(--emerald-100); }
-.probe-alert .probe-ok { color: var(--text-soft); font-size: 13.5px; }
-.probe-alert .probe-ok strong { color: var(--text); }
-.probe-alert.is-compact { padding: 16px 18px; }
-@media (max-width: 540px) { .probe-field { flex-direction: column; } .probe-field .tp-btn { width: 100%; } }
 
 /* ──────────────────────────────────────────── LEARN INDEX (.led) */
 .led-head { padding: 36px 0 10px; max-width: 40em; }
