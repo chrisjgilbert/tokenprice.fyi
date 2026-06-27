@@ -158,6 +158,45 @@ class AiModelTest < ActiveSupport::TestCase
     assert_nil model.long_description
   end
 
+  test "latest_price_move brackets the two most recent snapshots and reports both dimensions" do
+    move = ai_models(:deepseek_v4).latest_price_move
+
+    assert_equal price_points(:deepseek_launch), move.from
+    assert_equal price_points(:deepseek_cut), move.to
+    assert_in_delta(-75.0, move.input, 0.1)
+    assert_in_delta(-75.0, move.output, 0.1)
+    assert_equal Date.new(2026, 5, 31), move.date
+  end
+
+  test "latest_price_move is nil for a single-snapshot model" do
+    assert_nil ai_models(:opus).latest_price_move
+  end
+
+  test "latest_price_move is nil when the latest snapshots share the same price" do
+    model = ai_models(:opus)
+    model.price_points.create!(effective_on: Date.new(2026, 6, 1),
+                               input_per_mtok: 5, output_per_mtok: 25)
+
+    assert_nil model.reload.latest_price_move
+  end
+
+  test "latest_price_move is nil when only the cached price moved" do
+    model = ai_models(:opus)
+    model.price_points.create!(effective_on: Date.new(2026, 6, 1),
+                               input_per_mtok: 5, output_per_mtok: 25,
+                               cached_input_per_mtok: 0.25)
+
+    assert_nil model.reload.latest_price_move
+  end
+
+  test "latest_price_move ignores a backdated snapshot inserted before the latest pair" do
+    model = ai_models(:deepseek_v4)
+    model.price_points.create!(effective_on: Date.new(2026, 1, 1),
+                               input_per_mtok: 99, output_per_mtok: 99)
+
+    assert_equal price_points(:deepseek_cut), model.reload.latest_price_move.to
+  end
+
   test "price helpers use the eager-loaded association without extra queries" do
     model = AiModel.includes(:price_points).find(ai_models(:deepseek_v4).id)
     assert_queries_count(0) do

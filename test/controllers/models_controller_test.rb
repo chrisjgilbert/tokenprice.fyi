@@ -52,6 +52,20 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
+  test "hero surfaces a price change among the latest events" do
+    get root_url
+    assert_response :success
+    # The DeepSeek 75% cut (2026-05-31) is one of the two most recent events.
+    assert_select ".hero-card .hero-card-kind-chip.reprice", /Price change/
+    assert_select ".hero-card", /DeepSeek V4 Pro repriced/
+  end
+
+  test "the hero (and its price-change feed) is skipped on Turbo Frame refreshes" do
+    get root_url, headers: { "Turbo-Frame" => "models" }
+    assert_response :success
+    assert_select ".hero-card", count: 0
+  end
+
   test "footer carries the deck sourcing disclaimer" do
     get root_url
     assert_response :success
