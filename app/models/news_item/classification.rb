@@ -1,5 +1,3 @@
-require "anthropic"
-
 # Classifies a persisted NewsItem as relevant to LLM token pricing using Claude Haiku.
 # Reached through NewsItem#classify; returns { relevant:, kind:, rationale: } or
 # raises Error on API failure.
@@ -38,37 +36,27 @@ class NewsItem::Classification
   end
 
   def run
-    body = news_item.try(:body)
     content = "Headline: #{news_item.title}\nSource: #{news_item.source}"
-    content += "\n\nContext: #{body.first(500)}" if body.present?
 
-    response = client.messages.create(
-      model:       MODEL,
-      max_tokens:  256,
-      system_:     SYSTEM_PROMPT,
-      messages:    [ { role: "user", content: content } ],
-      tools:       [ TOOL_DEFINITION ],
-      tool_choice: { type: "tool", name: "classify_headline" }
+    input = AnthropicClient.tool_call(
+      model:      MODEL,
+      system:     SYSTEM_PROMPT,
+      messages:   [ { role: "user", content: content } ],
+      tool:       TOOL_DEFINITION,
+      max_tokens: 256,
+      client:     @client
     )
 
-    tool_use = response.content.find { |block| block.type == :tool_use }
-    raise Error, "No tool_use block in response" unless tool_use
-
-    input = tool_use.input
     {
       relevant:  input[:relevant],
       kind:      input[:kind],
       rationale: input[:rationale].to_s.truncate(200)
     }
-  rescue Anthropic::Errors::Error => e
-    raise Error, "Anthropic API error: #{e.message}"
+  rescue AnthropicClient::Error => e
+    raise Error, e.message
   end
 
   private
 
   attr_reader :news_item
-
-  def client
-    @client ||= AnthropicClient.build
-  end
 end

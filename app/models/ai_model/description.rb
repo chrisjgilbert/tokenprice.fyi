@@ -1,5 +1,3 @@
-require "anthropic"
-
 # Generates editorial copy — a one-line description plus strengths / best-for /
 # limitations — for a model we only have a raw third-party blurb for. The
 # OpenRouter sync uses it to give freshly-imported models the same structured
@@ -12,8 +10,8 @@ require "anthropic"
 # `describer:` collaborator and calls `#generate` on it.
 #
 # Mirrors NewsItem::Classification: a single cheap Haiku tool-call via
-# AnthropicClient, returning a plain hash. Raises GenerateError on API failure so
-# the caller can fall back rather than persist a half-written record.
+# AnthropicClient.tool_call, returning a plain hash. Raises GenerateError on API
+# failure so the caller can fall back rather than persist a half-written record.
 #
 #   AiModel::Description.generate(
 #     name: "Gemini 3.5 Flash", provider: "Google",
@@ -74,36 +72,28 @@ class AiModel::Description
       content << "\n\nUpstream description (may be truncated; use only as a hint):\n#{source_text}"
     end
 
-    response = client.messages.create(
-      model:       MODEL,
-      max_tokens:  512,
-      system_:     SYSTEM_PROMPT,
-      messages:    [ { role: "user", content: content } ],
-      tools:       [ TOOL_DEFINITION ],
-      tool_choice: { type: "tool", name: "write_model_copy" }
+    input = AnthropicClient.tool_call(
+      model:      MODEL,
+      system:     SYSTEM_PROMPT,
+      messages:   [ { role: "user", content: content } ],
+      tool:       TOOL_DEFINITION,
+      max_tokens: 512,
+      client:     @client
     )
 
-    tool_use = response.content.find { |block| block.type == :tool_use }
-    raise GenerateError, "No tool_use block in response" unless tool_use
-
-    input = tool_use.input
     {
       description: clamp(input[:description], DESCRIPTION_LIMIT),
       strengths:   clamp(input[:strengths], FACET_LIMIT),
       best_for:    clamp(input[:best_for], FACET_LIMIT),
       limitations: clamp(input[:limitations], FACET_LIMIT)
     }
-  rescue Anthropic::Errors::Error => e
-    raise GenerateError, "Anthropic API error: #{e.message}"
+  rescue AnthropicClient::Error => e
+    raise GenerateError, e.message
   end
 
   private
 
   def clamp(value, limit)
     value.to_s.strip.truncate(limit).presence
-  end
-
-  def client
-    @client ||= AnthropicClient.build
   end
 end
