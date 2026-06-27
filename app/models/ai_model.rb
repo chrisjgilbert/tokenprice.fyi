@@ -46,7 +46,7 @@ class AiModel < ApplicationRecord
   # plain-text row stays hidden — we have no data on it.
   scope :listed, -> {
     where.not(status: "retired")
-      .where("ai_models.id IN (SELECT ai_model_id FROM price_points) OR ai_models.modality_class <> 'text'")
+      .where("ai_models.id IN (SELECT ai_model_id FROM price_points) OR COALESCE(ai_models.modality_class, 'text') <> 'text'")
   }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
@@ -95,14 +95,13 @@ class AiModel < ApplicationRecord
     super
   end
 
-  # The single filterable class, as a Symbol. The string column is the queryable
-  # store (kept in sync by the before_save below, so `listed` can filter on it in
-  # SQL); reading reconciles it with the signature: a blank column — an unsaved
-  # record, or one written before this column existed — derives from the live
-  # signature so callers always get the right symbol. An empty/unknown signature
-  # degrades to :text, so existing text rows are unaffected.
+  # The single filterable class, as a Symbol, always derived from the live
+  # signature — so a reader is never stale, even after an in-memory signature
+  # change before save. The `modality_class` string column is a denormalised copy
+  # used ONLY by the `listed` SQL scope; `before_save :assign_modality_class`
+  # keeps it in lockstep. An empty/unknown signature degrades to :text.
   def modality_class
-    @modality_class ||= derived_modality_class
+    @modality_class ||= ModalityClass.for(input: input_modalities, output: output_modalities)
   end
 
   # Accepts a non-text input modality (image, audio, video, file, …) — i.e. the
@@ -250,20 +249,11 @@ class AiModel < ApplicationRecord
     i == needle.length
   end
 
-  # Prefer the stored column (queryable, kept in sync on save); fall back to the
-  # live signature when it's blank so an unsaved record still reads correctly.
-  def derived_modality_class
-    stored = read_attribute(:modality_class)
-    return stored.to_sym if stored.present?
-
-    ModalityClass.for(input: input_modalities, output: output_modalities)
-  end
-
-  # Keep the queryable column in lockstep with the signature on every save, and
-  # drop the memo so a later read reflects the freshly stored value.
+  # Keep the queryable `modality_class` column in lockstep with the signature on
+  # every save (the `listed` scope filters on it in SQL). The reader derives
+  # independently, so the column is a write-only-from-Ruby denormalisation.
   def assign_modality_class
-    self[:modality_class] = ModalityClass.for(input: input_modalities, output: output_modalities).to_s
-    @modality_class = nil
+    self[:modality_class] = modality_class.to_s
   end
 
   def set_slug

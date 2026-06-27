@@ -29,6 +29,14 @@ class EventsHelperTest < ActionView::TestCase
     assert non_reprice.all? { |e| e.move.nil? }
   end
 
+  test "a price-less directory model's launch note omits the dash price clause" do
+    launch = build_all_events.find { |e| e.kind == "launch" && e.model == ai_models(:image_gen) }
+
+    assert launch, "expected the listed price-less image-gen row to emit a launch event"
+    assert_includes launch.note, "Price not yet tracked"
+    assert_not_includes launch.note, "—"
+  end
+
   # The sync writes many repricings in one batch, all dated today; the hero must
   # still show a mix, not two price changes in a row.
   test "hero_events picks the newest event then the newest of a different kind" do

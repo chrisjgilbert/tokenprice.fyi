@@ -28,7 +28,9 @@ module EventsHelper
           date: m.released_on,
           title: "#{m.name} released",
           kind: "launch",
-          note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M.",
+          note: m.current_price ?
+            "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M." :
+            "#{m.provider.name} ships #{m.name}. Price not yet tracked.",
           model: m,
           provider: m.provider,
           source_url: nil,

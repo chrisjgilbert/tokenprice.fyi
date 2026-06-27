@@ -33,9 +33,12 @@ module ApplicationHelper
     any_to_any:       nil
   }.freeze
 
-  # True for a listed model with no per-token price — a Phase 2 directory row.
+  # True for a Phase 2 directory row: a non-text model with no per-token price,
+  # whose price reads "not yet tracked". A price-less *text* model (no data, not a
+  # directory entry — and not even `listed`) is excluded, so on the unscoped
+  # provider page it still renders a plain "—" rather than implying tracking.
   def directory_row?(model)
-    model.current_price.nil?
+    model.current_price.nil? && model.modality_class != :text
   end
 
   # A price cell: the USD figure when priced, otherwise an honest "not yet tracked"
@@ -60,8 +63,12 @@ module ApplicationHelper
     unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
   end
 
-  # I/O shorthand: "$3 / $15" — the primary at-a-glance price
+  # I/O shorthand: "$3 / $15" — the primary at-a-glance price. A directory row has
+  # no per-token rate, so it shows the honest note instead of a "— / —" pill that
+  # would read as free (this is the chip on the hero card and the launch timeline).
   def io_price(model, tag: false, big: false, light: false)
+    return content_tag(:span, "Not yet tracked", class: "tp-price-untracked") if directory_row?(model)
+
     classes = "tp-io num"
     classes += " tp-io-big" if big
     classes += " tp-io-light" if light

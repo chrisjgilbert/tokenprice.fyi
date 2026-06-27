@@ -253,17 +253,19 @@ module OpenRouter
       nil
     end
 
-    # A model is worth admitting as a directory entry if it carries any positive
-    # price in a dimension it can stand on its own — output tokens, an image, a
-    # second of audio, or a per-request charge. `parse_pricing` already covers
-    # the text-token case (and writes a PricePoint); this is the wider net used
-    # only to decide whether a non-text-priced row is admitted price-less.
+    # A model is worth admitting as a price-less directory entry if it carries a
+    # positive price in a NON-text dimension it can stand on — an image, a second
+    # of audio, or a per-request charge. The text-token case is `parse_pricing`'s
+    # job (it needs both prompt and completion and writes a PricePoint); a row
+    # with only a partial token price still has no storable per-token rate, so it
+    # isn't rescued here — it's skipped, as before, rather than mislabelled
+    # "not yet tracked".
     #
     # Deliberately excludes the cache and reasoning add-ons
     # (input_cache_read/write, internal_reasoning) and web_search: a row priced
     # ONLY on those isn't a model you'd price or list on its own, so it stays
     # skipped. Non-numeric / missing values parse to nil and are ignored.
-    PRICEABLE_KEYS = %w[prompt completion image audio request].freeze
+    PRICEABLE_KEYS = %w[image audio request].freeze
 
     def any_positive_price?(pricing)
       return false unless pricing.is_a?(Hash)

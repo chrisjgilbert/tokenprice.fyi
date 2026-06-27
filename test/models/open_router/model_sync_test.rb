@@ -534,6 +534,19 @@ module OpenRouter
       assert_nil AiModel.find_by(openrouter_id: "freeco/free-img")
     end
 
+    test "a text-output row with only a partial token price (no image/audio) is skipped, not mislabelled" do
+      # prompt blank → parse_pricing returns nil; the leftover completion price
+      # isn't a non-text dimension, so the row isn't rescued as a directory entry.
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "halfco/half-1", name: "HalfCo: Half 1",
+                        prompt: "", completion: "0.000005",
+                        output_modalities: [ "text" ]) ])
+      end
+
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "halfco/half-1")
+    end
+
     test "a text-to-speech row is admitted price-less, classed text_to_audio" do
       result = sync([ or_model(id: "openai/tts-1", name: "OpenAI: TTS 1",
                                prompt: "0", completion: "0", audio: "0.000015",
