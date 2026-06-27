@@ -169,9 +169,18 @@ module OpenRouter
     private
 
     # Returns the outcome symbol: :created, :enriched, :repriced or :skipped.
+    #
+    # Three pricing cases (the gate is on priceability, never on output
+    # modality — see MULTIMODAL_PRICING_PLAN.md Phase 2, directory-first):
+    #   - text-priced: `parse_pricing` returns a price; behaves as it always has,
+    #     writing a per-token PricePoint.
+    #   - priced only in a non-text dimension (image/audio/…): admitted as a
+    #     catalogue entry — its signature and class are recorded — but with no
+    #     PricePoint, since we can't price those units until Phase 3.
+    #   - un-priceable (free / malformed, no positive price anywhere): skipped.
     def import(row)
       pricing = parse_pricing(row["pricing"])
-      return :skipped unless pricing && text_output?(row)
+      return :skipped unless pricing || any_positive_price?(row["pricing"])
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
 
@@ -184,7 +193,7 @@ module OpenRouter
       generate_editorial(model)
       model.save!
 
-      repriced_from = record_price(model, pricing)
+      repriced_from = pricing ? record_price(model, pricing) : false
 
       if created
         @result.created_records << CreatedRecord.new(
@@ -192,8 +201,8 @@ module OpenRouter
           provider_name:   provider.name,
           model_slug:      model.slug,
           new_provider:    new_provider,
-          input_per_mtok:  pricing[:input],
-          output_per_mtok: pricing[:output]
+          input_per_mtok:  pricing&.fetch(:input),
+          output_per_mtok: pricing&.fetch(:output)
         )
         :created
       elsif repriced_from   # Hash of old pricing — truthy only when repriced
@@ -244,11 +253,22 @@ module OpenRouter
       nil
     end
 
-    # We track text-generation pricing, so skip embedding / image-only models.
-    # Be lenient: if the architecture is missing, assume text.
-    def text_output?(row)
-      modalities = row.dig("architecture", "output_modalities")
-      modalities.blank? || Array(modalities).include?("text")
+    # A model is worth admitting as a directory entry if it carries any positive
+    # price in a dimension it can stand on its own — output tokens, an image, a
+    # second of audio, or a per-request charge. `parse_pricing` already covers
+    # the text-token case (and writes a PricePoint); this is the wider net used
+    # only to decide whether a non-text-priced row is admitted price-less.
+    #
+    # Deliberately excludes the cache and reasoning add-ons
+    # (input_cache_read/write, internal_reasoning) and web_search: a row priced
+    # ONLY on those isn't a model you'd price or list on its own, so it stays
+    # skipped. Non-numeric / missing values parse to nil and are ignored.
+    PRICEABLE_KEYS = %w[prompt completion image audio request].freeze
+
+    def any_positive_price?(pricing)
+      return false unless pricing.is_a?(Hash)
+
+      PRICEABLE_KEYS.any? { |key| to_mtok(pricing[key]).to_f.positive? }
     end
 
     # Reads one side of a row's modality signature from `architecture`, through
