@@ -45,6 +45,11 @@ body {
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* The price table scrolls inside its own container; clip here so its width
+     never leaks a horizontal scrollbar onto the page (and so a fixed overlay
+     can't stretch to the over-reported document width). `clip` rather than
+     `hidden` keeps the sticky nav's scroll context intact. */
+  overflow-x: clip;
 }
 
 /* Techy faint grid texture */
@@ -561,6 +566,18 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-model-sub .tp-prov-name { color: var(--color-slate-600); font-weight: 500; }
 
 /* ============================================================ FORM CONTROLS */
+/* iOS Safari zooms the page when a focused text field's font-size is below
+   16px. The design uses smaller controls, so lift every text-entry control to
+   16px on touch-width viewports — this kills the focus-zoom without touching
+   the desktop sizing. (Checkboxes/radios are sr-only here and never zoom.) */
+@media (max-width: 760px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 .tp-search {
   position: relative;
   flex: 1;
