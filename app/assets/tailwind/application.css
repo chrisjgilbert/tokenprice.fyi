@@ -38,6 +38,11 @@
 }
 
 /* ============================================================ BASE */
+/* Prevent horizontal scroll at the viewport level. Both html and body need
+   this: on iOS Safari, clip on body alone is not reliably propagated to the
+   viewport. `clip` (not `hidden`) avoids creating a scroll container, which
+   keeps the sticky nav's scroll context intact. */
+html { overflow-x: clip; }
 body {
   font-family: var(--font-sans);
   font-size: 15px;
@@ -45,10 +50,6 @@ body {
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* The price table scrolls inside its own container; clip here so its width
-     never leaks a horizontal scrollbar onto the page (and so a fixed overlay
-     can't stretch to the over-reported document width). `clip` rather than
-     `hidden` keeps the sticky nav's scroll context intact. */
   overflow-x: clip;
 }
 
