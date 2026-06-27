@@ -15,6 +15,8 @@ module Api
             status: m.status,
             context_window: m.context_window,
             released_on: m.released_on,
+            modalities: { input: m.input_modalities, output: m.output_modalities },
+            modality_class: m.modality_class.to_s,
             price_per_mtok: { input: m.input, output: m.output, cached_input: m.cached }
           }
         end

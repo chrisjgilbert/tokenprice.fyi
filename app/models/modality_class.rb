@@ -20,6 +20,25 @@ class ModalityClass
     new(input, output).classify
   end
 
+  # Human-readable labels for the UI, naming the fact rather than a marketing
+  # term (per the plan's copy rules): "Speech to text", not "STT". The keys are
+  # the full class set — the signature-derived rules plus :other.
+  LABELS = {
+    text:             "Text",
+    multimodal:       "Multimodal",
+    text_to_audio:    "Text to audio",
+    audio_to_text:    "Speech to text",
+    speech_to_speech: "Realtime voice",
+    image_generation: "Image generation",
+    image_editing:    "Image editing",
+    video_generation: "Video generation",
+    embedding:        "Embedding",
+    any_to_any:       "Any to any",
+    other:            "Other"
+  }.freeze
+
+  def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
+
   def initialize(input, output)
     @input  = normalize(input)
     @output = normalize(output)

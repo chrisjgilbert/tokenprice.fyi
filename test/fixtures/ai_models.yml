@@ -64,6 +64,13 @@ sonnet:
   released_on: 2026-04-01
   status: active
   description: Mid-tier step-up model — a Guide starting option. Name kept distinct from the sync test's Sonnet rows; the slug is what FeaturePattern::Cost resolves.
+  # A multimodal-input signature (text + image in → text out) so the modality
+  # facet, badge, signature line, and API keys have a non-text row to assert on.
+  input_modalities:
+    - text
+    - image
+  output_modalities:
+    - text
 
 deepseek_v4:
   provider: deepseek

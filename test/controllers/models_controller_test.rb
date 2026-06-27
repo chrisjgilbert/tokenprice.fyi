@@ -184,6 +184,62 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td", /No models match your filters/
   end
 
+  test "index can be filtered to multimodal models" do
+    get root_url(modality: "multimodal")
+    assert_response :success
+    # The Sonnet fixture is multimodal (text, image in → text out).
+    assert_select "tbody td", text: /Guide Sonnet Fixture/
+    # Text-only models drop out of a multimodal-only view.
+    assert_select "tbody td", text: /DeepSeek V4 Pro/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+  end
+
+  test "index ignores an unknown modality filter" do
+    get root_url(modality: "not-a-class")
+    assert_response :success
+    assert_select "tbody td", text: /Guide Sonnet Fixture/
+    assert_select "tbody td", text: /DeepSeek V4 Pro/
+  end
+
+  test "index only offers modality facets present among listed models" do
+    get root_url
+    assert_response :success
+    # text and multimodal are present in fixtures; image generation is not.
+    assert_select "input[name=modality][value=multimodal]"
+    assert_select "input[name=modality][value=image_generation]", count: 0
+  end
+
+  test "index renders a modality badge on multimodal rows only" do
+    get root_url
+    assert_response :success
+    assert_select ".tp-modality-badge", minimum: 1
+  end
+
+  test "the modality filter rides in the etag so filtered views do not share a 304" do
+    get root_url(modality: "multimodal")
+    assert_response :success
+    multimodal_etag = @response.headers["ETag"]
+
+    get root_url(modality: "text")
+    assert_response :success
+    text_etag = @response.headers["ETag"]
+
+    assert_not_equal multimodal_etag, text_etag,
+      "different modality filters must not collide on one conditional-GET cache key"
+  end
+
+  test "show renders the modality signature for a multimodal model" do
+    get model_url(ai_models(:sonnet))
+    assert_response :success
+    assert_select ".tp-modality-signature", text: /Text, image in → text out/
+  end
+
+  test "show omits the modality signature for a plain text model" do
+    get model_url(ai_models(:opus))
+    assert_response :success
+    assert_select ".tp-modality-signature", count: 0
+  end
+
   test "show renders a model and its price history chart" do
     get model_url(ai_models(:deepseek_v4))
     assert_response :success

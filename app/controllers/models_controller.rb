@@ -31,13 +31,19 @@ class ModelsController < ApplicationController
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
 
+    # modality_class is derived, not a column, so the facet enumerates the
+    # classes actually present among listed rows (no empty options) and the
+    # filter is applied in-memory below — like @query.
+    @modality_classes = AiModel.listed.map { |m| m.modality_class.to_s }.uniq.sort
+    @modality = params[:modality].presence_in(@modality_classes)
+
     # Conditional GET. The page varies by every filter/sort param, so they MUST
     # ride in the etag — otherwise a conditional request for one filtered view
     # would 304 off a different view's cache. Renders 304 and halts on a match.
     # last_modified spans the catalog AND the market events + model rows the hero
     # renders (helpers.build_all_events), so editing a market event or a model
     # busts the cache instead of serving a stale hero. Renders 304 on a match.
-    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query ],
+    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query, @modality ],
       last_modified: helpers.timeline_last_modified)
 
     models = scope.to_a
@@ -49,6 +55,7 @@ class ModelsController < ApplicationController
         models.select! { |m| m.matches?(@query) }
       end
     end
+    models.select! { |m| m.modality_class.to_s == @modality } if @modality
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"
     @models = models

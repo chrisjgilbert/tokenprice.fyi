@@ -457,6 +457,24 @@
           </label>
         <% end %>
       </div>
+
+      <%# Modality radio pills — only the classes present among listed models. %>
+      <% if @modality_classes.size > 1 %>
+        <div class="tp-pills" role="group" aria-label="Filter by modality">
+          <label class="tp-pill <%= 'active' if @modality.nil? %>">
+            <%= radio_button_tag :modality, "", @modality.nil?,
+                  class: "sr-only", data: { action: "change->filters#submit" } %>
+            All
+          </label>
+          <% @modality_classes.each do |klass| %>
+            <label class="tp-pill <%= 'active' if @modality == klass %>">
+              <%= radio_button_tag :modality, klass, @modality == klass,
+                    class: "sr-only", data: { action: "change->filters#submit" } %>
+              <%= ModalityClass.label(klass) %>
+            </label>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <hr class="filters-divider">
@@ -504,7 +522,7 @@
 <% end %>
 
 <%# ── TABLE (Turbo Frame — refreshed on filter changes) ───────────── %>
-<% filter_params = { tier: @tier, q: @query.presence, providers: @provider_slugs.presence }.compact %>
+<% filter_params = { tier: @tier, modality: @modality, q: @query.presence, providers: @provider_slugs.presence }.compact %>
 
 <%# target="_top": links in here (model/provider rows, clear-filters) are real
     page navigations — only the sort links opt back into the frame. %>
@@ -591,6 +609,7 @@
                         <%= link_to model.provider.name, provider_path(model.provider),
                               class: "tp-prov-name hover:underline" %>
                         <%= status_badge(model.status) %>
+                        <%= modality_badge(model) %>
                       </div>
                     </div>
                   </div>

@@ -66,6 +66,32 @@ module ApplicationHelper
     end
   end
 
+  # A small pill naming a model's modality class — shown only for non-text
+  # models, so a plain text row stays uncluttered. Returns nil for :text.
+  def modality_badge(model)
+    return if model.modality_class == :text
+
+    content_tag(:span, ModalityClass.label(model.modality_class), class: "tp-modality-badge")
+  end
+
+  # The recorded signature as a calm "<inputs> in → <outputs> out" line, e.g.
+  # "Text, image in → text out". Returns nil when there's nothing worth saying —
+  # an unrecorded signature, or a plain text→text model that needn't announce it.
+  def modality_signature(model)
+    inputs  = model.input_modalities
+    outputs = model.output_modalities
+    return if inputs.empty? && outputs.empty?
+    return if inputs == %w[text] && outputs == %w[text]
+
+    "#{modalities_phrase(inputs)} in → #{modalities_phrase(outputs).downcase} out"
+  end
+
+  # "Text, image" from %w[text image]; the first letter is capitalised so the
+  # signature line reads as a sentence fragment.
+  def modalities_phrase(modalities)
+    modalities.join(", ").presence&.capitalize || "—"
+  end
+
   def status_badge(status)
     return if status == "active"
 
