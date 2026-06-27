@@ -57,13 +57,10 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
-  # The hero's "Latest changes" slice — a small, diverse pick rather than the
-  # raw N most recent. Repricings arrive in daily batches (the sync writes many
-  # at once, all dated today), so the unfiltered top would be wall-to-wall price
-  # changes and bury the rarer launches and market events. Take the newest
-  # event, then keep filling slots with the newest event of a kind not shown
-  # yet; if the kinds run out before the slots do, fall back to the next newest
-  # regardless of kind. Returned newest-first.
+  # The hero's "Latest changes" slice. Repricings arrive in daily batches (the
+  # sync writes many at once, all dated today), so the raw most-recent would be
+  # wall-to-wall price changes and bury the rarer launches and market events —
+  # hence a diverse pick (one per kind) rather than the strict top N.
   def hero_events(events, count: 2)
     newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
     picked = []
