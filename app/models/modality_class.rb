@@ -28,7 +28,7 @@ class ModalityClass
     multimodal:       "Multimodal",
     text_to_audio:    "Text to audio",
     audio_to_text:    "Speech to text",
-    speech_to_speech: "Realtime voice",
+    speech_to_speech: "Speech to speech",
     image_generation: "Image generation",
     image_editing:    "Image editing",
     video_generation: "Video generation",
@@ -39,9 +39,20 @@ class ModalityClass
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
 
+  # Clean a raw token list: lowercase, drop tokens outside the closed
+  # vocabulary, dedup — preserving order so callers that persist or display a
+  # signature keep the source's reading order (text first, typically). The
+  # classifier sorts on top of this for its own order-independent matching.
+  def self.normalize(modalities)
+    Array(modalities)
+      .map { |m| m.to_s.downcase }
+      .select { |m| VOCABULARY.include?(m) }
+      .uniq
+  end
+
   def initialize(input, output)
-    @input  = normalize(input)
-    @output = normalize(output)
+    @input  = self.class.normalize(input).sort
+    @output = self.class.normalize(output).sort
   end
 
   def classify
@@ -53,14 +64,6 @@ class ModalityClass
 
   private
 
-  def normalize(modalities)
-    Array(modalities)
-      .map { |m| m.to_s.downcase }
-      .select { |m| VOCABULARY.include?(m) }
-      .uniq
-      .sort
-  end
-
   def text_output?  = @output == %w[text]
   def audio_output? = @output == %w[audio]
   def image_output? = @output == %w[image]
@@ -68,21 +71,22 @@ class ModalityClass
   def embedding_output? = @output == %w[embedding]
 
   def input_includes?(*modalities) = modalities.all? { |m| @input.include?(m) }
-  def input_only?(*modalities) = @input == modalities.sort.uniq
   def nontext_input? = @input.any? { |m| m != "text" }
 
   # Each rule is evaluated in order against the normalised signature; the first
   # truthy match wins. image_editing precedes image_generation because an
-  # {image, text} → {image} signature satisfies both and the editing case is the
-  # more specific one. any_to_any is last among the matches: it's the catch for a
-  # signature that produces several modalities including a non-text one.
+  # image-input → {image} signature satisfies both and the editing case (it has
+  # an image to work from, with or without a text prompt) is the more specific
+  # one; image_generation is the text-only-input → {image} case. any_to_any is
+  # last among the matches: it's the catch for a signature that produces several
+  # modalities including a non-text one.
   SIGNATURE_RULES = {
     text:             -> { @input == %w[text] && text_output? },
     text_to_audio:    -> { @input == %w[text] && audio_output? },
     audio_to_text:    -> { input_includes?("audio") && (@input - %w[audio text]).empty? && text_output? },
     speech_to_speech: -> { @input == %w[audio] && audio_output? },
     multimodal:       -> { nontext_input? && text_output? },
-    image_editing:    -> { input_only?("image", "text") && image_output? },
+    image_editing:    -> { input_includes?("image") && (@input - %w[image text]).empty? && image_output? },
     image_generation: -> { (@input - %w[image text]).empty? && input_includes?("text") && image_output? },
     video_generation: -> { (@input - %w[image text]).empty? && @input.any? && video_output? },
     embedding:        -> { (@input - %w[image text]).empty? && @input.any? && embedding_output? },

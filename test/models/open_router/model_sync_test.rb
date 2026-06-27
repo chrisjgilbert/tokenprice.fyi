@@ -434,6 +434,25 @@ module OpenRouter
       assert model.multimodal?
     end
 
+    test "a re-synced owned row keeps a recorded signature when the payload omits architecture" do
+      id = "newlab/vision-2"
+      sync([ or_model(id: id, name: "NewLab: Vision 2",
+                      prompt: "0.000001", completion: "0.000005",
+                      input_modalities: [ "text", "image" ]) ])
+      model = AiModel.find_by!(openrouter_id: id)
+      assert model.multimodal?
+
+      # A later payload that drops `architecture` must not wipe the signature to [].
+      bare = { "id" => id, "name" => "NewLab: Vision 2", "created" => 1_700_000_000,
+               "description" => "Same model, bare payload.", "context_length" => 100_000,
+               "pricing" => { "prompt" => "0.000001", "completion" => "0.000005" },
+               "top_provider" => { "context_length" => 100_000, "max_completion_tokens" => 8_192 } }
+      sync([ bare ], today: Date.current + 1)
+
+      assert_equal %w[image text], model.reload.input_modalities.sort
+      assert model.multimodal?
+    end
+
     test "a curated/linked row's signature is filled only when blank, never overwritten" do
       deepseek = ai_models(:deepseek_v4)
       deepseek.update!(openrouter_id: "deepseek/deepseek-v4-pro",

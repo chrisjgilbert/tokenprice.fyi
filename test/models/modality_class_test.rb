@@ -13,6 +13,7 @@ class ModalityClassTest < ActiveSupport::TestCase
     [ %w[audio],             %w[audio],     :speech_to_speech ],
     [ %w[text],              %w[image],     :image_generation ],
     [ %w[image text],        %w[image],     :image_editing ],
+    [ %w[image],             %w[image],     :image_editing ],
     [ %w[text],              %w[video],     :video_generation ],
     [ %w[image],             %w[video],     :video_generation ],
     [ %w[text],              %w[embedding], :embedding ],

@@ -251,16 +251,12 @@ module OpenRouter
       modalities.blank? || Array(modalities).include?("text")
     end
 
-    # Reads one side of a row's modality signature from `architecture`,
-    # normalising to lowercase string tokens restricted to the closed
-    # vocabulary. A missing/blank architecture yields [], which downstream
-    # degrades to the `text` class. ModalityClass re-normalises, so the order
-    # here is incidental.
+    # Reads one side of a row's modality signature from `architecture`, through
+    # the same normalisation the classifier uses, so the stored order is
+    # deterministic. A missing/blank architecture yields [], which downstream
+    # degrades to the `text` class.
     def modality_signature(row, key)
-      Array(row.dig("architecture", key))
-        .map { |m| m.to_s.downcase }
-        .select { |m| ModalityClass::VOCABULARY.include?(m) }
-        .uniq
+      ModalityClass.normalize(row.dig("architecture", key))
     end
 
     # Append a snapshot only when the price moved. If it moved twice in one day,
@@ -359,8 +355,10 @@ module OpenRouter
         model.description    = desc if desc
         model.context_window = context if context
         model.max_output_tokens = max_out if max_out
-        model.input_modalities  = inputs
-        model.output_modalities = outputs
+        # Guarded like the fields above: a payload that omits `architecture`
+        # mustn't wipe a previously-recorded signature to [].
+        model.input_modalities  = inputs  if inputs.present?
+        model.output_modalities = outputs if outputs.present?
       else
         model.description    ||= desc
         model.context_window ||= context

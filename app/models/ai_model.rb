@@ -69,15 +69,28 @@ class AiModel < ApplicationRecord
   def current_output = current_price&.output_per_mtok
   def current_cached_input = current_price&.cached_input_per_mtok
 
-  # The modality signature. JSON columns can read back nil (or a non-array on
-  # some adapters); coerce so callers always get a string array, never nil.
-  def input_modalities  = Array(super)
-  def output_modalities = Array(super)
+  # The modality signature. JSON columns can read back nil or — on some
+  # adapters — a non-array scalar/object; coerce anything that isn't an array to
+  # [] so callers always get a string array to work with.
+  def input_modalities  = (v = super).is_a?(Array) ? v : []
+  def output_modalities = (v = super).is_a?(Array) ? v : []
+
+  # Reset the derived-class memo when the signature is reassigned.
+  def input_modalities=(value)
+    @modality_class = nil
+    super
+  end
+
+  def output_modalities=(value)
+    @modality_class = nil
+    super
+  end
 
   # The single filterable class derived from the signature. An empty/unknown
-  # signature degrades to :text, so existing text rows are unaffected.
+  # signature degrades to :text, so existing text rows are unaffected. Memoized
+  # like the other derived readers here; the writers above clear it.
   def modality_class
-    ModalityClass.for(input: input_modalities, output: output_modalities)
+    @modality_class ||= ModalityClass.for(input: input_modalities, output: output_modalities)
   end
 
   # Accepts a non-text input modality (image, audio, video, file, …) — i.e. the

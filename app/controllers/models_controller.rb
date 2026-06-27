@@ -31,11 +31,11 @@ class ModelsController < ApplicationController
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
 
-    # modality_class is derived, not a column, so the facet enumerates the
-    # classes actually present among listed rows (no empty options) and the
-    # filter is applied in-memory below — like @query.
-    @modality_classes = AiModel.listed.map { |m| m.modality_class.to_s }.uniq.sort
-    @modality = params[:modality].presence_in(@modality_classes)
+    # modality_class is derived in Ruby, not a column. Validate the param against
+    # the full known class set (no query) so it can ride the etag; the facet of
+    # classes actually present is derived from the loaded rows after the 304
+    # check, so a conditional hit pays for no extra load.
+    @modality = params[:modality].presence_in(ModalityClass::LABELS.keys.map(&:to_s))
 
     # Conditional GET. The page varies by every filter/sort param, so they MUST
     # ride in the etag — otherwise a conditional request for one filtered view
@@ -55,6 +55,10 @@ class ModelsController < ApplicationController
         models.select! { |m| m.matches?(@query) }
       end
     end
+    # Facet options: the classes present among the rows the other filters left,
+    # so no pill leads to an empty table. Derived before the modality filter is
+    # applied so switching between classes stays possible.
+    @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
     models.select! { |m| m.modality_class.to_s == @modality } if @modality
     models.sort_by!(&SORTS.fetch(@sort))
     models.reverse! if @dir == "desc"
@@ -73,11 +77,14 @@ class ModelsController < ApplicationController
     @model = AiModel.includes(:provider, :price_points).find_by!(slug: params[:id])
 
     # Conditional GET keyed on this model's latest price write (updated_at, not
-    # effective_on) so a same-day in-place price correction still busts the cache.
-    # The timestamp rides the ETag too, so an If-None-Match alone invalidates.
+    # effective_on) so a same-day in-place price correction still busts the cache,
+    # AND on the model row's own updated_at so an edit to non-price fields the page
+    # renders (the modality signature, description, …) busts it too. Both ride the
+    # ETag, so an If-None-Match alone invalidates.
     price_updated_at = @model.current_price&.updated_at
-    return if catalog_fresh?(etag: [ :model_show, @model.slug, price_updated_at ],
-      last_modified: price_updated_at)
+    freshness = [ price_updated_at, @model.updated_at ].compact.max
+    return if catalog_fresh?(etag: [ :model_show, @model.slug, price_updated_at, @model.updated_at ],
+      last_modified: freshness)
 
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is in the price catalog (listed + priced).
