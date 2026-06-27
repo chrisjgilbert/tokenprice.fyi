@@ -39,8 +39,8 @@
 
 /* ============================================================ BASE */
 /* Prevent horizontal scroll at the viewport level. Both html and body need
-   this: on iOS Safari, clip on body alone is not reliably propagated to the
-   viewport. `clip` (not `hidden`) avoids creating a scroll container, which
+   this: clip on body alone is not reliably propagated to the viewport in all
+   browsers. `clip` (not `hidden`) avoids creating a scroll container, which
    keeps the sticky nav's scroll context intact. */
 html { overflow-x: clip; }
 body {
