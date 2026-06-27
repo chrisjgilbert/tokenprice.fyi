@@ -9,11 +9,13 @@ module OpenRouter
     # exactly as the real API returns them.
     def or_model(id:, name:, prompt:, completion:, cache_read: "0",
                  context: 200_000, max_out: 8_192, created: 1_700_000_000,
-                 output_modalities: [ "text" ], description: "An OpenRouter model.")
+                 input_modalities: [ "text" ], output_modalities: [ "text" ],
+                 description: "An OpenRouter model.")
       {
         "id" => id, "name" => name, "created" => created,
         "description" => description, "context_length" => context,
-        "architecture" => { "output_modalities" => output_modalities },
+        "architecture" => { "input_modalities" => input_modalities,
+                            "output_modalities" => output_modalities },
         "pricing" => { "prompt" => prompt, "completion" => completion,
                        "input_cache_read" => cache_read },
         "top_provider" => { "context_length" => context, "max_completion_tokens" => max_out }
@@ -389,6 +391,92 @@ module OpenRouter
       result = sync(rows, today: Date.current + 1)
       assert_equal 0, result.repriced_records.size
       assert_equal 0, result.created_records.size
+    end
+
+    # --- modality signature -------------------------------------------------
+
+    test "an owned row stores its normalised modality signature" do
+      sync([ or_model(id: "newlab/vision-1", name: "NewLab: Vision 1",
+                      prompt: "0.000001", completion: "0.000005",
+                      input_modalities: [ "Text", "IMAGE" ], output_modalities: [ "text" ]) ])
+
+      model = AiModel.find_by!(openrouter_id: "newlab/vision-1")
+      assert_equal %w[image text], model.input_modalities.sort
+      assert_equal %w[text], model.output_modalities
+      assert model.multimodal?
+      assert_equal :multimodal, model.modality_class
+    end
+
+    test "an owned row's signature drops tokens outside the closed vocabulary" do
+      sync([ or_model(id: "newlab/odd-1", name: "NewLab: Odd 1",
+                      prompt: "0.000001", completion: "0.000005",
+                      input_modalities: [ "text", "hologram" ], output_modalities: [ "text" ]) ])
+
+      model = AiModel.find_by!(openrouter_id: "newlab/odd-1")
+      assert_equal %w[text], model.input_modalities
+      refute model.multimodal?
+    end
+
+    test "a re-synced owned row keeps its signature fresh (overwrite)" do
+      id = "newlab/vision-1"
+      sync([ or_model(id: id, name: "NewLab: Vision 1",
+                      prompt: "0.000001", completion: "0.000005",
+                      input_modalities: [ "text" ]) ])
+      model = AiModel.find_by!(openrouter_id: id)
+      refute model.multimodal?
+
+      sync([ or_model(id: id, name: "NewLab: Vision 1",
+                      prompt: "0.000001", completion: "0.000005",
+                      input_modalities: [ "text", "image" ]) ],
+           today: Date.current + 1)
+
+      assert_equal %w[image text], model.reload.input_modalities.sort
+      assert model.multimodal?
+    end
+
+    test "a curated/linked row's signature is filled only when blank, never overwritten" do
+      deepseek = ai_models(:deepseek_v4)
+      deepseek.update!(openrouter_id: "deepseek/deepseek-v4-pro",
+                       input_modalities: [ "text", "audio" ], output_modalities: [ "text" ])
+
+      sync([ or_model(id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro",
+                      prompt: "0.0000009", completion: "0.0000018",
+                      input_modalities: [ "text", "image" ]) ])
+
+      deepseek.reload
+      # Curated signature is preserved, not stomped by the OpenRouter payload.
+      assert_equal %w[audio text], deepseek.input_modalities.sort
+    end
+
+    test "a curated/linked row with a blank signature is filled from the payload" do
+      deepseek = ai_models(:deepseek_v4)
+      deepseek.update!(openrouter_id: "deepseek/deepseek-v4-pro",
+                       input_modalities: [], output_modalities: [])
+
+      sync([ or_model(id: "deepseek/deepseek-v4-pro", name: "DeepSeek: V4 Pro",
+                      prompt: "0.0000009", completion: "0.0000018",
+                      input_modalities: [ "text", "image" ], output_modalities: [ "text" ]) ])
+
+      deepseek.reload
+      assert_equal %w[image text], deepseek.input_modalities.sort
+      assert_equal %w[text], deepseek.output_modalities
+    end
+
+    test "a row with no architecture stores empty modality arrays and does not raise" do
+      row = {
+        "id" => "newlab/bare-1", "name" => "NewLab: Bare 1", "created" => 1_700_000_000,
+        "description" => "A bare row.", "context_length" => 100_000,
+        "pricing" => { "prompt" => "0.000001", "completion" => "0.000005",
+                       "input_cache_read" => "0" },
+        "top_provider" => { "context_length" => 100_000, "max_completion_tokens" => 8_192 }
+      }
+
+      assert_nothing_raised { sync([ row ]) }
+
+      model = AiModel.find_by!(openrouter_id: "newlab/bare-1")
+      assert_equal [], model.input_modalities
+      assert_equal [], model.output_modalities
+      assert_equal :text, model.modality_class
     end
 
     # --- editorial generation ----------------------------------------------
