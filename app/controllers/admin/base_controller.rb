@@ -13,12 +13,12 @@ module Admin
 
     def require_admin
       unless session[:admin]
-        redirect_to admin_login_path, alert: "Please sign in." and return
+        redirect_to main_app.admin_login_path, alert: "Please sign in." and return
       end
 
       if admin_session_expired?
         reset_session
-        redirect_to admin_login_path, alert: "Your session expired. Please sign in again." and return
+        redirect_to main_app.admin_login_path, alert: "Your session expired. Please sign in again." and return
       end
 
       # Back-fill the absolute-cap anchor for sessions created before this was

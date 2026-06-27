@@ -23,5 +23,11 @@ module Tokenprice
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Ride the existing admin session auth (Admin::BaseController enforces
+    # require_admin plus idle/absolute session timeouts) rather than standing up
+    # a second HTTP Basic credential just for the jobs dashboard.
+    config.mission_control.jobs.base_controller_class = "Admin::BaseController"
+    config.mission_control.jobs.http_basic_auth_enabled = false
   end
 end

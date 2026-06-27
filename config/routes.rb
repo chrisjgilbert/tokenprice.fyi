@@ -63,5 +63,8 @@ Rails.application.routes.draw do
     resources :signal_signups, only: :index do
       collection { get :export }
     end
+
+    # Active Job / Solid Queue dashboard, behind the admin session auth above.
+    mount MissionControl::Jobs::Engine, at: "jobs"
   end
 end
