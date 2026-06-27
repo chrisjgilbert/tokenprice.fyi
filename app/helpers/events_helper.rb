@@ -57,6 +57,25 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
+  # The hero's "Latest changes" slice. Repricings arrive in daily batches (the
+  # sync writes many at once, all dated today), so the raw most-recent would be
+  # wall-to-wall price changes and bury the rarer launches and market events —
+  # hence a diverse pick (one per kind) rather than the strict top N.
+  def hero_events(events, count: 2)
+    newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
+    picked = []
+    newest_first.each do |e|
+      next if picked.any? { |p| p.kind == e.kind }
+      picked << e
+      break if picked.size == count
+    end
+    newest_first.each do |e|
+      break if picked.size == count
+      picked << e unless picked.include?(e)
+    end
+    picked
+  end
+
   # Group a timeline into [year, events] pairs for the events page: newest year
   # first, and within each year newest event first. Order-independent of the
   # input — it sorts both the years and each group itself — so it produces the

@@ -322,7 +322,7 @@
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
   <%
-    recent_events = @all_events.last(2).reverse
+    recent_events = hero_events(@all_events)
     primary_event = recent_events[0]
     secondary_event = recent_events[1]
   %>
@@ -391,8 +391,12 @@
               <div class="hero-card-chips">
                 <%= price_change_badge(mv.input) %>
                 <%= price_change_badge(mv.output) %>
-                <span class="hero-card-chip num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
-                <span class="hero-card-chip num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
+                <% if mv.input %>
+                  <span class="hero-card-chip num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
+                <% end %>
+                <% if mv.output %>
+                  <span class="hero-card-chip num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
+                <% end %>
               </div>
             <% end %>
           </div>
