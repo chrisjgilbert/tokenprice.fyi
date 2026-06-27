@@ -46,5 +46,10 @@
 /.kamal/secrets.local
 /.kamal/secrets.*.local
 
-# Claude Code internal state (worktree tracking, local session data)
-/.claude/
+# Claude Code: ignore local session/worktree state, but commit the shared
+# dev-loop artifacts (commands, agents, hooks, project settings).
+/.claude/*
+!/.claude/commands/
+!/.claude/agents/
+!/.claude/hooks/
+!/.claude/settings.json
