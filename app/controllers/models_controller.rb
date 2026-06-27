@@ -9,10 +9,10 @@ class ModelsController < ApplicationController
     "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
-  # Cheapest input first. The view omits these from filter URLs to keep them
-  # clean, so it reads the same constants rather than repeating the literals.
-  DEFAULT_SORT = "input"
-  DEFAULT_DIR  = "asc"
+  # Most expensive output first. The view omits these from filter URLs to keep
+  # them clean, so it reads the same constants rather than repeating the literals.
+  DEFAULT_SORT = "output"
+  DEFAULT_DIR  = "desc"
 
   def index
     @providers = Provider.order(:name).to_a

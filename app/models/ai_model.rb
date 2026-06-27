@@ -120,6 +120,13 @@ class AiModel < ApplicationRecord
   # there's nothing to report.
   PriceChange = Data.define(:label, :input, :output)
 
+  # The most recent price move for this model: the two consecutive snapshots
+  # that bracket it, plus the % change in each dimension. `input`/`output` are
+  # nil where that dimension didn't move.
+  PriceMove = Data.define(:model, :from, :to, :input, :output) do
+    def date = to.effective_on
+  end
+
   # Percentage change in a price dimension (:input or :output) over a trailing
   # window (an ActiveSupport::Duration like 30.days) or since launch (:launch).
   # Negative means it got cheaper. The window is clamped to the model's history:
@@ -151,6 +158,26 @@ class AiModel < ApplicationRecord
 
   def price_changed?
     price_points.count > 1
+  end
+
+  # The latest price move across this model's history, or nil when there's
+  # nothing to report: a single snapshot, or a most-recent change where neither
+  # input nor output actually moved (a cached-only or flat manual entry). Uses
+  # the in-memory association so an eager-loaded includes(:price_points) isn't
+  # defeated by a fresh ordered query.
+  def latest_price_move
+    snapshots = price_points.sort_by(&:effective_on)
+    return nil if snapshots.size < 2
+
+    from, to = snapshots[-2], snapshots[-1]
+    # A flat dimension reads as nil, not 0% — price_change_between gives 0.0 for
+    # two distinct snapshots that happen to match, so an identical-price or
+    # cached-only entry collapses to "no move" and is dropped below.
+    input  = price_change_between(:input, from, to)&.nonzero?
+    output = price_change_between(:output, from, to)&.nonzero?
+    return nil if input.nil? && output.nil?
+
+    PriceMove.new(model: self, from:, to:, input:, output:)
   end
 
   # Fuzzy match against name, provider and slug. Every word in the query must

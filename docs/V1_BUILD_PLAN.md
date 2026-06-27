@@ -87,6 +87,11 @@ API) use for prices — never ad hoc model queries:
 
 ## 6. Demand probes (capture only — the gate's instruments)
 
+> **Removed.** The demand probes (`signal_signups` table, controllers, and capture
+> cards) were torn out after V1 — the alert card on the model page promised an email
+> that was never sent. The model page now links to the guide instead. The historical
+> spec below is kept as a record of what was built.
+
 - One small table `signal_signups`: `kind` ("measure_interest" | "price_alert"), `email`,
   `payload` (encoded workload/context), `created_at`.
 - **"Measure your real usage — notify me"** stub on the estimator (and the agent-cost

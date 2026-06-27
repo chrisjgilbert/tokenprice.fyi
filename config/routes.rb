@@ -33,9 +33,6 @@ Rails.application.routes.draw do
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
   get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
 
-  # Demand probes (capture only — no sending).
-  resources :signal_signups, only: :create
-
   # Public read-only JSON API off PriceCatalog — the citation/backlink flywheel.
   namespace :api do
     namespace :v1 do
@@ -59,9 +56,7 @@ Rails.application.routes.draw do
       member { patch :publish }
     end
 
-    # Read-only visibility into the demand-probe signups (the V1 gate metric).
-    resources :signal_signups, only: :index do
-      collection { get :export }
-    end
+    # Active Job / Solid Queue dashboard, behind the admin session auth above.
+    mount MissionControl::Jobs::Engine, at: "jobs"
   end
 end

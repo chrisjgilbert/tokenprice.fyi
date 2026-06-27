@@ -52,6 +52,20 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
+  test "hero surfaces a price change among the latest events" do
+    get root_url
+    assert_response :success
+    # The DeepSeek 75% cut (2026-05-31) is one of the two most recent events.
+    assert_select ".hero-card .hero-card-kind-chip.reprice", /Price change/
+    assert_select ".hero-card", /DeepSeek V4 Pro repriced/
+  end
+
+  test "the hero (and its price-change feed) is skipped on Turbo Frame refreshes" do
+    get root_url, headers: { "Turbo-Frame" => "models" }
+    assert_response :success
+    assert_select ".hero-card", count: 0
+  end
+
   test "footer carries the deck sourcing disclaimer" do
     get root_url
     assert_response :success
@@ -135,12 +149,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sort links carry the active filters and sort state rides in the form" do
-    get root_url(q: "claude", providers: [ "anthropic" ], sort: "output", dir: "desc")
+    get root_url(q: "claude", providers: [ "anthropic" ], sort: "input", dir: "asc")
     assert_response :success
     assert_select "thead a[href*='q=claude']"
     assert_select "thead a[href*='providers%5B%5D=anthropic']"
-    assert_select "input[type=hidden][name=sort][value=output][form=filters]", count: 1
-    assert_select "input[type=hidden][name=dir][value=desc][form=filters]", count: 1
+    assert_select "input[type=hidden][name=sort][value=input][form=filters]", count: 1
+    assert_select "input[type=hidden][name=dir][value=asc][form=filters]", count: 1
   end
 
   test "default sort state is omitted from the filter form" do
