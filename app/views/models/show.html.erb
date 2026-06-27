@@ -124,10 +124,16 @@
 
 <% if @catalog_entry %>
   <section class="mb-8">
-    <%= render "signal_signups/probe", frame_id: "probe_alert_model_#{@model.slug}", variant: "alert",
-          payload: "model=#{@model.slug}",
-          title: "Alert me when #{@model.name}'s price changes",
-          body: "Get an email when #{@model.name}'s price changes. No dashboard to check — we watch every provider.", error: nil %>
+    <%= link_to guide_path, class: "group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 hover:border-indigo-200" do %>
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 shrink-0 text-indigo-500" aria-hidden="true"><%= icon(:target, size: 20) %></span>
+        <div>
+          <h2 class="font-semibold">Find a model for your task</h2>
+          <p class="mt-1 text-sm text-slate-600">The guide groups starting models by task — RAG, coding agents, summarization — each with per-call cost estimates.</p>
+        </div>
+      </div>
+      <span class="shrink-0 text-slate-400 group-hover:text-indigo-500" aria-hidden="true"><%= icon(:chevron_right, size: 18) %></span>
+    <% end %>
   </section>
 <% end %>
 
