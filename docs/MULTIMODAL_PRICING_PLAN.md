@@ -1,9 +1,8 @@
-# Multimodal pricing plan — recording more than text tokens
+# Multimodal plan — classify models by what they turn into what
 
 Companion to the **Architecture** section of `CLAUDE.md`. This is a work-breakdown
-for teaching the catalogue to record models that price more than text input and
-output: their input/output modalities, and the extra price dimensions
-(image, audio, cache writes, per-request fees) that a multimodal model bills.
+for teaching the catalogue to record each model's **modality signature** — the set
+of inputs it accepts and outputs it produces — and to let people find models by it.
 
 Read the **Architecture** and **Copy style** sections of `CLAUDE.md` first. This
 file is the *what* and the *order*.
@@ -12,186 +11,233 @@ file is the *what* and the *order*.
 
 ---
 
-## What "multimodal" means here, and what it doesn't
+## The jobs to be done
 
-The site tracks **text-generation** pricing — the cost of running a model that
-takes a prompt and returns text. That framing stays. We are not adding
-image-generation models, embedding models, or speech-to-text endpoints to the
-catalogue; the `text_output?` gate in `OpenRouter::ModelSync` that skips them
-(`app/models/open_router/model_sync.rb:249`) is correct and stays.
+A visitor wants to filter the catalogue by what a model actually does:
 
-What's missing is everything a **text-output model that also accepts other inputs**
-costs and advertises. A model like GPT-4o or Gemini 2.5 takes images and audio as
-input and prices them separately from text tokens, and the catalogue currently
-records none of that:
+- which models are **text only** (text in, text out)
+- which are **multimodal input** (text + image and/or audio in, text out)
+- which are **text-to-speech** (text in, audio out)
+- which are **speech-to-text** (audio in, text out)
+- which are **image generation** (text, sometimes + image, in; image out)
+- which are **image editing** (image + text in, image out)
+- which are **video generation** (text or image in, video out)
+- which produce **embeddings** (text in, vector out)
 
-- **Modality metadata.** OpenRouter exposes `architecture.input_modalities` and
-  `architecture.output_modalities`. We read `output_modalities` only to filter
-  (`model_sync.rb:250`) and store neither. So the catalogue can't say "this model
-  reads images" — there's no `multimodal?`, no badge, no filter.
-- **Non-text price dimensions.** OpenRouter's `pricing` object carries
-  `image`, `audio`, `request`, and `input_cache_write` alongside the
-  `prompt` / `completion` / `input_cache_read` we already ingest
-  (`model_sync.rb:228`–`234`). We drop all of them.
-
-So "handling multimodal properly" is: **record the modalities a model supports,
-and record the prices it charges for non-text inputs** — then show both.
+Every one of these is a question about a model's **(input modalities → output
+modalities)** signature. So the signature is the thing to record, and a derived
+**class** label is the thing to filter on.
 
 ---
 
-## Where the text-tokens-only assumption lives
+## What this changes about the current design
 
-The assumption is baked into five layers, top to bottom:
+The catalogue today records only text-token pricing and, critically, **only admits
+text-output models**. `OpenRouter::ModelSync#text_output?`
+(`app/models/open_router/model_sync.rb:249`) skips any row whose
+`architecture.output_modalities` doesn't include `text` — so image-generation,
+text-to-speech, embedding, and video models never enter the catalogue at all.
+That gate is the single biggest blocker to the jobs above: you can't answer "which
+models are image generation" while filtering image-generation models out at
+ingestion.
+
+So this plan does two things the previous draft didn't:
+
+1. **Records a full modality signature** for every model, not just a "reads images"
+   badge on text models.
+2. **Admits non-text-output models** into the catalogue, classified — replacing the
+   binary `text_output?` gate with a recorded signature plus per-class handling.
+
+The pricing work from the earlier draft still matters, but it's downstream of
+classification, and it has to reckon with the fact that **different classes price in
+different units** (see Phase 3).
+
+---
+
+## The modality signature and the derived class
+
+Two recorded facts per model:
+
+- `input_modalities` — sorted string set, e.g. `["image", "text"]`
+- `output_modalities` — sorted string set, e.g. `["text"]`
+
+Modality vocabulary (closed set, normalised lowercase): `text`, `image`, `audio`,
+`video`, `file`, `embedding`. Anything OpenRouter sends outside this maps to the
+nearest term or is dropped, logged once.
+
+From the signature we derive a single **`modality_class`** for the JTBD filters. The
+derivation is deterministic and lives in one place (a `ModalityClass` value object,
+`app/models/modality_class.rb`), so the rules are reviewable and testable:
+
+| Class | Rule (input → output) | Examples |
+|-------|-----------------------|----------|
+| `text` | `{text}` → `{text}` | most chat LLMs |
+| `multimodal` | input ⊃ `{text}` plus image/audio/file → output `{text}` | GPT-4o, Gemini 2.5 |
+| `text_to_speech` | `{text}` → `{audio}` | TTS endpoints |
+| `speech_to_text` | `{audio}` (± text) → `{text}` | Whisper-class |
+| `image_generation` | text (± image) → `{image}` | Imagen, DALL·E-class |
+| `image_editing` | `{image, text}` → `{image}` | inpaint/edit models |
+| `video_generation` | text or image → `{video}` | Veo / Sora-class |
+| `embedding` | `{text}` → `{embedding}` | embedding models |
+| `other` | anything unmatched | logged for triage |
+
+`modality_class` is **derived, not stored** as truth — compute it from the signature
+so a re-classification is a code change, not a backfill. (Cache it on the row only
+if the index query needs it for sorting; otherwise derive on read.)
+
+---
+
+## Where the assumption lives today
 
 | Layer | File | What's hardcoded |
 |-------|------|------------------|
-| Schema | `db/schema.rb:73`–`85` | `price_points` has exactly three rate columns; `ai_models` has no modality columns |
-| Record | `app/models/price_point.rb:7`–`11`, `app/models/ai_model.rb:68`–`70` | validations + accessors for input/output/cached only |
-| Read model | `app/models/price_catalog.rb:12`, `:35`–`42` | `Snapshot = Data.define(:date, :input, :output, :cached)` |
-| Sync | `app/models/open_router/model_sync.rb:225`–`252`, `:261`–`292` | `parse_pricing` reads three keys; `record_price`/`same_price?` diff three; modalities used only to filter |
-| Surface | admin form + params (`admin/price_points`), public API (`api/v1/models_controller.rb:18`), model/provider views, sort sets | three price fields everywhere |
-
-Cost math (`CostEstimate#price_with`, `FeaturePattern::Shape`) is a sixth layer,
-but a separable one — see Phase 3.
+| Ingestion gate | `open_router/model_sync.rb:249`–`252` | non-text-output rows skipped entirely |
+| Schema | `db/schema.rb:14`–`37` | `ai_models` has no modality columns |
+| Schema | `db/schema.rb:73`–`85` | `price_points` has three per-token rate columns only |
+| Read model | `app/models/price_catalog.rb:12` | `Snapshot` carries input/output/cached only |
+| Surface | models/providers controllers + views, `api/v1/models_controller.rb:18` | no modality field, no class filter |
 
 ---
 
 ## The phasing
 
-Three phases, each independently shippable and revertible. Phase 1 delivers
-visible value (a "reads images/audio" badge) on its own; Phase 2 adds the prices;
-Phase 3 is the cost-math redesign and is optional. Ship in order — each later
-phase reads the data the earlier one records.
+Four phases, JTBD-ordered. Each is independently shippable and revertible. Phases 1
+and 2 deliver the filters the jobs above ask for; Phase 3 prices the new classes;
+Phase 4 fills coverage gaps the data source leaves.
 
-### Phase 1 — Modality metadata · branch `claude/multimodal-modalities`
+### Phase 1 — Record the signature, classify, filter · branch `claude/multimodal-signature`
 
-Record what a model can read and emit, independent of price.
+Answers "text-only vs multimodal-input" immediately, within the models already in
+the catalogue.
 
-- **Migration.** Add to `ai_models`: `input_modalities` and `output_modalities`
-  as `t.json` (SQLite + the Rails 8 JSON type; default `[]`). These hold small
-  string arrays like `["text", "image"]`.
+- **Migration.** Add to `ai_models`: `input_modalities`, `output_modalities` as
+  `t.json` (default `[]`).
 - **Sync.** In `enrich` (`model_sync.rb:338`), read
-  `row.dig("architecture", "input_modalities")` and `output_modalities`, normalise
-  to a sorted, lowercased string array, and assign. Follow the existing
-  augment-don't-clobber rule: overwrite for rows we own
-  (`source == OPENROUTER_SOURCE`), fill only blanks for curated/linked rows — the
-  same shape as the `description`/`context_window` handling right above it.
-- **Record.** `AiModel#multimodal?` (`input_modalities` beyond `["text"]`), plus
-  readers the views can call. A model with no recorded modalities reads as
-  text-only, so existing rows degrade quietly.
+  `architecture.input_modalities` / `output_modalities`, normalise to the closed
+  vocabulary, assign — under the existing augment-don't-clobber rule (overwrite rows
+  we own, fill only blanks on curated/linked rows).
+- **Classify.** `ModalityClass` value object with the derivation table above;
+  `AiModel#modality_class`, `#multimodal?`, modality readers.
 - **Surface.**
-  - Model page and the models index: a small badge listing non-text input
-    modalities. Copy style: state the fact ("Reads images, audio"), not a label
-    that performs novelty.
-  - Optional `modalities` key on the public model JSON
-    (`api/v1/models_controller.rb`) — additive, existing keys unchanged.
-  - Optional filter on the models index ("multimodal only"). Defer if it
-    crowds the page.
-- **Tests / fixtures.** Extend the `or_model` helper
-  (`test/models/open_router/model_sync_test.rb`) with `input_modalities:`; add a
-  multimodal fixture; assert the badge and the `multimodal?` predicate.
+  - Models index: a **class filter** (facet by `modality_class`) and a per-row badge.
+    This is the deliverable the jobs name. Copy style: name the fact ("Image
+    generation", "Speech-to-text"), not a marketing label.
+  - Model page: show the signature ("Text, image in → text out").
+  - Public API: additive `modalities` + `modality_class` keys.
+- **Tests / fixtures.** Extend `or_model` with `input_modalities:`; fixtures across
+  several classes; assert derivation and the filter.
 
-**Acceptance:** a synced GPT-4o-class row reports `input_modalities` including
-`image`; the model page badges it; text-only rows look unchanged; suite green.
+**Acceptance:** existing text and multimodal-input rows classify correctly; the
+index filters by class; text-only rows look unchanged; suite green.
 
-### Phase 2 — Non-text price dimensions · branch `claude/multimodal-prices`
+### Phase 2 — Admit non-text-output models · branch `claude/multimodal-admit`
 
-Record and show the extra rates. **Depends on the schema and read-model seams; do
-after Phase 1 lands.**
+This is the scope expansion that unlocks "image generation", "text-to-speech",
+"video generation". **The pivotal product decision in this whole plan.**
 
-- **Migration.** Add nullable columns to `price_points`, mirroring the existing
-  `cached_input_per_mtok` precedent (nil = "model doesn't charge for this"):
-  - `cache_write_per_mtok` — direct analog of cached read; OpenRouter
-    `input_cache_write`, per token → our per-MTok convention.
-  - `image_input_usd` — OpenRouter `pricing.image`, **per image** (not per token).
-  - `request_usd` — OpenRouter `pricing.request`, **per request**.
-  - `audio_input_per_mtok` — OpenRouter `pricing.audio`. **Open question:** verify
-    the unit against a live response before committing the column name — audio is
-    quoted per-token by some providers and per-second by others. Name the column
-    for whatever the unit actually is; don't guess it into `per_mtok` if it's
-    per-second.
+- **Replace the gate.** `text_output?` (`model_sync.rb:249`) stops being a skip
+  condition. Instead, record the signature for every priced row and let
+  `modality_class` carry the distinction. Keep skipping only genuinely un-priceable
+  rows (the existing `parse_pricing` nil guard) — not whole classes.
+- **Reckon with the pricing table.** `price_points` assumes per-token rates, which
+  don't describe an image-gen or TTS model. Two honest options for v1:
+  - **(a) Directory-first.** Admit non-text-output models as catalogue entries with
+    a signature and class, but mark their pricing "priced per image / per second —
+    not yet tracked" until Phase 3. Delivers every filter immediately; defers the
+    money.
+  - **(b) Gate Phase 2 on Phase 3.** Don't admit a class until its pricing unit
+    exists, so no entry ever shows a blank or misleading price.
 
-  > **Decision — fixed columns, not JSON.** A JSON `extra_prices` blob would avoid
-  > a migration per dimension, but it can't be validated, sorted, or queried, and
-  > it cuts against the relational, append-only `PricePoint` the rest of the app
-  > reads. OpenRouter's extra dimensions are a small, stable set, so fixed columns
-  > (the `cached_input_per_mtok` pattern, extended) stay in-style. Revisit only if
-  > a provider appears with a genuinely open-ended pricing shape.
+  **Recommend (a):** the jobs are discovery jobs ("which models *are* X"), and a
+  directory that lists image-gen models without a per-image price is still useful
+  and honest, as long as the missing price is labelled, not faked. Pricing follows
+  in Phase 3.
+- **Guard the headline surfaces.** The cheapest-frontier headline, the sort sets,
+  and the guide read per-token prices — make sure a newly-admitted image-gen model
+  with no per-token price can't crash or pollute them (it has no `input_per_mtok`).
+  Scope those reads to text/multimodal classes explicitly.
 
-- **Validations** (`price_point.rb`): each new column
-  `numericality: { greater_than_or_equal_to: 0 }, allow_nil: true`, matching
-  `cached_input_per_mtok`.
-- **Sync.** Extend `parse_pricing` (`model_sync.rb:225`) to pull the new keys via
-  the existing `to_mtok` (for per-token rates) and a sibling per-unit parser (for
-  per-image / per-request, which must **not** be multiplied by `PER_MTOK`).
-  Extend `record_price` and `same_price?` (`:261`, `:285`) to write and diff the
-  new fields, so a change in image price alone still writes a snapshot. The Slack
-  digest's `RepricedRecord` stays keyed on input/output — leave it unless a
-  non-text reprice is worth announcing.
-- **Read model.** Extend `PriceCatalog::Snapshot` (`price_catalog.rb:12`) and the
-  `Entry` price readers (`:51`–`53`) with the new fields. Everything downstream
-  reads through here, so this is the single seam.
-- **Surface.**
-  - Admin price form + `price_point_params` whitelist
-    (`admin/price_points_controller.rb`): optional fields, grouped under a
-    "Non-text pricing" heading so the common text-only case stays uncluttered.
-  - Model page: show non-text rates **only when present** — no empty "Image: —"
-    rows on text-only models.
-  - Public API price object: additive keys; document them.
+**Acceptance:** image-generation and other non-text-output models appear, correctly
+classed and filterable; none corrupts the text-pricing headline, sorts, or guide;
+their price reads as "not yet tracked", not `$0`.
 
-**Acceptance:** a multimodal row round-trips image/request/cache-write prices from
-sync → catalog → model page and API; a non-text-only reprice writes a new
-snapshot; text-only rows render and serialize exactly as before; suite green.
+### Phase 3 — Per-class pricing · branch `claude/multimodal-pricing`
 
-### Phase 3 — Cost math (optional, deferred) · branch `claude/multimodal-cost`
+Different classes bill in different units, so this isn't one schema:
 
-The guide's per-call estimates assume text tokens: `FeaturePattern::Shape =
-Data.define(:sys, :in, :out)` (`feature_pattern.rb:25`) and
-`CostEstimate#price_with(input:, output:, cached:)` (`cost_estimate.rb:38`). To
-price an image-input step, `Shape`/`Profile` need image/audio quantities and
-`price_with` needs the matching rates.
+| Class | Native unit | OpenRouter field |
+|-------|-------------|------------------|
+| text, multimodal-in | per token | `prompt`, `completion`, `input_cache_read`, `input_cache_write` |
+| image generation | per image (± by size/quality tier) | `pricing.image` (output) |
+| text-to-speech | per character or per second of audio | `pricing.audio` |
+| speech-to-text | per minute/second of audio in | `pricing.audio` |
+| video generation | per second of video | (often absent — see Phase 4) |
 
-All six current launch patterns are text-only, so this delivers nothing until a
-multimodal example pattern exists to use it. Keep it behind Phases 1–2:
+- **Verify units against live rows before naming any column.** Audio is per-token
+  for some providers, per-second for others; image is per-image for the OpenAI/Google
+  rows but confirm. Name columns for the unit that's actually quoted.
+- **Extend `price_points`** with the well-known dimensions as nullable columns
+  (mirroring the `cached_input_per_mtok` precedent — nil means "not charged / not
+  applicable"): `cache_write_per_mtok`, `image_output_usd`, `request_usd`, plus the
+  verified audio unit. Fixed columns over a JSON blob — same reasoning as before:
+  validatable, sortable, in-style with the append-only `PricePoint`.
+- **Wire through** `parse_pricing` / `record_price` / `same_price?`,
+  `PriceCatalog::Snapshot`, the admin form + params, the model page (show a rate only
+  when present), and the API (additive).
+- **Show class-appropriate prices.** An image-gen row shows "$X / image"; a TTS row
+  "$X / 1M characters" — the model page renders by class, not one fixed three-column
+  table.
 
-- Extend `Shape`/`Profile` with optional non-text quantities (default 0, so every
-  existing pattern is unchanged).
-- Extend `price_with` to add their cost, reading the Phase 2 rates through
-  `FeaturePattern::Cost` (`feature_pattern/cost.rb`). Preserve the cache-parity
-  invariant noted in that file verbatim.
-- Add at least one multimodal pattern (e.g. document/vision Q&A) so the new
-  parameters are exercised and the guide shows a non-text cost breakdown.
+**Acceptance:** a model in each priced class round-trips its native-unit price
+sync → catalog → page → API; a non-text reprice writes a snapshot; text rows are
+byte-identical to before; suite green.
 
-**Acceptance:** existing patterns produce identical figures; the new pattern
-prices image input; cache-parity test still asserts the uncached basis.
+### Phase 4 — Coverage beyond OpenRouter · branch `claude/multimodal-coverage` (future)
+
+OpenRouter lists mostly chat/text models and a growing set of image models.
+Text-to-speech, speech-to-text, and especially **video generation** are thinly
+covered or absent there. So some JTBD classes will show few or zero entries on
+OpenRouter data alone.
+
+- Flag per-class coverage honestly in the UI ("3 video-generation models tracked")
+  rather than implying the list is exhaustive.
+- Add curated/manual rows or a second source for the under-covered classes. The
+  `source == "manual"` path and admin UI already support hand-curated entries; this
+  is mostly data entry plus a per-class price form from Phase 3.
+
+This phase is data, not architecture. Sequence it last, or treat it as ongoing
+curation once Phases 1–3 establish the shape.
 
 ---
 
 ## Dependency graph & order
 
 ```
-Phase 1 (modalities)   ── ships alone; badge + API metadata
+Phase 1 (signature + classify + filter)  ── ships alone; answers text-only vs multimodal
         │
-Phase 2 (prices)       ── after 1; reads no Phase-1 data but shares the surface
+Phase 2 (admit non-text-output models)   ── unlocks image-gen / TTS / STT / video filters
         │
-Phase 3 (cost math)    ── optional; only worthwhile once a multimodal pattern exists
+Phase 3 (per-class pricing)              ── prices the admitted classes in native units
+        │
+Phase 4 (coverage)                       ── data/curation for classes OpenRouter misses
 ```
 
-Phases 1 and 2 touch disjoint columns (`ai_models` vs `price_points`) and could in
-principle be parallelised, but they overlap on the model-page view and the API
-serializer, so sequencing them avoids a merge conflict there. One phase per PR —
-small, reviewable, independently revertible.
+One phase per PR — small, reviewable, independently revertible. Phase 1 is pure
+addition (no behaviour change to existing rows). Phase 2 is the one with real product
+risk: it changes *which models exist* in the catalogue, so review it on its own.
 
-## Open questions to resolve before Phase 2
+## Decisions to settle before building
 
-1. **Audio unit.** Per-token or per-second? Fetch a live OpenRouter row for an
-   audio-input model and read `pricing.audio` against `architecture` before naming
-   the column.
-2. **Image unit.** Confirm `pricing.image` is per-image across providers (it is
-   for the OpenAI/Google rows) and not per-image-token for any we ingest.
-3. **API contract.** Whether the public JSON should nest non-text rates under a
-   `multimodal:` key or flatten them alongside `input`/`output`. Additive either
-   way; pick before publishing.
+1. **Scope of admission (Phase 2).** Confirm we want non-text-output models —
+   image gen, TTS, STT, video, embeddings — as catalogue entries. The jobs imply
+   yes; embeddings are the most arguable (different audience). Decide which classes
+   are in for v1.
+2. **Directory-first vs price-gated (Phase 2 (a) vs (b)).** Recommend (a):
+   list-then-price.
+3. **Units (Phase 3).** Verify audio and image units against live OpenRouter rows
+   before naming columns.
+4. **API contract.** Whether non-text rates nest under a `pricing_by_class` key or
+   flatten. Additive either way; pick before publishing.
 
 ## Green gate
 
