@@ -22,10 +22,13 @@ A visitor wants to filter the catalogue by what a model actually does:
 - which are **image generation** (text, sometimes + image, in; image out)
 - which are **image editing** (image + text in, image out)
 - which are **video generation** (text or image in, video out)
-- which produce **embeddings** (text in, vector out)
+- which produce **embeddings** (text or image in, vector out)
+- which are **realtime voice** (audio in, audio out)
+- which are **rerankers** (query + documents in, relevance scores out)
 
 Every one of these is a question about a model's **(input modalities → output
-modalities)** signature. So the signature is the thing to record, and a derived
+modalities)** signature — except reranking, which is defined by its task rather than
+its media types (see the taxonomy note below). So the signature is the thing to record, and a derived
 **class** label is the thing to filter on.
 
 ---
@@ -67,23 +70,36 @@ nearest term or is dropped, logged once.
 
 From the signature we derive a single **`modality_class`** for the JTBD filters. The
 derivation is deterministic and lives in one place (a `ModalityClass` value object,
-`app/models/modality_class.rb`), so the rules are reviewable and testable:
+`app/models/modality_class.rb`), so the rules are reviewable and testable. Class
+names follow the input→output naming you'd filter on (`text_to_audio`, not "TTS"):
 
 | Class | Rule (input → output) | Examples |
 |-------|-----------------------|----------|
 | `text` | `{text}` → `{text}` | most chat LLMs |
-| `multimodal` | input ⊃ `{text}` plus image/audio/file → output `{text}` | GPT-4o, Gemini 2.5 |
-| `text_to_speech` | `{text}` → `{audio}` | TTS endpoints |
-| `speech_to_text` | `{audio}` (± text) → `{text}` | Whisper-class |
+| `multimodal` | input ⊃ `{text}` plus image/audio/video/file → `{text}` | GPT-4o, Gemini 2.5 (incl. video *understanding*) |
+| `text_to_audio` | `{text}` → `{audio}` | TTS, music generation |
+| `audio_to_text` | `{audio}` (± text) → `{text}` | Whisper-class, transcription, speech translation |
+| `speech_to_speech` | `{audio}` → `{audio}` | realtime voice / voice agents |
 | `image_generation` | text (± image) → `{image}` | Imagen, DALL·E-class |
-| `image_editing` | `{image, text}` → `{image}` | inpaint/edit models |
+| `image_editing` | `{image, text}` → `{image}` | inpaint / edit models |
 | `video_generation` | text or image → `{video}` | Veo / Sora-class |
-| `embedding` | `{text}` → `{embedding}` | embedding models |
-| `other` | anything unmatched | logged for triage |
+| `embedding` | text or image → `{embedding}` | embedding models (incl. multimodal embeddings) |
+| `rerank` | text query + documents → relevance scores | Cohere / Voyage / Jina rerankers |
+| `any_to_any` | mixed inputs → multiple outputs incl. non-text | omni / native-multimodal output models |
+| `other` | anything unmatched | moderation, 3D, etc. — logged for triage |
+
+**Two classes aren't pure media signatures.** `rerank` and moderation-style models
+take text and return *scores or labels*, not a media modality — so their "output"
+doesn't appear in `output_modalities`. The classifier identifies these from
+OpenRouter's endpoint/category hint (e.g. a rerank endpoint), not from the signature
+alone. Everything else is signature-derived. This is the one seam where a model's
+*task* matters beyond its modalities; keep it isolated in `ModalityClass` so the rest
+of the system only ever sees the resolved class.
 
 `modality_class` is **derived, not stored** as truth — compute it from the signature
-so a re-classification is a code change, not a backfill. (Cache it on the row only
-if the index query needs it for sorting; otherwise derive on read.)
+(plus the endpoint hint for the two task classes) so a re-classification is a code
+change, not a backfill. Cache it on the row only if the index query needs it for
+sorting; otherwise derive on read.
 
 ---
 
@@ -167,11 +183,13 @@ Different classes bill in different units, so this isn't one schema:
 
 | Class | Native unit | OpenRouter field |
 |-------|-------------|------------------|
-| text, multimodal-in | per token | `prompt`, `completion`, `input_cache_read`, `input_cache_write` |
-| image generation | per image (± by size/quality tier) | `pricing.image` (output) |
-| text-to-speech | per character or per second of audio | `pricing.audio` |
-| speech-to-text | per minute/second of audio in | `pricing.audio` |
-| video generation | per second of video | (often absent — see Phase 4) |
+| `text`, `multimodal` | per token | `prompt`, `completion`, `input_cache_read`, `input_cache_write` |
+| `image_generation`, `image_editing` | per image (± by size/quality tier) | `pricing.image` (output) |
+| `text_to_audio` | per character or per second of audio | `pricing.audio` |
+| `audio_to_text`, `speech_to_speech` | per minute/second of audio | `pricing.audio` |
+| `video_generation` | per second of video | (often absent — see Phase 4) |
+| `embedding` | per input token | `prompt` |
+| `rerank` | per search/query unit | `request` (or a rerank-specific field) |
 
 - **Verify units against live rows before naming any column.** Audio is per-token
   for some providers, per-second for others; image is per-image for the OpenAI/Google
@@ -226,18 +244,23 @@ One phase per PR — small, reviewable, independently revertible. Phase 1 is pur
 addition (no behaviour change to existing rows). Phase 2 is the one with real product
 risk: it changes *which models exist* in the catalogue, so review it on its own.
 
-## Decisions to settle before building
+## Decisions (settled)
 
-1. **Scope of admission (Phase 2).** Confirm we want non-text-output models —
-   image gen, TTS, STT, video, embeddings — as catalogue entries. The jobs imply
-   yes; embeddings are the most arguable (different audience). Decide which classes
-   are in for v1.
-2. **Directory-first vs price-gated (Phase 2 (a) vs (b)).** Recommend (a):
-   list-then-price.
-3. **Units (Phase 3).** Verify audio and image units against live OpenRouter rows
-   before naming columns.
-4. **API contract.** Whether non-text rates nest under a `pricing_by_class` key or
-   flatten. Additive either way; pick before publishing.
+1. **Scope of admission (Phase 2).** All classes in the taxonomy table are in for
+   v1, **including embeddings and rerank**. The catalogue becomes a directory of
+   every priced model OpenRouter lists, classified — not just text-output models.
+2. **Directory-first (Phase 2 (a)).** Admit non-text-output models with their class
+   and signature before per-class pricing lands; label the missing price ("priced
+   per image — not yet tracked"), never fake it as `$0`. Pricing follows in Phase 3.
+
+## Still to verify before Phase 3 (data questions, not design)
+
+- **Units.** Confirm audio (`pricing.audio`) and image (`pricing.image`) units
+  against live OpenRouter rows before naming columns — audio is per-token for some
+  providers, per-second for others.
+- **API contract.** Whether non-text rates nest under a `pricing_by_class` key or
+  flatten alongside `input`/`output`. Additive either way; pick before publishing.
+  Default: nest under `pricing_by_class` so the shape scales with the taxonomy.
 
 ## Green gate
 
