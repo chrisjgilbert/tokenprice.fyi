@@ -17,39 +17,37 @@ module EventsHelper
       )
     end
 
+    # Each model contributes a launch entry and, if its price has moved, a
+    # reprice entry. A price change is two consecutive price points, so the
+    # reprice entry surfaces moves from any source — the daily OpenRouter sync
+    # and hand-entered admin prices alike. One reprice row per model (its latest
+    # move); full history lives on the model page.
     models.each do |m|
-      next if m.released_on.nil?
+      if m.released_on
+        events << Event.new(
+          date: m.released_on,
+          title: "#{m.name} released",
+          kind: "launch",
+          note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M.",
+          model: m,
+          provider: m.provider,
+          source_url: nil,
+          move: nil
+        )
+      end
 
-      events << Event.new(
-        date: m.released_on,
-        title: "#{m.name} released",
-        kind: "launch",
-        note: "#{m.provider.name} ships #{m.name} at #{usd_plain(m.current_input)} in / #{usd_plain(m.current_output)} out per 1M.",
-        model: m,
-        provider: m.provider,
-        source_url: nil,
-        move: nil
-      )
-    end
-
-    # A price change is two consecutive price points, so this surfaces moves
-    # from any source — the daily OpenRouter sync and hand-entered admin prices
-    # alike. One row per model (its latest move); full history lives on the
-    # model page.
-    models.each do |m|
-      move = m.latest_price_move
-      next unless move
-
-      events << Event.new(
-        date: move.date,
-        title: "#{m.name} repriced",
-        kind: "reprice",
-        note: nil,
-        model: m,
-        provider: m.provider,
-        source_url: nil,
-        move: move
-      )
+      if (move = m.latest_price_move)
+        events << Event.new(
+          date: move.date,
+          title: "#{m.name} repriced",
+          kind: "reprice",
+          note: nil,
+          model: m,
+          provider: m.provider,
+          source_url: nil,
+          move: move
+        )
+      end
     end
 
     # Deterministic ascending order: date, then kind, then title. The tertiary
@@ -87,30 +85,28 @@ module EventsHelper
     ].compact.max
   end
 
-  # Per-kind presentation for the timeline node + chip. Colours live in CSS
-  # (`ev-#{kind}` for the node, `tp-kind-#{kind}` for the chip), so only the
-  # human label and node icon live here.
+  # Per-kind presentation, the single source for how each event kind reads.
+  # Colours live in CSS (`ev-#{kind}` for the timeline node, `tp-kind-#{kind}`
+  # and `hero-card-kind-chip.#{kind}` for the chips), so only the words and the
+  # node icon live here. `hero` is the homepage's product-facing wording ("New
+  # model") next to the timeline's terser `label` ("Launch"); `noun` is the
+  # plural used in the empty state ("No price changes tracked").
   EVENT_KINDS = {
-    "market" => { label: "Market", icon: :bolt },
-    "launch" => { label: "Launch", icon: :spark },
-    "reprice" => { label: "Price change", icon: :swap }
+    "market"  => { label: "Market",       hero: "Market event", noun: "market events", icon: :bolt },
+    "launch"  => { label: "Launch",       hero: "New model",    noun: "launches",      icon: :spark },
+    "reprice" => { label: "Price change", hero: "Price change", noun: "price changes", icon: :swap }
   }.freeze
 
   def event_kind_label(kind)
     EVENT_KINDS.dig(kind, :label) || kind.to_s.titleize
   end
 
-  # The homepage hero's kind chip uses product-facing wording ("New model")
-  # rather than the timeline's terser label ("Launch"); the chip's colour class
-  # is the kind itself (.hero-card-kind-chip.launch/.market/.reprice).
-  HERO_KIND_CHIPS = {
-    "launch"  => "New model",
-    "market"  => "Market event",
-    "reprice" => "Price change"
-  }.freeze
-
   def hero_kind_chip_label(kind)
-    HERO_KIND_CHIPS.fetch(kind, kind.to_s.titleize)
+    EVENT_KINDS.dig(kind, :hero) || kind.to_s.titleize
+  end
+
+  def event_kind_noun(kind)
+    EVENT_KINDS.dig(kind, :noun) || kind.to_s.titleize
   end
 
   def event_kind_icon(kind)

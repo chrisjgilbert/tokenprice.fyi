@@ -63,7 +63,7 @@
     <% elsif @kind %>
       <div class="tp-empty">
         <div class="tp-empty-icon"><%= icon(:calendar, size: 26) %></div>
-        <p class="font-medium">No <%= @kind == "market" ? "market events" : "launches" %> tracked.</p>
+        <p class="font-medium">No <%= event_kind_noun(@kind) %> tracked.</p>
         <p class="text-sm mt-1" style="color:var(--color-slate-400)">
           <%= link_to "See all events", events_path, class: "text-indigo-600 hover:underline" %>.
         </p>
