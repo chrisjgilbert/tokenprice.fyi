@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_000000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -95,16 +95,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_120000) do
     t.string "website"
     t.index ["country_code"], name: "index_providers_on_country_code"
     t.index ["slug"], name: "index_providers_on_slug", unique: true
-  end
-
-  create_table "signal_signups", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "email", null: false
-    t.string "kind", null: false
-    t.text "payload"
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_signal_signups_on_created_at"
-    t.index ["kind"], name: "index_signal_signups_on_kind"
   end
 
   add_foreign_key "ai_models", "providers"

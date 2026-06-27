@@ -275,8 +275,9 @@ checklist with links and a one-paragraph standard description in
 ### T4.1 — Price-drop alerts
 
 **Why.** Converts one-time searchers into a returning audience — the difference
-between a tool people bookmark and one they forget. The demand probe already
-exists (`/admin/signal_signups`).
+between a tool people bookmark and one they forget. The earlier capture-only
+demand probe (`signal_signups`) was removed, so this builds the alert feature
+from scratch rather than reusing it.
 
 **Steps.** Let visitors subscribe to "email me when a model I use changes price"
 (and/or a Slack webhook). Reuse the changelog event stream from T2.1 as the
