@@ -28,4 +28,36 @@ class EventsHelperTest < ActionView::TestCase
     assert non_reprice.any?
     assert non_reprice.all? { |e| e.move.nil? }
   end
+
+  # The sync writes many repricings in one batch, all dated today; the hero must
+  # still show a mix, not two price changes in a row.
+  test "hero_events picks the newest event then the newest of a different kind" do
+    events = [
+      build_event(27, "reprice", "Zeta repriced"),
+      build_event(27, "reprice", "Alpha repriced"),
+      build_event(20, "launch",  "Gamma released"),
+      build_event(10, "market",  "A market event")
+    ]
+
+    picked = hero_events(events, count: 2)
+
+    assert_equal %w[reprice launch], picked.map(&:kind)
+    assert_equal "Zeta repriced", picked.first.title, "primary stays the genuinely newest event"
+  end
+
+  test "hero_events falls back to the same kind when no other kind is available" do
+    events = [ build_event(27, "reprice", "Zeta repriced"), build_event(26, "reprice", "Alpha repriced") ]
+
+    picked = hero_events(events, count: 2)
+
+    assert_equal %w[reprice reprice], picked.map(&:kind)
+    assert_equal 2, picked.size
+  end
+
+  private
+
+  def build_event(day, kind, title)
+    EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,
+                            note: nil, model: nil, provider: nil, source_url: nil, move: nil)
+  end
 end

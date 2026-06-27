@@ -40,8 +40,12 @@
         <% end %>
         <%= price_change_badge(mv.input) %>
         <%= price_change_badge(mv.output) %>
-        <span class="ev-tag num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
-        <span class="ev-tag num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
+        <% if mv.input %>
+          <span class="ev-tag num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
+        <% end %>
+        <% if mv.output %>
+          <span class="ev-tag num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
+        <% end %>
       </div>
     <% elsif event.source_url.present? %>
       <%= link_to event.source_url, class: "ev-source", target: "_blank", rel: "noopener" do %>
