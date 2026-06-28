@@ -21,6 +21,24 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil e.cached
   end
 
+  test "a native-priced directory entry exposes native_price and nil text prices" do
+    e = PriceCatalog.model("pixel-forge-pro")
+
+    assert_not_nil e, "a priced image-gen directory row should be listed"
+    assert_equal :image_generation, e.modality_class
+    assert_in_delta 0.04, e.native_price, 0.0001
+    assert_nil e.input
+    assert_nil e.output
+    assert_nil e.cached
+  end
+
+  test "a text entry has a nil native_price (unchanged)" do
+    e = PriceCatalog.model("claude-opus-4-8")
+
+    assert_nil e.native_price
+    assert_in_delta 5.0, e.input, 0.0001
+  end
+
   test "an entry exposes current prices, context, tier, and provider" do
     e = PriceCatalog.model("claude-opus-4-8")
 

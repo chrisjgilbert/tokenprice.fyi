@@ -34,6 +34,14 @@ sonnet_launch:
   request_usd: 0.01
   source: anthropic.com/pricing
 
+priced_image_gen_native:
+  ai_model: priced_image_gen
+  effective_on: 2026-05-15
+  input_per_mtok:
+  output_per_mtok:
+  native_price_usd: 0.04
+  source: curated
+
 deepseek_launch:
   ai_model: deepseek_v4
   effective_on: 2026-02-01

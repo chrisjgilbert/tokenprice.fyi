@@ -93,6 +93,25 @@ image_gen:
   # so set it explicitly — it mirrors ModalityClass.for(text → image).
   modality_class: image_generation
 
+# A priced directory row (image generation) carrying a single hand-entered native
+# per-image price with NULL text rates — Phase 4. It is `priced?` and therefore
+# NOT a directory_listing? (it has left the "not yet tracked" state). Distinct from
+# pixel-forge-1, which stays the canonical price-LESS directory row.
+priced_image_gen:
+  provider: anthropic
+  name: Pixel Forge Pro
+  slug: pixel-forge-pro
+  tier: mid
+  released_on: 2026-05-15
+  status: active
+  source: manual
+  description: Image-generation model with a curated per-image native price.
+  input_modalities:
+    - text
+  output_modalities:
+    - image
+  modality_class: image_generation
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
