@@ -8,12 +8,13 @@ module OpenRouter
     # Build an OpenRouter-shaped model hash. Prices are USD *per token* strings,
     # exactly as the real API returns them.
     def or_model(id:, name:, prompt:, completion:, cache_read: "0",
-                 image: nil, audio: nil, video: nil, request: nil,
+                 cache_write: nil, image: nil, audio: nil, video: nil, request: nil,
                  context: 200_000, max_out: 8_192, created: 1_700_000_000,
                  input_modalities: [ "text" ], output_modalities: [ "text" ],
                  description: "An OpenRouter model.")
       pricing = { "prompt" => prompt, "completion" => completion,
                   "input_cache_read" => cache_read }
+      pricing["input_cache_write"] = cache_write unless cache_write.nil?
       pricing["image"]   = image   unless image.nil?
       pricing["audio"]   = audio   unless audio.nil?
       pricing["video"]   = video   unless video.nil?
@@ -610,6 +611,62 @@ module OpenRouter
       assert_equal 1, result.enriched
       assert_equal 0, result.created
       assert_equal 0, result.repriced
+    end
+
+    # --- extra price dimensions (cache-write / audio / image / request) -----
+
+    test "a text row stores the four extra price dimensions in the right units" do
+      sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005",
+                      cache_write: "0.00000125", audio: "0.0001",
+                      image: "0.04", request: "0.005") ])
+
+      price = AiModel.find_by!(openrouter_id: "anthropic/claude-haiku-4.5").current_price
+      # per-token dimensions are scaled to per-1M-tokens.
+      assert_equal 1.25, price.cache_write_per_mtok
+      assert_equal 100.0, price.audio_input_per_mtok
+      # per-image / per-request dimensions are raw USD (no ×1M).
+      assert_equal 0.04, price.image_input_usd
+      assert_equal 0.005, price.request_usd
+    end
+
+    test "a text row with none of the four extra dimensions leaves them all nil" do
+      sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005") ])
+
+      price = AiModel.find_by!(openrouter_id: "anthropic/claude-haiku-4.5").current_price
+      assert_nil price.cache_write_per_mtok
+      assert_nil price.audio_input_per_mtok
+      assert_nil price.image_input_usd
+      assert_nil price.request_usd
+    end
+
+    test "a change in input_cache_write alone writes a new snapshot" do
+      id = "anthropic/claude-haiku-4.5"
+      sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005",
+                      cache_write: "0.00000125") ])
+      model = AiModel.find_by!(openrouter_id: id)
+      assert_equal 1, model.price_points.count
+
+      result = sync([ or_model(id: id, name: "Anthropic: Claude Haiku 4.5",
+                               prompt: "0.000001", completion: "0.000005",
+                               cache_write: "0.0000025") ],
+                    today: Date.current + 1)
+
+      assert_equal 1, result.repriced
+      assert_equal 2, model.reload.price_points.count
+      assert_equal 2.5, model.current_price.cache_write_per_mtok
+    end
+
+    test "an image-generation directory row still writes no price point despite an image rate" do
+      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
+                               prompt: "0", completion: "0", image: "0.04",
+                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
+
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "google/imagen-4")
+      assert_equal 0, model.price_points.count
     end
 
     # --- editorial generation ----------------------------------------------

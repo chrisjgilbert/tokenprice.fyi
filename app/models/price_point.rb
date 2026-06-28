@@ -7,7 +7,8 @@ class PricePoint < ApplicationRecord
   validates :input_per_mtok, :output_per_mtok,
             presence: true,
             numericality: { greater_than_or_equal_to: 0 }
-  validates :cached_input_per_mtok,
+  validates :cached_input_per_mtok, :cache_write_per_mtok, :audio_input_per_mtok,
+            :image_input_usd, :request_usd,
             numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   scope :chronological, -> { order(:effective_on) }

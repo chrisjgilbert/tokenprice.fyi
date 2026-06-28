@@ -8,14 +8,14 @@ module ApplicationHelper
 
   # Format a USD-per-million-tokens figure. The numeric rule lives in PriceFormat
   # so the insight services format identically; this layer adds HTML/em-dash.
-  def usd(value)
+  def usd(value, decimals: 4)
     return content_tag(:span, "—", class: "tp-muted-dash") if value.nil?
 
-    "$#{PriceFormat.usd_amount(value)}"
+    "$#{PriceFormat.usd_amount(value, decimals: decimals)}"
   end
 
-  def usd_plain(value)
-    value.nil? ? "—" : "$#{PriceFormat.usd_amount(value)}"
+  def usd_plain(value, decimals: 4)
+    value.nil? ? "—" : "$#{PriceFormat.usd_amount(value, decimals: decimals)}"
   end
 
   # True for a Phase 2 directory row — delegated to the model so the "render as

@@ -290,6 +290,23 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "span", text: /Input \(solid\)/, count: 0
   end
 
+  test "show lists the extra billed dimensions with their units when present" do
+    get model_url(ai_models(:sonnet))
+    assert_response :success
+    assert_select ".tp-also-billed" do
+      assert_select "*", text: /Cache write/
+      assert_select "*", text: /Image input/
+      assert_select "*", text: %r{/ image}
+      assert_select "*", text: %r{/ 1M}
+    end
+  end
+
+  test "show omits the also-billed block for a model with no extra dimensions" do
+    get model_url(ai_models(:opus))
+    assert_response :success
+    assert_select ".tp-also-billed", count: 0
+  end
+
   test "show emits a self-canonical link that ignores query params" do
     get model_url(ai_models(:opus), ref: "twitter")
     assert_response :success
