@@ -1,7 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Slide-down mobile menu. Lives on the <nav>; the toggle button opens a panel
-// anchored under the bar. Closes on the scrim, Escape, navigation (Turbo
+// Slide-down mobile menu. Lives on <body> so the drawer (a sibling of the
+// <nav>) sits outside the bar's backdrop-filter and can be fixed to the
+// viewport; the toggle button opens a panel anchored under the bar. The
+// menu-open class lands on <body>, which the CSS selectors key off of. Closes
+// on the scrim, Escape, navigation (Turbo
 // visit), or a resize back up to the desktop layout. While open it locks body
 // scroll, marks the rest of the page inert, and traps Tab focus inside the
 // panel so keyboard and screen-reader users stay within the menu.
