@@ -467,23 +467,12 @@
           outside the Turbo frame the form replaces, so a class wouldn't refresh. %>
       <div class="tp-filter-group">
         <div class="tp-pills" role="group" aria-label="Filter by tier">
-          <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
+          <% tier_pill_options.each do |label, value| %>
             <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
           <% end %>
         </div>
-        <button type="button" class="tp-info" popovertarget="tier-legend" aria-label="What the tiers mean">
-          <%= icon(:info, size: 16) %>
-        </button>
-        <div id="tier-legend" class="tp-legend" popover
-             data-controller="popover" data-action="toggle->popover#position">
-          <p class="tp-legend-title">Tiers</p>
-          <dl class="tp-legend-list">
-            <% [["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
-              <dt><%= label %></dt>
-              <dd><%= tier_description(value) %></dd>
-            <% end %>
-          </dl>
-        </div>
+        <%= render "filter_legend", id: "tier-legend", title: "Tiers",
+              button_label: "What the tiers mean", entries: tier_legend_entries %>
       </div>
 
       <%# Modality radio pills — only the classes present among listed models. %>
@@ -495,19 +484,9 @@
               <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
             <% end %>
           </div>
-          <button type="button" class="tp-info" popovertarget="modality-legend" aria-label="What the modality categories mean">
-            <%= icon(:info, size: 16) %>
-          </button>
-          <div id="modality-legend" class="tp-legend" popover
-               data-controller="popover" data-action="toggle->popover#position">
-            <p class="tp-legend-title">Modality categories</p>
-            <dl class="tp-legend-list">
-              <% @modality_classes.each do |klass| %>
-                <dt><%= ModalityClass.label(klass) %></dt>
-                <dd><%= ModalityClass.description(klass) %></dd>
-              <% end %>
-            </dl>
-          </div>
+          <%= render "filter_legend", id: "modality-legend", title: "Modality categories",
+                button_label: "What the modality categories mean",
+                entries: @modality_classes.map { |klass| [ ModalityClass.label(klass), ModalityClass.description(klass) ] } %>
         </div>
       <% end %>
     </div>

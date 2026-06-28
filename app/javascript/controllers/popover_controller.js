@@ -3,8 +3,10 @@ import { Controller } from "@hotwired/stimulus"
 // Positions a native popover under the button that opened it, clamped to the
 // viewport and flipped above when there's no room below. The Popover API itself
 // handles opening, light-dismiss, focus and top-layer rendering (so the filters
-// card's overflow can't clip it); this only places it. No page-level state, so a
-// Turbo navigation that re-renders the markup just gets a fresh controller.
+// card's overflow can't clip it); this only places it. CSS anchor positioning
+// would do the placement declaratively, but isn't broadly supported across
+// browsers yet, so we do it here. No page-level state, so a Turbo navigation
+// that re-renders the markup just gets a fresh controller.
 export default class extends Controller {
   position(event) {
     if (event.newState !== "open") return

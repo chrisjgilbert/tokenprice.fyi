@@ -127,8 +127,15 @@ module ApplicationHelper
 
   def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
 
-  # A filter radio styled as a pill (see .tp-pill). The active state is CSS-driven
-  # off the checked radio, so the label just wraps the (visually hidden) input.
+  # [label, value] for the tier pills, sourced from TIER_LABELS so the tier set
+  # and its order live in one place. The leading "All" pill clears the filter.
+  def tier_pill_options = [ [ "All", "" ] ] + TIER_LABELS.map { |value, label| [ label, value ] }
+
+  # [term, description] rows for the tier legend, off the same single source.
+  def tier_legend_entries = TIER_LABELS.map { |value, label| [ label, tier_description(value) ] }
+
+  # The active state is CSS-driven off the checked radio (.tp-pill:has(input:checked)),
+  # so the label just wraps the visually hidden input.
   def filter_pill(name, value, label, checked:)
     tag.label class: "tp-pill" do
       radio_button_tag(name, value, checked, class: "sr-only",
