@@ -16,6 +16,14 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes status_badge("retired"), "tp-status-retired"
   end
 
+  test "usd keeps full precision for raw-USD dimensions when asked" do
+    # Per-1M rates use the default 4 dp; a small per-image/per-request fee would
+    # truncate there, so those callers pass decimals: 6.
+    assert_equal "$0.0015", usd(0.00153)
+    assert_equal "$0.00153", usd(0.00153, decimals: 6)
+    assert_equal "$0.000125", usd_plain(0.000125, decimals: 6)
+  end
+
   test "modality_signature renders a multimodal signature in reading order" do
     model = AiModel.new(input_modalities: %w[text image], output_modalities: %w[text])
     assert_equal "Text, image in → text out", modality_signature(model)
