@@ -54,18 +54,21 @@ class AiModel < ApplicationRecord
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
-  # "desc", then on a price sort sink price-less rows to the bottom in BOTH
-  # directions (a row with no rate can't be ranked, and `reverse` would otherwise
-  # float it to the top). The models/providers tables share this; their column
-  # sets — and thus which sorts count as price sorts — legitimately differ, so
-  # each passes its own `price_sort:`.
+  # "desc", then on a price sort sink rows without a per-token rate to the bottom
+  # in BOTH directions (a row that can't be ranked on the sorted column — a
+  # price-less row OR a native-priced directory row — would otherwise float to the
+  # top on reverse). The sink predicate is `token_priced?`, not `priced?`: a
+  # native-priced directory model is `priced?` but has no per-token rate, so
+  # `priced?` would leave it ranked at Float::INFINITY among the priced group. The
+  # models/providers tables share this; their column sets — and thus which sorts
+  # count as price sorts — legitimately differ, so each passes its own `price_sort:`.
   def self.sort_for_display(models, by:, dir:, price_sort:)
     sorted = models.sort_by(&by)
     sorted.reverse! if dir == "desc"
     return sorted unless price_sort
 
-    priced, priceless = sorted.partition(&:priced?)
-    priced + priceless
+    token_priced, rest = sorted.partition(&:token_priced?)
+    token_priced + rest
   end
 
   # Pretty URLs: /models/claude-opus-4-8
@@ -127,6 +130,12 @@ class AiModel < ApplicationRecord
   end
 
   def priced? = current_price.present?
+
+  # Priced on the per-token axis the listing tables sort by — a text/multimodal
+  # row with an input rate. A native-priced directory row is `priced?` but not
+  # `token_priced?` (its price is per image/second, no per-token rate), so a price
+  # sort sinks it alongside the price-less rows rather than ranking it at infinity.
+  def token_priced? = current_input.present?
 
   # The one home for "render this as a price-less 'not yet tracked' directory row":
   # a live, non-token-billed class (image-gen/TTS/…) we list ahead of pricing it.

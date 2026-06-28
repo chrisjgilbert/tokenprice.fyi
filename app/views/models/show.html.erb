@@ -1,6 +1,6 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
-<% content_for :description, directory_row?(@model) ?
-     "#{@model.name} (#{@model.provider.name}) — #{ModalityClass.label(@model.modality_class)} model. Pricing not yet tracked." :
+<% content_for :description, ModalityClass.directory_class?(@model.modality_class) ?
+     "#{@model.name} (#{@model.provider.name}) — #{ModalityClass.label(@model.modality_class)} model. #{directory_row?(@model) ? "Pricing not yet tracked." : "Priced #{native_price_display(@model)}."}" :
      "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
@@ -111,16 +111,18 @@
   </section>
 <% end %>
 
-<% if directory_row?(@model) %>
-  <%# A price-less directory row (Phase 2): no per-token rate exists yet, so name
-      the native unit honestly rather than rendering $0 across three cards. %>
+<% if ModalityClass.directory_class?(@model.modality_class) %>
+  <%# A directory-class model bills in a native unit (per image / per second), not
+      per token, so it shows ONE native-price card — the hand-entered price when
+      recorded, the honest "not yet tracked" note when not — never the three
+      per-token cards (which would render "—" on NULL text rates). %>
   <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div class="rounded-xl border border-slate-200 bg-white p-4 sm:col-span-3">
       <div class="flex items-center justify-between">
         <p class="text-xs uppercase tracking-wide text-slate-500">Price</p>
         <span class="text-slate-300" aria-hidden="true"><%= icon(:arrow_in, size: 15) %></span>
       </div>
-      <p class="mt-1 text-lg font-semibold tp-price-untracked"><%= untracked_price_note(@model) %></p>
+      <p class="mt-1 text-lg font-semibold <%= "tp-price-untracked" if directory_row?(@model) %>"><%= native_price_display(@model) %></p>
     </div>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
       <div class="flex items-center justify-between">

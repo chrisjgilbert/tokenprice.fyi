@@ -384,7 +384,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
     forge_at = names.index { |n| n.include?("Pixel Forge 1") }
-    last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+    # Both Forge rows lack a per-token rate and sink; compare against the last
+    # token-priced (non-Forge) row.
+    last_priced = names.rindex { |n| !n.include?("Pixel Forge") }
     assert forge_at, "the price-less image-gen row should be listed"
     assert forge_at > last_priced,
       "a price-less row must sort below every priced row on output desc"
@@ -395,7 +397,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
     forge_at = names.index { |n| n.include?("Pixel Forge 1") }
-    last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+    last_priced = names.rindex { |n| !n.include?("Pixel Forge") }
     assert forge_at > last_priced,
       "a price-less row must sort below every priced row on output asc"
   end
@@ -406,7 +408,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
       forge_at = names.index { |n| n.include?("Pixel Forge 1") }
-      last_priced = names.rindex { |n| !n.include?("Pixel Forge 1") }
+      last_priced = names.rindex { |n| !n.include?("Pixel Forge") }
       assert forge_at > last_priced,
         "a price-less row must sort below every priced row on input #{dir}"
     end
@@ -417,8 +419,10 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tbody td", text: /Pixel Forge 1/
     assert_match(/not yet tracked/i, @response.body)
-    # The row must never read as a free model.
-    assert_no_match(/\$0\b/, css_select("tbody").to_s)
+    # The price-less row must never read as a free model (scoped to its own row so
+    # the native-priced "$0.04" sibling doesn't trip the guard).
+    forge_one_row = css_select("tbody tr").find { |tr| tr.to_s.include?("Pixel Forge 1") }
+    assert_no_match(/\$0\b/, forge_one_row.to_s)
   end
 
   test "show renders an honest not-yet-tracked note for a price-less directory row" do
@@ -427,6 +431,64 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Pixel Forge 1"
     assert_match(/not yet tracked/i, @response.body)
     assert_no_match(/\$0\b/, @response.body)
+  end
+
+  test "show renders a native-priced directory model by its unit, not three per-token cards" do
+    get model_url(ai_models(:priced_image_gen))
+    assert_response :success
+    assert_select "h1", "Pixel Forge Pro"
+    assert_match(/\$0\.04/, @response.body)
+    assert_match(/image/i, @response.body)
+    # No per-token cards (those would render an em-dash on NULL text rates).
+    assert_select "p", text: /Input \/ 1M/, count: 0
+    assert_select "p", text: /Output \/ 1M/, count: 0
+    assert_no_match(/not yet tracked/i, @response.body)
+    # The context window card stays.
+    assert_select "p", text: /Context window/
+  end
+
+  test "show renders the three per-token cards for a text model unchanged" do
+    get model_url(ai_models(:opus))
+    assert_response :success
+    assert_select "p", text: /Input \/ 1M/
+    assert_select "p", text: /Output \/ 1M/
+    assert_select "p", text: /Cached input \/ 1M/
+  end
+
+  test "index renders a native-priced directory row by its native unit, never a dash or zero" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "tbody td", text: /Pixel Forge Pro/
+    # The native price spans the per-token columns as one cell, not three dashes.
+    pro_row = css_select("tbody tr").find { |tr| tr.to_s.include?("Pixel Forge Pro") }
+    assert pro_row, "the native-priced row should be listed"
+    price_cell = pro_row.css("td.numeric[colspan='3']").first
+    assert price_cell, "the price spans the three per-token columns as one cell"
+    assert_equal "$0.04 / image", price_cell.text.strip
+    assert_no_match(/not yet tracked/i, pro_row.to_s)
+  end
+
+  test "a native-priced directory row (no token rate) sinks below priced text rows on output desc" do
+    get root_url(sort: "output", dir: "desc")
+    assert_response :success
+    names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
+    pro_at = names.index { |n| n.include?("Pixel Forge Pro") }
+    last_token_priced = names.rindex { |n| !n.include?("Pixel Forge") }
+    assert pro_at, "the native-priced image-gen row should be listed"
+    assert pro_at > last_token_priced,
+      "a native-priced row with no token rate must sort below every token-priced row"
+  end
+
+  test "a native-priced directory row sinks below priced text rows on input in both directions" do
+    %w[asc desc].each do |dir|
+      get root_url(sort: "input", dir: dir)
+      assert_response :success
+      names = css_select("tbody tr td .tp-model-name").map { |n| n.text.strip }
+      pro_at = names.index { |n| n.include?("Pixel Forge Pro") }
+      last_token_priced = names.rindex { |n| !n.include?("Pixel Forge") }
+      assert pro_at > last_token_priced,
+        "a native-priced row must sort below every token-priced row on input #{dir}"
+    end
   end
 
   test "show renders editorial facets when present" do

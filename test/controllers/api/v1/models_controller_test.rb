@@ -73,6 +73,19 @@ module Api
         assert_nil opus["price_per_unit"]["request_usd"]
       end
 
+      test "exposes the native per-unit price for a directory model, null for text" do
+        get api_v1_models_url(format: :json)
+        models = JSON.parse(@response.body)["models"]
+
+        forge = models.find { |m| m["slug"] == "pixel-forge-pro" }
+        assert forge, "the native-priced image-gen row should be listed"
+        assert_in_delta 0.04, forge["price_per_unit"]["native_price_usd"], 0.0001
+
+        # A text model carries no native price.
+        opus = models.find { |m| m["slug"] == "claude-opus-4-8" }
+        assert_nil opus["price_per_unit"]["native_price_usd"]
+      end
+
       test "is cross-origin readable" do
         get api_v1_models_url(format: :json)
         assert_equal "*", @response.headers["Access-Control-Allow-Origin"]

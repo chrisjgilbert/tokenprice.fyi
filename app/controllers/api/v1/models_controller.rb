@@ -21,7 +21,10 @@ module Api
               input: m.input, output: m.output, cached_input: m.cached,
               cache_write: m.cache_write, audio_input: m.audio_input
             },
-            price_per_unit: { image_input_usd: m.image_input, request_usd: m.request }
+            price_per_unit: {
+              image_input_usd: m.image_input, request_usd: m.request,
+              native_price_usd: m.native_price
+            }
           }
         end
 

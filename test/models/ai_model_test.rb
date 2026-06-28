@@ -143,6 +143,25 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal [ priced, priceless ], sorted, "non-price sort orders by name, no sink"
   end
 
+  test "token_priced? is true for a text model and false for a native-priced directory row" do
+    assert ai_models(:opus).token_priced?, "a text model with per-token rates is token-priced"
+    assert_not ai_models(:priced_image_gen).token_priced?,
+      "a native-priced directory row has no per-token rate"
+    assert_not ai_models(:image_gen).token_priced?, "a price-less directory row is not token-priced"
+  end
+
+  test "sort_for_display sinks a native-priced directory row (no token rate) on a price sort" do
+    token_priced = ai_models(:opus)         # has per-token rates
+    native       = ai_models(:priced_image_gen) # priced?, but no per-token rate
+    by = ->(m) { m.current_input || Float::INFINITY }
+
+    asc  = AiModel.sort_for_display([ native, token_priced ], by: by, dir: "asc",  price_sort: true)
+    desc = AiModel.sort_for_display([ token_priced, native ], by: by, dir: "desc", price_sort: true)
+
+    assert_equal native, asc.last,  "native-priced row sinks below token-priced rows ascending"
+    assert_equal native, desc.last, "native-priced row sinks below token-priced rows descending"
+  end
+
   test "directory_listing? is true only for a live, price-less, directory-class row" do
     assert ai_models(:image_gen).directory_listing?, "price-less image-gen row"
     assert_not ai_models(:no_price).directory_listing?, "price-less text row is not a directory listing"
