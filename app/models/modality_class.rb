@@ -45,12 +45,18 @@ class ModalityClass
   # real rate). Everything else — text, multimodal, embedding, any_to_any — is
   # priced per token (or per input token); a price-less one of those is just a
   # model we lack data for, not a directory entry, so it stays unlisted.
+  # Each class names the unit its real list prices are quoted in, not a uniform
+  # "per second": TTS bills per character (OpenAI tts-1 is $15 / 1M characters),
+  # speech-to-text per minute of audio (Whisper is $0.006 / minute), image models
+  # per generated image, and video per second of output. A seeded native price is
+  # only meaningful paired with the unit it was quoted in, so these must match the
+  # provider's billing.
   DIRECTORY_PRICE_UNITS = {
     image_generation: "per image",
     image_editing:    "per image",
-    text_to_audio:    "per second",
-    audio_to_text:    "per second",
-    speech_to_speech: "per second",
+    text_to_audio:    "per 1M characters",
+    audio_to_text:    "per minute",
+    speech_to_speech: "per minute",
     video_generation: "per second"
   }.freeze
 
