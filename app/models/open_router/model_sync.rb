@@ -218,25 +218,39 @@ module OpenRouter
         )
         :created
       elsif repriced_from   # Hash of old pricing — truthy only when repriced
-        old_input = repriced_from[:input].to_f
-        pct = old_input.nonzero? ? ((pricing[:input] - old_input) / old_input * 100).round(1) : 0.0
+        # A snapshot was written, but the Slack digest only reports the headline
+        # rates. Announce a reprice only when one of those actually moved — an
+        # extra-dimension-only change (e.g. cache write) would otherwise post a
+        # confusing "$3→$3 · +0.0%" line.
+        if headline_moved?(repriced_from, pricing)
+          old_input = repriced_from[:input].to_f
+          pct = old_input.nonzero? ? ((pricing[:input] - old_input) / old_input * 100).round(1) : 0.0
 
-        @result.repriced_records << RepricedRecord.new(
-          model_name:    model.name,
-          provider_name: provider.name,
-          model_slug:    model.slug,
-          old_input:     repriced_from[:input],
-          old_output:    repriced_from[:output],
-          old_cached:    repriced_from[:cached],
-          new_input:     pricing[:input],
-          new_output:    pricing[:output],
-          new_cached:    pricing[:cached],
-          pct_input_change: pct
-        )
+          @result.repriced_records << RepricedRecord.new(
+            model_name:    model.name,
+            provider_name: provider.name,
+            model_slug:    model.slug,
+            old_input:     repriced_from[:input],
+            old_output:    repriced_from[:output],
+            old_cached:    repriced_from[:cached],
+            new_input:     pricing[:input],
+            new_output:    pricing[:output],
+            new_cached:    pricing[:cached],
+            pct_input_change: pct
+          )
+        end
         :repriced
       else
         :enriched
       end
+    end
+
+    # Did a headline rate (input / output / cached) move? The extra Phase 3
+    # dimensions still write a snapshot, but they aren't carried in the digest.
+    def headline_moved?(old, new)
+      old[:input] != new[:input] ||
+        old[:output] != new[:output] ||
+        (old[:cached] || 0) != (new[:cached] || 0)
     end
 
     # --- pricing -----------------------------------------------------------
@@ -251,17 +265,13 @@ module OpenRouter
       return nil if input.nil? || output.nil?
       return nil if input.zero? && output.zero?
 
-      cached = to_mtok(pricing["input_cache_read"])
-      cached = nil if cached&.zero? # treat "no cached tier" and 0 alike
-
       {
         input:       input,
         output:      output,
-        cached:      cached,
-        # Extra dimensions OpenRouter carries on text-output rows, riding along
-        # on a row already text-priced above. Cache-write and audio are per-token
-        # (scaled to per-1M); image and request are raw USD. 0/blank → nil, like
-        # `cached`, so an absent dimension reads as "not charged".
+        cached:      zero_to_nil(to_mtok(pricing["input_cache_read"])),
+        # Extra dimensions OpenRouter carries on text-output rows. image/request
+        # are a flat USD charge (to_usd), not a per-token rate. 0/blank reads as
+        # "not charged", so it's nil'd like cached.
         cache_write: zero_to_nil(to_mtok(pricing["input_cache_write"])),
         audio_input: zero_to_nil(to_mtok(pricing["audio"])),
         image_input: zero_to_nil(to_usd(pricing["image"])),
@@ -273,20 +283,22 @@ module OpenRouter
       value unless value&.zero?
     end
 
+    # Per-token rate scaled to USD per 1M tokens.
     def to_mtok(value)
-      return nil if value.nil? || value.to_s.strip.empty?
-
-      (BigDecimal(value.to_s) * PER_MTOK).round(6)
-    rescue ArgumentError
-      nil
+      d = parse_decimal(value)
+      (d * PER_MTOK).round(6) if d
     end
 
-    # Raw USD, no per-1M scaling — for per-image and per-request dimensions
-    # OpenRouter already quotes as a flat charge, not a per-token rate.
+    # Raw USD, no per-1M scaling — for the per-image / per-request dimensions
+    # OpenRouter quotes as a flat charge rather than a per-token rate.
     def to_usd(value)
+      parse_decimal(value)&.round(6)
+    end
+
+    def parse_decimal(value)
       return nil if value.nil? || value.to_s.strip.empty?
 
-      BigDecimal(value.to_s).round(6)
+      BigDecimal(value.to_s)
     rescue ArgumentError
       nil
     end

@@ -67,6 +67,30 @@ class PriceCatalog
     def image_input = current&.image_input
     def request     = current&.request
 
+    # The non-text billing dimensions beyond the three per-token rates, named once
+    # so the model page and the admin history don't drift. Each carries its label,
+    # unit suffix, and display precision: the raw-USD per-image / per-request fees
+    # need 6 dp, the per-1M rates 4.
+    BillingDimension = Data.define(:reader, :label, :unit, :decimals)
+    EXTRA_DIMENSIONS = [
+      BillingDimension.new(:cache_write, "Cache write", "/ 1M",    4),
+      BillingDimension.new(:audio_input, "Audio input", "/ 1M",    4),
+      BillingDimension.new(:image_input, "Image input", "/ image", 6),
+      BillingDimension.new(:request,     "Per request", nil,       6)
+    ].freeze
+
+    BillingLine = Data.define(:label, :value, :unit, :decimals)
+
+    # The dimensions this model is actually charged for. A stored 0 reads as "not
+    # charged" (the `cached` precedent), so it's filtered out — never rendered as
+    # a misleading "$0" line.
+    def extra_billing
+      EXTRA_DIMENSIONS.filter_map do |d|
+        value = public_send(d.reader)
+        BillingLine.new(d.label, value, d.unit, d.decimals) if value&.nonzero?
+      end
+    end
+
     # The price snapshot in effect on `date` — the latest one on or before it,
     # or nil if the model had no price yet (it wasn't available then).
     def as_of(date)

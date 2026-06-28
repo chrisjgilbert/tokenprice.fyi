@@ -28,10 +28,10 @@
             <td class="px-4 py-3 whitespace-nowrap">
               <%= pp.effective_on.strftime("%-d %b %Y") %>
               <% extras = [
-                   (["cache write #{usd_plain(pp.cache_write_per_mtok)}/1M"] if pp.cache_write_per_mtok),
-                   (["audio #{usd_plain(pp.audio_input_per_mtok)}/1M"] if pp.audio_input_per_mtok),
-                   (["image #{usd_plain(pp.image_input_usd, decimals: 6)}/image"] if pp.image_input_usd),
-                   (["request #{usd_plain(pp.request_usd, decimals: 6)}"] if pp.request_usd)
+                   (["cache write #{usd_plain(pp.cache_write_per_mtok)}/1M"] if pp.cache_write_per_mtok&.nonzero?),
+                   (["audio #{usd_plain(pp.audio_input_per_mtok)}/1M"] if pp.audio_input_per_mtok&.nonzero?),
+                   (["image #{usd_plain(pp.image_input_usd, decimals: 6)}/image"] if pp.image_input_usd&.nonzero?),
+                   (["request #{usd_plain(pp.request_usd, decimals: 6)}"] if pp.request_usd&.nonzero?)
                  ].compact.flatten %>
               <% if extras.any? %>
                 <div class="mt-1 text-xs text-slate-400">+ <%= extras.join(", ") %></div>
