@@ -157,21 +157,6 @@ module ApplicationHelper
     content_tag(:span, ModalityClass.label(model.modality_class), class: "tp-modality-badge")
   end
 
-  # The recorded signature as a calm "<inputs> in → <outputs> out" line, e.g.
-  # "Text, image in → text out". Suppressed for plain text models (via the same
-  # class the badge uses, so the two always agree) and for a half-recorded
-  # signature where one side is blank. Cleans tokens through ModalityClass but
-  # keeps the source's reading order.
-  def modality_signature(model)
-    return if model.modality_class == :text
-
-    inputs  = ModalityClass.normalize(model.input_modalities)
-    outputs = ModalityClass.normalize(model.output_modalities)
-    return if inputs.empty? || outputs.empty?
-
-    "#{inputs.join(", ")} in → #{outputs.join(", ")} out".upcase_first
-  end
-
   def status_badge(status)
     return if status == "active"
 
