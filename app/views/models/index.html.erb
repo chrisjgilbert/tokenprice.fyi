@@ -467,28 +467,18 @@
           outside the Turbo frame the form replaces, so a class wouldn't refresh. %>
       <div class="tp-pills" role="group" aria-label="Filter by tier">
         <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
-          <label class="tp-pill" <%= tag.attributes(title: tier_description(value)) %>>
-            <%= radio_button_tag :tier, value, @tier == value.presence,
-                  class: "sr-only", data: { action: "change->filters#submit" } %>
-            <%= label %>
-          </label>
+          <%= filter_pill :tier, value, label,
+                checked: @tier == value.presence, description: tier_description(value) %>
         <% end %>
       </div>
 
       <%# Modality radio pills — only the classes present among listed models. %>
       <% if @modality_classes.size > 1 %>
         <div class="tp-pills" role="group" aria-label="Filter by modality">
-          <label class="tp-pill">
-            <%= radio_button_tag :modality, "", @modality.nil?,
-                  class: "sr-only", data: { action: "change->filters#submit" } %>
-            All
-          </label>
+          <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
           <% @modality_classes.each do |klass| %>
-            <label class="tp-pill" <%= tag.attributes(title: ModalityClass.description(klass)) %>>
-              <%= radio_button_tag :modality, klass, @modality == klass,
-                    class: "sr-only", data: { action: "change->filters#submit" } %>
-              <%= ModalityClass.label(klass) %>
-            </label>
+            <%= filter_pill :modality, klass, ModalityClass.label(klass),
+                  checked: @modality == klass, description: ModalityClass.description(klass) %>
           <% end %>
         </div>
       <% end %>

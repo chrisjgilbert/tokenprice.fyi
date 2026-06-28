@@ -127,6 +127,21 @@ module ApplicationHelper
 
   def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
 
+  # A filter radio styled as a pill (see .tp-pill). When a description is given,
+  # the label drives the custom tooltip (tooltip_controller.js) and the radio
+  # points at a visually-hidden copy via aria-describedby, so assistive tech
+  # gets the same text the tooltip shows.
+  def filter_pill(name, value, label, checked:, description: nil)
+    tip_id = "#{name}-tip-#{value.presence || 'all'}" if description.present?
+
+    radio = radio_button_tag(name, value, checked, class: "sr-only",
+              "aria-describedby": tip_id, data: { action: "change->filters#submit" })
+    hint  = tag.span(description, id: tip_id, class: "sr-only") if description.present?
+
+    tag.label safe_join([ radio, label, hint ].compact), class: "tp-pill",
+      data: ({ controller: "tooltip", tooltip_text_value: description } if description.present?)
+  end
+
   def tier_badge(tier)
     content_tag(:span, class: "tp-badge #{TIER_CLASSES.fetch(tier, '')}") do
       content_tag(:span, "", class: "tp-badge-dot") + TIER_LABELS.fetch(tier, tier.to_s.titleize)
