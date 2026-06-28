@@ -57,6 +57,9 @@ class ModalityClass
 
   def self.description(symbol) = DESCRIPTIONS.fetch(symbol.to_sym, nil)
 
+  # [label, description] rows for the modality filter legend.
+  def self.legend_entries(symbols) = symbols.map { |symbol| [ label(symbol), description(symbol) ] }
+
   # The classes that bill in a NON-token unit, mapped to that unit. These are the
   # only classes we admit to the catalogue without a price (a "directory" row,
   # priced "per image / per second — not yet tracked" until Phase 3 quotes the
