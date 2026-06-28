@@ -5,16 +5,20 @@ namespace :openrouter do
     puts result
   end
 
-  # One-off backfill: the daily sync only generates editorial copy for models
-  # as they are first imported, so OpenRouter rows that predate that feature
-  # still carry the (often truncated) upstream blurb and no editorial facets.
-  # This walks those rows and writes them up the same way a fresh import would.
+  # One-off backfill / repair. Targets OpenRouter rows that still need a write-up:
+  #   - no editorial facets yet (predate the generation feature), or
+  #   - a description that is still the upstream blurb, which OpenRouter often
+  #     truncates with a trailing ellipsis. The latter repairs models whose
+  #     generated description was reverted by the enrich-clobber bug.
+  # Generated descriptions never end in an ellipsis, so they aren't re-selected.
   # Set LIMIT to cap how many are processed in one run (handy for a cheap trial).
-  desc "Generate editorial copy for existing OpenRouter models that lack it"
+  desc "Generate or repair editorial copy for OpenRouter models that need it"
   task backfill_descriptions: :environment do
     generator = AiModel::Description.new
 
-    scope = AiModel.from_openrouter.includes(:provider).where(strengths: [ nil, "" ])
+    missing   = AiModel.from_openrouter.where(strengths: [ nil, "" ])
+    truncated = AiModel.from_openrouter.where("description LIKE ? OR description LIKE ?", "%…", "%...")
+    scope = missing.or(truncated).includes(:provider)
     scope = scope.limit(Integer(ENV["LIMIT"])) if ENV["LIMIT"].present?
     models = scope.to_a
 

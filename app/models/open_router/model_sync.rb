@@ -386,7 +386,11 @@ module OpenRouter
       outputs  = modality_signature(row, "output_modalities")
 
       if model.source == AiModel::OPENROUTER_SOURCE
-        model.description    = desc if desc
+        # Refresh from upstream only until we've written the model up ourselves.
+        # Once it has generated editorial copy, that description is authoritative
+        # and must survive later syncs — the upstream blurb is often truncated,
+        # so refreshing it would revert our generated description every run.
+        model.description    = desc if desc && !written_up?(model)
         model.context_window = context if context
         model.max_output_tokens = max_out if max_out
         # Guarded like the fields above: a payload that omits `architecture`
@@ -406,6 +410,14 @@ module OpenRouter
       model.released_on ||= released
     end
 
+    # A model we've already written editorial copy for. Its description and
+    # facets are authoritative — neither the upstream blurb (enrich) nor a fresh
+    # generation should overwrite them. The facets are written together, so the
+    # presence of `strengths` marks the whole write-up as done.
+    def written_up?(model)
+      model.strengths.present?
+    end
+
     # Replace the (often truncated) upstream blurb with a generated editorial
     # write-up in the catalogue's own voice — the same description +
     # strengths/best-for/limitations shape as the curated rows. Runs for any row
@@ -418,7 +430,7 @@ module OpenRouter
     def generate_editorial(model)
       return unless @describer
       return unless model.source == AiModel::OPENROUTER_SOURCE
-      return if model.strengths.present?
+      return if written_up?(model)
       return if generation_capped?
 
       @generated += 1
