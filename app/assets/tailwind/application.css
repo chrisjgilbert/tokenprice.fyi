@@ -259,10 +259,17 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   .menu-open .tp-nav-toggle-bars span:nth-child(2) { opacity: 0; }
   .menu-open .tp-nav-toggle-bars span:nth-child(3) { top: 6px; transform: rotate(-45deg); }
 
+  /* The nav's backdrop-filter makes it the containing block for these
+     positioned children, so a `fixed` scrim anchored with `inset` collapses to
+     the nav's height. Anchor it under the bar and give it an explicit viewport
+     height so it actually covers the page. */
   .tp-m-scrim {
     display: block;
-    position: fixed;
-    inset: var(--nav-h) 0 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 100vh;
     background: rgba(15,23,42,.34);
     opacity: 0;
     visibility: hidden;
@@ -281,9 +288,10 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
     max-height: calc(100vh - var(--nav-h));
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: rgba(248,250,252,.92);
-    backdrop-filter: saturate(160%) blur(14px);
-    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    /* Opaque, not translucent: a nested backdrop-filter inside the nav's own
+       backdrop-filter renders transparent on iOS Safari, letting the page bleed
+       through the open drawer. A solid fill is reliable everywhere. */
+    background: var(--color-slate-50);
     border-bottom: 1px solid var(--color-slate-200);
     box-shadow: var(--shadow-lg);
     padding: 8px 14px 14px;
