@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_28_141500) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -76,12 +76,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_130000) do
 
   create_table "price_points", force: :cascade do |t|
     t.integer "ai_model_id", null: false
+    t.decimal "audio_input_per_mtok", precision: 12, scale: 6
+    t.decimal "cache_write_per_mtok", precision: 12, scale: 6
     t.decimal "cached_input_per_mtok", precision: 12, scale: 6
     t.datetime "created_at", null: false
     t.date "effective_on", null: false
+    t.decimal "image_input_usd", precision: 12, scale: 6
     t.decimal "input_per_mtok", precision: 12, scale: 6, null: false
     t.string "note"
     t.decimal "output_per_mtok", precision: 12, scale: 6, null: false
+    t.decimal "request_usd", precision: 12, scale: 6
     t.string "source"
     t.datetime "updated_at", null: false
     t.index ["ai_model_id", "effective_on"], name: "index_price_points_on_ai_model_id_and_effective_on", unique: true

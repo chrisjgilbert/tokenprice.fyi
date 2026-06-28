@@ -254,13 +254,39 @@ module OpenRouter
       cached = to_mtok(pricing["input_cache_read"])
       cached = nil if cached&.zero? # treat "no cached tier" and 0 alike
 
-      { input: input, output: output, cached: cached }
+      {
+        input:       input,
+        output:      output,
+        cached:      cached,
+        # Extra dimensions OpenRouter carries on text-output rows, riding along
+        # on a row already text-priced above. Cache-write and audio are per-token
+        # (scaled to per-1M); image and request are raw USD. 0/blank → nil, like
+        # `cached`, so an absent dimension reads as "not charged".
+        cache_write: zero_to_nil(to_mtok(pricing["input_cache_write"])),
+        audio_input: zero_to_nil(to_mtok(pricing["audio"])),
+        image_input: zero_to_nil(to_usd(pricing["image"])),
+        request:     zero_to_nil(to_usd(pricing["request"]))
+      }
+    end
+
+    def zero_to_nil(value)
+      value unless value&.zero?
     end
 
     def to_mtok(value)
       return nil if value.nil? || value.to_s.strip.empty?
 
       (BigDecimal(value.to_s) * PER_MTOK).round(6)
+    rescue ArgumentError
+      nil
+    end
+
+    # Raw USD, no per-1M scaling — for per-image and per-request dimensions
+    # OpenRouter already quotes as a flat charge, not a per-token rate.
+    def to_usd(value)
+      return nil if value.nil? || value.to_s.strip.empty?
+
+      BigDecimal(value.to_s).round(6)
     rescue ArgumentError
       nil
     end
@@ -315,6 +341,10 @@ module OpenRouter
         input_per_mtok:        pricing[:input],
         output_per_mtok:       pricing[:output],
         cached_input_per_mtok: pricing[:cached],
+        cache_write_per_mtok:  pricing[:cache_write],
+        audio_input_per_mtok:  pricing[:audio_input],
+        image_input_usd:       pricing[:image_input],
+        request_usd:           pricing[:request],
         source:                PRICE_SOURCE_LABEL
       )
       point.note ||= "Imported from OpenRouter"
@@ -329,8 +359,14 @@ module OpenRouter
         point.output_per_mtok == pricing[:output] &&
         # A missing cached tier reads back as nil from our own rows but may be a
         # stored 0 on a curated/linked row — treat the two alike so an
-        # unchanged price never churns a fresh snapshot every day.
-        (point.cached_input_per_mtok || 0) == (pricing[:cached] || 0)
+        # unchanged price never churns a fresh snapshot every day. The four extra
+        # dimensions get the same nil/0 normalisation so a change in any one alone
+        # (e.g. cache-write only) counts as a reprice and lands a fresh snapshot.
+        (point.cached_input_per_mtok || 0) == (pricing[:cached] || 0) &&
+        (point.cache_write_per_mtok || 0) == (pricing[:cache_write] || 0) &&
+        (point.audio_input_per_mtok || 0) == (pricing[:audio_input] || 0) &&
+        (point.image_input_usd || 0) == (pricing[:image_input] || 0) &&
+        (point.request_usd || 0) == (pricing[:request] || 0)
     end
 
     # --- providers & models ------------------------------------------------
