@@ -24,7 +24,9 @@ providers = {
   mistral:   { name: "Mistral",   website: "https://mistral.ai",        accent: "#FA520F", country: "France", country_code: "FR" },
   cohere:    { name: "Cohere",    website: "https://cohere.com",        accent: "#39594D", country: "Canada", country_code: "CA" },
   alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED", country: "China", country_code: "CN" },
-  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" }
+  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" },
+  bfl:       { name: "Black Forest Labs", website: "https://bfl.ai",    accent: "#111827", country: "Germany", country_code: "DE" },
+  stability: { name: "Stability AI", website: "https://stability.ai",   accent: "#7C3AED", country: "United Kingdom", country_code: "GB" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -890,12 +892,13 @@ end
 # verify against the provider's pricing page before relying on them.
 # ---------------------------------------------------------------------------
 directory_catalog = [
+  # ---- Image generation (text → image, billed per image) ----------------
   {
-    provider: :openai, name: "GPT Image 1", tier: "mid", status: "active",
-    released_on: "2025-04-23",
-    description: "OpenAI's image-generation model. Billed per generated image; the $0.04 figure is the standard-quality 1024×1024 list price.",
-    input_modalities: %w[text image], output_modalities: %w[image],
-    prices: [ { on: "2025-04-23", native: 0.04, src: "openai.com/api/pricing", note: "Standard quality, 1024×1024 list price" } ]
+    provider: :openai, name: "DALL·E 3", tier: "mid", status: "active",
+    released_on: "2023-11-06",
+    description: "OpenAI's text-to-image model. Billed per generated image; the $0.04 figure is the standard-quality 1024×1024 list price (HD and larger sizes cost more).",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: [ { on: "2023-11-06", native: 0.04, src: "openai.com/api/pricing", note: "Standard quality, 1024×1024 list price" } ]
   },
   {
     provider: :google, name: "Imagen 4", tier: "mid", status: "active",
@@ -903,6 +906,77 @@ directory_catalog = [
     description: "Google's image-generation model on the Gemini API. Billed per generated image at a $0.04 standard list price.",
     input_modalities: %w[text], output_modalities: %w[image],
     prices: [ { on: "2025-08-26", native: 0.04, src: "ai.google.dev/gemini-api/docs/pricing", note: "Imagen 4 standard, per-image list price" } ]
+  },
+  {
+    provider: :bfl, name: "FLUX1.1 [pro]", tier: "mid", status: "active",
+    released_on: "2024-10-02",
+    description: "Black Forest Labs' flagship text-to-image model. Billed per generated image on the BFL API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: [ { on: "2024-10-02", native: 0.04, src: "bfl.ai/pricing", note: "Per-image API list price" } ]
+  },
+  {
+    provider: :stability, name: "Stable Diffusion 3.5 Large", tier: "mid", status: "active",
+    released_on: "2024-10-22",
+    description: "Stability AI's open-weight 8B text-to-image model. The hosted Stability API bills 6.5 credits ($0.065) per generated image.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: [ { on: "2024-10-22", native: 0.065, src: "platform.stability.ai/pricing", note: "6.5 credits per image at $10 / 1000 credits" } ]
+  },
+
+  # ---- Image editing (text + image → image, billed per image) -----------
+  {
+    provider: :openai, name: "GPT Image 1", tier: "mid", status: "active",
+    released_on: "2025-04-23",
+    description: "OpenAI's image model: accepts text and image input for generation and editing, billed per generated image. The $0.04 figure is the medium-quality 1024×1024 list price.",
+    input_modalities: %w[text image], output_modalities: %w[image],
+    prices: [ { on: "2025-04-23", native: 0.04, src: "openai.com/api/pricing", note: "Medium quality, 1024×1024 list price" } ]
+  },
+  {
+    provider: :bfl, name: "FLUX.1 Kontext [pro]", tier: "mid", status: "active",
+    released_on: "2025-05-29",
+    description: "Black Forest Labs' in-context image-editing model — edits an input image from a text instruction. Billed per generated image on the BFL API.",
+    input_modalities: %w[text image], output_modalities: %w[image],
+    prices: [ { on: "2025-05-29", native: 0.04, src: "bfl.ai/pricing", note: "Per-image API list price" } ]
+  },
+
+  # ---- Video generation (text/image → video, billed per second) ---------
+  {
+    provider: :google, name: "Veo 3", tier: "frontier", status: "active",
+    released_on: "2025-05-20",
+    description: "Google's text- and image-to-video model with native audio, on the Gemini API. Billed per second of generated video.",
+    input_modalities: %w[text image], output_modalities: %w[video],
+    prices: [ { on: "2025-05-20", native: 0.40, src: "ai.google.dev/gemini-api/docs/pricing", note: "Per-second list price, video with audio" } ]
+  },
+  {
+    provider: :google, name: "Veo 3 Fast", tier: "mid", status: "active",
+    released_on: "2025-07-22",
+    description: "Faster, cheaper Veo 3 variant on the Gemini API. Billed per second of generated video. Release date approximate.",
+    input_modalities: %w[text image], output_modalities: %w[video],
+    prices: [ { on: "2025-07-22", native: 0.15, src: "ai.google.dev/gemini-api/docs/pricing", note: "Per-second list price, video with audio; date approximate" } ]
+  },
+
+  # ---- Text to audio / TTS (text → audio, billed per character) ---------
+  {
+    provider: :openai, name: "TTS-1", tier: "small", status: "active",
+    released_on: "2023-11-06",
+    description: "OpenAI's speed-optimised text-to-speech model. Billed per input character — $15 per 1M characters.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    prices: [ { on: "2023-11-06", native: 15.0, src: "openai.com/api/pricing", note: "$0.015 / 1K characters = $15 / 1M characters" } ]
+  },
+  {
+    provider: :openai, name: "TTS-1 HD", tier: "mid", status: "active",
+    released_on: "2023-11-06",
+    description: "Quality-optimised variant of OpenAI's text-to-speech model. Billed per input character — $30 per 1M characters.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    prices: [ { on: "2023-11-06", native: 30.0, src: "openai.com/api/pricing", note: "$0.030 / 1K characters = $30 / 1M characters" } ]
+  },
+
+  # ---- Speech to text / STT (audio → text, billed per minute) -----------
+  {
+    provider: :openai, name: "Whisper", tier: "small", status: "active",
+    released_on: "2023-03-01",
+    description: "OpenAI's speech-to-text model. Billed per minute of audio, rounded to the nearest second — $0.006 per minute.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    prices: [ { on: "2023-03-01", native: 0.006, src: "openai.com/api/pricing", note: "$0.006 / minute, rounded to the nearest second" } ]
   }
 ]
 
