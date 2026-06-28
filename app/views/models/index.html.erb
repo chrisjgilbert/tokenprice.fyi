@@ -486,7 +486,7 @@
           </div>
           <%= render "filter_legend", id: "modality-legend", title: "Modality categories",
                 button_label: "What the modality categories mean",
-                entries: @modality_classes.map { |klass| [ ModalityClass.label(klass), ModalityClass.description(klass) ] } %>
+                entries: ModalityClass.legend_entries(@modality_classes) %>
         </div>
       <% end %>
     </div>
