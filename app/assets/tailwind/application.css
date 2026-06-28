@@ -623,7 +623,7 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
 
 /* Pill radio group */
 .tp-pills {
-  display: inline-flex; padding: 4px; gap: 3px;
+  display: inline-flex; flex-wrap: wrap; min-width: 0; padding: 4px; gap: 3px;
   background: var(--color-slate-100); border-radius: var(--radius-pill);
   border: 1px solid var(--color-slate-200);
 }
@@ -642,8 +642,10 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
   border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); z-index: -1;
 }
 
-/* Filter group: the pills plus an info button that opens a legend popover. */
-.tp-filter-group { display: inline-flex; align-items: center; gap: 8px; }
+/* Filter group: the pills plus an info button that opens a legend popover.
+   min/max-width let a long pill row (modality) shrink and wrap on a narrow
+   screen instead of overflowing the card and pushing the info button off it. */
+.tp-filter-group { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .tp-info {
   display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none;
   border-radius: 50%; border: 1px solid var(--color-slate-200); background: #fff;
