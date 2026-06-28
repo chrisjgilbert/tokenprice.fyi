@@ -58,8 +58,8 @@
             <%= status_badge(model.status) %>
           </td>
           <td class="px-4 py-3"><%= tier_badge(model.tier) %></td>
-          <% if directory_row?(model) %>
-            <td class="px-4 py-3 text-right tabular-nums" colspan="2"><%= price_cell(nil, model, compact: false) %></td>
+          <% if ModalityClass.directory_class?(model.modality_class) %>
+            <td class="px-4 py-3 text-right tabular-nums <%= 'tp-price-untracked' if directory_row?(model) %>" colspan="2"><%= native_price_display(model) %></td>
           <% else %>
             <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
             <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>

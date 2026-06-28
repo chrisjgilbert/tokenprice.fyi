@@ -37,6 +37,16 @@ class EventsHelperTest < ActionView::TestCase
     assert_not_includes launch.note, "—"
   end
 
+  test "a native-priced directory model's launch note names its native price, not per-token dashes" do
+    launch = build_all_events.find { |e| e.kind == "launch" && e.model == ai_models(:priced_image_gen) }
+
+    assert launch, "expected the native-priced image-gen row to emit a launch event"
+    assert_includes launch.note, "$0.04"
+    assert_includes launch.note, "image"
+    assert_not_includes launch.note, "per 1M"
+    assert_not_includes launch.note, "—"
+  end
+
   # The sync writes many repricings in one batch, all dated today; the hero must
   # still show a mix, not two price changes in a row.
   test "hero_events picks the newest event then the newest of a different kind" do

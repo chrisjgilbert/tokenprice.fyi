@@ -881,6 +881,59 @@ catalog.each do |row|
   end
 end
 
+# ---------------------------------------------------------------------------
+# Directory-class models (Phase 4) — non-text-output models that bill in a
+# native unit (per image / per second), not per token. OpenRouter prices none
+# of these, so the price is hand-entered: one native_price_usd snapshot with the
+# per-token rates NULL. The unit is class-derived (ModalityClass.price_unit), so
+# one column carries the value. Prices are widely-published round list prices —
+# verify against the provider's pricing page before relying on them.
+# ---------------------------------------------------------------------------
+directory_catalog = [
+  {
+    provider: :openai, name: "GPT Image 1", tier: "mid", status: "active",
+    released_on: "2025-04-23",
+    description: "OpenAI's image-generation model. Billed per generated image; the $0.04 figure is the standard-quality 1024×1024 list price.",
+    input_modalities: %w[text image], output_modalities: %w[image],
+    prices: [ { on: "2025-04-23", native: 0.04, src: "openai.com/api/pricing", note: "Standard quality, 1024×1024 list price" } ]
+  },
+  {
+    provider: :google, name: "Imagen 4", tier: "mid", status: "active",
+    released_on: "2025-08-26",
+    description: "Google's image-generation model on the Gemini API. Billed per generated image at a $0.04 standard list price.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: [ { on: "2025-08-26", native: 0.04, src: "ai.google.dev/gemini-api/docs/pricing", note: "Imagen 4 standard, per-image list price" } ]
+  }
+]
+
+directory_catalog.each do |row|
+  model = AiModel.find_or_initialize_by(slug: row[:name].parameterize)
+  model.update!(
+    provider:          providers.fetch(row[:provider]),
+    name:              row[:name],
+    tier:              row[:tier],
+    status:            row[:status],
+    released_on:       row[:released_on],
+    description:       row[:description],
+    source:            AiModel::MANUAL_SOURCE,
+    input_modalities:  row[:input_modalities],
+    output_modalities: row[:output_modalities]
+  )
+
+  wanted_dates = row[:prices].map { |p| Date.parse(p[:on]) }
+  model.price_points.where.not(effective_on: wanted_dates).destroy_all
+
+  row[:prices].each do |p|
+    point = model.price_points.find_or_initialize_by(effective_on: Date.parse(p[:on]))
+    point.update!(
+      input_per_mtok:   nil,
+      output_per_mtok:  nil,
+      native_price_usd: p[:native],
+      source:           p[:src],
+      note:             p[:note]
+    )
+  end
+end
 
 # ---------------------------------------------------------------------------
 # Market Events — curated industry milestones for Trends overlays

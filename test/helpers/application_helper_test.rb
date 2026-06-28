@@ -61,4 +61,22 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes pill, "Not yet tracked"
     assert_not_includes pill, "—"
   end
+
+  test "io_price shows the native price for a priced directory model, never a dash pill" do
+    pill = io_price(ai_models(:priced_image_gen))
+    assert_includes pill, "$0.04"
+    assert_includes pill, "image"
+    assert_not_includes pill, "—"
+    assert_not_includes pill, "Not yet tracked"
+  end
+
+  test "native_price_display names the native unit price for a priced directory model" do
+    display = native_price_display(ai_models(:priced_image_gen))
+    assert_includes display, "$0.04"
+    assert_includes display, "image"
+  end
+
+  test "native_price_display falls back to the not-yet-tracked note when unpriced" do
+    assert_includes native_price_display(ai_models(:image_gen)), "not yet tracked"
+  end
 end

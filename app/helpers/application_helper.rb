@@ -36,6 +36,20 @@ module ApplicationHelper
     content_tag(:span, untracked_price_note(model, compact: compact), class: "tp-price-untracked")
   end
 
+  # The display string for a directory-class model's price: its native per-unit
+  # price ("$0.04 / image") when one is recorded, otherwise the honest "not yet
+  # tracked" note. The unit phrasing has one home — ModalityClass.price_unit gives
+  # "per image"; both the price and the untracked note read off it, so a priced and
+  # an unpriced directory row of the same class name the same unit.
+  def native_price_display(model)
+    price = model.current_price&.native_price_usd
+    return untracked_price_note(model) if price.nil?
+
+    unit = ModalityClass.price_unit(model.modality_class)
+    suffix = unit ? " / #{unit.delete_prefix("per ")}" : ""
+    "#{usd_plain(price, decimals: 4)}#{suffix}"
+  end
+
   # The compact price subtitle in the compare model-picker dropdown: the input
   # rate, or the untracked note for a directory row so it never reads "— in".
   def picker_price(model)
@@ -54,11 +68,16 @@ module ApplicationHelper
     unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
   end
 
-  # I/O shorthand: "$3 / $15" — the primary at-a-glance price. A directory row has
-  # no per-token rate, so it shows the honest note instead of a "— / —" pill that
-  # would read as free (this is the chip on the hero card and the launch timeline).
+  # I/O shorthand: "$3 / $15" — the primary at-a-glance price. A directory-class
+  # model has no per-token rate, so it shows its native unit price ("$0.04 / image")
+  # when one is recorded and the honest "Not yet tracked" note when not — never a
+  # "— / —" pill that would read as free (this is the chip on the hero card and the
+  # launch timeline). A text/multimodal row renders the I/O pill unchanged.
   def io_price(model, tag: false, big: false, light: false)
-    return content_tag(:span, "Not yet tracked", class: "tp-price-untracked") if directory_row?(model)
+    if ModalityClass.directory_class?(model.modality_class)
+      label = directory_row?(model) ? untracked_price_note(model, compact: true) : native_price_display(model)
+      return content_tag(:span, label, class: "tp-price-untracked")
+    end
 
     classes = "tp-io num"
     classes += " tp-io-big" if big
