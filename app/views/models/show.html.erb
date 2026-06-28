@@ -182,6 +182,10 @@
   </section>
 <% end %>
 
+<%# Per-token price history + snapshots — only meaningful for token-priced models.
+    A directory-class model bills in a native unit (its price is the card above),
+    so skip these rather than chart $0.00 / list "—" rows on NULL text rates. %>
+<% unless ModalityClass.directory_class?(@model.modality_class) %>
 <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
   <div class="mb-4 flex items-center justify-between">
     <h2 class="text-lg font-semibold">Price history</h2>
@@ -240,6 +244,7 @@
     </table>
   </div>
 </section>
+<% end %>
 
 <% if @related.any? %>
   <section>

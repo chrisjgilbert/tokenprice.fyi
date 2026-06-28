@@ -263,6 +263,16 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "svg"
   end
 
+  test "show renders a native-priced directory model's price, skipping the per-token history" do
+    get model_url(ai_models(:priced_image_gen))
+    assert_response :success
+    assert_match %r{\$0\.04 / image}, @response.body
+    # The per-token sections would chart $0.00 on NULL text rates, so they're omitted.
+    assert_select "h2", text: "Price history", count: 0
+    assert_select "h2", text: "Snapshots", count: 0
+    assert_no_match(/\$0\.00/, @response.body)
+  end
+
   test "show mounts the interactive price-chart controller with its data" do
     # The chart is progressively enhanced: the controller plus the serialized
     # price points (for the hover crosshair/tooltip) ride on the container.
