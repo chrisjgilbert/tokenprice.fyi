@@ -633,8 +633,11 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
   font-family: var(--font-sans); transition: color .16s var(--ease-default); position: relative; letter-spacing: -0.01em;
 }
 .tp-pill:hover { color: var(--color-slate-900); }
-.tp-pill.active { color: var(--color-indigo-700); }
-.tp-pill.active::before {
+/* Active state derives from the checked radio (like .tp-check below), not a
+   server-rendered class: the pills sit outside the Turbo frame the filter form
+   replaces, so a render-time class would never refresh on a filter change. */
+.tp-pill:has(input:checked) { color: var(--color-indigo-700); }
+.tp-pill:has(input:checked)::before {
   content: ""; position: absolute; inset: 0; background: #fff;
   border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); z-index: -1;
 }

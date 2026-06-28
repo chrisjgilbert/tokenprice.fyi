@@ -462,10 +462,12 @@
               data: { action: "input->filters#search" } %>
       </div>
 
-      <%# Tier radio pills %>
+      <%# Tier radio pills. Active state is driven by the checked radio in CSS
+          (.tp-pill:has(input:checked)), not a render-time class — the pills sit
+          outside the Turbo frame the form replaces, so a class wouldn't refresh. %>
       <div class="tp-pills" role="group" aria-label="Filter by tier">
         <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
-          <label class="tp-pill <%= @tier == value.presence ? 'active' : '' %>">
+          <label class="tp-pill" <%= tag.attributes(title: tier_description(value)) %>>
             <%= radio_button_tag :tier, value, @tier == value.presence,
                   class: "sr-only", data: { action: "change->filters#submit" } %>
             <%= label %>
@@ -476,13 +478,13 @@
       <%# Modality radio pills — only the classes present among listed models. %>
       <% if @modality_classes.size > 1 %>
         <div class="tp-pills" role="group" aria-label="Filter by modality">
-          <label class="tp-pill <%= 'active' if @modality.nil? %>">
+          <label class="tp-pill">
             <%= radio_button_tag :modality, "", @modality.nil?,
                   class: "sr-only", data: { action: "change->filters#submit" } %>
             All
           </label>
           <% @modality_classes.each do |klass| %>
-            <label class="tp-pill <%= 'active' if @modality == klass %>">
+            <label class="tp-pill" <%= tag.attributes(title: ModalityClass.description(klass)) %>>
               <%= radio_button_tag :modality, klass, @modality == klass,
                     class: "sr-only", data: { action: "change->filters#submit" } %>
               <%= ModalityClass.label(klass) %>

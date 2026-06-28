@@ -39,6 +39,24 @@ class ModalityClass
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
 
+  # One-line filter tooltips naming each class by its input→output shape — the
+  # same signature the rules below match on, said in plain words.
+  DESCRIPTIONS = {
+    text:             "Text in, text out.",
+    multimodal:       "Accepts images, audio, or other media as input; produces text.",
+    text_to_audio:    "Text in, audio out — text-to-speech.",
+    audio_to_text:    "Audio in, text out — transcription.",
+    speech_to_speech: "Audio in, audio out.",
+    image_generation: "Text, optionally with an image, in; a generated image out.",
+    image_editing:    "An image in, an edited image out.",
+    video_generation: "Text or an image in, generated video out.",
+    embedding:        "Text or an image in, a vector embedding out.",
+    any_to_any:       "Produces several output modalities, including non-text.",
+    other:            "Modality signatures that don't fit the categories above."
+  }.freeze
+
+  def self.description(symbol) = DESCRIPTIONS.fetch(symbol.to_sym, nil)
+
   # The classes that bill in a NON-token unit, mapped to that unit. These are the
   # only classes we admit to the catalogue without a price (a "directory" row,
   # priced "per image / per second — not yet tracked" until Phase 3 quotes the

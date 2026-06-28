@@ -119,6 +119,14 @@ module ApplicationHelper
 
   TIER_LABELS = { "frontier" => "Frontier", "mid" => "Mid", "small" => "Small" }.freeze
 
+  TIER_DESCRIPTIONS = {
+    "frontier" => "A provider's most capable, highest-priced models.",
+    "mid"      => "Mid-range models — cheaper than frontier, capable for most work.",
+    "small"    => "The smallest, cheapest models — for high-volume, well-defined tasks."
+  }.freeze
+
+  def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
+
   def tier_badge(tier)
     content_tag(:span, class: "tp-badge #{TIER_CLASSES.fetch(tier, '')}") do
       content_tag(:span, "", class: "tp-badge-dot") + TIER_LABELS.fetch(tier, tier.to_s.titleize)
