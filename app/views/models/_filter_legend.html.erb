@@ -1,0 +1,15 @@
+<%# A filter group's info button and the legend popover it opens.
+    locals: id, title, button_label, entries (array of [term, description]). %>
+<button type="button" class="tp-info" popovertarget="<%= id %>" aria-label="<%= button_label %>">
+  <%= icon(:info, size: 16) %>
+</button>
+<div id="<%= id %>" class="tp-legend" popover
+     data-controller="popover" data-action="toggle->popover#position">
+  <p class="tp-legend-title"><%= title %></p>
+  <dl class="tp-legend-list">
+    <% entries.each do |term, description| %>
+      <dt><%= term %></dt>
+      <dd><%= description %></dd>
+    <% end %>
+  </dl>
+</div>
