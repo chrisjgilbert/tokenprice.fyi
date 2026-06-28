@@ -657,6 +657,9 @@ module OpenRouter
       assert_equal 1, result.repriced
       assert_equal 2, model.reload.price_points.count
       assert_equal 2.5, model.current_price.cache_write_per_mtok
+      # The headline rates didn't move, so the Slack digest gets no misleading
+      # "$X→$X · +0.0%" reprice line for the cache-write-only change.
+      assert_empty result.repriced_records
     end
 
     test "an image-generation directory row still writes no price point despite an image rate" do

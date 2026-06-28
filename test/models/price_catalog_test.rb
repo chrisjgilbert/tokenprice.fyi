@@ -61,6 +61,23 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil e.request
   end
 
+  test "extra_billing lists the charged dimensions with labels, and omits nil or zero" do
+    sonnet = PriceCatalog.model("claude-sonnet-4-6")
+    labels = sonnet.extra_billing.map(&:label)
+    assert_equal [ "Cache write", "Audio input", "Image input", "Per request" ], labels
+    assert_equal "/ image", sonnet.extra_billing.find { |l| l.label == "Image input" }.unit
+
+    # A model with none charged has an empty list (nil dimensions are omitted).
+    assert_empty PriceCatalog.model("claude-opus-4-8").extra_billing
+  end
+
+  test "extra_billing treats a stored 0 as not charged, never a $0 line" do
+    pp = ai_models(:sonnet).price_points.chronological.last
+    pp.update!(image_input_usd: 0)
+    e = PriceCatalog.model("claude-sonnet-4-6")
+    assert_not_includes e.extra_billing.map(&:label), "Image input"
+  end
+
   test "history is chronological" do
     dates = PriceCatalog.history("deepseek-v4-pro").map(&:date)
 

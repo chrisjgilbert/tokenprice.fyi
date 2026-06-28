@@ -148,31 +148,20 @@
     <% end %>
   </div>
 
-  <% if @catalog_entry %>
-    <% present = [
-         # [label, value, unit, decimals] — per-1M rates at 4 dp, the raw-USD
-         # per-image/per-request fees at 6 dp so a $0.00153 surcharge isn't
-         # truncated to "$0.0015".
-         [ "Cache write", @catalog_entry.cache_write, "/ 1M",    4 ],
-         [ "Audio input", @catalog_entry.audio_input, "/ 1M",    4 ],
-         [ "Image input", @catalog_entry.image_input, "/ image", 6 ],
-         [ "Per request", @catalog_entry.request,     nil,       6 ]
-       ].select { |_, value, _, _| value.present? } %>
-    <% if present.any? %>
-      <div class="tp-also-billed mb-8 rounded-xl border border-slate-200 bg-white p-5">
-        <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Also billed</p>
-        <dl class="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-          <% present.each do |label, value, unit, decimals| %>
-            <div class="flex items-baseline justify-between gap-4">
-              <dt class="text-sm text-slate-600"><%= label %></dt>
-              <dd class="text-sm font-semibold tabular-nums">
-                <%= usd(value, decimals: decimals) %><% if unit %> <span class="font-normal text-slate-400"><%= unit %></span><% end %>
-              </dd>
-            </div>
-          <% end %>
-        </dl>
-      </div>
-    <% end %>
+  <% if @catalog_entry && (billing = @catalog_entry.extra_billing).any? %>
+    <div class="tp-also-billed mb-8 rounded-xl border border-slate-200 bg-white p-5">
+      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Also billed</p>
+      <dl class="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+        <% billing.each do |line| %>
+          <div class="flex items-baseline justify-between gap-4">
+            <dt class="text-sm text-slate-600"><%= line.label %></dt>
+            <dd class="text-sm font-semibold tabular-nums">
+              <%= usd(line.value, decimals: line.decimals) %><% if line.unit %> <span class="font-normal text-slate-400"><%= line.unit %></span><% end %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
   <% end %>
 <% end %>
 
