@@ -94,6 +94,9 @@ class AiModel::Description
   private
 
   def clamp(value, limit)
-    value.to_s.strip.truncate(limit).presence
+    # No ellipsis: a generated line should never *look* truncated, and the
+    # backfill's repair scope keys off a trailing ellipsis to spot leftover
+    # upstream blurbs — our own output must not trip that.
+    value.to_s.strip.truncate(limit, omission: "").rstrip.presence
   end
 end

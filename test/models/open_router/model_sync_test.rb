@@ -707,6 +707,26 @@ module OpenRouter
                           .where(strengths: [ nil, "" ]).count
     end
 
+    test "a written-up model keeps its generated description across syncs" do
+      # A model we've already written up: a clean generated description + facets.
+      model = AiModel.create!(
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        name: "Wonder Pre", slug: "anthropic-wonder-pre", status: "active", tier: "mid",
+        openrouter_id: "anthropic/wonder-pre",
+        description: "A clean generated sentence.",
+        strengths: "S.", best_for: "B.", limitations: "L."
+      )
+
+      # A later sync brings the (truncated) upstream blurb again. Generation off.
+      sync([ or_model(id: "anthropic/wonder-pre", name: "Anthropic: Wonder Pre",
+                      prompt: "0.000001", completion: "0.000002",
+                      description: "Upstream blurb that is truncated…") ],
+           today: Date.current + 1, describer: nil)
+
+      assert_equal "A clean generated sentence.", model.reload.description,
+                   "enrich must not revert a written-up model's description to the upstream blurb"
+    end
+
     test "a generation failure falls back to the upstream description" do
       raising = FakeDescriber.new { |**| raise "boom" }
 
