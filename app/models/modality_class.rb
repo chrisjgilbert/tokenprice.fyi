@@ -33,7 +33,7 @@ class ModalityClass
     image_editing:    "Image editing",
     video_generation: "Video generation",
     embedding:        "Embedding",
-    any_to_any:       "Any to any",
+    any_to_any:       "Omnimodal",
     other:            "Other"
   }.freeze
 

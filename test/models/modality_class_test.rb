@@ -29,6 +29,10 @@ class ModalityClassTest < ActiveSupport::TestCase
     end
   end
 
+  test "the omni class is labelled Omnimodal" do
+    assert_equal "Omnimodal", ModalityClass.label(:any_to_any)
+  end
+
   test "empty input and output degrade to text" do
     assert_equal :text, ModalityClass.for(input: [], output: [])
   end
