@@ -66,7 +66,8 @@ class ModelsController < ApplicationController
     # applied so switching between classes stays possible.
     @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
     models.select! { |m| m.modality_class.to_s == @modality } if @modality
-    @models = sort_models(models, @sort, @dir)
+    @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
+      price_sort: PRICE_SORTS.include?(@sort))
 
     # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
@@ -97,20 +98,5 @@ class ModelsController < ApplicationController
     @related = AiModel.listed.where(provider: @model.provider)
       .where.not(id: @model.id)
       .includes(:price_points, :provider).by_release.limit(4)
-  end
-
-  private
-
-  # Sort, then sink price-less directory rows to the bottom on a price sort. They
-  # have no per-token rate to rank by, so the chosen key + reverse would otherwise
-  # float them above priced rows in one direction — the partition keeps them last
-  # in both. Non-price sorts (name/tier/context/change) need no special handling.
-  def sort_models(models, sort, dir)
-    sorted = models.sort_by(&SORTS.fetch(sort))
-    sorted.reverse! if dir == "desc"
-    return sorted unless PRICE_SORTS.include?(sort)
-
-    priced, priceless = sorted.partition { |m| m.current_price }
-    priced + priceless
   end
 end
