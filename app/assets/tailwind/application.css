@@ -274,16 +274,17 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   .tp-m-panel {
     display: flex;
     flex-direction: column;
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: var(--nav-h);
     left: 0;
     right: 0;
     max-height: calc(100vh - var(--nav-h));
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: rgba(248,250,252,.92);
-    backdrop-filter: saturate(160%) blur(14px);
-    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    /* Opaque, not translucent: a nested backdrop-filter inside the nav's own
+       backdrop-filter renders transparent on iOS Safari, letting the page bleed
+       through the open drawer. A solid fill is reliable everywhere. */
+    background: var(--color-slate-50);
     border-bottom: 1px solid var(--color-slate-200);
     box-shadow: var(--shadow-lg);
     padding: 8px 14px 14px;
