@@ -39,8 +39,8 @@ class ModalityClass
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
 
-  # One-line filter tooltips naming each class by its input→output shape — the
-  # same signature the rules below match on, said in plain words.
+  # One-line descriptions for the filter legend, naming each class by its
+  # input→output shape — the same signature the rules below match on, in plain words.
   DESCRIPTIONS = {
     text:             "Text in, text out.",
     multimodal:       "Accepts images, audio, or other media as input; produces text.",

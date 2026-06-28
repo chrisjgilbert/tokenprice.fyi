@@ -127,19 +127,13 @@ module ApplicationHelper
 
   def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
 
-  # A filter radio styled as a pill (see .tp-pill). When a description is given,
-  # the label drives the custom tooltip (tooltip_controller.js) and the radio
-  # points at a visually-hidden copy via aria-describedby, so assistive tech
-  # gets the same text the tooltip shows.
-  def filter_pill(name, value, label, checked:, description: nil)
-    tip_id = "#{name}-tip-#{value.presence || 'all'}" if description.present?
-
-    radio = radio_button_tag(name, value, checked, class: "sr-only",
-              "aria-describedby": tip_id, data: { action: "change->filters#submit" })
-    hint  = tag.span(description, id: tip_id, class: "sr-only") if description.present?
-
-    tag.label safe_join([ radio, label, hint ].compact), class: "tp-pill",
-      data: ({ controller: "tooltip", tooltip_text_value: description } if description.present?)
+  # A filter radio styled as a pill (see .tp-pill). The active state is CSS-driven
+  # off the checked radio, so the label just wraps the (visually hidden) input.
+  def filter_pill(name, value, label, checked:)
+    tag.label class: "tp-pill" do
+      radio_button_tag(name, value, checked, class: "sr-only",
+        data: { action: "change->filters#submit" }) + label
+    end
   end
 
   def tier_badge(tier)
@@ -328,7 +322,8 @@ module ApplicationHelper
     brackets: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/></svg>',
     bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>',
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
-    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
   }.freeze
 
   def icon(name, size: 17)
