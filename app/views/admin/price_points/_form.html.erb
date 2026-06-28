@@ -24,6 +24,29 @@
       </div>
     </div>
 
+    <div class="border-t border-slate-100 pt-4">
+      <h3 class="text-sm font-medium text-slate-700">Non-text pricing (optional)</h3>
+      <p class="mt-1 mb-3 text-xs text-slate-500">Leave blank when the model isn't charged for these.</p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= f.label :cache_write_per_mtok, "Cache write $/1M", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.number_field :cache_write_per_mtok, step: "any", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        </div>
+        <div>
+          <%= f.label :audio_input_per_mtok, "Audio input $/1M", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.number_field :audio_input_per_mtok, step: "any", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        </div>
+        <div>
+          <%= f.label :image_input_usd, "Image input $/image", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.number_field :image_input_usd, step: "any", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        </div>
+        <div>
+          <%= f.label :request_usd, "Per request $", class: "block text-sm font-medium text-slate-700 mb-1" %>
+          <%= f.number_field :request_usd, step: "any", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+        </div>
+      </div>
+    </div>
+
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <%= f.label :source, "Source (URL you read it from)", class: "block text-sm font-medium text-slate-700 mb-1" %>

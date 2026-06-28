@@ -36,4 +36,60 @@ class Admin::PricePointsControllerTest < ActionDispatch::IntegrationTest
       delete admin_model_price_point_path(model, price_points(:deepseek_cut))
     end
   end
+
+  test "persists the non-text pricing dimensions on create" do
+    model = ai_models(:opus)
+    post admin_model_price_points_path(model), params: { price_point: {
+      effective_on: Date.new(2026, 6, 1), input_per_mtok: 4, output_per_mtok: 20,
+      cache_write_per_mtok: 5, audio_input_per_mtok: 40,
+      image_input_usd: 0.002, request_usd: 0.01
+    } }
+    pp = model.price_points.find_by!(effective_on: Date.new(2026, 6, 1))
+    assert_equal 5, pp.cache_write_per_mtok
+    assert_equal 40, pp.audio_input_per_mtok
+    assert_equal 0.002, pp.image_input_usd
+    assert_equal 0.01, pp.request_usd
+  end
+
+  test "blank non-text pricing dimensions persist as nil" do
+    model = ai_models(:opus)
+    post admin_model_price_points_path(model), params: { price_point: {
+      effective_on: Date.new(2026, 6, 1), input_per_mtok: 4, output_per_mtok: 20,
+      cache_write_per_mtok: "", audio_input_per_mtok: "",
+      image_input_usd: "", request_usd: ""
+    } }
+    pp = model.price_points.find_by!(effective_on: Date.new(2026, 6, 1))
+    assert_nil pp.cache_write_per_mtok
+    assert_nil pp.audio_input_per_mtok
+    assert_nil pp.image_input_usd
+    assert_nil pp.request_usd
+  end
+
+  test "edits the non-text pricing dimensions" do
+    pp = price_points(:sonnet_launch)
+    model = pp.ai_model
+    patch admin_model_price_point_path(model, pp), params: { price_point: {
+      cache_write_per_mtok: 7, image_input_usd: 0.004
+    } }
+    pp.reload
+    assert_equal 7, pp.cache_write_per_mtok
+    assert_equal 0.004, pp.image_input_usd
+  end
+
+  test "the edit form renders inputs for the non-text pricing dimensions" do
+    pp = price_points(:sonnet_launch)
+    get edit_admin_model_price_point_path(pp.ai_model, pp)
+    assert_response :success
+    assert_select "input[name='price_point[cache_write_per_mtok]']"
+    assert_select "input[name='price_point[audio_input_per_mtok]']"
+    assert_select "input[name='price_point[image_input_usd]']"
+    assert_select "input[name='price_point[request_usd]']"
+  end
+
+  test "the price history shows non-text dimensions when present" do
+    pp = price_points(:sonnet_launch)
+    get edit_admin_model_path(pp.ai_model)
+    assert_response :success
+    assert_match "0.002", @response.body
+  end
 end

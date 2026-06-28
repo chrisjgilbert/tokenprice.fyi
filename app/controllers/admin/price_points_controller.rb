@@ -45,7 +45,8 @@ module Admin
     def price_point_params
       params.require(:price_point).permit(
         :effective_on, :input_per_mtok, :output_per_mtok,
-        :cached_input_per_mtok, :source, :note
+        :cached_input_per_mtok, :cache_write_per_mtok, :audio_input_per_mtok,
+        :image_input_usd, :request_usd, :source, :note
       )
     end
   end
