@@ -39,7 +39,9 @@ module ApplicationHelper
   # The compact price subtitle in the compare model-picker dropdown: the input
   # rate, or the untracked note for a directory row so it never reads "— in".
   def picker_price(model)
-    directory_row?(model) ? "Not yet tracked" : "#{usd(model.current_input)} in"
+    return untracked_price_note(model, compact: true) if directory_row?(model)
+
+    "#{usd(model.current_input)} in"
   end
 
   # The wording for a directory row's missing price. The full form names the
