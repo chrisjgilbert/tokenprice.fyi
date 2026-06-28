@@ -36,6 +36,12 @@ module ApplicationHelper
     content_tag(:span, untracked_price_note(model, compact: compact), class: "tp-price-untracked")
   end
 
+  # The compact price subtitle in the compare model-picker dropdown: the input
+  # rate, or the untracked note for a directory row so it never reads "— in".
+  def picker_price(model)
+    directory_row?(model) ? "Not yet tracked" : "#{usd(model.current_input)} in"
+  end
+
   # The wording for a directory row's missing price. The full form names the
   # native billing unit ("Priced per image — not yet tracked") from ModalityClass
   # (the one home for the taxonomy); the compact form is just "Not yet tracked".

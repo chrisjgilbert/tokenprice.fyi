@@ -23,12 +23,7 @@ class ProvidersController < ApplicationController
     return if catalog_fresh?(etag: [ :provider_show, @provider.slug, @sort, @dir ])
 
     models = @provider.ai_models.includes(:price_points).to_a
-    models.sort_by!(&SORTS.fetch(@sort))
-    models.reverse! if @dir == "desc"
-    if PRICE_SORTS.include?(@sort)
-      priced, priceless = models.partition(&:current_price)
-      models = priced + priceless
-    end
-    @models = models
+    @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
+      price_sort: PRICE_SORTS.include?(@sort))
   end
 end

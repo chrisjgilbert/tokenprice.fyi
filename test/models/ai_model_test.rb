@@ -122,6 +122,27 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not_includes AiModel.listed, model
   end
 
+  test "sort_for_display sinks price-less rows to the bottom on a price sort in both directions" do
+    priced    = ai_models(:opus)        # has price points
+    priceless = ai_models(:image_gen)   # directory row, no price
+    by = ->(m) { m.current_input || Float::INFINITY }
+
+    asc  = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc",  price_sort: true)
+    desc = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "desc", price_sort: true)
+
+    assert_equal priceless, asc.last,  "price-less row sinks last ascending"
+    assert_equal priceless, desc.last, "price-less row sinks last descending too"
+  end
+
+  test "sort_for_display leaves price-less rows in normal order on a non-price sort" do
+    priced    = ai_models(:opus)
+    priceless = ai_models(:image_gen)
+    by = ->(m) { m.name.to_s.downcase } # "claude opus 4.8" < "pixel forge 1"
+
+    sorted = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc", price_sort: false)
+    assert_equal [ priced, priceless ], sorted, "non-price sort orders by name, no sink"
+  end
+
   test "directory_listing? is true only for a live, price-less, directory-class row" do
     assert ai_models(:image_gen).directory_listing?, "price-less image-gen row"
     assert_not ai_models(:no_price).directory_listing?, "price-less text row is not a directory listing"

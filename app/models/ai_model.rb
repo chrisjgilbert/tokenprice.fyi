@@ -53,6 +53,21 @@ class AiModel < ApplicationRecord
   scope :curated, -> { where(source: MANUAL_SOURCE) }
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
+  # Order an already-loaded list for a listing table: sort by `by`, reverse for
+  # "desc", then on a price sort sink price-less rows to the bottom in BOTH
+  # directions (a row with no rate can't be ranked, and `reverse` would otherwise
+  # float it to the top). The models/providers tables share this; their column
+  # sets — and thus which sorts count as price sorts — legitimately differ, so
+  # each passes its own `price_sort:`.
+  def self.sort_for_display(models, by:, dir:, price_sort:)
+    sorted = models.sort_by(&by)
+    sorted.reverse! if dir == "desc"
+    return sorted unless price_sort
+
+    priced, priceless = sorted.partition(&:priced?)
+    priced + priceless
+  end
+
   # Pretty URLs: /models/claude-opus-4-8
   def to_param = slug
 
