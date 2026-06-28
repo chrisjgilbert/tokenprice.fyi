@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_130000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -19,6 +19,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_120000) do
     t.json "input_modalities", default: [], null: false
     t.text "limitations"
     t.integer "max_output_tokens"
+    t.string "modality_class", default: "text", null: false
     t.string "name", null: false
     t.string "openrouter_id"
     t.json "output_modalities", default: [], null: false
@@ -30,6 +31,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_120000) do
     t.text "strengths"
     t.string "tier", default: "frontier", null: false
     t.datetime "updated_at", null: false
+    t.index ["modality_class"], name: "index_ai_models_on_modality_class"
     t.index ["openrouter_id"], name: "index_ai_models_on_openrouter_id", unique: true
     t.index ["provider_id"], name: "index_ai_models_on_provider_id"
     t.index ["slug"], name: "index_ai_models_on_slug", unique: true

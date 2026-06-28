@@ -39,6 +39,31 @@ class ModalityClass
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
 
+  # The classes that bill in a NON-token unit, mapped to that unit. These are the
+  # only classes we admit to the catalogue without a price (a "directory" row,
+  # priced "per image / per second — not yet tracked" until Phase 3 quotes the
+  # real rate). Everything else — text, multimodal, embedding, any_to_any — is
+  # priced per token (or per input token); a price-less one of those is just a
+  # model we lack data for, not a directory entry, so it stays unlisted.
+  DIRECTORY_PRICE_UNITS = {
+    image_generation: "per image",
+    image_editing:    "per image",
+    text_to_audio:    "per second",
+    audio_to_text:    "per second",
+    speech_to_speech: "per second",
+    video_generation: "per second"
+  }.freeze
+
+  # The class symbols admitted as price-less directory rows, as strings — for the
+  # `listed` SQL scope's IN-list.
+  DIRECTORY_CLASS_NAMES = DIRECTORY_PRICE_UNITS.keys.map(&:to_s).freeze
+
+  # Whether a class is one we'd list without a price (non-token billing).
+  def self.directory_class?(symbol) = DIRECTORY_PRICE_UNITS.key?(symbol.to_sym)
+
+  # The non-token billing unit for a directory class, or nil for token-priced ones.
+  def self.price_unit(symbol) = DIRECTORY_PRICE_UNITS[symbol.to_sym]
+
   # Clean a raw token list: lowercase, drop tokens outside the closed
   # vocabulary, dedup — preserving order so callers that persist or display a
   # signature keep the source's reading order (text first, typically). The

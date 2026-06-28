@@ -8,16 +8,23 @@ module OpenRouter
     # Build an OpenRouter-shaped model hash. Prices are USD *per token* strings,
     # exactly as the real API returns them.
     def or_model(id:, name:, prompt:, completion:, cache_read: "0",
+                 image: nil, audio: nil, video: nil, request: nil,
                  context: 200_000, max_out: 8_192, created: 1_700_000_000,
                  input_modalities: [ "text" ], output_modalities: [ "text" ],
                  description: "An OpenRouter model.")
+      pricing = { "prompt" => prompt, "completion" => completion,
+                  "input_cache_read" => cache_read }
+      pricing["image"]   = image   unless image.nil?
+      pricing["audio"]   = audio   unless audio.nil?
+      pricing["video"]   = video   unless video.nil?
+      pricing["request"] = request unless request.nil?
+
       {
         "id" => id, "name" => name, "created" => created,
         "description" => description, "context_length" => context,
         "architecture" => { "input_modalities" => input_modalities,
                             "output_modalities" => output_modalities },
-        "pricing" => { "prompt" => prompt, "completion" => completion,
-                       "input_cache_read" => cache_read },
+        "pricing" => pricing,
         "top_provider" => { "context_length" => context, "max_completion_tokens" => max_out }
       }
     end
@@ -30,7 +37,7 @@ module OpenRouter
                     describer: describer, logger: ActiveSupport::Logger.new(nil)).call
     end
 
-    test "creates new models, skips curated duplicates and free/non-text rows" do
+    test "creates new models, skips curated duplicates and genuinely free rows" do
       rows = [
         # Duplicates curated `opus` (Claude Opus 4.8) -> skipped, left untouched.
         or_model(id: "anthropic/claude-opus-4.8", name: "Anthropic: Claude Opus 4.8",
@@ -43,16 +50,13 @@ module OpenRouter
                  prompt: "0.0000001", completion: "0.0000004"),
         # Free model -> skipped.
         or_model(id: "freeco/free-1", name: "FreeCo: Free 1",
-                 prompt: "0", completion: "0"),
-        # Embeddings (non-text output) -> skipped.
-        or_model(id: "embedco/embed-1", name: "EmbedCo: Embed 1",
-                 prompt: "0.00000002", completion: "0", output_modalities: [ "embedding" ])
+                 prompt: "0", completion: "0")
       ]
 
       result = assert_difference("AiModel.count", 2) { sync(rows) }
 
       assert_equal 2, result.created
-      assert_equal 3, result.skipped
+      assert_equal 2, result.skipped
 
       # Curated Opus is untouched: no parallel record, original data intact.
       assert_equal 1, AiModel.where("name = ?", "Claude Opus 4.8").count
@@ -61,9 +65,8 @@ module OpenRouter
       assert_equal "Test model.", opus.description
       assert_equal 1, opus.price_points.count
 
-      # Free / embedding rows created neither providers nor models.
+      # Free row created neither a provider nor a model.
       assert_nil Provider.find_by(slug: "freeco")
-      assert_nil Provider.find_by(slug: "embedco")
     end
 
     test "a created model is mapped onto our schema" do
@@ -496,6 +499,117 @@ module OpenRouter
       assert_equal [], model.input_modalities
       assert_equal [], model.output_modalities
       assert_equal :text, model.modality_class
+    end
+
+    # --- admitting non-text-output models (directory-first) -----------------
+
+    test "an image-generation row is admitted price-less, classed, with no price points" do
+      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
+                               prompt: "0", completion: "0", image: "0.04",
+                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
+
+      assert_equal 1, result.created
+
+      model = AiModel.find_by!(openrouter_id: "google/imagen-4")
+      assert_equal :image_generation, model.modality_class
+      assert_equal 0, model.price_points.count
+    end
+
+    test "an embedding row priced on prompt tokens is skipped, never written as a $0-output priced row" do
+      # Embeddings carry a real prompt price with completion 0, so parse_pricing
+      # returns a price — but output isn't text, so no per-token PricePoint may be
+      # written (it would render a misleading $0 output). Embedding isn't a
+      # directory class, so the row is skipped entirely.
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "openai/text-embedding-3", name: "OpenAI: Text Embedding 3",
+                        prompt: "0.00000002", completion: "0",
+                        input_modalities: [ "text" ], output_modalities: [ "embedding" ]) ])
+      end
+
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "openai/text-embedding-3")
+    end
+
+    test "a video-generation row priced per video is admitted price-less, classed video_generation" do
+      result = sync([ or_model(id: "google/veo-3", name: "Google: Veo 3",
+                               prompt: "0", completion: "0", video: "0.5",
+                               input_modalities: [ "text" ], output_modalities: [ "video" ]) ])
+
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "google/veo-3")
+      assert_equal :video_generation, model.modality_class
+      assert_equal 0, model.price_points.count
+    end
+
+    test "a text model still records a price point (regression)" do
+      sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
+                      prompt: "0.000001", completion: "0.000005") ])
+
+      model = AiModel.find_by!(openrouter_id: "anthropic/claude-haiku-4.5")
+      assert_equal 1, model.price_points.count
+      assert_equal 1.0, model.current_price.input_per_mtok
+    end
+
+    test "a genuinely free row with no non-text price is still skipped" do
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "freeco/free-img", name: "FreeCo: Free Img",
+                        prompt: "0", completion: "0", image: "0",
+                        output_modalities: [ "image" ]) ])
+      end
+
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "freeco/free-img")
+    end
+
+    test "a text-output row with only a partial token price (no image/audio) is skipped, not mislabelled" do
+      # prompt blank → parse_pricing returns nil; the leftover completion price
+      # isn't a non-text dimension, so the row isn't rescued as a directory entry.
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "halfco/half-1", name: "HalfCo: Half 1",
+                        prompt: "", completion: "0.000005",
+                        output_modalities: [ "text" ]) ])
+      end
+
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "halfco/half-1")
+    end
+
+    test "a text-to-speech row is admitted price-less, classed text_to_audio" do
+      result = sync([ or_model(id: "openai/tts-1", name: "OpenAI: TTS 1",
+                               prompt: "0", completion: "0", audio: "0.000015",
+                               input_modalities: [ "text" ], output_modalities: [ "audio" ]) ])
+
+      assert_equal 1, result.created
+
+      model = AiModel.find_by!(openrouter_id: "openai/tts-1")
+      assert_equal :text_to_audio, model.modality_class
+      assert_equal 0, model.price_points.count
+    end
+
+    test "building the digest does not raise when a price-less model is created" do
+      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
+                               prompt: "0", completion: "0", image: "0.04",
+                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
+
+      assert_nothing_raised { OpenRouter::SyncDigest.new(result).to_slack_payload }
+      rec = result.created_records.first
+      assert_nil rec.input_per_mtok
+      assert_nil rec.output_per_mtok
+    end
+
+    test "a re-synced price-less model enriches without a price point" do
+      rows = [ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
+                        prompt: "0", completion: "0", image: "0.04",
+                        input_modalities: [ "text" ], output_modalities: [ "image" ]) ]
+      sync(rows)
+
+      result = nil
+      assert_no_difference [ "AiModel.count", "PricePoint.count" ] do
+        result = sync(rows, today: Date.current + 1)
+      end
+      assert_equal 1, result.enriched
+      assert_equal 0, result.created
+      assert_equal 0, result.repriced
     end
 
     # --- editorial generation ----------------------------------------------

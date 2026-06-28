@@ -37,8 +37,18 @@ class AiModel < ApplicationRecord
 
   before_validation :set_slug, on: :create
   before_validation :normalize_openrouter_id
+  before_save :assign_modality_class, if: :modality_signature_changed?
 
-  scope :listed, -> { where.not(status: "retired").where(id: PricePoint.select(:ai_model_id)) }
+  # Visible in the public directory: not retired, and either priced or a directory
+  # class (a non-token-billed class like image-gen/TTS that we list price-less,
+  # "not yet tracked", until Phase 3). A price-less token-priced row (text,
+  # multimodal, embedding) stays hidden — we simply have no data on it. The
+  # modality_class column is NOT NULL, so the IN-list is index-usable.
+  scope :listed, -> {
+    where.not(status: "retired")
+      .where("ai_models.id IN (SELECT ai_model_id FROM price_points) OR ai_models.modality_class IN (?)",
+             ModalityClass::DIRECTORY_CLASS_NAMES)
+  }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
@@ -86,9 +96,11 @@ class AiModel < ApplicationRecord
     super
   end
 
-  # The single filterable class derived from the signature. An empty/unknown
-  # signature degrades to :text, so existing text rows are unaffected. Memoized
-  # like the other derived readers here; the writers above clear it.
+  # The single filterable class, as a Symbol, always derived from the live
+  # signature — so a reader is never stale, even after an in-memory signature
+  # change before save. The `modality_class` string column is a denormalised copy
+  # used ONLY by the `listed` SQL scope; `before_save :assign_modality_class`
+  # keeps it in lockstep. An empty/unknown signature degrades to :text.
   def modality_class
     @modality_class ||= ModalityClass.for(input: input_modalities, output: output_modalities)
   end
@@ -97,6 +109,16 @@ class AiModel < ApplicationRecord
   # input spans beyond plain text.
   def multimodal?
     input_modalities.any? { |m| m != "text" }
+  end
+
+  def priced? = current_price.present?
+
+  # The one home for "render this as a price-less 'not yet tracked' directory row":
+  # a live, non-token-billed class (image-gen/TTS/…) we list ahead of pricing it.
+  # The views, helpers, sort, and Slack digest all ask this — never their own
+  # ad-hoc nil-price check — so the rule lives in one place.
+  def directory_listing?
+    !priced? && !retired? && ModalityClass.directory_class?(modality_class)
   end
 
   # A fuller descriptive paragraph for meta tags and structured data, folding
@@ -236,6 +258,18 @@ class AiModel < ApplicationRecord
     i = 0
     haystack.each_char { |c| i += 1 if c == needle[i] }
     i == needle.length
+  end
+
+  # Keep the queryable `modality_class` column in lockstep with the signature (the
+  # `listed` scope filters on it in SQL). The reader derives independently, so the
+  # column is a write-only-from-Ruby denormalisation; the `if:` guard skips the
+  # rewrite when the signature didn't change (the common daily-sync save).
+  def assign_modality_class
+    self[:modality_class] = modality_class.to_s
+  end
+
+  def modality_signature_changed?
+    new_record? || will_save_change_to_input_modalities? || will_save_change_to_output_modalities?
   end
 
   def set_slug

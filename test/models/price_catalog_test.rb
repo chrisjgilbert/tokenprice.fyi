@@ -11,6 +11,16 @@ class PriceCatalogTest < ActiveSupport::TestCase
     refute_includes slugs, "claude-instant-1" # retired
   end
 
+  test "a price-less non-text directory model appears with its class and nil prices" do
+    e = PriceCatalog.model("pixel-forge-1")
+
+    assert_not_nil e, "price-less image-gen directory row should be listed"
+    assert_equal :image_generation, e.modality_class
+    assert_nil e.input
+    assert_nil e.output
+    assert_nil e.cached
+  end
+
   test "an entry exposes current prices, context, tier, and provider" do
     e = PriceCatalog.model("claude-opus-4-8")
 
@@ -56,6 +66,17 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_equal "frontier", result.tier
     assert_equal "deepseek-v4-pro", result.slug # cheapest frontier by input (0.435)
     assert_in_delta frontier_inputs.min, result.input, 1e-9
+  end
+
+  test "cheapest never picks a price-less directory row of its tier" do
+    # pixel-forge-1 is a mid-tier directory row with no current input price. The
+    # cheapest-frontier/mid headline reads `e.input` to rank, so a nil-priced row
+    # must be filtered out — never returned (a nil .input would otherwise crash
+    # min_by or surface as a blank/$0 in the worked example).
+    result = PriceCatalog.cheapest(tier: "mid")
+    assert result, "a priced mid-tier model should still win the headline"
+    refute_equal "pixel-forge-1", result.slug
+    refute_nil result.input, "the cheapest example must carry a real input price"
   end
 
   test "cheapest reuses an injected catalog and returns nil when none qualify" do

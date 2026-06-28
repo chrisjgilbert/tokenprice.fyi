@@ -120,6 +120,15 @@ module OpenRouter
       assert_includes section_text, "/admin/models/newlab-wonder-1/edit"
     end
 
+    test "a price-less directory model reads 'not yet tracked', never $0/$0" do
+      c = make_created(model_name: "Pixel Forge 1", input_per_mtok: nil, output_per_mtok: nil)
+      payload = digest(make_result(created_records: [ c ])).to_slack_payload
+      section_text = payload[:blocks].find { |b| b[:type] == "section" }&.dig(:text, :text)
+      assert_includes section_text, "Pixel Forge 1"
+      assert_includes section_text, "price not yet tracked"
+      assert_not_includes section_text, "$0/$0"
+    end
+
     test "shows 'new provider' marker when new_provider is true" do
       c = make_created(provider_name: "BrandNewCo", new_provider: true)
       payload = digest(make_result(created_records: [ c ])).to_slack_payload

@@ -38,6 +38,18 @@ module Api
         assert_in_delta 5.0, models.find { |m| m["slug"] == "claude-opus-4-8" }["price_per_mtok"]["input"], 0.0001
       end
 
+      test "a price-less directory row reports null prices, never zero" do
+        get api_v1_models_url(format: :json)
+        models = JSON.parse(@response.body)["models"]
+
+        forge = models.find { |m| m["slug"] == "pixel-forge-1" }
+        assert forge, "the price-less image-gen directory row should be listed"
+        assert_equal "image_generation", forge["modality_class"]
+        assert_nil forge["price_per_mtok"]["input"]
+        assert_nil forge["price_per_mtok"]["output"]
+        assert_nil forge["price_per_mtok"]["cached_input"]
+      end
+
       test "is cross-origin readable" do
         get api_v1_models_url(format: :json)
         assert_equal "*", @response.headers["Access-Control-Allow-Origin"]

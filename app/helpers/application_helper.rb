@@ -18,8 +18,40 @@ module ApplicationHelper
     value.nil? ? "—" : "$#{PriceFormat.usd_amount(value)}"
   end
 
-  # I/O shorthand: "$3 / $15" — the primary at-a-glance price
+  # True for a Phase 2 directory row — delegated to the model so the "render as
+  # 'not yet tracked'" rule (live, price-less, non-token-billed class) has one
+  # home. A price-less text/multimodal row (no data, not a directory class) and a
+  # retired one are excluded, so on the unscoped provider page they render "—".
+  def directory_row?(model) = model.directory_listing?
+
+  # A price cell: the USD figure when priced, otherwise an honest "not yet tracked"
+  # note — never $0 or a bare dash that could read as "free". `compact:` (the dense
+  # listing tables, where the note repeats across three columns) shows the short
+  # "Not yet tracked"; the full form names the native unit, for the roomier model
+  # page. Used everywhere a price-table cell renders so a directory row degrades
+  # the same way across surfaces.
+  def price_cell(value, model, compact: true)
+    return usd(value) unless directory_row?(model)
+
+    content_tag(:span, untracked_price_note(model, compact: compact), class: "tp-price-untracked")
+  end
+
+  # The wording for a directory row's missing price. The full form names the
+  # native billing unit ("Priced per image — not yet tracked") from ModalityClass
+  # (the one home for the taxonomy); the compact form is just "Not yet tracked".
+  def untracked_price_note(model, compact: false)
+    return "Not yet tracked" if compact
+
+    unit = ModalityClass.price_unit(model.modality_class)
+    unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
+  end
+
+  # I/O shorthand: "$3 / $15" — the primary at-a-glance price. A directory row has
+  # no per-token rate, so it shows the honest note instead of a "— / —" pill that
+  # would read as free (this is the chip on the hero card and the launch timeline).
   def io_price(model, tag: false, big: false, light: false)
+    return content_tag(:span, "Not yet tracked", class: "tp-price-untracked") if directory_row?(model)
+
     classes = "tp-io num"
     classes += " tp-io-big" if big
     classes += " tp-io-light" if light

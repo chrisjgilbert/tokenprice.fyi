@@ -176,6 +176,20 @@ class GuideControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "—"
   end
 
+  # --- Phase 2: a price-less directory row in the catalog can't break the guide.
+
+  test "every task still renders with a price-less directory row in the catalog" do
+    # The image-gen fixture (no price points) rides in PriceCatalog.models; the
+    # guide loads that catalog and prices its options against it. None of the
+    # guide's option slugs reference the price-less row, so every page must still
+    # render and never fabricate a $0 figure off the nil-priced entry.
+    assert_includes PriceCatalog.models.map(&:slug), "pixel-forge-1"
+    FeaturePattern.all.each do |pattern|
+      get guide_task_path(pattern.slug)
+      assert_response :success, "#{pattern.key} did not render with a price-less catalog row present"
+    end
+  end
+
   # --- SPEC §3: the guide's feature_costs cross-link lands on the MATCHING
   # feature_costs section when one exists, and falls back to the index otherwise.
   test "the guide deep-links to the matching feature_costs section for a known pattern" do

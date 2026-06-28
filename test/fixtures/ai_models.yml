@@ -72,6 +72,27 @@ sonnet:
   output_modalities:
     - text
 
+# A non-text-output directory row (image generation) with NO price points —
+# Phase 2 admits it as a catalogue entry, classed and filterable, but priceless
+# until Phase 3. It must surface through `listed` and PriceCatalog despite having
+# no PricePoint.
+image_gen:
+  provider: anthropic
+  name: Pixel Forge 1
+  slug: pixel-forge-1
+  tier: mid
+  released_on: 2026-05-01
+  status: active
+  source: openrouter
+  description: Image-generation model with no per-token price — directory-only until Phase 3.
+  input_modalities:
+    - text
+  output_modalities:
+    - image
+  # Fixtures insert via raw SQL, bypassing the before_save that syncs this column,
+  # so set it explicitly — it mirrors ModalityClass.for(text → image).
+  modality_class: image_generation
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro

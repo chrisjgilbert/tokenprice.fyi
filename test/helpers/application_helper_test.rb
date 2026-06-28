@@ -42,4 +42,15 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes modality_badge(multimodal), "Multimodal"
     assert_nil modality_badge(AiModel.new(input_modalities: %w[text], output_modalities: %w[text]))
   end
+
+  test "directory_row? is true for a price-less non-text model and false for a price-less text model" do
+    assert directory_row?(ai_models(:image_gen)), "price-less image-gen row is a directory row"
+    refute directory_row?(ai_models(:no_price)), "price-less text row is not a directory row"
+  end
+
+  test "io_price shows the untracked note for a directory row, never a dash pill" do
+    pill = io_price(ai_models(:image_gen))
+    assert_includes pill, "Not yet tracked"
+    assert_not_includes pill, "—"
+  end
 end

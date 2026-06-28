@@ -100,6 +100,63 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not_includes listed, ai_models(:retired_instant)
   end
 
+  test "listed includes a price-less non-text directory row but not a price-less text row" do
+    listed = AiModel.listed
+    # An image-generation row with no price points is now a visible directory entry.
+    assert_includes listed, ai_models(:image_gen)
+    # A price-less plain-text row stays hidden — we have no data on it.
+    assert_not_includes listed, ai_models(:no_price)
+  end
+
+  test "listed returns each priced model exactly once" do
+    ids = AiModel.listed.pluck(:id)
+    assert_equal ids.uniq, ids
+  end
+
+  test "listed excludes a price-less multimodal row (token-priced, not a directory class)" do
+    # Multimodal bills per token, so a price-less one is just missing data, not a
+    # directory entry to surface "not yet tracked".
+    model = ai_models(:no_price)
+    model.update!(input_modalities: %w[text image], output_modalities: %w[text])
+    assert_equal :multimodal, model.modality_class
+    assert_not_includes AiModel.listed, model
+  end
+
+  test "directory_listing? is true only for a live, price-less, directory-class row" do
+    assert ai_models(:image_gen).directory_listing?, "price-less image-gen row"
+    assert_not ai_models(:no_price).directory_listing?, "price-less text row is not a directory listing"
+    assert_not ai_models(:opus).directory_listing?, "a priced row is not a directory listing"
+
+    ai_models(:image_gen).update!(status: "retired")
+    assert_not ai_models(:image_gen).reload.directory_listing?, "a retired row is not a directory listing"
+  end
+
+  test "modality_class is stored on save and matches the derived value" do
+    model = providers(:anthropic).ai_models.create!(
+      name: "Stored Class Probe", tier: "mid",
+      input_modalities: %w[text], output_modalities: %w[image]
+    )
+    assert_equal "image_generation", model.read_attribute(:modality_class)
+    assert_equal :image_generation, model.modality_class
+  end
+
+  test "modality_class returns a symbol on an unsaved record" do
+    model = AiModel.new(input_modalities: %w[image text], output_modalities: %w[text])
+    assert_equal :multimodal, model.modality_class
+  end
+
+  test "changing input_modalities updates the stored class on save" do
+    model = providers(:anthropic).ai_models.create!(
+      name: "Reclass Probe", tier: "mid",
+      input_modalities: %w[text], output_modalities: %w[text]
+    )
+    assert_equal "text", model.read_attribute(:modality_class)
+
+    model.update!(output_modalities: %w[image])
+    assert_equal "image_generation", model.read_attribute(:modality_class)
+    assert_equal :image_generation, model.modality_class
+  end
+
   test "suspended is a valid status that stays listed, unlike retired" do
     fable = ai_models(:suspended_fable)
     assert fable.suspended?
