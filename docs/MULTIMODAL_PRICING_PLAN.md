@@ -179,43 +179,55 @@ their price reads as "not yet tracked", not `$0`.
 
 ### Phase 3 — Per-class pricing · branch `claude/multimodal-pricing`
 
-Different classes bill in different units, so this isn't one schema:
+**Finding (verified against 341 live `/models` rows, mirrors dated to 2026-05-27).**
+The classes Phase 3 was meant to price in their native unit — image-gen, TTS,
+video — are exactly the ones OpenRouter does **not** price. Dedicated
+image-generation rows (FLUX.2, Seedream, Riverflow) carry `{prompt:0, completion:0}`
+and no `image`/`request` key; there are no `output:["audio"]` (TTS) rows and **no
+`video` pricing key exists at all**. So per-image / per-second native pricing for the
+directory classes can't come from OpenRouter — it moves to **Phase 4** (curation /
+second source).
 
-| Class | Native unit | OpenRouter field |
-|-------|-------------|------------------|
-| `text`, `multimodal` | per token | `prompt`, `completion`, `input_cache_read`, `input_cache_write` |
-| `image_generation`, `image_editing` | per image (± by size/quality tier) | `pricing.image` (output) |
-| `text_to_audio` | per character or per second of audio | `pricing.audio` |
-| `audio_to_text`, `speech_to_speech` | per minute/second of audio | `pricing.audio` |
-| `video_generation` | per second of video | (often absent — see Phase 4) |
-| `embedding` | per input token | `prompt` |
-| `rerank` | per search/query unit | `request` (or a rerank-specific field) |
+What OpenRouter *does* expose are extra cost dimensions on the **text-output models
+we already price**. Those are what Phase 3 captures (verified units):
 
-- **Verify units against live rows before naming any column.** Audio is per-token
-  for some providers, per-second for others; image is per-image for the OpenAI/Google
-  rows but confirm. Name columns for the unit that's actually quoted.
-- **Extend `price_points`** with the well-known dimensions as nullable columns
-  (mirroring the `cached_input_per_mtok` precedent — nil means "not charged / not
-  applicable"): `cache_write_per_mtok`, `image_output_usd`, `request_usd`, plus the
-  verified audio unit. Fixed columns over a JSON blob — same reasoning as before:
-  validatable, sortable, in-style with the append-only `PricePoint`.
-- **Wire through** `parse_pricing` / `record_price` / `same_price?`,
+| Dimension | Source key | Unit | Column |
+|-----------|------------|------|--------|
+| Cache write | `input_cache_write` | per token | `cache_write_per_mtok` |
+| Audio input | `audio` | per token | `audio_input_per_mtok` |
+| Image input | `image` | per image (flat; provider-dependent — store as quoted) | `image_input_usd` |
+| Per-request fee | `request` | flat per request | `request_usd` |
+
+- **Extend `price_points`** with those four as **nullable** columns (the
+  `cached_input_per_mtok` precedent — nil = not charged). The text columns
+  (`input_per_mtok`/`output_per_mtok`) stay `NOT NULL`, because Phase 3 only enriches
+  text-output rows that already have a per-token price — no nullable-text problem.
+  Fixed columns over a JSON blob, same reasoning as before. `image_input_usd` is the
+  flagged one: OpenRouter's `image` is a per-image surcharge for OpenAI/Anthropic but
+  per-token on Google image rows — store the value as quoted and label it "per input
+  image"; revisit if the Google edge matters.
+- **Wire through** `parse_pricing` (a raw-USD parser alongside `to_mtok` for the
+  per-image/per-request values), `record_price` / `same_price?`,
   `PriceCatalog::Snapshot`, the admin form + params, the model page (show a rate only
-  when present), and the API (additive).
-- **Show class-appropriate prices.** An image-gen row shows "$X / image"; a TTS row
-  "$X / 1M characters" — the model page renders by class, not one fixed three-column
-  table.
+  when present), and the API (additive — nest the extras under a `pricing` sub-key).
+- **Display** the extra dimensions in a secondary "Also billed" block on the model
+  page, shown only when present, so the common three-rate row is unchanged.
 
-**Acceptance:** a model in each priced class round-trips its native-unit price
-sync → catalog → page → API; a non-text reprice writes a snapshot; text rows are
-byte-identical to before; suite green.
+Deferred (not in Phase 3): `web_search` and `internal_reasoning` (present but nichey),
+and all directory-class native pricing (Phase 4).
+
+**Acceptance:** a text/multimodal model round-trips any of the four extra dimensions
+sync → catalog → page → API; a change in one of them alone writes a new snapshot;
+rows without them are byte-identical to before; suite green.
 
 ### Phase 4 — Coverage beyond OpenRouter · branch `claude/multimodal-coverage` (future)
 
-OpenRouter lists mostly chat/text models and a growing set of image models.
-Text-to-speech, speech-to-text, and especially **video generation** are thinly
-covered or absent there. So some JTBD classes will show few or zero entries on
-OpenRouter data alone.
+OpenRouter lists image-gen/TTS/video models but **prices none of them** (verified —
+see the Phase 3 finding), and video isn't even a pricing field. So both the *coverage*
+and the *native pricing* of the directory classes (the "$X / image", "$X / second"
+the Phase 2 labels promise) live here, not in Phase 3: they need curated/admin-entered
+prices or a second source. Text-to-speech, speech-to-text, and **video generation**
+are also thinly listed there.
 
 - Flag per-class coverage honestly in the UI ("3 video-generation models tracked")
   rather than implying the list is exhaustive.
@@ -235,7 +247,7 @@ Phase 1 (signature + classify + filter)  ── ships alone; answers text-only v
         │
 Phase 2 (admit non-text-output models)   ── unlocks image-gen / TTS / STT / video filters
         │
-Phase 3 (per-class pricing)              ── prices the admitted classes in native units
+Phase 3 (extra price dimensions)         ── captures cache-write/image/audio/request on text models
         │
 Phase 4 (coverage)                       ── data/curation for classes OpenRouter misses
 ```
@@ -253,14 +265,14 @@ risk: it changes *which models exist* in the catalogue, so review it on its own.
    and signature before per-class pricing lands; label the missing price ("priced
    per image — not yet tracked"), never fake it as `$0`. Pricing follows in Phase 3.
 
-## Still to verify before Phase 3 (data questions, not design)
+## Resolved before Phase 3 (verified against live `/models` mirrors)
 
-- **Units.** Confirm audio (`pricing.audio`) and image (`pricing.image`) units
-  against live OpenRouter rows before naming columns — audio is per-token for some
-  providers, per-second for others.
-- **API contract.** Whether non-text rates nest under a `pricing_by_class` key or
-  flatten alongside `input`/`output`. Additive either way; pick before publishing.
-  Default: nest under `pricing_by_class` so the shape scales with the taxonomy.
+- **Units.** `audio` is per **token** (not per second), `input_cache_write` per
+  token, `request` flat per request, `image` per image (provider-dependent). No
+  `video` key exists. Image-gen/TTS/video models carry no usable price in `/models`
+  — see the Phase 3 finding. Columns named accordingly.
+- **API contract.** The four extra dimensions nest under the existing model's
+  `pricing` object additively; existing `price_per_mtok` keys are untouched.
 
 ## Green gate
 
