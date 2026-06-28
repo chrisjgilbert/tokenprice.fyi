@@ -37,9 +37,16 @@
                 <div class="mt-1 text-xs text-slate-400">+ <%= extras.join(", ") %></div>
               <% end %>
             </td>
-            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.input_per_mtok) %></td>
-            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.output_per_mtok) %></td>
-            <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(pp.cached_input_per_mtok) %></td>
+            <% if pp.native_price_usd.present? %>
+              <% unit = ModalityClass.price_unit(@model.modality_class) %>
+              <td colspan="3" class="px-4 py-3 text-right tabular-nums">
+                native: <%= usd_plain(pp.native_price_usd) %><%= " / #{unit.delete_prefix("per ")}" if unit %>
+              </td>
+            <% else %>
+              <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.input_per_mtok) %></td>
+              <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.output_per_mtok) %></td>
+              <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(pp.cached_input_per_mtok) %></td>
+            <% end %>
             <td class="px-4 py-3 text-slate-500"><%= pp.source %></td>
             <td class="px-4 py-3 text-right whitespace-nowrap">
               <%= link_to "Edit", edit_admin_model_price_point_path(@model, pp), class: "text-slate-500 hover:underline" %>

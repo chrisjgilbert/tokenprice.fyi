@@ -92,4 +92,56 @@ class Admin::PricePointsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match "0.002", @response.body
   end
+
+  test "persists a native price with blank text rates for a directory model" do
+    model = ai_models(:image_gen)
+    assert_difference "model.price_points.count", 1 do
+      post admin_model_price_points_path(model), params: { price_point: {
+        effective_on: Date.new(2026, 6, 1), input_per_mtok: "", output_per_mtok: "",
+        native_price_usd: 0.05, source: "example.com/pricing"
+      } }
+    end
+    assert_redirected_to edit_admin_model_path(model)
+    pp = model.price_points.find_by!(effective_on: Date.new(2026, 6, 1))
+    assert_equal 0.05, pp.native_price_usd
+    assert_nil pp.input_per_mtok
+    assert_nil pp.output_per_mtok
+  end
+
+  test "edits the native price and it round-trips on the form" do
+    pp = price_points(:priced_image_gen_native)
+    model = pp.ai_model
+    patch admin_model_price_point_path(model, pp), params: { price_point: {
+      native_price_usd: 0.08
+    } }
+    assert_equal 0.08, pp.reload.native_price_usd
+
+    get edit_admin_model_price_point_path(model, pp)
+    assert_response :success
+    assert_select "input[name='price_point[native_price_usd]'][value=?]", "0.08"
+  end
+
+  test "a blank native price persists as nil" do
+    pp = price_points(:sonnet_launch)
+    model = pp.ai_model
+    patch admin_model_price_point_path(model, pp), params: { price_point: {
+      native_price_usd: ""
+    } }
+    assert_nil pp.reload.native_price_usd
+  end
+
+  test "the edit form renders a native price input" do
+    pp = price_points(:priced_image_gen_native)
+    get edit_admin_model_price_point_path(pp.ai_model, pp)
+    assert_response :success
+    assert_select "input[name='price_point[native_price_usd]']"
+  end
+
+  test "the price history shows the native price for a directory model" do
+    pp = price_points(:priced_image_gen_native)
+    get edit_admin_model_path(pp.ai_model)
+    assert_response :success
+    assert_match "0.04", @response.body
+    assert_match "image", @response.body
+  end
 end

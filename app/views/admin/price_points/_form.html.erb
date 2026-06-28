@@ -47,6 +47,15 @@
       </div>
     </div>
 
+    <div class="border-t border-slate-100 pt-4">
+      <h3 class="text-sm font-medium text-slate-700">Native price (image-gen / TTS / …)</h3>
+      <p class="mt-1 mb-3 text-xs text-slate-500">The per-image / per-second list price for a directory-class model. Those rows leave the per-token rates above blank; a text model leaves this blank.</p>
+      <div class="sm:w-1/2">
+        <%= f.label :native_price_usd, "Native price $", class: "block text-sm font-medium text-slate-700 mb-1" %>
+        <%= f.number_field :native_price_usd, step: "any", class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      </div>
+    </div>
+
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <%= f.label :source, "Source (URL you read it from)", class: "block text-sm font-medium text-slate-700 mb-1" %>
