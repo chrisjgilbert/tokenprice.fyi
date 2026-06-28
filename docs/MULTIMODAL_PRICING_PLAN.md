@@ -220,23 +220,42 @@ and all directory-class native pricing (Phase 4).
 sync → catalog → page → API; a change in one of them alone writes a new snapshot;
 rows without them are byte-identical to before; suite green.
 
-### Phase 4 — Coverage beyond OpenRouter · branch `claude/multimodal-coverage` (future)
+### Phase 4 — Price the directory classes (curated) · branch `claude/multimodal-curated-pricing`
 
-OpenRouter lists image-gen/TTS/video models but **prices none of them** (verified —
-see the Phase 3 finding), and video isn't even a pricing field. So both the *coverage*
-and the *native pricing* of the directory classes (the "$X / image", "$X / second"
-the Phase 2 labels promise) live here, not in Phase 3: they need curated/admin-entered
-prices or a second source. Text-to-speech, speech-to-text, and **video generation**
-are also thinly listed there.
+OpenRouter prices none of the directory classes (image-gen/TTS/video — verified in
+the Phase 3 finding), so their native price ("$X / image", "$X / second" the Phase 2
+labels promise) has to be **hand-entered**. This is the one phase that finally needs
+the nullable-text-rate schema change Phases 2–3 deferred.
 
-- Flag per-class coverage honestly in the UI ("3 video-generation models tracked")
-  rather than implying the list is exhaustive.
-- Add curated/manual rows or a second source for the under-covered classes. The
-  `source == "manual"` path and admin UI already support hand-curated entries; this
-  is mostly data entry plus a per-class price form from Phase 3.
+**The unit is already class-determined**, so one column carries the value and
+`ModalityClass.price_unit` carries the unit — no per-class column sprawl:
 
-This phase is data, not architecture. Sequence it last, or treat it as ongoing
-curation once Phases 1–3 establish the shape.
+- **Schema.** Add `native_price_usd` (decimal 12,6, nullable) to `price_points`, and
+  make `input_per_mtok` / `output_per_mtok` **nullable**. A directory model's price
+  point sets `native_price_usd` with the two text rates NULL; a text model is
+  unchanged (text rates set, `native_price_usd` NULL).
+- **Validation.** A price point must price *something*: a custom validation requiring
+  either both text rates **or** a native price; text rates stay present-together
+  (input without output is invalid). All amounts `>= 0`.
+- **`priced?` flips.** Once a directory model has a `native_price_usd` snapshot it's
+  `priced?`, so it leaves the "not yet tracked" state automatically — `directory_listing?`
+  (price-less + directory class) already encodes this.
+- **Display by class.** The model page, index price cell, and API branch on
+  `ModalityClass.directory_class?`: a directory-class model shows its native price
+  ("$0.04 / image" via `price_unit`) when priced and "not yet tracked" when not —
+  **never** the three per-token cards (those would render "—" on NULL text rates).
+  Text/multimodal models are byte-identical. `PriceCatalog::Entry` exposes
+  `native_price`; the API adds it under `price_per_unit`.
+- **Source.** Curated/admin only — the sync is untouched (OpenRouter has no data
+  here). The admin price form shows a "Native price" field (with the class's unit
+  label) for directory-class models.
+- **Data.** Seed a few well-known real examples (a couple of image-gen models at
+  their real per-image price) so the feature ships non-empty and demonstrable; the
+  rest is ongoing curation.
+
+Acceptance: a curated image-gen model shows "$X / image" end to end (page, index,
+API) and drops out of "not yet tracked"; text rows are byte-identical; a price point
+with neither text rates nor a native price is invalid; suite green.
 
 ---
 
