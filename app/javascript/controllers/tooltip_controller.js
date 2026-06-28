@@ -3,10 +3,17 @@ import { Controller } from "@hotwired/stimulus"
 // A custom tooltip for elements wearing data-controller="tooltip" and a
 // data-tooltip-text-value. The bubble is a single node portaled to <body>, so
 // it's never clipped by an ancestor's overflow (the filters card hides its own
-// overflow for rounded corners). Shows on hover and on keyboard focus, sits
-// above the target, and flips below when there isn't room. Screen readers get
-// the same text via the target's own aria-describedby, independent of this.
+// overflow for rounded corners). Positioned in JS: centred over the target,
+// clamped to the viewport, flipped below when there isn't room above.
+//
+// Pointer and keyboard get hover/focus. Touch is different: there's no hover,
+// and tapping a pill doesn't reliably hold focus, so a focus-driven tooltip
+// flashes and dies. So on touch we show it on tap and auto-dismiss — the same
+// tap also applies the filter, and the body-portaled bubble outlives the
+// frame reload that follows. Screen readers get the text from the target's
+// aria-describedby regardless.
 let bubble
+let hideTimer
 
 function tooltipBubble() {
   if (!bubble) {
@@ -21,33 +28,38 @@ export default class extends Controller {
   static values = { text: String }
 
   connect() {
-    this.show = this.show.bind(this)
-    this.hide = this.hide.bind(this)
-    this.element.addEventListener("mouseenter", this.show)
-    this.element.addEventListener("mouseleave", this.hide)
-    this.element.addEventListener("focusin", this.show)
-    this.element.addEventListener("focusout", this.hide)
+    this.onEnter = () => { if (!this.touched) this.show() }
+    this.onLeave = () => { if (!this.touched) this.hide() }
+    this.onTap = () => { this.touched = true; this.show(2500) }
+
+    this.element.addEventListener("mouseenter", this.onEnter)
+    this.element.addEventListener("mouseleave", this.onLeave)
+    this.element.addEventListener("focusin", this.onEnter)
+    this.element.addEventListener("focusout", this.onLeave)
+    this.element.addEventListener("touchstart", this.onTap, { passive: true })
   }
 
   disconnect() {
-    this.element.removeEventListener("mouseenter", this.show)
-    this.element.removeEventListener("mouseleave", this.hide)
-    this.element.removeEventListener("focusin", this.show)
-    this.element.removeEventListener("focusout", this.hide)
+    this.element.removeEventListener("mouseenter", this.onEnter)
+    this.element.removeEventListener("mouseleave", this.onLeave)
+    this.element.removeEventListener("focusin", this.onEnter)
+    this.element.removeEventListener("focusout", this.onLeave)
+    this.element.removeEventListener("touchstart", this.onTap)
     this.hide()
   }
 
-  show() {
+  show(autoHideMs) {
     if (!this.textValue) return
+    clearTimeout(hideTimer)
     const el = tooltipBubble()
     el.textContent = this.textValue
     this.position(el)
     el.dataset.show = "true"
-    window.addEventListener("scroll", this.hide, { passive: true })
+    if (autoHideMs) hideTimer = setTimeout(() => this.hide(), autoHideMs)
   }
 
   hide() {
-    window.removeEventListener("scroll", this.hide)
+    clearTimeout(hideTimer)
     if (bubble) delete bubble.dataset.show
   }
 
