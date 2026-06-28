@@ -50,6 +50,29 @@ module Api
         assert_nil forge["price_per_mtok"]["cached_input"]
       end
 
+      test "exposes the extra billed dimensions additively, null when absent" do
+        get api_v1_models_url(format: :json)
+        models = JSON.parse(@response.body)["models"]
+
+        sonnet = models.find { |m| m["slug"] == "claude-sonnet-4-6" }
+        assert_in_delta 3.75, sonnet["price_per_mtok"]["cache_write"], 0.0001
+        assert_in_delta 40.0, sonnet["price_per_mtok"]["audio_input"], 0.0001
+        assert_in_delta 0.002, sonnet["price_per_unit"]["image_input_usd"], 0.0001
+        assert_in_delta 0.01, sonnet["price_per_unit"]["request_usd"], 0.0001
+
+        # Existing per-mtok keys are untouched.
+        assert_in_delta 3.0, sonnet["price_per_mtok"]["input"], 0.0001
+        assert_in_delta 15.0, sonnet["price_per_mtok"]["output"], 0.0001
+        assert_in_delta 0.3, sonnet["price_per_mtok"]["cached_input"], 0.0001
+
+        # A model that isn't charged the extras reports them null.
+        opus = models.find { |m| m["slug"] == "claude-opus-4-8" }
+        assert_nil opus["price_per_mtok"]["cache_write"]
+        assert_nil opus["price_per_mtok"]["audio_input"]
+        assert_nil opus["price_per_unit"]["image_input_usd"]
+        assert_nil opus["price_per_unit"]["request_usd"]
+      end
+
       test "is cross-origin readable" do
         get api_v1_models_url(format: :json)
         assert_equal "*", @response.headers["Access-Control-Allow-Origin"]

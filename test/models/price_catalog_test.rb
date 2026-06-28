@@ -43,6 +43,24 @@ class PriceCatalogTest < ActiveSupport::TestCase
     refute_nil PriceCatalog.model("deepseek-v4-pro").cached
   end
 
+  test "an entry exposes the extra billed dimensions from its latest snapshot" do
+    e = PriceCatalog.model("claude-sonnet-4-6")
+
+    assert_in_delta 3.75, e.cache_write, 0.0001
+    assert_in_delta 40.0, e.audio_input, 0.0001
+    assert_in_delta 0.002, e.image_input, 0.0001
+    assert_in_delta 0.01, e.request, 0.0001
+  end
+
+  test "the extra billed dimensions are nil when not charged" do
+    e = PriceCatalog.model("claude-opus-4-8")
+
+    assert_nil e.cache_write
+    assert_nil e.audio_input
+    assert_nil e.image_input
+    assert_nil e.request
+  end
+
   test "history is chronological" do
     dates = PriceCatalog.history("deepseek-v4-pro").map(&:date)
 

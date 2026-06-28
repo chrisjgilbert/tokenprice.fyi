@@ -7,9 +7,12 @@
 # Everything is exposed as small value objects (Entry / Snapshot) rather than
 # ActiveRecord, so consumers depend on the interface, not the table.
 class PriceCatalog
-  # A single dated price observation, normalized to USD per 1M tokens.
-  # `cached` is nil when the model offers no prompt cache.
-  Snapshot = Data.define(:date, :input, :output, :cached)
+  # A single dated price observation. `input`/`output`/`cached`/`cache_write`/
+  # `audio_input` are USD per 1M tokens; `image_input` is flat USD per input
+  # image and `request` is flat USD per request. Each extra dimension is nil when
+  # the model isn't charged for it (the `cached` precedent).
+  Snapshot = Data.define(:date, :input, :output, :cached,
+                         :cache_write, :audio_input, :image_input, :request)
 
   # Minimal provider shape so the shared `provider_square` helper (which reads
   # name/slug/accent) works against catalog entries without an AiModel.
@@ -38,10 +41,14 @@ class PriceCatalog
       @provider_accent = model.provider.accent
       @snapshots = model.price_points.sort_by(&:effective_on).map do |pp|
         Snapshot.new(
-          date:   pp.effective_on,
-          input:  pp.input_per_mtok.to_f,
-          output: pp.output_per_mtok.to_f,
-          cached: pp.cached_input_per_mtok&.to_f
+          date:        pp.effective_on,
+          input:       pp.input_per_mtok.to_f,
+          output:      pp.output_per_mtok.to_f,
+          cached:      pp.cached_input_per_mtok&.to_f,
+          cache_write: pp.cache_write_per_mtok&.to_f,
+          audio_input: pp.audio_input_per_mtok&.to_f,
+          image_input: pp.image_input_usd&.to_f,
+          request:     pp.request_usd&.to_f
         )
       end
     end
@@ -55,6 +62,10 @@ class PriceCatalog
     def input  = current&.input
     def output = current&.output
     def cached = current&.cached
+    def cache_write = current&.cache_write
+    def audio_input = current&.audio_input
+    def image_input = current&.image_input
+    def request     = current&.request
 
     # The price snapshot in effect on `date` — the latest one on or before it,
     # or nil if the model had no price yet (it wasn't available then).

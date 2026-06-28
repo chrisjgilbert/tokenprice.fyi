@@ -147,6 +147,30 @@
       </div>
     <% end %>
   </div>
+
+  <% if @catalog_entry %>
+    <% present = [
+         [ "Cache write", @catalog_entry.cache_write, "/ 1M" ],
+         [ "Audio input", @catalog_entry.audio_input, "/ 1M" ],
+         [ "Image input", @catalog_entry.image_input, "/ image" ],
+         [ "Per request", @catalog_entry.request, nil ]
+       ].select { |_, value, _| value.present? } %>
+    <% if present.any? %>
+      <div class="tp-also-billed mb-8 rounded-xl border border-slate-200 bg-white p-5">
+        <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Also billed</p>
+        <dl class="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+          <% present.each do |label, value, unit| %>
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-sm text-slate-600"><%= label %></dt>
+              <dd class="text-sm font-semibold tabular-nums">
+                <%= usd(value) %><% if unit %> <span class="font-normal text-slate-400"><%= unit %></span><% end %>
+              </dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
+    <% end %>
+  <% end %>
 <% end %>
 
 <% if @catalog_entry %>

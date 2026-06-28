@@ -28,6 +28,10 @@ sonnet_launch:
   input_per_mtok: 3
   output_per_mtok: 15
   cached_input_per_mtok: 0.3
+  cache_write_per_mtok: 3.75
+  audio_input_per_mtok: 40
+  image_input_usd: 0.002
+  request_usd: 0.01
   source: anthropic.com/pricing
 
 deepseek_launch:

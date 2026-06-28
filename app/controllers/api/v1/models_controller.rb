@@ -17,7 +17,11 @@ module Api
             released_on: m.released_on,
             modalities: { input: m.input_modalities, output: m.output_modalities },
             modality_class: m.modality_class.to_s,
-            price_per_mtok: { input: m.input, output: m.output, cached_input: m.cached }
+            price_per_mtok: {
+              input: m.input, output: m.output, cached_input: m.cached,
+              cache_write: m.cache_write, audio_input: m.audio_input
+            },
+            price_per_unit: { image_input_usd: m.image_input, request_usd: m.request }
           }
         end
 
