@@ -885,7 +885,8 @@ end
 
 # ---------------------------------------------------------------------------
 # Directory-class models (Phase 4) — non-text-output models that bill in a
-# native unit (per image / per second), not per token. OpenRouter prices none
+# native, non-token unit (per image, per second, per minute, or per 1M
+# characters — the unit is class-derived). OpenRouter prices none
 # of these, so the price is hand-entered: one native_price_usd snapshot with the
 # per-token rates NULL. The unit is class-derived (ModalityClass.price_unit), so
 # one column carries the value. Prices are widely-published round list prices —
@@ -948,10 +949,10 @@ directory_catalog = [
   },
   {
     provider: :google, name: "Veo 3 Fast", tier: "mid", status: "active",
-    released_on: "2025-07-22",
-    description: "Faster, cheaper Veo 3 variant on the Gemini API. Billed per second of generated video. Release date approximate.",
+    released_on: "2025-07-31",
+    description: "Faster, cheaper Veo 3 variant on the Gemini API. Billed per second of generated video.",
     input_modalities: %w[text image], output_modalities: %w[video],
-    prices: [ { on: "2025-07-22", native: 0.15, src: "ai.google.dev/gemini-api/docs/pricing", note: "Per-second list price, video with audio; date approximate" } ]
+    prices: [ { on: "2025-07-31", native: 0.15, src: "ai.google.dev/gemini-api/docs/pricing", note: "Per-second list price, video with audio (cut from the $0.40 launch rate)" } ]
   },
 
   # ---- Text to audio / TTS (text → audio, billed per character) ---------
