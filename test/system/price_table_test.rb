@@ -89,6 +89,41 @@ class PriceTableTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Claude Opus 4.8"
   end
 
+  test "mobile tier dropdown chip filters the table" do
+    resize_to_mobile
+    visit root_path
+
+    # Below 760px the tier pills collapse behind a chip; they only become
+    # reachable once its popover is open.
+    assert_no_selector "#tier-panel label.tp-pill"
+    find(".tp-facet-chip", text: "Tier").click
+    within "#tier-panel" do
+      choose "tier_frontier", allow_label_click: true
+    end
+
+    within "#models" do
+      assert_text "Claude Opus 4.8"
+      assert_selector "[data-models-count]", text: /model/
+    end
+    # The chip echoes the active value and lights up. normalize_ws collapses the
+    # newline the button's markup puts between the label and the value span.
+    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier", normalize_ws: true
+  end
+
+  test "mobile provider dropdown chip filters the table" do
+    resize_to_mobile
+    visit root_path
+
+    find("summary.tp-provider-summary").click
+    check "provider_anthropic", allow_label_click: true
+
+    within "#models" do
+      assert_text "Claude Opus 4.8"
+      assert_no_text "DeepSeek V4 Pro"
+    end
+    assert_selector ".tp-provider-summary.is-active"
+  end
+
   private
 
   # The provider checkboxes live inside a <details> that only auto-opens when a

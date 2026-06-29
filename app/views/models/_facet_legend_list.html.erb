@@ -1,0 +1,10 @@
+<%# A titled term/description list. Shared by the desktop info-button popover
+    (_filter_legend) and the mobile facet dropdown panel (_facet).
+    locals: title, entries (array of [term, description]). %>
+<p class="tp-legend-title"><%= title %></p>
+<dl class="tp-legend-list">
+  <% entries.each do |term, description| %>
+    <dt><%= term %></dt>
+    <dd><%= description %></dd>
+  <% end %>
+</dl>

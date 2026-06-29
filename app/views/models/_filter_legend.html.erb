@@ -5,11 +5,5 @@
 </button>
 <div id="<%= id %>" class="tp-legend" popover
      data-controller="popover" data-action="toggle->popover#position">
-  <p class="tp-legend-title"><%= title %></p>
-  <dl class="tp-legend-list">
-    <% entries.each do |term, description| %>
-      <dt><%= term %></dt>
-      <dd><%= description %></dd>
-    <% end %>
-  </dl>
+  <%= render "facet_legend_list", title: title, entries: entries %>
 </div>
