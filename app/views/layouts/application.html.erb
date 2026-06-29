@@ -38,8 +38,8 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <nav class="tp-nav" data-controller="mobile-nav">
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-controller="mobile-nav">
+    <nav class="tp-nav">
       <div class="tp-nav-inner">
         <div class="tp-brand-group">
           <%= link_to root_path, class: "tp-brand" do %>
@@ -75,28 +75,31 @@
           <span class="tp-nav-toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
         </button>
       </div>
-
-      <%# Mobile drawer. Slides down under the bar; flattens the Learn dropdown
-          into a labelled section. Hidden above 760px, where the inline nav and
-          dropdown take over. %>
-      <div class="tp-m-scrim" data-action="click->mobile-nav#close" aria-hidden="true"></div>
-      <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
-        <nav class="tp-m-links" aria-label="Primary">
-          <% primary_nav_items.each do |label, path| %>
-            <%= mobile_nav_link label, path, active: current_page?(path) %>
-          <% end %>
-          <div class="tp-m-section">
-            <span class="tp-m-eyebrow">Learn</span>
-            <% learn_nav_items.each do |label, path| %>
-              <%= mobile_nav_link label, path, active: current_page?(path), sub: true %>
-            <% end %>
-          </div>
-        </nav>
-        <div class="tp-m-foot">
-          <%= render "shared/prices_synced", css: "tp-m-sync" %>
-        </div>
-      </div>
     </nav>
+
+    <%# Mobile drawer. Fixed to the viewport just under the bar; flattens the
+        Learn dropdown into a labelled section. Hidden above 760px, where the
+        inline nav and dropdown take over. Kept a sibling of <nav> (not a child)
+        so it escapes the nav's backdrop-filter, which would otherwise become the
+        containing block and anchor the drawer to the bar instead of the
+        viewport. %>
+    <div class="tp-m-scrim" data-action="click->mobile-nav#close" aria-hidden="true"></div>
+    <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
+      <nav class="tp-m-links" aria-label="Primary">
+        <% primary_nav_items.each do |label, path| %>
+          <%= mobile_nav_link label, path, active: current_page?(path) %>
+        <% end %>
+        <div class="tp-m-section">
+          <span class="tp-m-eyebrow">Learn</span>
+          <% learn_nav_items.each do |label, path| %>
+            <%= mobile_nav_link label, path, active: current_page?(path), sub: true %>
+          <% end %>
+        </div>
+      </nav>
+      <div class="tp-m-foot">
+        <%= render "shared/prices_synced", css: "tp-m-sync" %>
+      </div>
+    </div>
 
     <main class="shell">
       <%= yield %>

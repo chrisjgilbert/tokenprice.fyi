@@ -32,6 +32,21 @@ class ModalityClass
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
 
+  # One-line descriptions for the filter legend, naming each class by its
+  # input→output shape — the same signature the rules below match on, in plain words.
+  DESCRIPTIONS = {
+    text:       "Text in, text out.",
+    multimodal: "Accepts images, audio, or other media as input; produces text.",
+    embedding:  "Text or an image in, a vector embedding out.",
+    any_to_any: "Produces several output modalities, including non-text.",
+    other:      "Modality signatures that don't fit the categories above."
+  }.freeze
+
+  def self.description(symbol) = DESCRIPTIONS.fetch(symbol.to_sym, nil)
+
+  # [label, description] rows for the modality filter legend.
+  def self.legend_entries(symbols) = symbols.map { |symbol| [ label(symbol), description(symbol) ] }
+
   # Clean a raw token list: lowercase, drop tokens outside the closed
   # vocabulary, dedup — preserving order so callers that persist or display a
   # signature keep the source's reading order (text first, typically). The

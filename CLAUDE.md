@@ -85,6 +85,18 @@ ingestion jobs, so that principle mostly doesn't apply here — don't invent
 broadcasting. The jobs (`NewsScanJob`, `OpenRouterSyncJob`, …) stay thin
 schedulable wrappers that call one method on a model/coordinator.
 
+### Frontend: prefer the platform
+
+Default to the native browser API before hand-rolling a behaviour or pulling in
+a library. The Popover API, `<details>`, `<dialog>`, `:has()`, `Intl`,
+`IntersectionObserver` and friends already solve light-dismiss, focus
+management, top-layer rendering and the accessibility edge cases a bespoke
+Stimulus controller has to reinvent and usually gets subtly wrong (a hand-rolled
+tooltip here shipped three bugs before `popover` replaced it). A Stimulus
+controller should be thin glue *around* the platform feature — e.g. positioning
+a popover on its `toggle` event — not a from-scratch reimplementation. Roll your
+own only when the platform genuinely can't do the job, and say why when you do.
+
 ### Replacing service objects
 
 **Concerns** slice an aspect of one entity into `app/models/<entity>/`, included

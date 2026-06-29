@@ -244,16 +244,16 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
       "different modality filters must not collide on one conditional-GET cache key"
   end
 
-  test "show renders the modality signature for a multimodal model" do
+  test "show renders the modality badge for a multimodal model" do
     get model_url(ai_models(:sonnet))
     assert_response :success
-    assert_select ".tp-modality-signature", text: /Text, image in → text out/
+    assert_select ".tp-modality-badge", text: "Multimodal"
   end
 
-  test "show omits the modality signature for a plain text model" do
+  test "show omits the modality badge for a plain text model" do
     get model_url(ai_models(:opus))
     assert_response :success
-    assert_select ".tp-modality-signature", count: 0
+    assert_select ".tp-modality-badge", count: 0
   end
 
   test "show renders a model and its price history chart" do

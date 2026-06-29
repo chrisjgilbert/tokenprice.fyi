@@ -462,32 +462,31 @@
               data: { action: "input->filters#search" } %>
       </div>
 
-      <%# Tier radio pills %>
-      <div class="tp-pills" role="group" aria-label="Filter by tier">
-        <% [["All", ""], ["Frontier", "frontier"], ["Mid", "mid"], ["Small", "small"]].each do |label, value| %>
-          <label class="tp-pill <%= @tier == value.presence ? 'active' : '' %>">
-            <%= radio_button_tag :tier, value, @tier == value.presence,
-                  class: "sr-only", data: { action: "change->filters#submit" } %>
-            <%= label %>
-          </label>
-        <% end %>
+      <%# Tier radio pills. Active state is driven by the checked radio in CSS
+          (.tp-pill:has(input:checked)), not a render-time class — the pills sit
+          outside the Turbo frame the form replaces, so a class wouldn't refresh. %>
+      <div class="tp-filter-group">
+        <div class="tp-pills" role="group" aria-label="Filter by tier">
+          <% tier_pill_options.each do |label, value| %>
+            <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
+          <% end %>
+        </div>
+        <%= render "filter_legend", id: "tier-legend", title: "Tiers",
+              button_label: "What the tiers mean", entries: tier_legend_entries %>
       </div>
 
       <%# Modality radio pills — only the classes present among listed models. %>
       <% if @modality_classes.size > 1 %>
-        <div class="tp-pills" role="group" aria-label="Filter by modality">
-          <label class="tp-pill <%= 'active' if @modality.nil? %>">
-            <%= radio_button_tag :modality, "", @modality.nil?,
-                  class: "sr-only", data: { action: "change->filters#submit" } %>
-            All
-          </label>
-          <% @modality_classes.each do |klass| %>
-            <label class="tp-pill <%= 'active' if @modality == klass %>">
-              <%= radio_button_tag :modality, klass, @modality == klass,
-                    class: "sr-only", data: { action: "change->filters#submit" } %>
-              <%= ModalityClass.label(klass) %>
-            </label>
-          <% end %>
+        <div class="tp-filter-group">
+          <div class="tp-pills" role="group" aria-label="Filter by modality">
+            <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
+            <% @modality_classes.each do |klass| %>
+              <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
+            <% end %>
+          </div>
+          <%= render "filter_legend", id: "modality-legend", title: "Modality categories",
+                button_label: "What the modality categories mean",
+                entries: ModalityClass.legend_entries(@modality_classes) %>
         </div>
       <% end %>
     </div>

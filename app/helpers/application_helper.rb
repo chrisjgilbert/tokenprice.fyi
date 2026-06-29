@@ -66,6 +66,30 @@ module ApplicationHelper
 
   TIER_LABELS = { "frontier" => "Frontier", "mid" => "Mid", "small" => "Small" }.freeze
 
+  TIER_DESCRIPTIONS = {
+    "frontier" => "A provider's most capable, highest-priced models.",
+    "mid"      => "Mid-range models — cheaper than frontier, capable for most work.",
+    "small"    => "The smallest, cheapest models — for high-volume, well-defined tasks."
+  }.freeze
+
+  def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
+
+  # [label, value] for the tier pills, sourced from TIER_LABELS so the tier set
+  # and its order live in one place. The leading "All" pill clears the filter.
+  def tier_pill_options = [ [ "All", "" ] ] + TIER_LABELS.map { |value, label| [ label, value ] }
+
+  # [term, description] rows for the tier legend, off the same single source.
+  def tier_legend_entries = TIER_LABELS.map { |value, label| [ label, tier_description(value) ] }
+
+  # The active state is CSS-driven off the checked radio (.tp-pill:has(input:checked)),
+  # so the label just wraps the visually hidden input.
+  def filter_pill(name, value, label, checked:)
+    tag.label class: "tp-pill" do
+      radio_button_tag(name, value, checked, class: "sr-only",
+        data: { action: "change->filters#submit" }) + label
+    end
+  end
+
   def tier_badge(tier)
     content_tag(:span, class: "tp-badge #{TIER_CLASSES.fetch(tier, '')}") do
       content_tag(:span, "", class: "tp-badge-dot") + TIER_LABELS.fetch(tier, tier.to_s.titleize)
@@ -78,21 +102,6 @@ module ApplicationHelper
     return if model.modality_class == :text
 
     content_tag(:span, ModalityClass.label(model.modality_class), class: "tp-modality-badge")
-  end
-
-  # The recorded signature as a calm "<inputs> in → <outputs> out" line, e.g.
-  # "Text, image in → text out". Suppressed for plain text models (via the same
-  # class the badge uses, so the two always agree) and for a half-recorded
-  # signature where one side is blank. Cleans tokens through ModalityClass but
-  # keeps the source's reading order.
-  def modality_signature(model)
-    return if model.modality_class == :text
-
-    inputs  = ModalityClass.normalize(model.input_modalities)
-    outputs = ModalityClass.normalize(model.output_modalities)
-    return if inputs.empty? || outputs.empty?
-
-    "#{inputs.join(", ")} in → #{outputs.join(", ")} out".upcase_first
   end
 
   def status_badge(status)
@@ -252,7 +261,8 @@ module ApplicationHelper
     brackets: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/></svg>',
     bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>',
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
-    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>'
   }.freeze
 
   def icon(name, size: 17)
