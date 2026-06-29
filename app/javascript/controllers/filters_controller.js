@@ -23,6 +23,35 @@ export default class extends Controller {
         input.value = params.get(input.name) || ""
       }
     })
+
+    // The provider <details> auto-opens on desktop to reveal the selection; on
+    // mobile it's a dropdown chip, so it must start closed whatever the state.
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      this.element.querySelector(".tp-provider-details")?.removeAttribute("open")
+    }
+
+    this.syncChips()
+  }
+
+  // Keep the mobile facet chips in step with the controls inside their panels:
+  // the chips live outside the Turbo frame, so nothing else refreshes them. The
+  // tier/modality chips echo the chosen value; the provider chip lights up when
+  // the selection is narrowed. No-ops on desktop, where the chips are hidden.
+  syncChips() {
+    this.element.querySelectorAll("[data-facet-chip]").forEach((slot) => {
+      const checked = this.element.querySelector(`input[name="${slot.dataset.facetChip}"]:checked`)
+      const value = checked?.value
+      const label = value ? checked.closest(".tp-pill")?.textContent.trim() : ""
+      slot.textContent = label ? ` · ${label}` : ""
+      slot.closest(".tp-facet-chip")?.classList.toggle("is-active", Boolean(value))
+    })
+
+    // No boxes checked means "all providers" (the form omits an empty filter),
+    // so the chip is only active for a proper, non-empty subset.
+    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
+    const checked = providers.filter((input) => input.checked).length
+    const narrowed = checked > 0 && checked < providers.length
+    this.element.querySelector(".tp-provider-summary")?.classList.toggle("is-active", narrowed)
   }
 
   search(event) {
@@ -34,6 +63,7 @@ export default class extends Controller {
 
   submit() {
     clearTimeout(this.timeout)
+    this.syncChips()
     this.element.requestSubmit()
   }
 

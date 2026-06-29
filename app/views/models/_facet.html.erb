@@ -1,0 +1,28 @@
+<%# A filter facet. Desktop: the controls sit inline in the filters row, with an
+    info button opening the legend — unchanged from before. Under 760px the whole
+    facet collapses to a chip that opens its controls in a native popover, with
+    the legend folded into the panel. The CSS does the swap (.tp-facet-panel is
+    display:contents on desktop); this partial just carries both presentations.
+
+    locals: name, label, panel_id, legend_id, legend_title, legend_button,
+            legend_entries. Yields the control inputs (the pills). %>
+<div class="tp-filter-group tp-facet">
+  <button type="button" class="tp-facet-chip" popovertarget="<%= panel_id %>"
+          aria-label="Filter by <%= name %>">
+    <%= label %><span class="tp-facet-chip-val" data-facet-chip="<%= name %>"></span>
+    <span class="tp-facet-caret"><%= icon(:chevron_down, size: 14) %></span>
+  </button>
+
+  <div id="<%= panel_id %>" class="tp-facet-panel" popover
+       data-controller="popover"
+       data-action="toggle->popover#position change->popover#close">
+    <p class="tp-facet-panel-title"><%= label %></p>
+    <%= yield %>
+    <div class="tp-facet-legend">
+      <%= render "facet_legend_list", title: legend_button, entries: legend_entries %>
+    </div>
+  </div>
+
+  <%= render "filter_legend", id: legend_id, title: legend_title,
+        button_label: legend_button, entries: legend_entries %>
+</div>

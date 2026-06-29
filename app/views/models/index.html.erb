@@ -249,6 +249,27 @@
     padding: 14px 20px;
   }
 
+  /* Under 760px the inline filter row collapses into a single chip cluster:
+     search on its own line, then the tier / modality / provider dropdown chips
+     wrapping below it. The section wrappers flatten (display:contents) so every
+     chip becomes a sibling in one wrapping flex row, and the card lets the
+     provider dropdown panel escape its bounds. */
+  @media (max-width: 760px) {
+    .filters-card {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      overflow: visible;
+    }
+    .filters-top,
+    .filters-bottom,
+    .filters-card fieldset { display: contents; }
+    .filters-divider { display: none; }
+    .tp-search { flex-basis: 100%; min-width: 0; }
+  }
+
   /* Result bar */
   .result-bar {
     display: flex;
@@ -464,30 +485,34 @@
 
       <%# Tier radio pills. Active state is driven by the checked radio in CSS
           (.tp-pill:has(input:checked)), not a render-time class — the pills sit
-          outside the Turbo frame the form replaces, so a class wouldn't refresh. %>
-      <div class="tp-filter-group">
+          outside the Turbo frame the form replaces, so a class wouldn't refresh.
+          The facet layout keeps the pills inline on desktop and collapses them
+          into a dropdown chip under 760px. %>
+      <%= render layout: "facet", locals: {
+            name: "tier", label: "Tier", panel_id: "tier-panel",
+            legend_id: "tier-legend", legend_title: "Tiers",
+            legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
         <div class="tp-pills" role="group" aria-label="Filter by tier">
           <% tier_pill_options.each do |label, value| %>
             <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
           <% end %>
         </div>
-        <%= render "filter_legend", id: "tier-legend", title: "Tiers",
-              button_label: "What the tiers mean", entries: tier_legend_entries %>
-      </div>
+      <% end %>
 
       <%# Modality radio pills — only the classes present among listed models. %>
       <% if @modality_classes.size > 1 %>
-        <div class="tp-filter-group">
+        <%= render layout: "facet", locals: {
+              name: "modality", label: "Modality", panel_id: "modality-panel",
+              legend_id: "modality-legend", legend_title: "Modality categories",
+              legend_button: "What the modality categories mean",
+              legend_entries: ModalityClass.legend_entries(@modality_classes) } do %>
           <div class="tp-pills" role="group" aria-label="Filter by modality">
             <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
             <% @modality_classes.each do |klass| %>
               <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
             <% end %>
           </div>
-          <%= render "filter_legend", id: "modality-legend", title: "Modality categories",
-                button_label: "What the modality categories mean",
-                entries: ModalityClass.legend_entries(@modality_classes) %>
-        </div>
+        <% end %>
       <% end %>
     </div>
 
@@ -508,7 +533,7 @@
             </span>
             <span class="tp-provider-caret"><%= icon(:chevron_down, size: 14) %></span>
           </summary>
-          <div class="tp-check-row" style="margin-top: 12px">
+          <div class="tp-check-row">
             <% @providers.each do |provider| %>
               <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
               <label class="tp-check">

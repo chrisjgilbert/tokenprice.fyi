@@ -727,6 +727,91 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
 .tp-provider-details[open] .tp-provider-caret {
   transform: rotate(180deg);
 }
+/* Open-state spacing lives here (not an inline style) so the mobile dropdown
+   rule below can re-anchor the panel without fighting inline specificity. */
+.tp-provider-details[open] .tp-check-row { margin-top: 12px; }
+
+/* ============================================================ FILTER FACETS
+   Desktop keeps the tier/modality pills inline in the filters row exactly as
+   before — the chip trigger and the in-panel title/legend are hidden, and the
+   popover panel is display:contents so the pills flow into the row unchanged.
+   Under 760px each facet collapses to a dropdown chip (the AllTrails pattern):
+   tier/modality open a native popover (top-layer, light-dismiss, positioned by
+   popover_controller); providers reuse the native <details> as its own chip. */
+.tp-facet-chip { display: none; }
+.tp-facet-panel-title { display: none; }
+.tp-facet-legend { display: none; }
+
+.tp-facet-panel-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--color-slate-500); margin-bottom: 10px;
+}
+
+@media (min-width: 761px) {
+  /* Transparent on desktop: the pills become direct children of the filter
+     group and lay out exactly as they did before the facet wrapper existed. */
+  .tp-facet-panel { display: contents; }
+}
+
+@media (max-width: 760px) {
+  .tp-facet { position: relative; }
+
+  .tp-facet-chip,
+  .tp-provider-summary {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 40px; padding: 0 14px;
+    border: 1px solid var(--color-slate-300); border-radius: var(--radius-pill);
+    background: #fff; box-shadow: var(--shadow-xs);
+    font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+    color: var(--color-slate-700); cursor: pointer; white-space: nowrap;
+    transition: border-color .16s var(--ease-default), background .16s var(--ease-default), color .16s var(--ease-default);
+  }
+  .tp-facet-chip:hover,
+  .tp-provider-summary:hover { border-color: var(--color-slate-400); }
+
+  /* Active chip — a facet narrowing the table — mirrors the checked-pill indigo. */
+  .tp-facet-chip.is-active,
+  .tp-provider-summary.is-active {
+    border-color: var(--color-indigo-400);
+    background: var(--color-indigo-50);
+    color: var(--color-indigo-700);
+  }
+  .tp-provider-summary-text { font-size: 14px; font-weight: 600; color: inherit; }
+
+  .tp-facet-caret { display: inline-flex; color: var(--color-slate-400); transition: transform .2s var(--ease-default); }
+  .tp-facet-chip.is-active .tp-facet-caret { color: var(--color-indigo-500); }
+  .tp-facet:has(.tp-facet-panel:popover-open) .tp-facet-caret { transform: rotate(180deg); }
+
+  /* The legend is folded into each dropdown panel, so drop the inline info button. */
+  .tp-filter-group .tp-info { display: none; }
+
+  /* Shared dropdown panel chrome — the popover (tier/modality) and the provider
+     <details> content read as the same floating card. */
+  .tp-facet-panel,
+  .tp-provider-details[open] .tp-check-row {
+    width: min(320px, calc(100vw - 28px));
+    padding: 14px; background: #fff;
+    border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  /* tier/modality: a native popover, placed by popover_controller. */
+  .tp-facet-panel { position: fixed; margin: 0; inset: auto; z-index: 60; }
+  .tp-facet-panel .tp-pills { display: flex; }
+  .tp-facet-panel-title { display: block; }
+  .tp-facet-legend {
+    display: block; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--color-slate-100);
+  }
+
+  /* providers: float the checkbox cloud under its chip instead of pushing the
+     table down. position:relative on the <details> anchors the panel to the
+     chip; the card's overflow is opened up (in the page <style>) so it isn't
+     clipped. */
+  .tp-provider-details { position: relative; }
+  .tp-provider-details[open] .tp-check-row {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; margin-top: 0;
+  }
+}
 
 /* Segmented control */
 .tp-seg {
