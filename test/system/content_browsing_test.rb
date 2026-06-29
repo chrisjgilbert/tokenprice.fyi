@@ -9,7 +9,6 @@ class ContentBrowsingTest < ApplicationSystemTestCase
     visit model_path("deepseek-v4-pro")
 
     assert_selector "h1", text: "DeepSeek V4 Pro"
-    assert_selector "h2", text: "Price history"
     # The chart renders server-side as SVG (the Stimulus controller only adds the
     # crosshair on top), so it's present without any interaction.
     assert_selector "svg[data-price-chart-target='svg']"

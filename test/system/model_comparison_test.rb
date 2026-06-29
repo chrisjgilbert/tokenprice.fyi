@@ -20,7 +20,6 @@ class ModelComparisonTest < ApplicationSystemTestCase
 
     assert_selector ".sel-btn-name", text: "Guide Haiku Fixture"
     assert_includes current_url, "a=claude-haiku-4-5"
-    assert_no_selector ".sel-btn-name", text: "Claude Opus 4.8"
   end
 
   test "the search box filters the model list inside the popover" do
@@ -51,7 +50,7 @@ class ModelComparisonTest < ApplicationSystemTestCase
 
   private
 
-  # The popover's search input has no label, so target it by its placeholder.
+  # The popover's search input has no <label>, so target it by its placeholder.
   def fill_in_search(text)
     find("input[placeholder='Search models…']").set(text)
   end

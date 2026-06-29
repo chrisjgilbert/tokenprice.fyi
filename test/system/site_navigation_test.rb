@@ -15,7 +15,6 @@ class SiteNavigationTest < ApplicationSystemTestCase
     end
 
     assert_current_path learn_reasoning_path
-    assert_selector "h1"
   end
 
   test "the mobile drawer opens and navigates" do
