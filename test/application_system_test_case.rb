@@ -27,5 +27,24 @@ Capybara.register_driver :tokenprice_headless_chrome do |app|
 end
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :tokenprice_headless_chrome, screen_size: [ 1400, 1400 ]
+  DESKTOP_SCREEN = [ 1400, 1400 ].freeze
+  MOBILE_SCREEN  = [ 390, 844 ].freeze
+
+  driven_by :tokenprice_headless_chrome, screen_size: DESKTOP_SCREEN
+
+  # One browser is shared across a run, and resetting a session doesn't restore
+  # the window size — so a test that shrinks to the mobile layout would leak it
+  # to the next test (where, say, the compare page hides its swap button below
+  # 720px). Start every test from the desktop default.
+  setup { resize_to_desktop }
+
+  private
+
+  def resize_to_desktop
+    page.current_window.resize_to(*DESKTOP_SCREEN)
+  end
+
+  def resize_to_mobile
+    page.current_window.resize_to(*MOBILE_SCREEN)
+  end
 end

@@ -5,7 +5,6 @@ require "application_system_test_case"
 # breakpoint, so each test sizes the window for the layout it exercises.
 class SiteNavigationTest < ApplicationSystemTestCase
   test "the Learn dropdown opens and navigates to an explainer" do
-    resize_to_desktop
     visit root_path
 
     find("button.tp-nav-trigger", text: "Learn").click
@@ -32,15 +31,5 @@ class SiteNavigationTest < ApplicationSystemTestCase
 
     assert_current_path compare_path
     assert_selector ".sel-btn-name"
-  end
-
-  private
-
-  def resize_to_desktop
-    page.current_window.resize_to(1400, 1400)
-  end
-
-  def resize_to_mobile
-    page.current_window.resize_to(390, 844)
   end
 end

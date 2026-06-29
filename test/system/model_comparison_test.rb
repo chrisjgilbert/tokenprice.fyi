@@ -41,8 +41,7 @@ class ModelComparisonTest < ApplicationSystemTestCase
 
     find('[data-compare-target="swapBtn"]').click
 
-    # Wait for the Turbo visit to land (a retrying matcher) before reading the
-    # URL: A becomes DeepSeek, B becomes Opus, and the query reflects the swap.
+    # Let the Turbo visit land via a retrying matcher before reading current_url.
     within '[data-compare-target="btnA"]' do
       assert_text "DeepSeek V4 Pro"
     end
