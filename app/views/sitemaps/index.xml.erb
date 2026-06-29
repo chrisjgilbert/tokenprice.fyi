@@ -20,7 +20,7 @@
   <% @models.each do |model| %>
     <url>
       <loc><%= model_url(model) %></loc>
-      <% if model.updated_at %><lastmod><%= model.updated_at.utc.strftime("%Y-%m-%d") %></lastmod><% end %>
+      <lastmod><%= model.updated_at.utc.strftime("%Y-%m-%d") %></lastmod>
       <changefreq>weekly</changefreq><priority>0.8</priority>
     </url>
   <% end %>

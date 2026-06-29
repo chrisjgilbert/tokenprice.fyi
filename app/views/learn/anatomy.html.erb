@@ -6,8 +6,8 @@
   <%= json_ld({ "@context": "https://schema.org", "@type": "Article",
         headline: "What an AI feature is actually made of",
         datePublished: "2026-06-01",
-        author: { "@type": "Organization", name: "tokenprice.fyi", url: root_url },
-        publisher: { "@type": "Organization", name: "tokenprice.fyi", url: root_url },
+        author: { "@type": "Organization", "@id": "#{request.base_url}/#organization" },
+        publisher: { "@type": "Organization", "@id": "#{request.base_url}/#organization" },
         mainEntityOfPage: learn_anatomy_url }) %>
   <%= json_ld({ "@context": "https://schema.org", "@type": "BreadcrumbList",
         itemListElement: [

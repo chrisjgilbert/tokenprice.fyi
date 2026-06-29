@@ -34,6 +34,7 @@
     <%= json_ld({
           "@context": "https://schema.org",
           "@type": "Organization",
+          "@id": "#{request.base_url}/#organization",
           name: "tokenprice.fyi",
           url: root_url,
           logo: "#{request.base_url}/icon.png",
@@ -42,6 +43,7 @@
     <%= json_ld({
           "@context": "https://schema.org",
           "@type": "WebSite",
+          "@id": "#{request.base_url}/#website",
           name: "tokenprice.fyi",
           url: root_url
         }) %>

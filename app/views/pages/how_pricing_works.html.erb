@@ -8,8 +8,8 @@
         "@type": "Article",
         headline: "How LLM pricing works",
         datePublished: "2026-06-11",
-        author: { "@type": "Organization", name: "tokenprice.fyi", url: root_url },
-        publisher: { "@type": "Organization", name: "tokenprice.fyi", url: root_url },
+        author: { "@type": "Organization", "@id": "#{request.base_url}/#organization" },
+        publisher: { "@type": "Organization", "@id": "#{request.base_url}/#organization" },
         mainEntityOfPage: how_pricing_works_url
       }) %>
   <%= json_ld({ "@context": "https://schema.org", "@type": "BreadcrumbList",
