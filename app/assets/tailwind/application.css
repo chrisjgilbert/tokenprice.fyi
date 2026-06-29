@@ -263,7 +263,18 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
      nav's position:sticky, so it scrolls off with the page and the bar — and
      its close button — vanish. Pin it to the viewport for the duration; the
      page content it leaves flow is hidden behind the scrim and panel anyway. */
-  .menu-open .tp-nav { position: fixed; top: 0; left: 0; right: 0; }
+  /* Drop the frosted translucency while open: against the now-opaque drawer, a
+     see-through bar that shows page content behind it looks out of place. Match
+     the panel's solid fill instead. */
+  .menu-open .tp-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-slate-50);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 
   .tp-m-scrim {
     display: block;
