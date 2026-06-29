@@ -7,12 +7,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta property="og:site_name" content="tokenprice.fyi">
+    <meta property="og:locale" content="en_US">
     <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi — LLM API price tracker' %>">
     <meta property="og:description" content="<%= content_for(:description) || 'LLM API token prices, tracked daily. Full history, every provider.' %>">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="<%= content_for(:og_type).presence || 'website' %>">
     <meta property="og:url" content="<%= request.original_url %>">
     <meta property="og:image" content="<%= request.base_url %>/og.svg">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= content_for(:title) || 'tokenprice.fyi — LLM API price tracker' %>">
+    <meta name="twitter:description" content="<%= content_for(:description) || 'LLM API token prices, tracked daily. Full history, every provider.' %>">
     <meta name="twitter:image" content="<%= request.base_url %>/og.svg">
     <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,6 +31,20 @@
     <noscript><link href="<%= fonts_href %>" rel="stylesheet"></noscript>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%= json_ld({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "tokenprice.fyi",
+          url: root_url,
+          logo: "#{request.base_url}/icon.png",
+          description: "Independent LLM API pricing tracker — input, output, and cached token prices for 40+ models, updated daily."
+        }) %>
+    <%= json_ld({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "tokenprice.fyi",
+          url: root_url
+        }) %>
 
     <%= yield :head %>
 

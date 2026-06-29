@@ -368,7 +368,8 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get model_url(model)
     assert_response :success
 
-    json_ld = @response.body[/<script type="application\/ld\+json">(.+?)<\/script>/m, 1]
+    all_ld = @response.body.scan(/<script type="application\/ld\+json">(.+?)<\/script>/m).map(&:first)
+    json_ld = all_ld.find { |s| s.include?('"Product"') }
     assert json_ld, "expected Product JSON-LD on the show page"
     # input + output only (cached dropped) → offerCount 2.
     assert_includes json_ld, "\"offerCount\":2"

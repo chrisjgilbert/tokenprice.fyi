@@ -1,26 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc><%= root_url %></loc></url>
-  <url><loc><%= events_url %></loc></url>
-  <url><loc><%= compare_url %></loc></url>
-  <url><loc><%= sources_url %></loc></url>
-  <url><loc><%= learn_url %></loc></url>
-  <url><loc><%= learn_anatomy_url %></loc></url>
-  <url><loc><%= how_pricing_works_url %></loc></url>
-  <url><loc><%= learn_reasoning_url %></loc></url>
-  <url><loc><%= learn_feature_costs_url %></loc></url>
-  <url><loc><%= learn_cost_cutting_url %></loc></url>
-  <url><loc><%= guide_url %></loc></url>
+  <url><loc><%= root_url %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc><%= events_url %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc><%= compare_url %></loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc><%= sources_url %></loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc><%= learn_url %></loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc><%= learn_anatomy_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc><%= how_pricing_works_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc><%= learn_reasoning_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc><%= learn_feature_costs_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc><%= learn_cost_cutting_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc><%= guide_url %></loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <% FeaturePattern.all.each do |pattern| %>
-    <url><loc><%= guide_task_url(pattern.slug) %></loc></url>
+    <url><loc><%= guide_task_url(pattern.slug) %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <% end %>
   <% @providers.each do |provider| %>
-    <url><loc><%= provider_url(provider) %></loc></url>
+    <url><loc><%= provider_url(provider) %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <% end %>
   <% @models.each do |model| %>
     <url>
       <loc><%= model_url(model) %></loc>
-      <% if model.released_on %><lastmod><%= model.released_on.iso8601 %></lastmod><% end %>
+      <% if model.updated_at %><lastmod><%= model.updated_at.utc.strftime("%Y-%m-%d") %></lastmod><% end %>
+      <changefreq>weekly</changefreq><priority>0.8</priority>
     </url>
   <% end %>
 </urlset>
