@@ -9,8 +9,7 @@ class ModelsController < ApplicationController
     "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
-  # Price-based sorts that a price-less directory row (image-gen/TTS/etc., admitted
-  # without a per-token price in Phase 2) must always sink to the bottom of —
+  # Price-based sorts that a price-less row must always sink to the bottom of —
   # regardless of direction, so it never floats above a priced row when the list
   # is reversed. Name/tier/context/change still sort it normally: it has those.
   PRICE_SORTS = %w[input output cached].freeze
