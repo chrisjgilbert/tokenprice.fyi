@@ -51,32 +51,9 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_nil modality_badge(AiModel.new(input_modalities: %w[text], output_modalities: %w[text]))
   end
 
-  test "directory_row? is true for a price-less non-text model and false for a price-less text model" do
-    assert directory_row?(ai_models(:image_gen)), "price-less image-gen row is a directory row"
-    refute directory_row?(ai_models(:no_price)), "price-less text row is not a directory row"
-  end
-
-  test "io_price shows the untracked note for a directory row, never a dash pill" do
-    pill = io_price(ai_models(:image_gen))
-    assert_includes pill, "Not yet tracked"
-    assert_not_includes pill, "—"
-  end
-
-  test "io_price shows the native price for a priced directory model, never a dash pill" do
-    pill = io_price(ai_models(:priced_image_gen))
-    assert_includes pill, "$0.04"
-    assert_includes pill, "image"
-    assert_not_includes pill, "—"
-    assert_not_includes pill, "Not yet tracked"
-  end
-
-  test "native_price_display names the native unit price for a priced directory model" do
-    display = native_price_display(ai_models(:priced_image_gen))
-    assert_includes display, "$0.04"
-    assert_includes display, "image"
-  end
-
-  test "native_price_display falls back to the not-yet-tracked note when unpriced" do
-    assert_includes native_price_display(ai_models(:image_gen)), "not yet tracked"
+  test "io_price renders the per-token I/O pill for a priced model" do
+    pill = io_price(ai_models(:opus))
+    assert_includes pill, "$5"
+    assert_includes pill, "$25"
   end
 end

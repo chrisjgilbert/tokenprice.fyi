@@ -10,13 +10,9 @@ class PriceCatalog
   # A single dated price observation. `input`/`output`/`cached`/`cache_write`/
   # `audio_input` are USD per 1M tokens; `image_input` is flat USD per input
   # image and `request` is flat USD per request. Each extra dimension is nil when
-  # the model isn't charged for it (the `cached` precedent). `native_price` is the
-  # single hand-entered per-unit price for a directory class (image-gen/TTS/video);
-  # its unit comes from `ModalityClass.price_unit`. A directory snapshot carries a
-  # `native_price` with nil text rates; a text snapshot is the reverse.
+  # the model isn't charged for it (the `cached` precedent).
   Snapshot = Data.define(:date, :input, :output, :cached,
-                         :cache_write, :audio_input, :image_input, :request,
-                         :native_price)
+                         :cache_write, :audio_input, :image_input, :request)
 
   # Minimal provider shape so the shared `provider_square` helper (which reads
   # name/slug/accent) works against catalog entries without an AiModel.
@@ -52,8 +48,7 @@ class PriceCatalog
           cache_write:  pp.cache_write_per_mtok&.to_f,
           audio_input:  pp.audio_input_per_mtok&.to_f,
           image_input:  pp.image_input_usd&.to_f,
-          request:      pp.request_usd&.to_f,
-          native_price: pp.native_price_usd&.to_f
+          request:      pp.request_usd&.to_f
         )
       end
     end
@@ -71,7 +66,6 @@ class PriceCatalog
     def audio_input = current&.audio_input
     def image_input = current&.image_input
     def request     = current&.request
-    def native_price = current&.native_price
 
     # The non-text billing dimensions beyond the three per-token rates, named once
     # so the model page and the admin history don't drift. Each carries its label,

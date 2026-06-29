@@ -632,25 +632,15 @@
                 <td class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
                   <%= tier_badge(model.tier) %>
                 </td>
-                <% if ModalityClass.directory_class?(model.modality_class) %>
-                  <%# A directory-class row bills in a native unit, not per token:
-                      its native price ("$0.04 / image") when recorded, the honest
-                      "not yet tracked" note when not — one cell spanning the three
-                      per-token columns, rather than three dashes that read as free. %>
-                  <td class="numeric <%= 'tp-col-highlight' if %w[input output cached].include?(sort_col) %>" colspan="3">
-                    <span class="<%= 'tp-price-untracked' if directory_row?(model) %>"><%= native_price_display(model) %></span>
-                  </td>
-                <% else %>
-                  <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
-                    <%= usd(model.current_input) %>
-                  </td>
-                  <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
-                    <%= usd(model.current_output) %>
-                  </td>
-                  <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
-                    <%= usd(model.current_cached_input) %>
-                  </td>
-                <% end %>
+                <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_input) %>
+                </td>
+                <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_output) %>
+                </td>
+                <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                  <%= usd(model.current_cached_input) %>
+                </td>
                 <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
                 </td>

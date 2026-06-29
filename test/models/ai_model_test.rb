@@ -100,22 +100,13 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not_includes listed, ai_models(:retired_instant)
   end
 
-  test "listed includes a price-less non-text directory row but not a price-less text row" do
-    listed = AiModel.listed
-    # An image-generation row with no price points is now a visible directory entry.
-    assert_includes listed, ai_models(:image_gen)
-    # A price-less plain-text row stays hidden — we have no data on it.
-    assert_not_includes listed, ai_models(:no_price)
-  end
-
   test "listed returns each priced model exactly once" do
     ids = AiModel.listed.pluck(:id)
     assert_equal ids.uniq, ids
   end
 
-  test "listed excludes a price-less multimodal row (token-priced, not a directory class)" do
-    # Multimodal bills per token, so a price-less one is just missing data, not a
-    # directory entry to surface "not yet tracked".
+  test "listed excludes a price-less multimodal row" do
+    # Multimodal bills per token, so a price-less one is just missing data.
     model = ai_models(:no_price)
     model.update!(input_modalities: %w[text image], output_modalities: %w[text])
     assert_equal :multimodal, model.modality_class
@@ -123,8 +114,8 @@ class AiModelTest < ActiveSupport::TestCase
   end
 
   test "sort_for_display sinks price-less rows to the bottom on a price sort in both directions" do
-    priced    = ai_models(:opus)        # has price points
-    priceless = ai_models(:image_gen)   # directory row, no price
+    priced    = ai_models(:opus)       # has price points
+    priceless = ai_models(:no_price)   # no price points
     by = ->(m) { m.current_input || Float::INFINITY }
 
     asc  = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc",  price_sort: true)
@@ -135,49 +126,27 @@ class AiModelTest < ActiveSupport::TestCase
   end
 
   test "sort_for_display leaves price-less rows in normal order on a non-price sort" do
-    priced    = ai_models(:opus)
-    priceless = ai_models(:image_gen)
-    by = ->(m) { m.name.to_s.downcase } # "claude opus 4.8" < "pixel forge 1"
+    priced    = ai_models(:opus)       # "Claude Opus 4.8"
+    priceless = ai_models(:no_price)   # "Claude No Price"
+    by = ->(m) { m.name.to_s.downcase }
 
-    sorted = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc", price_sort: false)
-    assert_equal [ priced, priceless ], sorted, "non-price sort orders by name, no sink"
+    # "claude no price" < "claude opus 4.8" — pure name order, no price-based sink.
+    sorted = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "asc", price_sort: false)
+    assert_equal [ priceless, priced ], sorted, "non-price sort orders by name, no sink"
   end
 
-  test "token_priced? is true for a text model and false for a native-priced directory row" do
-    assert ai_models(:opus).token_priced?, "a text model with per-token rates is token-priced"
-    assert_not ai_models(:priced_image_gen).token_priced?,
-      "a native-priced directory row has no per-token rate"
-    assert_not ai_models(:image_gen).token_priced?, "a price-less directory row is not token-priced"
-  end
-
-  test "sort_for_display sinks a native-priced directory row (no token rate) on a price sort" do
-    token_priced = ai_models(:opus)         # has per-token rates
-    native       = ai_models(:priced_image_gen) # priced?, but no per-token rate
-    by = ->(m) { m.current_input || Float::INFINITY }
-
-    asc  = AiModel.sort_for_display([ native, token_priced ], by: by, dir: "asc",  price_sort: true)
-    desc = AiModel.sort_for_display([ token_priced, native ], by: by, dir: "desc", price_sort: true)
-
-    assert_equal native, asc.last,  "native-priced row sinks below token-priced rows ascending"
-    assert_equal native, desc.last, "native-priced row sinks below token-priced rows descending"
-  end
-
-  test "directory_listing? is true only for a live, price-less, directory-class row" do
-    assert ai_models(:image_gen).directory_listing?, "price-less image-gen row"
-    assert_not ai_models(:no_price).directory_listing?, "price-less text row is not a directory listing"
-    assert_not ai_models(:opus).directory_listing?, "a priced row is not a directory listing"
-
-    ai_models(:image_gen).update!(status: "retired")
-    assert_not ai_models(:image_gen).reload.directory_listing?, "a retired row is not a directory listing"
+  test "token_priced? is true for a priced model and false for a price-less one" do
+    assert ai_models(:opus).token_priced?, "a model with per-token rates is token-priced"
+    assert_not ai_models(:no_price).token_priced?, "a price-less model is not token-priced"
   end
 
   test "modality_class is stored on save and matches the derived value" do
     model = providers(:anthropic).ai_models.create!(
       name: "Stored Class Probe", tier: "mid",
-      input_modalities: %w[text], output_modalities: %w[image]
+      input_modalities: %w[text image], output_modalities: %w[text]
     )
-    assert_equal "image_generation", model.read_attribute(:modality_class)
-    assert_equal :image_generation, model.modality_class
+    assert_equal "multimodal", model.read_attribute(:modality_class)
+    assert_equal :multimodal, model.modality_class
   end
 
   test "modality_class returns a symbol on an unsaved record" do
@@ -192,9 +161,9 @@ class AiModelTest < ActiveSupport::TestCase
     )
     assert_equal "text", model.read_attribute(:modality_class)
 
-    model.update!(output_modalities: %w[image])
-    assert_equal "image_generation", model.read_attribute(:modality_class)
-    assert_equal :image_generation, model.modality_class
+    model.update!(input_modalities: %w[text image])
+    assert_equal "multimodal", model.read_attribute(:modality_class)
+    assert_equal :multimodal, model.modality_class
   end
 
   test "suspended is a valid status that stays listed, unlike retired" do
@@ -334,8 +303,8 @@ class AiModelTest < ActiveSupport::TestCase
     model.update!(input_modalities: %w[image text], output_modalities: %w[text])
     assert_equal :multimodal, model.modality_class
 
-    model.update!(input_modalities: %w[text], output_modalities: %w[image])
-    assert_equal :image_generation, model.modality_class
+    model.update!(input_modalities: %w[text], output_modalities: %w[embedding])
+    assert_equal :embedding, model.modality_class
   end
 
   test "multimodal? is true when input accepts a non-text modality" do

@@ -1,6 +1,5 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
-<% content_for :description, ModalityClass.directory_class?(@model.modality_class) ?
-     "#{@model.name} (#{@model.provider.name}) — #{ModalityClass.label(@model.modality_class)} model. #{directory_row?(@model) ? "Pricing not yet tracked." : "Priced #{native_price_display(@model)}."}" :
+<% content_for :description,
      "#{@model.name} (#{@model.provider.name}) API pricing: #{usd_plain(@model.current_input)} input / #{usd_plain(@model.current_output)} output per 1M tokens." %>
 <% content_for :canonical, model_url(@model) %>
 <% content_for :head do %>
@@ -111,60 +110,37 @@
   </section>
 <% end %>
 
-<% if ModalityClass.directory_class?(@model.modality_class) %>
-  <%# A directory-class model bills in a native unit (per image / per second), not
-      per token, so it shows ONE native-price card — the hand-entered price when
-      recorded, the honest "not yet tracked" note when not — never the three
-      per-token cards (which would render "—" on NULL text rates). %>
-  <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-    <div class="rounded-xl border border-slate-200 bg-white p-4 sm:col-span-3">
-      <div class="flex items-center justify-between">
-        <p class="text-xs uppercase tracking-wide text-slate-500">Price</p>
-        <span class="text-slate-300" aria-hidden="true"><%= icon(:arrow_in, size: 15) %></span>
-      </div>
-      <p class="mt-1 text-lg font-semibold <%= "tp-price-untracked" if directory_row?(@model) %>"><%= native_price_display(@model) %></p>
-    </div>
+<div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <% [
+       ["Input / 1M", usd(@model.current_input), :arrow_in],
+       ["Output / 1M", usd(@model.current_output), :arrow_out],
+       ["Cached input / 1M", usd(@model.current_cached_input), :cache],
+       ["Context window", tokens_short(@model.context_window), :brackets]
+     ].each do |label, value, ic| %>
     <div class="rounded-xl border border-slate-200 bg-white p-4">
       <div class="flex items-center justify-between">
-        <p class="text-xs uppercase tracking-wide text-slate-500">Context window</p>
-        <span class="text-slate-300" aria-hidden="true"><%= icon(:brackets, size: 15) %></span>
+        <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
+        <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
       </div>
-      <p class="mt-1 text-2xl font-semibold tabular-nums"><%= tokens_short(@model.context_window) %></p>
-    </div>
-  </div>
-<% else %>
-  <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-    <% [
-         ["Input / 1M", usd(@model.current_input), :arrow_in],
-         ["Output / 1M", usd(@model.current_output), :arrow_out],
-         ["Cached input / 1M", usd(@model.current_cached_input), :cache],
-         ["Context window", tokens_short(@model.context_window), :brackets]
-       ].each do |label, value, ic| %>
-      <div class="rounded-xl border border-slate-200 bg-white p-4">
-        <div class="flex items-center justify-between">
-          <p class="text-xs uppercase tracking-wide text-slate-500"><%= label %></p>
-          <span class="text-slate-300" aria-hidden="true"><%= icon(ic, size: 15) %></span>
-        </div>
-        <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
-      </div>
-    <% end %>
-  </div>
-
-  <% if @catalog_entry && (billing = @catalog_entry.extra_billing).any? %>
-    <div class="tp-also-billed mb-8 rounded-xl border border-slate-200 bg-white p-5">
-      <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Also billed</p>
-      <dl class="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-        <% billing.each do |line| %>
-          <div class="flex items-baseline justify-between gap-4">
-            <dt class="text-sm text-slate-600"><%= line.label %></dt>
-            <dd class="text-sm font-semibold tabular-nums">
-              <%= usd(line.value, decimals: line.decimals) %><% if line.unit %> <span class="font-normal text-slate-400"><%= line.unit %></span><% end %>
-            </dd>
-          </div>
-        <% end %>
-      </dl>
+      <p class="mt-1 text-2xl font-semibold tabular-nums"><%= value %></p>
     </div>
   <% end %>
+</div>
+
+<% if @catalog_entry && (billing = @catalog_entry.extra_billing).any? %>
+  <div class="tp-also-billed mb-8 rounded-xl border border-slate-200 bg-white p-5">
+    <p class="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Also billed</p>
+    <dl class="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+      <% billing.each do |line| %>
+        <div class="flex items-baseline justify-between gap-4">
+          <dt class="text-sm text-slate-600"><%= line.label %></dt>
+          <dd class="text-sm font-semibold tabular-nums">
+            <%= usd(line.value, decimals: line.decimals) %><% if line.unit %> <span class="font-normal text-slate-400"><%= line.unit %></span><% end %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
 <% end %>
 
 <% if @catalog_entry %>
@@ -182,10 +158,6 @@
   </section>
 <% end %>
 
-<%# Per-token price history + snapshots — only meaningful for token-priced models.
-    A directory-class model bills in a native unit (its price is the card above),
-    so skip these rather than chart $0.00 / list "—" rows on NULL text rates. %>
-<% unless ModalityClass.directory_class?(@model.modality_class) %>
 <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
   <div class="mb-4 flex items-center justify-between">
     <h2 class="text-lg font-semibold">Price history</h2>
@@ -244,7 +216,6 @@
     </table>
   </div>
 </section>
-<% end %>
 
 <% if @related.any? %>
   <section>

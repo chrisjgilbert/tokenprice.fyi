@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_28_153000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -82,10 +82,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_153000) do
     t.datetime "created_at", null: false
     t.date "effective_on", null: false
     t.decimal "image_input_usd", precision: 12, scale: 6
-    t.decimal "input_per_mtok", precision: 12, scale: 6
-    t.decimal "native_price_usd", precision: 12, scale: 6
+    t.decimal "input_per_mtok", precision: 12, scale: 6, null: false
     t.string "note"
-    t.decimal "output_per_mtok", precision: 12, scale: 6
+    t.decimal "output_per_mtok", precision: 12, scale: 6, null: false
     t.decimal "request_usd", precision: 12, scale: 6
     t.string "source"
     t.datetime "updated_at", null: false

@@ -18,67 +18,14 @@ module ApplicationHelper
     value.nil? ? "—" : "$#{PriceFormat.usd_amount(value, decimals: decimals)}"
   end
 
-  # True for a Phase 2 directory row — delegated to the model so the "render as
-  # 'not yet tracked'" rule (live, price-less, non-token-billed class) has one
-  # home. A price-less text/multimodal row (no data, not a directory class) and a
-  # retired one are excluded, so on the unscoped provider page they render "—".
-  def directory_row?(model) = model.directory_listing?
-
-  # A price cell: the USD figure when priced, otherwise an honest "not yet tracked"
-  # note — never $0 or a bare dash that could read as "free". `compact:` (the dense
-  # listing tables, where the note repeats across three columns) shows the short
-  # "Not yet tracked"; the full form names the native unit, for the roomier model
-  # page. Used everywhere a price-table cell renders so a directory row degrades
-  # the same way across surfaces.
-  def price_cell(value, model, compact: true)
-    return usd(value) unless directory_row?(model)
-
-    content_tag(:span, untracked_price_note(model, compact: compact), class: "tp-price-untracked")
-  end
-
-  # The display string for a directory-class model's price: its native per-unit
-  # price ("$0.04 / image") when one is recorded, otherwise the honest "not yet
-  # tracked" note. The unit phrasing has one home — ModalityClass.price_unit gives
-  # "per image"; both the price and the untracked note read off it, so a priced and
-  # an unpriced directory row of the same class name the same unit.
-  def native_price_display(model)
-    price = model.current_price&.native_price_usd
-    return untracked_price_note(model) if price.nil?
-
-    unit = ModalityClass.price_unit(model.modality_class)
-    suffix = unit ? " / #{unit.delete_prefix("per ")}" : ""
-    "#{usd_plain(price, decimals: 4)}#{suffix}"
-  end
-
-  # The compact price subtitle in the compare model-picker dropdown: the input
-  # rate, or the untracked note for a directory row so it never reads "— in".
+  # The compact price subtitle in the compare model-picker dropdown: the input rate.
   def picker_price(model)
-    return untracked_price_note(model, compact: true) if directory_row?(model)
-
     "#{usd(model.current_input)} in"
   end
 
-  # The wording for a directory row's missing price. The full form names the
-  # native billing unit ("Priced per image — not yet tracked") from ModalityClass
-  # (the one home for the taxonomy); the compact form is just "Not yet tracked".
-  def untracked_price_note(model, compact: false)
-    return "Not yet tracked" if compact
-
-    unit = ModalityClass.price_unit(model.modality_class)
-    unit ? "Priced #{unit} — not yet tracked" : "Not yet tracked"
-  end
-
-  # I/O shorthand: "$3 / $15" — the primary at-a-glance price. A directory-class
-  # model has no per-token rate, so it shows its native unit price ("$0.04 / image")
-  # when one is recorded and the honest "Not yet tracked" note when not — never a
-  # "— / —" pill that would read as free (this is the chip on the hero card and the
-  # launch timeline). A text/multimodal row renders the I/O pill unchanged.
+  # I/O shorthand: "$3 / $15" — the primary at-a-glance price (the chip on the hero
+  # card and the launch timeline).
   def io_price(model, tag: false, big: false, light: false)
-    if ModalityClass.directory_class?(model.modality_class)
-      label = directory_row?(model) ? untracked_price_note(model, compact: true) : native_price_display(model)
-      return content_tag(:span, label, class: "tp-price-untracked")
-    end
-
     classes = "tp-io num"
     classes += " tp-io-big" if big
     classes += " tp-io-light" if light

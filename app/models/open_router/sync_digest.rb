@@ -50,9 +50,7 @@ module OpenRouter
       lines = @result.created_records.map do |r|
         edit_link    = slack_link("#{BASE_URL}/admin/models/#{r.model_slug}/edit", "edit")
         provider_str = r.new_provider ? "*#{r.provider_name} — new provider ★*" : r.provider_name
-        # A directory row admitted without a per-token price (Phase 2) has nil
-        # input/output — say so rather than announce a misleading "$0/$0 per MTok".
-        price_str = r.input_per_mtok ? "$#{fmt(r.input_per_mtok)}/$#{fmt(r.output_per_mtok)} per MTok" : "price not yet tracked"
+        price_str    = "$#{fmt(r.input_per_mtok)}/$#{fmt(r.output_per_mtok)} per MTok"
         "• #{r.model_name} (#{provider_str}) — #{price_str} · #{edit_link}"
       end
       mrkdwn_section("*🆕 New models (#{lines.size})*\n#{lines.join("\n")}")

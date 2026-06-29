@@ -1,14 +1,11 @@
 module EventsHelper
   Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move)
 
-  # The launch-timeline blurb for a model. A directory-class model bills in a
-  # native unit, so it reads "at $0.04 / image", not the per-token "$X in / $Y
-  # out per 1M" (whose rates are NULL on those rows). Unpriced → "not yet tracked".
+  # The launch-timeline blurb for a model: "ships X at $Y in / $Z out per 1M",
+  # or "Price not yet tracked" for the rare price-less row.
   def launch_note(model)
     base = "#{model.provider.name} ships #{model.name}"
-    if ModalityClass.directory_class?(model.modality_class)
-      model.current_price ? "#{base} at #{native_price_display(model)}." : "#{base}. Price not yet tracked."
-    elsif model.current_price
+    if model.current_price
       "#{base} at #{usd_plain(model.current_input)} in / #{usd_plain(model.current_output)} out per 1M."
     else
       "#{base}. Price not yet tracked."

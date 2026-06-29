@@ -22,8 +22,7 @@ module Api
               cache_write: m.cache_write, audio_input: m.audio_input
             },
             price_per_unit: {
-              image_input_usd: m.image_input, request_usd: m.request,
-              native_price_usd: m.native_price
+              image_input_usd: m.image_input, request_usd: m.request
             }
           }
         end
