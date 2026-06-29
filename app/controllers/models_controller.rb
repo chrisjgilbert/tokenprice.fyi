@@ -90,6 +90,10 @@ class ModelsController < ApplicationController
     return if catalog_fresh?(etag: [ :model_show, @model.slug, price_updated_at, @model.updated_at ],
       last_modified: freshness)
 
+    # The freshness instant the page surfaces to readers — the same value the
+    # conditional GET is keyed on, so "data updated" can't claim a time newer
+    # than the one the cache would serve.
+    @last_updated = freshness
     @price_points = @model.price_points.chronological.to_a
     # Present only when the model is listed (priced); nil otherwise, so the view's
     # extra-billing section reads off a real catalog entry or renders nothing.

@@ -25,5 +25,11 @@ class ProvidersController < ApplicationController
     models = @provider.ai_models.includes(:price_points).to_a
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
       price_sort: PRICE_SORTS.include?(@sort))
+
+    # Newest data write across this provider's models (latest price-row write, or
+    # the provider row itself). Read off the already-loaded price points so it
+    # adds no query. Always <= the global PriceCatalog.last_modified the
+    # conditional GET keys on, so any change that moves it also busts the cache.
+    @last_updated = (models.flat_map(&:price_points).map(&:updated_at) << @provider.updated_at).compact.max
   end
 end

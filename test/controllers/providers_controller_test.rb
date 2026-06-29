@@ -41,4 +41,14 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "\"@type\":\"BreadcrumbList\""
     assert_includes @response.body, provider_url(provider)
   end
+
+  test "stamps when the data was last updated and offers a prefilled report link" do
+    provider = providers(:anthropic)
+    get provider_url(provider)
+    assert_response :success
+    assert_select "time", text: /Data updated/
+    assert_select "a[href^=?]", "mailto:#{ApplicationHelper::REPORT_EMAIL}", text: "Report a problem" do
+      assert_select ":match('href', ?)", "data%20issue%3A%20#{ERB::Util.url_encode(provider.name)}"
+    end
+  end
 end

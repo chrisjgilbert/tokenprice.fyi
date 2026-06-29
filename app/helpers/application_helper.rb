@@ -280,4 +280,45 @@ module ApplicationHelper
     return "—" if date.nil?
     date.strftime("%b %-d, %Y")
   end
+
+  # The "data updated <date>" stamp shown on the model and provider pages. A
+  # <time> carries the precise instant (datetime attribute, relative hint in the
+  # title) while the visible text stays a specific date, per the copy style —
+  # "write the number", not "up to date". Returns nil when there's no timestamp.
+  def data_updated_tag(timestamp, label: "Data updated", css: nil)
+    return if timestamp.nil?
+
+    tag.time "#{label} #{fmt_date_full(timestamp)}",
+      datetime: timestamp.iso8601,
+      title: "#{time_ago_in_words(timestamp)} ago",
+      class: css
+  end
+
+  # Where "Report a problem" links resolve. Same inbox as the footer Contact
+  # link; named here so the report links and that link can't drift apart.
+  REPORT_EMAIL = "chris@chrisgilbert.dev"
+
+  # A prefilled "Report a problem" mailto link. Scoping the subject and body to
+  # the page means a reply lands already in context, and a mailto (rather than a
+  # form posting to a new endpoint) keeps the app backend-free and with no
+  # spam-able write surface — in keeping with the existing Contact link.
+  def report_problem_link(subject:, body:, css: nil)
+    mail_to REPORT_EMAIL, "Report a problem", subject: subject, body: body, class: css
+  end
+
+  def model_report_link(model, css: nil)
+    report_problem_link(
+      subject: "tokenprice.fyi data issue: #{model.name}",
+      body: "Model: #{model.name} (#{model.provider.name})\nPage: #{model_url(model)}\n\nWhat looks wrong?\n",
+      css: css
+    )
+  end
+
+  def provider_report_link(provider, css: nil)
+    report_problem_link(
+      subject: "tokenprice.fyi data issue: #{provider.name}",
+      body: "Provider: #{provider.name}\nPage: #{provider_url(provider)}\n\nWhat looks wrong?\n",
+      css: css
+    )
+  end
 end
