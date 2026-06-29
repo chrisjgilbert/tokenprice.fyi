@@ -91,8 +91,8 @@ class ModelsController < ApplicationController
       last_modified: freshness)
 
     @price_points = @model.price_points.chronological.to_a
-    # Present when the model is listed — priced models and price-less Phase 2
-    # directory rows alike (the latter render their prices as "not yet tracked").
+    # Present only when the model is listed (priced); nil otherwise, so the view's
+    # extra-billing section reads off a real catalog entry or renders nothing.
     @catalog_entry = PriceCatalog.model(@model.slug)
     @related = AiModel.listed.where(provider: @model.provider)
       .where.not(id: @model.id)

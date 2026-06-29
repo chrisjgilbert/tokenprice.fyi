@@ -1,8 +1,8 @@
 require "test_helper"
 
 class ModalityClassTest < ActiveSupport::TestCase
-  # One row per line of the taxonomy table in docs/MULTIMODAL_PRICING_PLAN.md.
-  # [input, output, expected_class]
+  # The signature → class table. Only token-priced classes are derived now; a
+  # non-text-output media signature degrades to :other. [input, output, expected]
   TAXONOMY = [
     [ %w[text],              %w[text],      :text ],
     [ %w[image text],        %w[text],      :multimodal ],
@@ -51,7 +51,7 @@ class ModalityClassTest < ActiveSupport::TestCase
     assert_equal :other, ModalityClass.for(input: %w[video], output: %w[file])
   end
 
-  test "video understanding (video input, text output) stays multimodal not video_generation" do
+  test "video understanding (video input, text output) classifies as multimodal" do
     assert_equal :multimodal, ModalityClass.for(input: %w[text video], output: %w[text])
   end
 end

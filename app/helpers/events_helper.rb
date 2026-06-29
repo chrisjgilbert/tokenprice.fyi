@@ -1,8 +1,8 @@
 module EventsHelper
   Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move)
 
-  # The launch-timeline blurb for a model: "ships X at $Y in / $Z out per 1M",
-  # or "Price not yet tracked" for the rare price-less row.
+  # The launch-timeline blurb for a model: "ships X at $Y in / $Z out per 1M".
+  # Every listed model is priced, so the else is a defensive fallback only.
   def launch_note(model)
     base = "#{model.provider.name} ships #{model.name}"
     if model.current_price

@@ -237,7 +237,7 @@ module OpenRouter
       end
     end
 
-    # Did a headline rate (input / output / cached) move? The extra Phase 3
+    # Did a headline rate (input / output / cached) move? The extra billing
     # dimensions still write a snapshot, but they aren't carried in the digest.
     def headline_moved?(old, new)
       old[:input] != new[:input] ||

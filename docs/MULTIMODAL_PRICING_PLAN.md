@@ -1,5 +1,12 @@
 # Multimodal plan — classify models by what they turn into what
 
+> **Superseded in part (2026-06):** the **directory classes** (image generation/
+> editing, TTS, STT, speech-to-speech, video) and their native (per-image/second)
+> pricing were removed — the site tracks token-priced models only. The surviving
+> taxonomy is text, multimodal, omnimodal (`any_to_any`), and embedding; a
+> non-text-output media signature degrades to `:other`. The directory-class
+> sections below are kept as historical record.
+
 Companion to the **Architecture** section of `CLAUDE.md`. This is a work-breakdown
 for teaching the catalogue to record each model's **modality signature** — the set
 of inputs it accepts and outputs it produces — and to let people find models by it.
