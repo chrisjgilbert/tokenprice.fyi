@@ -45,4 +45,12 @@ class Admin::ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "anthropic", anthropic.slug      # unchanged
     assert_equal "Anthropic Renamed", anthropic.name # other fields still update
   end
+
+  test "persists a description on update" do
+    patch admin_provider_path(providers(:anthropic)),
+          params: { provider: { description: "Builds the Claude family across the Opus, Sonnet, and Haiku tiers." } }
+    assert_redirected_to admin_providers_path
+    assert_equal "Builds the Claude family across the Opus, Sonnet, and Haiku tiers.",
+                 providers(:anthropic).reload.description
+  end
 end

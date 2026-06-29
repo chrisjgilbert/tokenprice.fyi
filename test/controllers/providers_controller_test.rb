@@ -17,6 +17,14 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "input/output rates per 1M tokens"
   end
 
+  test "renders the description blurb and uses it for the meta description when present" do
+    providers(:anthropic).update!(description: "Builds the Claude family across the Opus, Sonnet, and Haiku tiers.")
+    get provider_url(providers(:anthropic))
+    assert_response :success
+    assert_select "p", text: /Builds the Claude family across the Opus, Sonnet, and Haiku tiers\./
+    assert_select "meta[name=description][content*=?]", "Builds the Claude family across the Opus"
+  end
+
   test "renders a crawlable intro paragraph with the provider name and live model count" do
     provider = providers(:anthropic)
     get provider_url(provider)

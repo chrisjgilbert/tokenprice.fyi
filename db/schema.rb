@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_130000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -97,6 +97,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
     t.string "country"
     t.string "country_code"
     t.datetime "created_at", null: false
+    t.text "description"
     t.string "name", null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
