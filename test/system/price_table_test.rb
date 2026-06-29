@@ -105,8 +105,9 @@ class PriceTableTest < ApplicationSystemTestCase
       assert_text "Claude Opus 4.8"
       assert_selector "[data-models-count]", text: /model/
     end
-    # The chip echoes the active value and lights up.
-    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier"
+    # The chip echoes the active value and lights up. normalize_ws collapses the
+    # newline the button's markup puts between the label and the value span.
+    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier", normalize_ws: true
   end
 
   test "mobile provider dropdown chip filters the table" do
