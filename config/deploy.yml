@@ -74,6 +74,23 @@ aliases:
 volumes:
   - "tokenprice_storage:/rails/storage"
 
+# Litestream streams SQLite WAL frames to Hetzner Object Storage in near real-time.
+# Boot with: bin/kamal accessory boot litestream
+# Restore with: bin/kamal accessory exec litestream "litestream restore -o /rails/storage/production.sqlite3 s3://fsn1.your-objectstorage.com/tokenprice-backups/db/production"
+accessories:
+  litestream:
+    image: litestream/litestream:0.3.13
+    host: 46.224.179.132
+    volumes:
+      - "tokenprice_storage:/rails/storage"
+    files:
+      - config/litestream.yml:/etc/litestream.yml
+    env:
+      secret:
+        - LITESTREAM_ACCESS_KEY_ID
+        - LITESTREAM_SECRET_ACCESS_KEY
+    cmd: replicate
+
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
