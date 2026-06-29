@@ -742,11 +742,6 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
 .tp-facet-panel-title { display: none; }
 .tp-facet-legend { display: none; }
 
-.tp-facet-panel-title {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-  color: var(--color-slate-500); margin-bottom: 10px;
-}
-
 @media (min-width: 761px) {
   /* Transparent on desktop: the pills become direct children of the filter
      group and lay out exactly as they did before the facet wrapper existed. */
@@ -776,7 +771,7 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
     background: var(--color-indigo-50);
     color: var(--color-indigo-700);
   }
-  .tp-provider-summary-text { font-size: 14px; font-weight: 600; color: inherit; }
+  .tp-provider-summary-text { font-size: 14px; color: inherit; }
 
   .tp-facet-caret { display: inline-flex; color: var(--color-slate-400); transition: transform .2s var(--ease-default); }
   .tp-facet-chip.is-active .tp-facet-caret { color: var(--color-indigo-500); }
@@ -797,7 +792,11 @@ td .tp-price-untracked { display: inline-block; text-align: left; white-space: n
   /* tier/modality: a native popover, placed by popover_controller. */
   .tp-facet-panel { position: fixed; margin: 0; inset: auto; z-index: 60; }
   .tp-facet-panel .tp-pills { display: flex; }
-  .tp-facet-panel-title { display: block; }
+  .tp-facet-panel-title {
+    display: block;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--color-slate-500); margin-bottom: 10px;
+  }
   .tp-facet-legend {
     display: block; margin-top: 12px; padding-top: 12px;
     border-top: 1px solid var(--color-slate-100);
