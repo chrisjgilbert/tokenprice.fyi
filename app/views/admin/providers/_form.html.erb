@@ -39,6 +39,11 @@
         <p class="mt-1 text-xs text-slate-400">Two letters, e.g. US, CN, FR — drives the map.</p>
       </div>
     </div>
+    <div>
+      <%= f.label :description, "Description (optional)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_area :description, rows: 3, class: "block w-full rounded-lg border-slate-300 shadow-sm" %>
+      <p class="mt-1 text-xs text-slate-400">A short editorial blurb shown on the provider page — a sentence or two on what the lab ships. No pricing; that's computed separately.</p>
+    </div>
   </div>
 
   <div class="mt-4 flex items-center gap-3">

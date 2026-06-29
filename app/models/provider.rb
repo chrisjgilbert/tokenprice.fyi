@@ -7,6 +7,9 @@ class Provider < ApplicationRecord
                                message: "must be a hex colour like #4f46e5" }, allow_blank: true
   validates :country_code, format: { with: /\A[A-Z]{2}\z/,
                                       message: "must be a 2-letter ISO code like US" }, allow_blank: true
+  # A short editorial blurb for the provider page (a sentence or two); the cap is
+  # a sanity guard on the admin free-text field, not a hard editorial limit.
+  validates :description, length: { maximum: 1000 }, allow_blank: true
 
   before_validation :set_slug, on: :create
   before_validation :normalize_country_code

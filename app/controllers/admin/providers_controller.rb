@@ -46,7 +46,7 @@ module Admin
     end
 
     def provider_params
-      permitted = params.require(:provider).permit(:name, :slug, :website, :accent, :country, :country_code)
+      permitted = params.require(:provider).permit(:name, :slug, :website, :accent, :country, :country_code, :description)
       # Slug is the provider's permanent public URL — set on create, locked after.
       permitted.delete(:slug) if @provider&.persisted?
       permitted
