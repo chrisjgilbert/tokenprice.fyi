@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   end
 
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
+  get "llms.txt",    to: "pages#llms_txt",  defaults: { format: "txt" }, as: :llms_txt
 
   namespace :admin do
     root "models#index"

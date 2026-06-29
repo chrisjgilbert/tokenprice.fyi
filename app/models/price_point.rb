@@ -1,5 +1,5 @@
 class PricePoint < ApplicationRecord
-  belongs_to :ai_model
+  belongs_to :ai_model, touch: true
 
   validates :effective_on, presence: true,
             uniqueness: { scope: :ai_model_id,

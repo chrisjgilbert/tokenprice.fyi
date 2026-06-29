@@ -1,4 +1,10 @@
 class PagesController < ApplicationController
+  def llms_txt
+    @providers = Provider.all.order(:name)
+    @patterns  = FeaturePattern.all
+    render formats: :txt
+  end
+
   def how_pricing_works
     # The catalog freshness timestamp drives the conditional-GET key below, so
     # the page issues a single freshness query.

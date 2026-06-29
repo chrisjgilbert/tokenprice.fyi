@@ -223,6 +223,10 @@ module ApplicationHelper
     content_tag :script, raw(JSON.generate(data).gsub("</", '<\/')), type: "application/ld+json"
   end
 
+  def org_ref
+    { "@type": "Organization", "@id": "#{request.base_url}/#organization" }
+  end
+
   def aria_sort_for(key, current_sort:, current_dir:)
     return "none" unless current_sort == key
 

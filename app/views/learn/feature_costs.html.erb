@@ -1,9 +1,19 @@
 <% content_for :title, "What drives the cost of common features — tokenprice.fyi" %>
 <% content_for :description, "RAG, chat, classification, summarisation, coding agents — each has a different cost shape. Where the money concentrates, the dominant lever, and when a cheaper tier is good enough." %>
 <% content_for :canonical, learn_feature_costs_url %>
+<% content_for :og_type, "article" %>
 <% content_for :head do %>
-  <%= json_ld({ "@context": "https://schema.org", "@type": "Article", headline: "What drives the cost of common features",
-        publisher: { "@type": "Organization", name: "tokenprice.fyi" }, mainEntityOfPage: learn_feature_costs_url }) %>
+  <%= json_ld({ "@context": "https://schema.org", "@type": "Article",
+        headline: "What drives the cost of common features",
+        datePublished: "2026-06-01",
+        author: org_ref,
+        publisher: org_ref,
+        mainEntityOfPage: learn_feature_costs_url }) %>
+  <%= json_ld({ "@context": "https://schema.org", "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Learn", item: learn_url },
+          { "@type": "ListItem", position: 2, name: "What drives the cost of common features", item: learn_feature_costs_url }
+        ] }) %>
 <% end %>
 <%= render "shared/explainer_styles" %>
 
