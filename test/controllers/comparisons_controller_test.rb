@@ -20,13 +20,4 @@ class ComparisonsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".sel-btn-name", /DeepSeek V4 Pro/
     assert_select ".cmp-table"
   end
-
-  test "the model picker shows a directory row's price as 'not yet tracked', never '— in'" do
-    get compare_url
-    assert_response :success
-    # The price-less image-gen row is listed, so it appears in the picker.
-    forge = css_select("li[data-model-name='Pixel Forge 1'] .cmp-pop-item-price").first
-    assert forge, "expected the directory row in the compare picker"
-    assert_equal "Not yet tracked", forge.text.strip
-  end
 end

@@ -39,15 +39,11 @@ class AiModel < ApplicationRecord
   before_validation :normalize_openrouter_id
   before_save :assign_modality_class, if: :modality_signature_changed?
 
-  # Visible in the public directory: not retired, and either priced or a directory
-  # class (a non-token-billed class like image-gen/TTS that we list price-less,
-  # "not yet tracked", until Phase 3). A price-less token-priced row (text,
-  # multimodal, embedding) stays hidden — we simply have no data on it. The
-  # modality_class column is NOT NULL, so the IN-list is index-usable.
+  # Visible in the public directory: not retired and priced (has at least one
+  # price point). A price-less row stays hidden — we simply have no data on it.
   scope :listed, -> {
     where.not(status: "retired")
-      .where("ai_models.id IN (SELECT ai_model_id FROM price_points) OR ai_models.modality_class IN (?)",
-             ModalityClass::DIRECTORY_CLASS_NAMES)
+      .where("ai_models.id IN (SELECT ai_model_id FROM price_points)")
   }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
@@ -55,13 +51,10 @@ class AiModel < ApplicationRecord
 
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
   # "desc", then on a price sort sink rows without a per-token rate to the bottom
-  # in BOTH directions (a row that can't be ranked on the sorted column — a
-  # price-less row OR a native-priced directory row — would otherwise float to the
-  # top on reverse). The sink predicate is `token_priced?`, not `priced?`: a
-  # native-priced directory model is `priced?` but has no per-token rate, so
-  # `priced?` would leave it ranked at Float::INFINITY among the priced group. The
-  # models/providers tables share this; their column sets — and thus which sorts
-  # count as price sorts — legitimately differ, so each passes its own `price_sort:`.
+  # in BOTH directions (they can't be ranked on the sorted column and would
+  # otherwise float to the top on reverse). The models/providers tables share
+  # this; their column sets — and thus which sorts count as price sorts —
+  # legitimately differ, so each passes its own `price_sort:`.
   def self.sort_for_display(models, by:, dir:, price_sort:)
     sorted = models.sort_by(&by)
     sorted.reverse! if dir == "desc"
@@ -117,8 +110,8 @@ class AiModel < ApplicationRecord
   # The single filterable class, as a Symbol, always derived from the live
   # signature — so a reader is never stale, even after an in-memory signature
   # change before save. The `modality_class` string column is a denormalised copy
-  # used ONLY by the `listed` SQL scope; `before_save :assign_modality_class`
-  # keeps it in lockstep. An empty/unknown signature degrades to :text.
+  # kept in lockstep by `before_save :assign_modality_class`, available for SQL
+  # filtering. An empty/unknown signature degrades to :text.
   def modality_class
     @modality_class ||= ModalityClass.for(input: input_modalities, output: output_modalities)
   end
@@ -131,19 +124,12 @@ class AiModel < ApplicationRecord
 
   def priced? = current_price.present?
 
-  # Priced on the per-token axis the listing tables sort by — a text/multimodal
-  # row with an input rate. A native-priced directory row is `priced?` but not
-  # `token_priced?` (its price is per image/second, no per-token rate), so a price
-  # sort sinks it alongside the price-less rows rather than ranking it at infinity.
+  # Priced on the per-token axis the listing tables sort by — a row with an input
+  # rate. A row without one sinks to the bottom of a price sort rather than
+  # ranking at infinity. Every listed row is token-priced, so this currently
+  # agrees with `priced?`; it stays a distinct predicate because the sort runs on
+  # arbitrary in-memory collections, not only the `listed` scope.
   def token_priced? = current_input.present?
-
-  # The one home for "render this as a price-less 'not yet tracked' directory row":
-  # a live, non-token-billed class (image-gen/TTS/…) we list ahead of pricing it.
-  # The views, helpers, sort, and Slack digest all ask this — never their own
-  # ad-hoc nil-price check — so the rule lives in one place.
-  def directory_listing?
-    !priced? && !retired? && ModalityClass.directory_class?(modality_class)
-  end
 
   # A fuller descriptive paragraph for meta tags and structured data, folding
   # the editorial facets into the lede when they're present.

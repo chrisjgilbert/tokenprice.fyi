@@ -38,18 +38,6 @@ module Api
         assert_in_delta 5.0, models.find { |m| m["slug"] == "claude-opus-4-8" }["price_per_mtok"]["input"], 0.0001
       end
 
-      test "a price-less directory row reports null prices, never zero" do
-        get api_v1_models_url(format: :json)
-        models = JSON.parse(@response.body)["models"]
-
-        forge = models.find { |m| m["slug"] == "pixel-forge-1" }
-        assert forge, "the price-less image-gen directory row should be listed"
-        assert_equal "image_generation", forge["modality_class"]
-        assert_nil forge["price_per_mtok"]["input"]
-        assert_nil forge["price_per_mtok"]["output"]
-        assert_nil forge["price_per_mtok"]["cached_input"]
-      end
-
       test "exposes the extra billed dimensions additively, null when absent" do
         get api_v1_models_url(format: :json)
         models = JSON.parse(@response.body)["models"]
@@ -71,19 +59,6 @@ module Api
         assert_nil opus["price_per_mtok"]["audio_input"]
         assert_nil opus["price_per_unit"]["image_input_usd"]
         assert_nil opus["price_per_unit"]["request_usd"]
-      end
-
-      test "exposes the native per-unit price for a directory model, null for text" do
-        get api_v1_models_url(format: :json)
-        models = JSON.parse(@response.body)["models"]
-
-        forge = models.find { |m| m["slug"] == "pixel-forge-pro" }
-        assert forge, "the native-priced image-gen row should be listed"
-        assert_in_delta 0.04, forge["price_per_unit"]["native_price_usd"], 0.0001
-
-        # A text model carries no native price.
-        opus = models.find { |m| m["slug"] == "claude-opus-4-8" }
-        assert_nil opus["price_per_unit"]["native_price_usd"]
       end
 
       test "is cross-origin readable" do

@@ -8,8 +8,8 @@ class ProvidersController < ApplicationController
     "released" => ->(m) { m.released_on || Date.new(1900, 1, 1) }
   }.freeze
 
-  # Price sorts a price-less directory row must always sink below, in either
-  # direction (see ModelsController::PRICE_SORTS for the rationale).
+  # Price sorts a price-less row must always sink below, in either direction
+  # (see ModelsController::PRICE_SORTS for the rationale).
   PRICE_SORTS = %w[input output].freeze
 
   def show

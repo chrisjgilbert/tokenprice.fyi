@@ -502,25 +502,23 @@ module OpenRouter
       assert_equal :text, model.modality_class
     end
 
-    # --- admitting non-text-output models (directory-first) -----------------
+    # --- non-text-output models are skipped (not priced here) ---------------
 
-    test "an image-generation row is admitted price-less, classed, with no price points" do
-      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
-                               prompt: "0", completion: "0", image: "0.04",
-                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
+    test "an image-generation row is skipped — no model, no price point" do
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
+                        prompt: "0", completion: "0", image: "0.04",
+                        input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
+      end
 
-      assert_equal 1, result.created
-
-      model = AiModel.find_by!(openrouter_id: "google/imagen-4")
-      assert_equal :image_generation, model.modality_class
-      assert_equal 0, model.price_points.count
+      assert_equal 1, result.skipped
+      assert_nil AiModel.find_by(openrouter_id: "google/imagen-4")
     end
 
-    test "an embedding row priced on prompt tokens is skipped, never written as a $0-output priced row" do
+    test "a non-text-output row with a real token price is still skipped (output gate)" do
       # Embeddings carry a real prompt price with completion 0, so parse_pricing
       # returns a price — but output isn't text, so no per-token PricePoint may be
-      # written (it would render a misleading $0 output). Embedding isn't a
-      # directory class, so the row is skipped entirely.
+      # written (it would render a misleading $0 output) and the row is skipped.
       result = assert_no_difference("AiModel.count") do
         sync([ or_model(id: "openai/text-embedding-3", name: "OpenAI: Text Embedding 3",
                         prompt: "0.00000002", completion: "0",
@@ -529,17 +527,6 @@ module OpenRouter
 
       assert_equal 1, result.skipped
       assert_nil AiModel.find_by(openrouter_id: "openai/text-embedding-3")
-    end
-
-    test "a video-generation row priced per video is admitted price-less, classed video_generation" do
-      result = sync([ or_model(id: "google/veo-3", name: "Google: Veo 3",
-                               prompt: "0", completion: "0", video: "0.5",
-                               input_modalities: [ "text" ], output_modalities: [ "video" ]) ])
-
-      assert_equal 1, result.created
-      model = AiModel.find_by!(openrouter_id: "google/veo-3")
-      assert_equal :video_generation, model.modality_class
-      assert_equal 0, model.price_points.count
     end
 
     test "a text model still records a price point (regression)" do
@@ -562,9 +549,9 @@ module OpenRouter
       assert_nil AiModel.find_by(openrouter_id: "freeco/free-img")
     end
 
-    test "a text-output row with only a partial token price (no image/audio) is skipped, not mislabelled" do
-      # prompt blank → parse_pricing returns nil; the leftover completion price
-      # isn't a non-text dimension, so the row isn't rescued as a directory entry.
+    test "a text-output row with only a partial token price is skipped, not mislabelled" do
+      # prompt blank → parse_pricing returns nil; a half-entered token price has no
+      # storable per-token rate, so the row is skipped rather than written as $0.
       result = assert_no_difference("AiModel.count") do
         sync([ or_model(id: "halfco/half-1", name: "HalfCo: Half 1",
                         prompt: "", completion: "0.000005",
@@ -573,44 +560,6 @@ module OpenRouter
 
       assert_equal 1, result.skipped
       assert_nil AiModel.find_by(openrouter_id: "halfco/half-1")
-    end
-
-    test "a text-to-speech row is admitted price-less, classed text_to_audio" do
-      result = sync([ or_model(id: "openai/tts-1", name: "OpenAI: TTS 1",
-                               prompt: "0", completion: "0", audio: "0.000015",
-                               input_modalities: [ "text" ], output_modalities: [ "audio" ]) ])
-
-      assert_equal 1, result.created
-
-      model = AiModel.find_by!(openrouter_id: "openai/tts-1")
-      assert_equal :text_to_audio, model.modality_class
-      assert_equal 0, model.price_points.count
-    end
-
-    test "building the digest does not raise when a price-less model is created" do
-      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
-                               prompt: "0", completion: "0", image: "0.04",
-                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
-
-      assert_nothing_raised { OpenRouter::SyncDigest.new(result).to_slack_payload }
-      rec = result.created_records.first
-      assert_nil rec.input_per_mtok
-      assert_nil rec.output_per_mtok
-    end
-
-    test "a re-synced price-less model enriches without a price point" do
-      rows = [ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
-                        prompt: "0", completion: "0", image: "0.04",
-                        input_modalities: [ "text" ], output_modalities: [ "image" ]) ]
-      sync(rows)
-
-      result = nil
-      assert_no_difference [ "AiModel.count", "PricePoint.count" ] do
-        result = sync(rows, today: Date.current + 1)
-      end
-      assert_equal 1, result.enriched
-      assert_equal 0, result.created
-      assert_equal 0, result.repriced
     end
 
     # --- extra price dimensions (cache-write / audio / image / request) -----
@@ -660,16 +609,6 @@ module OpenRouter
       # The headline rates didn't move, so the Slack digest gets no misleading
       # "$X→$X · +0.0%" reprice line for the cache-write-only change.
       assert_empty result.repriced_records
-    end
-
-    test "an image-generation directory row still writes no price point despite an image rate" do
-      result = sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
-                               prompt: "0", completion: "0", image: "0.04",
-                               input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
-
-      assert_equal 1, result.created
-      model = AiModel.find_by!(openrouter_id: "google/imagen-4")
-      assert_equal 0, model.price_points.count
     end
 
     # --- editorial generation ----------------------------------------------

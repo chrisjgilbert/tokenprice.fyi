@@ -9,8 +9,7 @@ class ModelsController < ApplicationController
     "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
   }.freeze
 
-  # Price-based sorts that a price-less directory row (image-gen/TTS/etc., admitted
-  # without a per-token price in Phase 2) must always sink to the bottom of —
+  # Price-based sorts that a price-less row must always sink to the bottom of —
   # regardless of direction, so it never floats above a priced row when the list
   # is reversed. Name/tier/context/change still sort it normally: it has those.
   PRICE_SORTS = %w[input output cached].freeze
@@ -92,8 +91,8 @@ class ModelsController < ApplicationController
       last_modified: freshness)
 
     @price_points = @model.price_points.chronological.to_a
-    # Present when the model is listed — priced models and price-less Phase 2
-    # directory rows alike (the latter render their prices as "not yet tracked").
+    # Present only when the model is listed (priced); nil otherwise, so the view's
+    # extra-billing section reads off a real catalog entry or renders nothing.
     @catalog_entry = PriceCatalog.model(@model.slug)
     @related = AiModel.listed.where(provider: @model.provider)
       .where.not(id: @model.id)

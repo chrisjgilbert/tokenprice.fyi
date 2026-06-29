@@ -587,17 +587,6 @@ table.tp-data td.numeric {
   color: var(--color-slate-900);
 }
 td .tp-muted-dash { color: var(--color-slate-300); }
-/* A directory row's missing price (Phase 2): calm and clearly not a number, so it
-   never reads as a real rate or $0. Normal weight, left-aligned in the otherwise
-   right-aligned price columns. */
-.tp-price-untracked {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-slate-400);
-  letter-spacing: 0;
-}
-td .tp-price-untracked { display: inline-block; text-align: left; white-space: normal; }
 .tp-col-highlight { background: rgba(99,102,241,.045); }
 
 /* Model cell */
