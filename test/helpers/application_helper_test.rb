@@ -29,6 +29,25 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_nil modality_badge(model)
   end
 
+  test "data_updated_tag shows a specific date and carries the precise instant" do
+    stamp = Time.utc(2026, 6, 27, 9, 30, 0)
+    html = data_updated_tag(stamp)
+    assert_includes html, "Data updated Jun 27, 2026"
+    assert_select Nokogiri::HTML.fragment(html), "time[datetime=?]", stamp.iso8601
+  end
+
+  test "data_updated_tag renders nothing without a timestamp" do
+    assert_nil data_updated_tag(nil)
+  end
+
+  test "report_problem_link builds a mailto with a prefilled subject and body" do
+    html = report_problem_link(subject: "Issue: X", body: "line one\nline two")
+    assert_match %r{href="mailto:chris@chrisgilbert\.dev}, html
+    assert_includes html, "subject=Issue%3A%20X"
+    assert_includes html, "body=line%20one%0Aline%20two"
+    assert_includes html, "Report a problem"
+  end
+
   test "modality_badge names the class for a multimodal model and is nil for text" do
     multimodal = AiModel.new(input_modalities: %w[text image], output_modalities: %w[text])
     assert_includes modality_badge(multimodal), "Multimodal"

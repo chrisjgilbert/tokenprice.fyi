@@ -307,6 +307,23 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tp-also-billed", count: 0
   end
 
+  test "show stamps when the model data was last updated" do
+    model = ai_models(:opus)
+    get model_url(model)
+    assert_response :success
+    freshness = [ model.current_price&.updated_at, model.updated_at ].compact.max
+    assert_select "time[datetime=?]", freshness.iso8601, text: /Data updated/
+  end
+
+  test "show offers a report link prefilled with the model context" do
+    model = ai_models(:opus)
+    get model_url(model)
+    assert_response :success
+    assert_select "a[href^=?]", "mailto:#{ApplicationHelper::REPORT_EMAIL}", text: "Report a problem" do
+      assert_select ":match('href', ?)", "data%20issue%3A%20#{ERB::Util.url_encode(model.name)}"
+    end
+  end
+
   test "show emits a self-canonical link that ignores query params" do
     get model_url(ai_models(:opus), ref: "twitter")
     assert_response :success

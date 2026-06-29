@@ -67,3 +67,8 @@
     </tbody>
   </table>
 </div>
+
+<div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 text-sm text-slate-500">
+  <%= data_updated_tag(@last_updated) %>
+  <%= provider_report_link(@provider, css: "underline decoration-slate-300 underline-offset-2 hover:text-indigo-600") %>
+</div>
