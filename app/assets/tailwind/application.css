@@ -259,6 +259,12 @@ h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; 
   .menu-open .tp-nav-toggle-bars span:nth-child(2) { opacity: 0; }
   .menu-open .tp-nav-toggle-bars span:nth-child(3) { top: 6px; transform: rotate(-45deg); }
 
+  /* Locking body scroll (overflow:hidden) while the menu is open breaks the
+     nav's position:sticky, so it scrolls off with the page and the bar — and
+     its close button — vanish. Pin it to the viewport for the duration; the
+     page content it leaves flow is hidden behind the scrim and panel anyway. */
+  .menu-open .tp-nav { position: fixed; top: 0; left: 0; right: 0; }
+
   .tp-m-scrim {
     display: block;
     position: fixed;
