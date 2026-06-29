@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title><%= content_for(:title) || "tokenprice.fyi — LLM API price tracker" %></title>
+    <% page_title = content_for(:title).presence || "tokenprice.fyi — LLM API price tracker" %>
+    <% page_description = content_for(:description).presence || "LLM API token prices, tracked daily. Full history, every provider." %>
+    <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and more LLM APIs. Updated daily, with full price history.' %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -9,14 +11,14 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta property="og:site_name" content="tokenprice.fyi">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="<%= content_for(:title) || 'tokenprice.fyi — LLM API price tracker' %>">
-    <meta property="og:description" content="<%= content_for(:description) || 'LLM API token prices, tracked daily. Full history, every provider.' %>">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
     <meta property="og:type" content="<%= content_for(:og_type).presence || 'website' %>">
     <meta property="og:url" content="<%= request.original_url %>">
     <meta property="og:image" content="<%= request.base_url %>/og.svg">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<%= content_for(:title) || 'tokenprice.fyi — LLM API price tracker' %>">
-    <meta name="twitter:description" content="<%= content_for(:description) || 'LLM API token prices, tracked daily. Full history, every provider.' %>">
+    <meta name="twitter:title" content="<%= page_title %>">
+    <meta name="twitter:description" content="<%= page_description %>">
     <meta name="twitter:image" content="<%= request.base_url %>/og.svg">
     <link rel="canonical" href="<%= content_for(:canonical).presence || request.original_url %>">
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -126,7 +126,7 @@ class PriceCatalog
     # ISO 8601 date string of the most recent price-row write, for sitemap
     # lastmod. Falls back to today when no price points exist yet.
     def last_modified_date
-      (last_modified || Date.today).strftime("%Y-%m-%d")
+      (last_modified || Date.current).strftime("%Y-%m-%d")
     end
 
     # Chronological price history for one model.
