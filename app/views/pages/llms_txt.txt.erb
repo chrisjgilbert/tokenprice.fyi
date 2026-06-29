@@ -1,0 +1,34 @@
+# llms.txt — tokenprice.fyi
+# https://llmstxt.org/
+
+# tokenprice.fyi is an independent LLM API pricing tracker.
+# It records input, output, and cached token prices for 40+ models across 12 providers,
+# updated daily, with full price history since launch.
+
+> tokenprice.fyi: LLM API price tracker. Input, output, and cached token prices for Claude, GPT, Gemini, Grok, DeepSeek and more. Updated daily with full price history.
+
+## Pages
+
+- Pricing table (all models): <%= root_url %>
+- Compare two models side by side: <%= compare_url %>
+- Market events & price change timeline: <%= events_url %>
+- Data sources & methodology: <%= sources_url %>
+- JSON API (pricing data): <%= api_v1_models_url(format: :json) %>
+
+## Providers
+<% @providers.each do |provider| %>
+- <%= provider.name %>: <%= provider_url(provider) %>
+<% end %>
+
+## Guide — starting models by task
+<% @patterns.each do |pattern| %>
+- <%= pattern.label %>: <%= guide_task_url(pattern.slug) %>
+<% end %>
+
+## Learn — explainers on LLM API pricing
+
+- What an AI feature is made of: <%= learn_anatomy_url %>
+- Reasoning & thinking tokens: <%= learn_reasoning_url %>
+- What drives the cost of common features: <%= learn_feature_costs_url %>
+- Cost-cutting strategies: <%= learn_cost_cutting_url %>
+- How LLM pricing works: <%= how_pricing_works_url %>
