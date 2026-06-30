@@ -68,12 +68,14 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
-  # The hero's "Latest changes" slice. Repricings arrive in daily batches (the
-  # sync writes many at once, all dated today), so the raw most-recent would be
-  # wall-to-wall price changes and bury the rarer launches and market events —
-  # hence a diverse pick (one per kind) rather than the strict top N.
-  def hero_events(events, count: 2)
-    newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
+  # The hero's "Latest events" slice. An optional `kinds:` list pre-filters the
+  # event pool so only matching kinds are considered — the homepage passes
+  # %w[market launch] to keep price changes off the card (they get their own
+  # ticker). Without `kinds:` all kinds are eligible. Diversity still applies:
+  # one per kind, then fill remaining slots with the most-recent of any kind.
+  def hero_events(events, count: 2, kinds: nil)
+    candidates = kinds ? events.select { |e| kinds.include?(e.kind) } : events
+    newest_first = candidates.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
     picked = []
     newest_first.each do |e|
       next if picked.any? { |p| p.kind == e.kind }
@@ -113,6 +115,12 @@ module EventsHelper
       AiModel.maximum(:updated_at),
       Provider.maximum(:updated_at)
     ].compact.max
+  end
+
+  # The most-recent reprice events for the scrolling ticker banner.
+  # build_all_events returns ascending order, so .last(limit) is a free slice.
+  def ticker_events(events, limit: 20)
+    events.select { |e| e.kind == "reprice" }.last(limit).reverse
   end
 
   # Per-kind presentation, the single source for how each event kind reads.

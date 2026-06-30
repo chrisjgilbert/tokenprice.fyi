@@ -330,6 +330,85 @@
     transition: transform .15s var(--ease-default);
   }
   .tp-banner:hover .tp-banner-arrow { transform: translateX(3px); }
+
+  /* ── Price-change ticker ───────────────────────────── */
+  /* Only present on the homepage (content_for :price_ticker). The has-ticker
+     body class lifts the footer clear of the fixed bar. */
+  body.has-ticker { padding-bottom: 38px; }
+
+  .tp-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-top: 1px solid var(--color-slate-200);
+    box-shadow: 0 -1px 8px rgba(0,0,0,.06);
+  }
+  .tp-ticker-label {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    padding: 0 14px 0 16px;
+    border-right: 1px solid var(--color-slate-200);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--color-slate-400);
+    white-space: nowrap;
+  }
+  .tp-ticker-label svg { width: 13px; height: 13px; color: var(--color-slate-400); }
+  .tp-ticker-outer {
+    flex: 1;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent);
+  }
+  .tp-ticker-inner {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: tp-ticker-scroll var(--ticker-dur, 50s) linear infinite;
+  }
+  @keyframes tp-ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .tp-ticker-inner:hover { animation-play-state: paused; }
+  .tp-ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 28px 0 0;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .tp-ticker-model {
+    font-weight: 600;
+    color: var(--color-slate-700);
+  }
+  .tp-ticker-delta {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .tp-ticker-delta.down { color: var(--color-emerald-600); }
+  .tp-ticker-delta.up   { color: var(--color-rose-600); }
+  .tp-ticker-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--color-slate-300);
+    flex: none;
+    margin: 0 10px 0 2px;
+  }
 </style>
 
 <%# ── ANNOUNCEMENT BANNER ────────────────────────────────────────── %>
@@ -343,7 +422,7 @@
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
   <%
-    recent_events = hero_events(@all_events)
+    recent_events = hero_events(@all_events, kinds: %w[market launch])
     primary_event = recent_events[0]
     secondary_event = recent_events[1]
   %>
@@ -377,7 +456,7 @@
       <div class="hero-card-inner">
         <div class="hero-card-tag">
           <%= icon(:spark, size: 13) %>
-          Latest changes
+          Latest events
         </div>
 
         <% if primary_event %>
@@ -406,17 +485,6 @@
                 <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>
                 <% if m.context_window %>
                   <span class="hero-card-chip num"><%= tokens_short(m.context_window) %> ctx</span>
-                <% end %>
-              </div>
-            <% elsif primary_event.kind == "reprice" && (mv = primary_event.move) %>
-              <div class="hero-card-chips">
-                <%= price_change_badge(mv.input) %>
-                <%= price_change_badge(mv.output) %>
-                <% if mv.input %>
-                  <span class="hero-card-chip num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
-                <% end %>
-                <% if mv.output %>
-                  <span class="hero-card-chip num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
                 <% end %>
               </div>
             <% end %>
@@ -688,3 +756,41 @@
 <p class="mt-4 text-xs text-slate-400">
   Sorted by output price by default — output tokens are typically 3–5× more expensive than input and dominate the bill for generation-heavy workloads. Sort by input or cached input when your mix differs.
 </p>
+
+<%# ── PRICE-CHANGE TICKER ─────────────────────────────────────────── %>
+<% if @all_events %>
+  <% t_events = ticker_events(@all_events) %>
+  <% if t_events.any? %>
+    <% ticker_dur = [ t_events.size * 3, 24 ].max %>
+    <%= content_for :price_ticker do %>
+      <div class="tp-ticker" aria-label="Recent price changes" role="marquee">
+        <div class="tp-ticker-label">
+          <%= icon(:swap, size: 13) %> Price changes
+        </div>
+        <div class="tp-ticker-outer">
+          <div class="tp-ticker-inner" style="--ticker-dur:<%= ticker_dur %>s">
+            <%# Duplicated so translateX(-50%) loops back to an identical copy — seamless marquee %>
+            <% (t_events * 2).each do |ev| %>
+              <span class="tp-ticker-item">
+                <span class="tp-ticker-dot" aria-hidden="true"></span>
+                <span class="tp-ticker-model"><%= ev.model&.name %></span>
+                <% if (inp = ev.move.input) %>
+                  <% down = inp.negative? %>
+                  <span class="tp-ticker-delta <%= down ? 'down' : 'up' %>">
+                    <%= down ? '↓' : '↑' %><%= number_to_percentage(inp.abs, precision: 1) %> in
+                  </span>
+                <% end %>
+                <% if (out = ev.move.output) %>
+                  <% down = out.negative? %>
+                  <span class="tp-ticker-delta <%= down ? 'down' : 'up' %>">
+                    <%= down ? '↓' : '↑' %><%= number_to_percentage(out.abs, precision: 1) %> out
+                  </span>
+                <% end %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
