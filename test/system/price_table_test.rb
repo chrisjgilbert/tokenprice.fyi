@@ -186,9 +186,11 @@ class PriceTableTest < ApplicationSystemTestCase
   test "provider chip shows a count badge only when narrowed to a subset" do
     visit root_path
 
-    within ".tp-facet-chip", text: "Provider" do
+    provider_chip = find(".tp-facet-chip", text: "Provider")
+    within provider_chip do
       assert_no_selector ".tp-facet-chip-count", visible: :visible
     end
+    assert_not provider_chip[:class].include?("is-active")
 
     open_provider_filter
     within "#provider-panel" do
@@ -198,6 +200,7 @@ class PriceTableTest < ApplicationSystemTestCase
     within ".tp-facet-chip", text: "Provider" do
       assert_selector ".tp-facet-chip-count", visible: :visible, text: "1"
     end
+    assert_selector ".tp-facet-chip.is-active", text: "Provider"
 
     # The panel stays open across checkbox changes (it's multi-select) — pick
     # it back up from the open popover rather than re-querying the page.
@@ -208,6 +211,7 @@ class PriceTableTest < ApplicationSystemTestCase
     within ".tp-facet-chip", text: "Provider" do
       assert_no_selector ".tp-facet-chip-count", visible: :visible
     end
+    assert_not provider_chip[:class].include?("is-active")
   end
 
   private

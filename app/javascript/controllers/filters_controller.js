@@ -51,7 +51,10 @@ export default class extends Controller {
       badge.closest(".tp-facet-chip")?.classList.toggle("is-active", narrowed)
     }
 
-    const selectAllButton = this.element.querySelector(".tp-facet-panel-action")
+    // Scoped to the provider panel specifically — a bare ".tp-facet-panel-action"
+    // query would silently grab the wrong button if a second multi-select facet
+    // ever grows its own select-all header.
+    const selectAllButton = this.element.querySelector("#provider-panel .tp-facet-panel-action")
     if (selectAllButton) selectAllButton.textContent = allChecked ? "Clear all" : "Select all"
   }
 

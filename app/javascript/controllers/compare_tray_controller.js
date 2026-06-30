@@ -13,7 +13,7 @@ import { Controller } from "@hotwired/stimulus"
 // re-apply after a frame reload, wired declaratively below (the same
 // turbo:frame-load@document pattern filters_controller#announce uses).
 export default class extends Controller {
-  static targets = ["tray", "slot", "compareBtn", "dialog", "frame"]
+  static targets = ["tray", "slot", "compareBtn", "dialog", "frame", "removeIconTemplate"]
   static values = {
     comparePath: String,
     slugs: { type: Array, default: [] }
@@ -26,16 +26,17 @@ export default class extends Controller {
   toggle(event) {
     const btn = event.currentTarget
     const slug = btn.dataset.slug
+    const adding = !this.slugsValue.includes(slug)
+
     // Cache the row's display data now, while its row is guaranteed live —
     // a selection survives filtering (by design), so the row backing it can
     // disappear from the #models frame before the tray slot next re-renders.
-    this._cacheSlotData(slug, btn)
+    // Only needed on the way in; a deselect has nothing left to render.
+    if (adding) this._cacheSlotData(slug, btn)
 
-    const slugs = this.slugsValue.includes(slug)
-      ? this.slugsValue.filter((s) => s !== slug)
-      : [...this.slugsValue, slug].slice(-2) // FIFO cap of 2: drop the oldest
-
-    this.slugsValue = slugs
+    this.slugsValue = adding
+      ? [...this.slugsValue, slug].slice(-2) // FIFO cap of 2: drop the oldest
+      : this.slugsValue.filter((s) => s !== slug)
   }
 
   clear() {
@@ -142,10 +143,7 @@ export default class extends Controller {
     removeBtn.setAttribute("aria-label", `Remove ${data.name}`)
     removeBtn.dataset.slug = slug
     removeBtn.dataset.action = "click->compare-tray#remove"
-    // Reuse the dialog close button's already-rendered close icon (icon(:close)
-    // in the view) rather than a second hardcoded copy of the same SVG.
-    const closeIcon = this.dialogTarget.querySelector(".tp-compare-dialog-close svg")
-    if (closeIcon) removeBtn.append(closeIcon.cloneNode(true))
+    removeBtn.append(this.removeIconTemplateTarget.content.cloneNode(true))
     wrap.append(removeBtn)
 
     return wrap

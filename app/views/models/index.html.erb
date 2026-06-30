@@ -742,6 +742,9 @@
     model is selected. Slot contents are cloned from the selected row's own
     markup in JS — no second client-side model-data source. %>
 <div class="tp-tray" data-compare-tray-target="tray" hidden>
+  <%# A slot's remove button clones this rather than reaching into the dialog's
+      unrelated close button for its icon — keeps the two independent. %>
+  <template data-compare-tray-target="removeIconTemplate"><%= icon(:close, size: 14) %></template>
   <div class="tp-tray-inner">
     <div class="tp-tray-slots">
       <div class="tp-tray-slot" data-compare-tray-target="slot" data-slot-index="0">

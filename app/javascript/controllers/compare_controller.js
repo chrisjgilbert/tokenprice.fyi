@@ -138,15 +138,16 @@ export default class extends Controller {
   // and updates the browser URL. The same "comparison" turbo-frame markup also
   // loads inside the homepage's compare dialog — there, window.location is the
   // homepage and a top-level Turbo.visit would navigate the whole page away,
-  // blowing the modal away with it. Distinguish the two by whether the frame
-  // sits inside a <dialog>: only the embedded copy does. There, update the
-  // frame's src directly so Turbo loads it scoped to the frame, leaving the
-  // homepage and modal untouched; otherwise fall back to today's behavior.
+  // blowing the modal away with it. The enclosing <dialog> is what's unique to
+  // the embedded copy (the turbo-frame wrapper is present either way), so it's
+  // the only check needed: update the frame's src directly so Turbo loads it
+  // scoped to the frame, leaving the homepage and modal untouched; otherwise
+  // fall back to today's behavior.
   _navigate() {
-    const frame = this.element.closest("turbo-frame")
     const dialog = this.element.closest("dialog")
 
-    if (frame && dialog) {
+    if (dialog) {
+      const frame = this.element.closest("turbo-frame")
       const url = new URL(frame.src || window.location.href)
       url.searchParams.set("a", this.slugAValue)
       url.searchParams.set("b", this.slugBValue)

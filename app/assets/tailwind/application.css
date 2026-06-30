@@ -948,6 +948,10 @@ body:has(dialog[open]) { overflow: hidden; }
 .tp-tray-slot-empty { padding: 0 12px; font-size: 12.5px; color: var(--text-mute); }
 .tp-tray-slot-content { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 8px 0 10px; min-width: 0; }
 .tp-tray-slot-content .tp-prov-sq { width: 24px; height: 24px; border-radius: 7px; font-size: 10px; flex: none; }
+/* The cloned square keeps its original tp-prov-sq-md(.tp-prov-logo) classes,
+   whose fixed 18px logo size (sized for the row's 30px box) would otherwise
+   win by specificity over the 24px box above — rescale to match. */
+.tp-tray-slot-content .tp-prov-sq.tp-prov-logo svg { width: 14px; height: 14px; }
 .tp-tray-slot-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .tp-tray-slot-name { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-tray-slot-provider { font-size: 11px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
