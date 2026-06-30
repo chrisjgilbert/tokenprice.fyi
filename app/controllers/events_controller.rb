@@ -4,7 +4,7 @@ class EventsController < ApplicationController
   PER_PAGE = 20
 
   def index
-    @kind = params[:kind].presence_in(%w[market launch reprice])
+    @kind = params[:kind].presence_in(%w[market launch])
     @page = [ params[:page].to_i, 1 ].max
 
     # The same URL serves a cumulative HTML page (a direct/no-JS hit) and a Turbo
@@ -26,10 +26,9 @@ class EventsController < ApplicationController
     # The counts and earliest year drive the header and filter tabs, which only
     # the full HTML page renders — skip them on the Turbo Stream append path.
     unless request.format.turbo_stream?
-      @total_count   = all.size
-      @market_count  = all.count { |e| e.kind == "market" }
-      @launch_count  = all.count { |e| e.kind == "launch" }
-      @reprice_count = all.count { |e| e.kind == "reprice" }
+      @total_count  = all.size
+      @market_count = all.count { |e| e.kind == "market" }
+      @launch_count = all.count { |e| e.kind == "launch" }
       # `all` is sorted ascending, so the first entry is the earliest on record.
       @earliest_year = all.first&.date&.year
     end

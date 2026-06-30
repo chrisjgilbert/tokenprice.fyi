@@ -1,5 +1,5 @@
 module EventsHelper
-  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move)
+  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url)
 
   # The launch-timeline blurb for a model: "ships X at $Y in / $Z out per 1M".
   # Every listed model is priced, so the else is a defensive fallback only.
@@ -23,42 +23,26 @@ module EventsHelper
         note: me.note,
         model: nil,
         provider: nil,
-        source_url: me.source_url,
-        move: nil
+        source_url: me.source_url
       )
     end
 
-    # Each model contributes a launch entry and, if its price has moved, a
-    # reprice entry. A price change is two consecutive price points, so the
-    # reprice entry surfaces moves from any source — the daily OpenRouter sync
-    # and hand-entered admin prices alike. One reprice row per model (its latest
-    # move); full history lives on the model page.
+    # Each listed model contributes a launch entry. Price changes are not
+    # surfaced here — they're noisy and mostly inconsequential; significant
+    # ones are curated as MarketEvents instead. Full per-model price history
+    # still lives on the model page.
     models.each do |m|
-      if m.released_on
-        events << Event.new(
-          date: m.released_on,
-          title: "#{m.name} released",
-          kind: "launch",
-          note: launch_note(m),
-          model: m,
-          provider: m.provider,
-          source_url: nil,
-          move: nil
-        )
-      end
+      next unless m.released_on
 
-      if (move = m.latest_price_move)
-        events << Event.new(
-          date: move.date,
-          title: "#{m.name} repriced",
-          kind: "reprice",
-          note: nil,
-          model: m,
-          provider: m.provider,
-          source_url: nil,
-          move: move
-        )
-      end
+      events << Event.new(
+        date: m.released_on,
+        title: "#{m.name} released",
+        kind: "launch",
+        note: launch_note(m),
+        model: m,
+        provider: m.provider,
+        source_url: nil
+      )
     end
 
     # Deterministic ascending order: date, then kind, then title. The tertiary
@@ -69,10 +53,9 @@ module EventsHelper
   end
 
   # The hero's "Latest events" slice. An optional `kinds:` list pre-filters the
-  # event pool so only matching kinds are considered — the homepage passes
-  # %w[market launch] to keep price changes off the card (they get their own
-  # ticker). Without `kinds:` all kinds are eligible. Diversity still applies:
-  # one per kind, then fill remaining slots with the most-recent of any kind.
+  # event pool so only matching kinds are considered. Without `kinds:` all
+  # kinds are eligible. Diversity still applies: one per kind, then fill
+  # remaining slots with the most-recent of any kind.
   def hero_events(events, count: 2, kinds: nil)
     candidates = kinds ? events.select { |e| kinds.include?(e.kind) } : events
     newest_first = candidates.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
@@ -117,22 +100,15 @@ module EventsHelper
     ].compact.max
   end
 
-  # The most-recent reprice events for the scrolling ticker banner.
-  # build_all_events returns ascending order, so .last(limit) is a free slice.
-  def ticker_events(events, limit: 20)
-    events.select { |e| e.kind == "reprice" }.last(limit).reverse
-  end
-
   # Per-kind presentation, the single source for how each event kind reads.
   # Colours live in CSS (`ev-#{kind}` for the timeline node, `tp-kind-#{kind}`
   # and `hero-card-kind-chip.#{kind}` for the chips), so only the words and the
   # node icon live here. `hero` is the homepage's product-facing wording ("New
   # model") next to the timeline's terser `label` ("Launch"); `noun` is the
-  # plural used in the empty state ("No price changes tracked").
+  # plural used in the empty state.
   EVENT_KINDS = {
-    "market"  => { label: "Market",       hero: "Market event", noun: "market events", icon: :bolt },
-    "launch"  => { label: "Launch",       hero: "New model",    noun: "launches",      icon: :spark },
-    "reprice" => { label: "Price change", hero: "Price change", noun: "price changes", icon: :swap }
+    "market" => { label: "Market", hero: "Market event", noun: "market events", icon: :bolt },
+    "launch" => { label: "Launch", hero: "New model",    noun: "launches",      icon: :spark }
   }.freeze
 
   def event_kind_label(kind)

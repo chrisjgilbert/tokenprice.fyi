@@ -52,12 +52,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
-  test "hero shows only market events and launches — no reprice chips" do
+  test "hero shows only market events and launches — no reprice chips, and there is no ticker" do
     get root_url
     assert_response :success
-    # The hero card now focuses on market events and model releases; price changes
-    # moved to the ticker banner. No reprice chips should appear in the card.
+    # The hero card focuses on market events and model releases; price changes
+    # are no longer surfaced as events anywhere, so no reprice chips and no
+    # ticker banner.
     assert_select ".hero-card .hero-card-kind-chip.reprice", count: 0
+    assert_select ".tp-ticker", count: 0
     # At least one launch or market chip should be present.
     assert_select ".hero-card .hero-card-kind-chip.launch, .hero-card .hero-card-kind-chip.market"
   end
@@ -93,12 +95,10 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "index can be sorted by change since launch and renders delta badges" do
-    get root_url(sort: "change", dir: "asc")
+  test "the homepage table has no price-change column" do
+    get root_url
     assert_response :success
-    assert_select "th.sort-active", text: /Δ input/i
-    # DeepSeek V4 Pro's 75% cut renders as a delta pill in the new column.
-    assert_select ".tp-delta", minimum: 1
+    assert_select "th", text: /Δ input/i, count: 0
   end
 
   test "index can be filtered to a single provider" do
@@ -168,7 +168,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 7
+    assert_select "thead a[data-turbo-frame=models]", count: 6
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
