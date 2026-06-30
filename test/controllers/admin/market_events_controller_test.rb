@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     sign_in_admin
     @published = MarketEvent.create!(
@@ -86,6 +88,13 @@ class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
     patch publish_admin_market_event_path(@draft)
     assert_redirected_to admin_market_events_path
     assert_equal "published", @draft.reload.status
+  end
+
+  test "PATCH publish enqueues the announcement off the request" do
+    assert_enqueued_with(job: MarketEventAnnouncementJob, args: [ @draft ]) do
+      patch publish_admin_market_event_path(@draft)
+    end
+    assert_redirected_to admin_market_events_path
   end
 
   # --- destroy ---------------------------------------------------------------

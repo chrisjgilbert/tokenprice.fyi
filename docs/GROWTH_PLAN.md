@@ -233,6 +233,12 @@ These are mostly **non-code** — an agent should produce the drafts/assets and
 leave the actual posting to the owner (don't post to external platforms without
 explicit go-ahead).
 
+> **Automated social presence** (BlueSky + Mastodon) gets its own plan:
+> `docs/SOCIAL_PRESENCE_PLAN.md`. It posts published market events and new model
+> launches by adding thin `lib/` transports modelled on `SlackNotifier`
+> (individual price moves are deliberately kept off the feed as noise). Same
+> go-ahead rule applies.
+
 ### T3.1 — Show HN, framed on the wedge
 
 Draft a "Show HN" post. **Do not** frame it as "another LLM pricing tool"

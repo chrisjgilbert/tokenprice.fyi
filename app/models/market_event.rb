@@ -1,4 +1,6 @@
 class MarketEvent < ApplicationRecord
+  include Announceable
+
   has_many :news_items, foreign_key: :market_event_id, dependent: :nullify
 
   validates :title,      presence: true

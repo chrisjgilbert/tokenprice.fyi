@@ -44,6 +44,7 @@ module Admin
 
     def publish
       @event.update!(status: "published")
+      @event.announce
       redirect_to admin_market_events_path, notice: "Published “#{@event.title}”."
     end
 
