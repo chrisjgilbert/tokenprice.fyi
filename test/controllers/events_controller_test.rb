@@ -43,23 +43,21 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     assert_equal dates.sort.reverse, dates, "events should render newest-first by date"
   end
 
-  test "renders price-change rows with both delta badges and old-new prices" do
+  test "never renders price-change rows, even for a model with a tracked reprice" do
     get events_url
     assert_response :success
 
-    # The DeepSeek 75% cut surfaces as a reprice row, linking to the model.
-    assert_select ".ev-item[data-kind=reprice] .ev-title a", text: /DeepSeek V4 Pro repriced/
-    assert_select ".ev-item[data-kind=reprice] .tp-delta", minimum: 2
-    assert_select ".ev-item[data-kind=reprice] .ev-tag", text: /in/
+    # deepseek_v4 has a 75% cut in the fixtures — the exact case that used to
+    # surface as a reprice row. Price changes are no longer events.
+    assert_select ".ev-item[data-kind=reprice]", count: 0
   end
 
-  test "the kind filter isolates price changes" do
+  test "an old ?kind=reprice link degrades gracefully to the unfiltered timeline" do
     get events_url(kind: "reprice")
     assert_response :success
-    assert_select ".tp-seg a.on[data-kind=reprice]"
-    # Only reprice rows remain; launches and market events are filtered out.
-    assert_select ".ev-item[data-kind=launch]", count: 0
-    assert_select ".ev-item[data-kind=reprice]", minimum: 1
+    # "reprice" isn't a recognized filter anymore, so it behaves like no filter.
+    assert_select ".tp-seg a.on[data-kind=all]"
+    assert_select ".ev-item[data-kind=launch]", minimum: 1
   end
 
   test "excludes draft market events" do
