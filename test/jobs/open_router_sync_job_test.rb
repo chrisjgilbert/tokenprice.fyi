@@ -72,4 +72,112 @@ class OpenRouterSyncJobTest < ActiveJob::TestCase
 
     assert_equal false, post_called, "expected no Slack post when nothing notable changed"
   end
+
+  # --- launch posts (BlueSky + Mastodon) -----------------------------------
+
+  def announceable_created
+    OpenRouter::ModelSync::CreatedRecord.new(
+      model_name: "Claude Haiku 4.5", provider_name: "Anthropic",
+      model_slug: "claude-haiku-4-5", new_provider: false,
+      input_per_mtok: 1.0, output_per_mtok: 5.0
+    )
+  end
+
+  def stub_sync_and_slack(result)
+    original_sync = OpenRouter::ModelSync.singleton_class.instance_method(:call)
+    original_post = SlackNotifier.singleton_class.instance_method(:post)
+    OpenRouter::ModelSync.define_singleton_method(:call) { |*, **| result }
+    SlackNotifier.define_singleton_method(:post) { |_| }
+    yield
+  ensure
+    OpenRouter::ModelSync.singleton_class.define_method(:call, original_sync)
+    SlackNotifier.singleton_class.define_method(:post, original_post)
+  end
+
+  def capture_social_posts
+    bluesky_posts  = []
+    mastodon_posts = []
+    original_bsky  = BlueskyClient.singleton_class.instance_method(:post)
+    original_masto = MastodonClient.singleton_class.instance_method(:post)
+    BlueskyClient.define_singleton_method(:post)  { |text:| bluesky_posts << text }
+    MastodonClient.define_singleton_method(:post) { |text:| mastodon_posts << text }
+    yield bluesky_posts, mastodon_posts
+  ensure
+    BlueskyClient.singleton_class.define_method(:post, original_bsky)
+    MastodonClient.singleton_class.define_method(:post, original_masto)
+  end
+
+  test "posts each notable launch to both BlueSky and Mastodon" do
+    result = OpenRouter::ModelSync::Result.new(
+      created: 2, enriched: 0, repriced: 0, skipped: 0,
+      created_records: [
+        announceable_created,
+        OpenRouter::ModelSync::CreatedRecord.new(
+          model_name: "GPT-6 mini", provider_name: "OpenAI",
+          model_slug: "gpt-6-mini", new_provider: false,
+          input_per_mtok: 0.5, output_per_mtok: 2.0
+        )
+      ],
+      repriced_records: []
+    )
+
+    stub_sync_and_slack(result) do
+      capture_social_posts do |bluesky_posts, mastodon_posts|
+        OpenRouterSyncJob.perform_now
+
+        assert_equal 2, bluesky_posts.size
+        assert_equal 2, mastodon_posts.size
+        assert(bluesky_posts.any? { |t| t.include?("Claude Haiku 4.5") })
+        assert(bluesky_posts.any? { |t| t.include?("GPT-6 mini") })
+        assert_equal bluesky_posts, mastodon_posts
+      end
+    end
+  end
+
+  test "a client failure is non-fatal and does not stop the other platform" do
+    result = OpenRouter::ModelSync::Result.new(
+      created: 1, enriched: 0, repriced: 0, skipped: 0,
+      created_records: [ announceable_created ], repriced_records: []
+    )
+
+    mastodon_posts = []
+    original_bsky  = BlueskyClient.singleton_class.instance_method(:post)
+    original_masto = MastodonClient.singleton_class.instance_method(:post)
+    BlueskyClient.define_singleton_method(:post)  { |text:| raise "bsky down" }
+    MastodonClient.define_singleton_method(:post) { |text:| mastodon_posts << text }
+
+    begin
+      stub_sync_and_slack(result) do
+        assert_nothing_raised { OpenRouterSyncJob.perform_now }
+      end
+    ensure
+      BlueskyClient.singleton_class.define_method(:post, original_bsky)
+      MastodonClient.singleton_class.define_method(:post, original_masto)
+    end
+
+    assert_equal 1, mastodon_posts.size, "expected Mastodon to be posted despite BlueSky failing"
+    assert_includes mastodon_posts.first, "Claude Haiku 4.5"
+  end
+
+  test "does not post to social when there are no notable launches" do
+    result = OpenRouter::ModelSync::Result.new(
+      created: 1, enriched: 0, repriced: 0, skipped: 0,
+      created_records: [
+        OpenRouter::ModelSync::CreatedRecord.new(
+          model_name: "Wonder 1", provider_name: "NewLab",
+          model_slug: "newlab-wonder-1", new_provider: false,
+          input_per_mtok: 0.1, output_per_mtok: 0.4
+        )
+      ],
+      repriced_records: []
+    )
+
+    stub_sync_and_slack(result) do
+      capture_social_posts do |bluesky_posts, mastodon_posts|
+        OpenRouterSyncJob.perform_now
+        assert_empty bluesky_posts
+        assert_empty mastodon_posts
+      end
+    end
+  end
 end

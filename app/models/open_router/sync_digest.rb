@@ -7,6 +7,15 @@ module OpenRouter
   class SyncDigest
     BASE_URL = "https://tokenprice.fyi"
 
+    # Every OpenRouter-synced model is created at tier "mid" (ModelSync's
+    # DEFAULT_TIER), with a human re-curating tier later — so at sync time tier
+    # can't tell a notable launch from the long tail. The curated provider set is
+    # the gate instead. Display names match the seeded major providers.
+    ANNOUNCEABLE_PROVIDERS = Set[
+      "Anthropic", "OpenAI", "Google", "xAI", "DeepSeek",
+      "Meta", "Mistral", "Cohere", "Alibaba", "Moonshot AI"
+    ].freeze
+
     def initialize(result, date: Date.current)
       @result = result
       @date   = date
@@ -23,7 +32,20 @@ module OpenRouter
         blocks: [ header_block, *sections ] }
     end
 
+    # Social-post strings for the sync's new launches, one per announceable model.
+    def launch_posts
+      @result.created_records
+        .select { |r| ANNOUNCEABLE_PROVIDERS.include?(r.provider_name) }
+        .map { |r| launch_post(r) }
+    end
+
     private
+
+    def launch_post(record)
+      "New model: #{record.model_name} (#{record.provider_name}) — " \
+        "$#{fmt(record.input_per_mtok)}/M in, $#{fmt(record.output_per_mtok)}/M out.\n" \
+        "#{BASE_URL}/models/#{record.model_slug}"
+    end
 
     def header_block
       { type: "header",

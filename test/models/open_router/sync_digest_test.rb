@@ -176,5 +176,67 @@ module OpenRouter
       # fmt(0) returns "0", not "0.00"
       assert_includes section_text, "$0→$0 cached"
     end
+
+    # --- launch_posts (social post strings) ---------------------------------
+
+    test "launch_posts builds one post for an announceable provider" do
+      c = make_created(model_name: "Claude Haiku 4.5", provider_name: "Anthropic",
+                       model_slug: "claude-haiku-4-5",
+                       input_per_mtok: 1.0, output_per_mtok: 5.0)
+      posts = digest(make_result(created_records: [ c ])).launch_posts
+      assert_equal 1, posts.size
+      post = posts.first
+      assert_includes post, "Claude Haiku 4.5"
+      assert_includes post, "Anthropic"
+      assert_includes post, "$1/M in"
+      assert_includes post, "$5/M out"
+      assert_includes post, "https://tokenprice.fyi/models/claude-haiku-4-5"
+    end
+
+    test "launch_posts excludes a non-announceable provider" do
+      c = make_created(provider_name: "NewLab")
+      assert_empty digest(make_result(created_records: [ c ])).launch_posts
+    end
+
+    test "launch_posts keeps only announceable records, in order" do
+      records = [
+        make_created(model_name: "Claude Haiku 4.5", provider_name: "Anthropic",
+                     model_slug: "claude-haiku-4-5"),
+        make_created(model_name: "Wonder 1", provider_name: "NewLab",
+                     model_slug: "newlab-wonder-1"),
+        make_created(model_name: "GPT-6 mini", provider_name: "OpenAI",
+                     model_slug: "gpt-6-mini")
+      ]
+      posts = digest(make_result(created_records: records)).launch_posts
+      assert_equal 2, posts.size
+      assert_includes posts[0], "Claude Haiku 4.5"
+      assert_includes posts[1], "GPT-6 mini"
+    end
+
+    test "launch_posts returns empty array with no created records" do
+      assert_empty digest(make_result).launch_posts
+    end
+
+    test "launch_posts returns empty array when all records are non-announceable" do
+      records = [ make_created(provider_name: "NewLab"),
+                  make_created(provider_name: "ObscureCo") ]
+      assert_empty digest(make_result(created_records: records)).launch_posts
+    end
+
+    test "launch_posts formats prices via fmt" do
+      c = make_created(provider_name: "OpenAI",
+                       input_per_mtok: 0.5, output_per_mtok: 5.0)
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+      assert_includes post, "$0.5/M in"
+      assert_includes post, "$5/M out"
+    end
+
+    test "launch_posts stays within BlueSky's 300-character limit" do
+      c = make_created(model_name: "Claude Haiku 4.5", provider_name: "Anthropic",
+                       model_slug: "claude-haiku-4-5",
+                       input_per_mtok: 1.0, output_per_mtok: 5.0)
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+      assert_operator post.length, :<=, 300
+    end
   end
 end
