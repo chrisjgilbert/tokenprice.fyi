@@ -537,7 +537,7 @@
         select-all/clear-all header instead of a legend. %>
     <%= render layout: "facet", locals: {
           name: "provider", label: "Provider", panel_id: "provider-panel", icon: :server,
-          count_badge: true } do %>
+          count_badge: true, close_on_change: false } do %>
       <fieldset>
         <legend class="sr-only">Filter by provider</legend>
         <div class="tp-facet-panel-header">

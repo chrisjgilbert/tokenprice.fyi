@@ -173,33 +173,41 @@ class PriceTableTest < ApplicationSystemTestCase
       all('input[name="providers[]"]').each { |cb| assert_not cb.checked? }
     end
 
+    # An empty providers[] submission is indistinguishable from "every box
+    # checked" server-side (ModelsController#index only applies the where
+    # clause when @provider_slugs is non-empty) — "Clear all" resets to the
+    # unfiltered table, same as "Select all", not an empty result.
     within "#models" do
-      assert_no_text "DeepSeek V4 Pro"
-      assert_no_text "Claude Opus 4.8"
+      assert_text "DeepSeek V4 Pro"
+      assert_text "Claude Opus 4.8"
     end
   end
 
   test "provider chip shows a count badge only when narrowed to a subset" do
     visit root_path
 
-    badge = find(".tp-facet-chip", text: "Provider").find(".tp-facet-chip-count", visible: :all)
-    assert badge[:hidden]
+    within ".tp-facet-chip", text: "Provider" do
+      assert_no_selector ".tp-facet-chip-count", visible: :visible
+    end
 
     open_provider_filter
     within "#provider-panel" do
       check "provider_anthropic", allow_label_click: true
     end
 
-    badge = find(".tp-facet-chip", text: "Provider").find(".tp-facet-chip-count", visible: :all)
-    assert_not badge[:hidden]
-    assert_equal "1", badge.text(:all)
+    within ".tp-facet-chip", text: "Provider" do
+      assert_selector ".tp-facet-chip-count", visible: :visible, text: "1"
+    end
 
+    # The panel stays open across checkbox changes (it's multi-select) — pick
+    # it back up from the open popover rather than re-querying the page.
     within "#provider-panel" do
       click_on "Select all"
     end
 
-    badge = find(".tp-facet-chip", text: "Provider").find(".tp-facet-chip-count", visible: :all)
-    assert badge[:hidden]
+    within ".tp-facet-chip", text: "Provider" do
+      assert_no_selector ".tp-facet-chip-count", visible: :visible
+    end
   end
 
   private

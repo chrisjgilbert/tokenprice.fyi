@@ -6,6 +6,9 @@
     locals: name, label, panel_id, icon (optional, defaults to the facet name),
             count_badge (optional — renders an empty numeric badge slot instead
             of the single-value chip text; for the multi-select provider facet),
+            close_on_change (optional, defaults true — a single-select facet
+            closes its popover the instant a choice is made; a multi-select
+            facet like provider must stay open so further boxes stay reachable),
             legend_id, legend_title, legend_button, legend_entries (all
             optional together — omit for a facet with no legend, e.g. provider).
     Yields the control inputs (the pills/checkboxes). %>
@@ -22,9 +25,10 @@
     <span class="tp-facet-caret"><%= icon(:chevron_down, size: 14) %></span>
   </button>
 
+  <% close_on_change = local_assigns.fetch(:close_on_change, true) %>
   <div id="<%= panel_id %>" class="tp-facet-panel" popover
        data-controller="popover"
-       data-action="toggle->popover#position change->popover#close">
+       data-action="toggle->popover#position<%= ' change->popover#close' if close_on_change %>">
     <p class="tp-facet-panel-title"><%= label %></p>
     <%= yield %>
     <% if local_assigns[:legend_entries] %>
