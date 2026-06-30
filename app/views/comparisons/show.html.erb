@@ -4,7 +4,21 @@
 <%# Collapse every ?a=&b= permutation onto one param-free URL. %>
 <% content_for :canonical, compare_url %>
 
-<%# ── Page-specific styles ──────────────────────────────────────────────── %>
+<%# ── Header ──────────────────────────────────────────────────────────────── %>
+<section class="mb-8">
+  <h1 class="text-4xl font-semibold tracking-tight text-slate-900">Compare two models</h1>
+  <p class="mt-2 text-slate-500 text-base">Select any two models. Input, output, cached, and context rarely move together — the cheaper model on one line isn't always the cheaper one on the next.</p>
+</section>
+
+<%# ── Selector row + comparison table ─────────────────────────────────────── %>
+<%# Wrapped in a frame so this content can also be loaded scoped to the compare
+    dialog's nested frame on the homepage, without duplicating any of the
+    comparison logic above. Renders identically on the standalone /compare page.
+    The page-specific <style> block lives inside the frame too (not above it):
+    when this content loads scoped into the dialog's frame, Turbo only keeps
+    markup inside the matching <turbo-frame>, so a <style> tag outside it would
+    silently stop applying in the embedded case. %>
+<%= turbo_frame_tag "comparison" do %>
 <style>
 /* ── Comparison table ─────────────────────────────────────────────────── */
 .cmp-table {
@@ -243,14 +257,6 @@
   font-size: 16px;
 }
 </style>
-
-<%# ── Header ──────────────────────────────────────────────────────────────── %>
-<section class="mb-8">
-  <h1 class="text-4xl font-semibold tracking-tight text-slate-900">Compare two models</h1>
-  <p class="mt-2 text-slate-500 text-base">Select any two models. Input, output, cached, and context rarely move together — the cheaper model on one line isn't always the cheaper one on the next.</p>
-</section>
-
-<%# ── Selector row ─────────────────────────────────────────────────────────── %>
 <div data-controller="compare"
      data-compare-slug-a-value="<%= @left&.slug %>"
      data-compare-slug-b-value="<%= @right&.slug %>">
@@ -484,3 +490,4 @@
   <% end %>
 
 </div><%# /[data-controller="compare"] %>
+<% end %><%# /turbo_frame_tag "comparison" %>

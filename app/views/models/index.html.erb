@@ -496,6 +496,14 @@
   </div>
 <% end %>
 
+<%# ── COMPARE TRAY WRAPPER ────────────────────────────────────────────
+    Mounted outside turbo_frame_tag "models" deliberately: that frame
+    re-renders on every filter/sort change, which would destroy and recreate
+    a controller (and its selection state) mounted inside it. Spans the
+    filters form, the table frame, the tray, and the compare dialog so
+    selection survives filtering and the dialog can sit beside the tray. %>
+<div data-controller="compare-tray" data-compare-tray-compare-path-value="<%= compare_path %>">
+
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
 <p class="tp-section-label mb-4">Price table</p>
 
@@ -617,6 +625,7 @@
                cls
              } %>
           <tr>
+            <th scope="col" class="tp-col-select" aria-hidden="true" title="Select to compare"></th>
             <th scope="col" class="<%= th_cls.('name') %>" aria-sort="<%= aria_sort_for('name', current_sort: @sort, current_dir: @dir) %>">
               <%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
@@ -643,7 +652,7 @@
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="7">
+              <td colspan="8">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -664,6 +673,17 @@
                   (not effective_on) so a same-day in-place correction busts the row. %>
               <% cache [ model, model.current_price&.updated_at, sort_col ] do %>
               <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>" onclick="location.href='<%= j(model_path(model)) %>'">
+                <td class="tp-col-select">
+                  <button type="button" class="tp-select-btn"
+                          data-action="click->compare-tray#toggle:stop"
+                          data-slug="<%= model.slug %>"
+                          data-name="<%= model.name %>"
+                          data-provider-name="<%= model.provider.name %>"
+                          aria-pressed="false"
+                          aria-label="Select <%= model.name %> to compare">
+                    <%= icon(:check, size: 13) %>
+                  </button>
+                </td>
                 <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">
                     <%= link_to model_path(model) do %>
@@ -717,6 +737,49 @@
 <p class="mt-4 text-xs text-slate-400">
   Sorted by output price by default — output tokens are typically 3–5× more expensive than input and dominate the bill for generation-heavy workloads. Sort by input or cached input when your mix differs.
 </p>
+
+<%# ── COMPARE TRAY ──────────────────────────────────────────────────
+    Hidden (via .tp-tray:not(:has(.tp-tray-slot.filled))) until at least one
+    model is selected. Slot contents are cloned from the selected row's own
+    markup in JS — no second client-side model-data source. %>
+<div class="tp-tray" data-compare-tray-target="tray" hidden>
+  <div class="tp-tray-inner">
+    <div class="tp-tray-slots">
+      <div class="tp-tray-slot" data-compare-tray-target="slot" data-slot-index="0">
+        <span class="tp-tray-slot-empty">Select a model</span>
+      </div>
+      <div class="tp-tray-slot" data-compare-tray-target="slot" data-slot-index="1">
+        <span class="tp-tray-slot-empty">Select a model</span>
+      </div>
+    </div>
+    <div class="tp-tray-actions">
+      <button type="button" class="tp-btn tp-btn-ghost tp-btn-sm" data-action="click->compare-tray#clear">
+        Clear
+      </button>
+      <button type="button" class="tp-btn tp-btn-primary tp-btn-sm" data-compare-tray-target="compareBtn"
+              data-action="click->compare-tray#openCompare" disabled>
+        Pick one more
+      </button>
+    </div>
+  </div>
+</div>
+
+<%# ── COMPARE DIALOG ────────────────────────────────────────────────
+    Native <dialog>: Esc-to-close and focus trap come free from showModal().
+    Backdrop-click-to-close and the open trigger are the only behaviour this
+    needs to wire up; the comparison content itself is the existing /compare
+    page, loaded into the nested frame so nothing about the comparison logic
+    is duplicated here. %>
+<dialog class="tp-compare-dialog" data-compare-tray-target="dialog" data-action="click->compare-tray#backdropClose" aria-label="Compare models">
+  <div class="tp-compare-dialog-inner">
+    <button type="button" class="tp-compare-dialog-close" data-action="click->compare-tray#closeDialog" aria-label="Close comparison">
+      <%= icon(:close, size: 18) %>
+    </button>
+    <%= turbo_frame_tag "comparison", data: { compare_tray_target: "frame" } %>
+  </div>
+</dialog>
+
+</div><%# /[data-controller="compare-tray"] %>
 
 <%# ── PRICE-CHANGE TICKER ─────────────────────────────────────────── %>
 <% if @all_events %>
