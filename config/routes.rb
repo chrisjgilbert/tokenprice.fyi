@@ -42,6 +42,10 @@ Rails.application.routes.draw do
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
   get "llms.txt",    to: "pages#llms_txt",  defaults: { format: "txt" }, as: :llms_txt
 
+  # Lets BlueSky verify tokenprice.fyi as the account's handle (AT Protocol
+  # resolves the domain by fetching this DID).
+  get "/.well-known/atproto-did", to: "pages#atproto_did"
+
   namespace :admin do
     root "models#index"
     get    "login",  to: "sessions#new"

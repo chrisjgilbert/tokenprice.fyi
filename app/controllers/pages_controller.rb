@@ -1,8 +1,15 @@
 class PagesController < ApplicationController
+  # The site's BlueSky DID. Public (it's served openly below), not a secret.
+  BLUESKY_DID = "did:plc:3uigsasak6n63m64kh4hresj"
+
   def llms_txt
     @providers = Provider.all.order(:name)
     @patterns  = FeaturePattern.all
     render formats: :txt
+  end
+
+  def atproto_did
+    render plain: BLUESKY_DID
   end
 
   def how_pricing_works
