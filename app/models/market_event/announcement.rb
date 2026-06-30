@@ -14,9 +14,7 @@ class MarketEvent::Announcement
   def run
     return unless announceable?
 
-    text = post_text
-    post_to(BlueskyClient, text)
-    post_to(MastodonClient, text)
+    SocialBroadcast.post(post_text)
 
     # A single stamp (not one per platform) is deliberate for v1: it prevents
     # re-posting to the platform that succeeded if the other was flaky. Per-platform
@@ -31,13 +29,6 @@ class MarketEvent::Announcement
 
   def announceable?
     @event.status == "published" && @event.announced_at.nil?
-  end
-
-  def post_to(client, text)
-    client.post(text: text)
-  rescue => e
-    Rails.logger.error("MarketEvent::Announcement: #{client} failed — #{e.class}: #{e.message}")
-    Honeybadger.notify(e) if defined?(Honeybadger)
   end
 
   def post_text

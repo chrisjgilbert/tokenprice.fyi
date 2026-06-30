@@ -94,12 +94,16 @@ class OpenRouterSyncJobTest < ActiveJob::TestCase
     SlackNotifier.singleton_class.define_method(:post, original_post)
   end
 
-  def capture_social_posts
+  def capture_social_posts(bluesky_raises: false)
     bluesky_posts  = []
     mastodon_posts = []
     original_bsky  = BlueskyClient.singleton_class.instance_method(:post)
     original_masto = MastodonClient.singleton_class.instance_method(:post)
-    BlueskyClient.define_singleton_method(:post)  { |text:| bluesky_posts << text }
+    BlueskyClient.define_singleton_method(:post) do |text:|
+      raise "bsky down" if bluesky_raises
+
+      bluesky_posts << text
+    end
     MastodonClient.define_singleton_method(:post) { |text:| mastodon_posts << text }
     yield bluesky_posts, mastodon_posts
   ensure
@@ -140,23 +144,14 @@ class OpenRouterSyncJobTest < ActiveJob::TestCase
       created_records: [ announceable_created ], repriced_records: []
     )
 
-    mastodon_posts = []
-    original_bsky  = BlueskyClient.singleton_class.instance_method(:post)
-    original_masto = MastodonClient.singleton_class.instance_method(:post)
-    BlueskyClient.define_singleton_method(:post)  { |text:| raise "bsky down" }
-    MastodonClient.define_singleton_method(:post) { |text:| mastodon_posts << text }
-
-    begin
-      stub_sync_and_slack(result) do
+    stub_sync_and_slack(result) do
+      capture_social_posts(bluesky_raises: true) do |_bluesky_posts, mastodon_posts|
         assert_nothing_raised { OpenRouterSyncJob.perform_now }
-      end
-    ensure
-      BlueskyClient.singleton_class.define_method(:post, original_bsky)
-      MastodonClient.singleton_class.define_method(:post, original_masto)
-    end
 
-    assert_equal 1, mastodon_posts.size, "expected Mastodon to be posted despite BlueSky failing"
-    assert_includes mastodon_posts.first, "Claude Haiku 4.5"
+        assert_equal 1, mastodon_posts.size, "expected Mastodon to be posted despite BlueSky failing"
+        assert_includes mastodon_posts.first, "Claude Haiku 4.5"
+      end
+    end
   end
 
   test "does not post to social when there are no notable launches" do

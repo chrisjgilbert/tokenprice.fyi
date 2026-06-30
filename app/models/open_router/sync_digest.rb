@@ -39,6 +39,10 @@ module OpenRouter
         .map { |r| launch_post(r) }
     end
 
+    # Total new models this run, announceable or not — lets the caller log how
+    # many launches were filtered below the provider bar.
+    def created_count = @result.created_records.size
+
     private
 
     def launch_post(record)
