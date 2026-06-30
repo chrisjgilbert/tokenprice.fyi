@@ -4,11 +4,20 @@
       <stop offset="0" stop-color="#eef2ff"/>
       <stop offset="1" stop-color="#ffffff"/>
     </linearGradient>
+    <radialGradient id="ogmark" cx="32%" cy="24%" r="82%">
+      <stop offset="0" stop-color="#8b93ff"/>
+      <stop offset="55%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4338ca"/>
+    </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="12" fill="#4f46e5"/>
   <g transform="translate(96, 150)" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
-    <text x="0" y="0" font-size="40" fill="#4f46e5">◎</text>
+    <g transform="translate(0, -34)">
+      <rect width="38" height="38" rx="11" fill="url(#ogmark)"/>
+      <text x="15" y="20.5" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="JetBrains Mono, monospace" font-weight="700" font-size="18">$</text>
+      <rect x="23.5" y="24.5" width="9" height="3" rx="1.5" fill="rgba(255,255,255,.75)"/>
+    </g>
     <text x="52" y="0" font-size="34" font-weight="700" fill="#0f172a">tokenprice<tspan fill="#94a3b8">.fyi</tspan></text>
     <text x="0" y="130" font-size="76" font-weight="800" fill="#0f172a">What does a million</text>
     <text x="0" y="220" font-size="76" font-weight="800" fill="#0f172a">tokens cost?</text>
