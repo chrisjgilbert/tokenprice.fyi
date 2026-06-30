@@ -1,25 +1,21 @@
 module LearnHelper
-  # The five built explainers. Each entry drives an index card and its own
-  # page header. All five have a live page; the index links straight to them.
-  # The anatomy explainer is foundational — the concept the guide layer stands
-  # on — so it orders first.
+  # The four built explainers. Each entry drives an index card and its own
+  # page header. All four have a live page; the index links straight to them.
+  # Order: pricing fundamentals first, reasoning last (most advanced topic).
   def learn_concepts
     [
-      { title: "What an AI feature is actually made of", icon: :blocks, tint: "#7c3aed", read: "5 min",
-        dek: "A feature is a chain of calls, each with a different job. The step that drives the bill and the step that needs the capable model are usually different ones.",
-        path: learn_anatomy_path },
       { title: "How LLM API pricing works", icon: :coin, tint: "#6366f1", read: "6 min",
         dek: "Tokens, the input/output split, cached reads, and why the same answer costs several times more to write than to read.",
         path: how_pricing_works_path },
-      { title: "Reasoning & \"thinking\" tokens", icon: :brain, tint: "#7c3aed", read: "6 min",
-        dek: "Reasoning models bill the hidden thinking they do before answering, at the output rate, and it is often the biggest line on the invoice. Effort dials the volume of that thinking, not the price per token.",
-        path: learn_reasoning_path },
       { title: "What drives the cost of common features", icon: :layers, tint: "#e11d48", read: "8 min",
         dek: "RAG, chat, classification, summarisation, a coding agent — each has a different cost shape. Here's why.",
         path: learn_feature_costs_path },
       { title: "Cost-cutting strategies & savings", icon: :scissors, tint: "#0d9488", read: "6 min",
         dek: "Tiering, routing, caching, shorter outputs, batch. The levers that move a bill the most, and by how much.",
-        path: learn_cost_cutting_path }
+        path: learn_cost_cutting_path },
+      { title: "Reasoning & \"thinking\" tokens", icon: :brain, tint: "#7c3aed", read: "6 min",
+        dek: "Reasoning models bill the hidden thinking they do before answering, at the output rate, and it is often the biggest line on the invoice. Effort dials the volume of that thinking, not the price per token.",
+        path: learn_reasoning_path }
     ]
   end
 
@@ -36,33 +32,8 @@ module LearnHelper
     ]
   end
 
-  # The line a call-chain teaches in the anatomy explainer, computed from the
-  # FeaturePattern relationship (AUDIT #2/#4) — never a hardcoded per-pattern
-  # string, and never a second copy of the find/branch the guide does. Mirrors
-  # GuideHelper#guide_takeaway's branching, framed for the anatomy lesson and
-  # carrying <strong> emphasis. Returns an array of HTML-bearing lines; the view
-  # is responsible for marking them html_safe.
-  def anatomy_chain_reading(pattern)
-    driver_role = pattern.cost_driver_step&.role
-    capable_role = pattern.capable_step&.role
-
-    case pattern.driver_and_capable_relationship
-    when :no_capability
-      if driver_role
-        [ "The bill concentrates on <strong>#{driver_role}</strong>. No step here needs a capable model, so a small model runs the whole chain." ]
-      else
-        [ "No step here drives the bill or needs a capable model; a small model runs the whole chain." ]
-      end
-    when :same
-      [ "Here the cost-driver step and the capable-model step are the <strong>same one</strong>: #{capable_role}. Spend there, keep the rest small." ]
-    else
-      [ "The cost-driver step is <strong>#{driver_role}</strong>. The capable-model step is <strong>#{capable_role}</strong>. They are different steps, so the capable model goes on #{capable_role} and the rest stay small." ]
-    end
-  end
-
   LEARN_ICONS = {
     coin:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9a2.5 2.5 0 0 0-2.3-1.4c-1.4 0-2.5.9-2.5 2s1 1.7 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2A2.5 2.5 0 0 1 9.2 15"/><path d="M12 6v1.6M12 16.4V18"/></svg>',
-    blocks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>',
     scissors: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg>',
     layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></svg>',
     refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',

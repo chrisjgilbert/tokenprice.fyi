@@ -17,12 +17,6 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes @response.body, "/which-model"
   end
 
-  test "the sitemap includes the learn anatomy explainer" do
-    get sitemap_url
-    assert_response :success
-    assert_includes @response.body, learn_anatomy_url
-  end
-
   test "the sitemap lists the coding agent at its hyphenated slug" do
     get sitemap_url
     assert_response :success
