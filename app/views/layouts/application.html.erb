@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <% page_title = content_for(:title).presence || "tokenprice.fyi — LLM API price tracker" %>
-    <% page_description = content_for(:description).presence || "LLM API token prices, tracked daily. Full history, every provider." %>
+    <% page_description = content_for(:description).presence || "LLM API token prices for Anthropic, OpenAI, Google, xAI, DeepSeek and more. Input, output, and cached rates per 1M tokens, tracked daily." %>
     <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="<%= content_for(:description) || 'Token prices for Claude, GPT, Gemini, Grok, DeepSeek, and more LLM APIs. Updated daily, with full price history.' %>">
+    <meta name="description" content="<%= page_description %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="tokenprice.fyi">
     <meta name="mobile-web-app-capable" content="yes">
