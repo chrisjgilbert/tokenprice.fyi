@@ -4,7 +4,7 @@
 # admin publish action never 500s on a flaky social API.
 class MarketEvent::Announcement
   BASE_URL = "https://tokenprice.fyi"
-  EVENTS_URL = "#{BASE_URL}/events".freeze
+  EVENTS_URL = "#{BASE_URL}/events"
   CHAR_LIMIT = 300
 
   def initialize(event)
@@ -43,9 +43,6 @@ class MarketEvent::Announcement
   def post_text
     body = [ @event.title, @event.note.to_s.strip.presence ].compact.join("\n\n")
     suffix = "\n\n#{EVENTS_URL}"
-    budget = CHAR_LIMIT - suffix.length
-
-    body = "#{body[0, budget - 1].rstrip}…" if body.length > budget
-    "#{body}#{suffix}"
+    "#{body.truncate(CHAR_LIMIT - suffix.length, omission: '…')}#{suffix}"
   end
 end
