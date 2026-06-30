@@ -24,19 +24,13 @@ export default class extends Controller {
       }
     })
 
-    // The provider <details> auto-opens on desktop to reveal the selection; on
-    // mobile it's a dropdown chip, so it must start closed whatever the state.
-    if (window.matchMedia("(max-width: 760px)").matches) {
-      this.element.querySelector(".tp-provider-details")?.removeAttribute("open")
-    }
-
     this.syncChips()
   }
 
-  // Keep the mobile facet chips in step with the controls inside their panels:
-  // the chips live outside the Turbo frame, so nothing else refreshes them. The
-  // tier/modality chips echo the chosen value; the provider chip lights up when
-  // the selection is narrowed. No-ops on desktop, where the chips are hidden.
+  // Keep the facet dropdown chips in step with the controls inside their
+  // panels: the chips live outside the Turbo frame, so nothing else refreshes
+  // them. The tier/modality chips echo the chosen value; the provider chip
+  // shows a count badge when the selection is narrowed to a proper subset.
   syncChips() {
     this.element.querySelectorAll("[data-facet-chip]").forEach((slot) => {
       const checked = this.element.querySelector(`input[name="${slot.dataset.facetChip}"]:checked`)
@@ -47,11 +41,31 @@ export default class extends Controller {
     })
 
     // No boxes checked means "all providers" (the form omits an empty filter),
-    // so the chip is only active for a proper, non-empty subset.
+    // so the chip is only narrowed for a proper, non-empty subset.
     const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
-    const checked = providers.filter((input) => input.checked).length
-    const narrowed = checked > 0 && checked < providers.length
-    this.element.querySelector(".tp-provider-summary")?.classList.toggle("is-active", narrowed)
+    const checkedCount = providers.filter((input) => input.checked).length
+    const narrowed = checkedCount > 0 && checkedCount < providers.length
+
+    const badge = this.element.querySelector('[data-facet-chip-count="provider"]')
+    if (badge) {
+      badge.textContent = narrowed ? checkedCount : ""
+      badge.hidden = !narrowed
+      badge.closest(".tp-facet-chip")?.classList.toggle("is-active", narrowed)
+    }
+
+    const allChecked = checkedCount === providers.length
+    const selectAllButton = this.element.querySelector(".tp-facet-panel-action")
+    if (selectAllButton) selectAllButton.textContent = allChecked ? "Clear all" : "Select all"
+  }
+
+  // Checks every providers[] box when none/some are checked, or unchecks all
+  // of them when every box is already checked — mirroring the button's own
+  // toggling label ("Select all" / "Clear all") computed in syncChips.
+  toggleAllProviders() {
+    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
+    const allChecked = providers.every((input) => input.checked)
+    providers.forEach((input) => { input.checked = !allChecked })
+    this.submit()
   }
 
   search(event) {

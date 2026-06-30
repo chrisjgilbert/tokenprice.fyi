@@ -1,15 +1,24 @@
-<%# A filter facet. Desktop: the controls sit inline in the filters row, with an
-    info button opening the legend — unchanged from before. Under 760px the whole
-    facet collapses to a chip that opens its controls in a native popover, with
-    the legend folded into the panel. The CSS does the swap (.tp-facet-panel is
-    display:contents on desktop); this partial just carries both presentations.
+<%# A filter facet: a dropdown-popover button at every viewport width. The
+    button opens a native popover panel (positioned by popover_controller)
+    carrying the controls, an optional header (e.g. provider's select-all row),
+    and an optional folded-in legend.
 
-    locals: name, label, panel_id, legend_id, legend_title, legend_button,
-            legend_entries. Yields the control inputs (the pills). %>
+    locals: name, label, panel_id, icon (optional, defaults to the facet name),
+            count_badge (optional — renders an empty numeric badge slot instead
+            of the single-value chip text; for the multi-select provider facet),
+            legend_id, legend_title, legend_button, legend_entries (all
+            optional together — omit for a facet with no legend, e.g. provider).
+    Yields the control inputs (the pills/checkboxes). %>
 <div class="tp-filter-group tp-facet">
   <button type="button" class="tp-facet-chip" popovertarget="<%= panel_id %>"
           aria-label="Filter by <%= name %>">
-    <%= label %><span class="tp-facet-chip-val" data-facet-chip="<%= name %>"></span>
+    <%= icon(local_assigns.fetch(:icon, name.to_sym), size: 16) %>
+    <span class="tp-facet-chip-label"><%= label %></span>
+    <% if local_assigns[:count_badge] %>
+      <span class="tp-facet-chip-count" data-facet-chip-count="<%= name %>" hidden></span>
+    <% else %>
+      <span class="tp-facet-chip-val" data-facet-chip="<%= name %>"></span>
+    <% end %>
     <span class="tp-facet-caret"><%= icon(:chevron_down, size: 14) %></span>
   </button>
 
@@ -18,11 +27,15 @@
        data-action="toggle->popover#position change->popover#close">
     <p class="tp-facet-panel-title"><%= label %></p>
     <%= yield %>
-    <div class="tp-facet-legend">
-      <%= render "facet_legend_list", title: legend_button, entries: legend_entries %>
-    </div>
+    <% if local_assigns[:legend_entries] %>
+      <div class="tp-facet-legend">
+        <%= render "facet_legend_list", title: legend_button, entries: legend_entries %>
+      </div>
+    <% end %>
   </div>
 
-  <%= render "filter_legend", id: legend_id, title: legend_title,
-        button_label: legend_button, entries: legend_entries %>
+  <% if local_assigns[:legend_entries] %>
+    <%= render "filter_legend", id: legend_id, title: legend_title,
+          button_label: legend_button, entries: legend_entries %>
+  <% end %>
 </div>
