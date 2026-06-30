@@ -70,8 +70,8 @@
           <% end %>
         </div>
         <div class="tp-nav-links">
-          <% primary_nav_items.each do |label, path| %>
-            <%= nav_link label, path, active: (label == "Events" ? events_active? : current_page?(path)) %>
+          <% primary_nav_items.each do |label, path, active_check| %>
+            <%= nav_link label, path, active: active_check.call %>
           <% end %>
           <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
               on mobile it's replaced by the drawer's Learn section. %>
@@ -108,8 +108,8 @@
     <div class="tp-m-scrim" data-action="click->mobile-nav#close" aria-hidden="true"></div>
     <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
       <nav class="tp-m-links" aria-label="Primary">
-        <% primary_nav_items.each do |label, path| %>
-          <%= mobile_nav_link label, path, active: (label == "Events" ? events_active? : current_page?(path)) %>
+        <% primary_nav_items.each do |label, path, active_check| %>
+          <%= mobile_nav_link label, path, active: active_check.call %>
         <% end %>
         <div class="tp-m-section">
           <span class="tp-m-eyebrow">Learn</span>

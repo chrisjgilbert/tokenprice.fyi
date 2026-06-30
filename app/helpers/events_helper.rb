@@ -117,6 +117,12 @@ module EventsHelper
     ].compact.max
   end
 
+  # The most-recent reprice events for the scrolling ticker banner.
+  # build_all_events returns ascending order, so .last(limit) is a free slice.
+  def ticker_events(events, limit: 20)
+    events.select { |e| e.kind == "reprice" }.last(limit).reverse
+  end
+
   # Per-kind presentation, the single source for how each event kind reads.
   # Colours live in CSS (`ev-#{kind}` for the timeline node, `tp-kind-#{kind}`
   # and `hero-card-kind-chip.#{kind}` for the chips), so only the words and the

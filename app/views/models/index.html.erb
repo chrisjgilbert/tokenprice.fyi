@@ -487,17 +487,6 @@
                   <span class="hero-card-chip num"><%= tokens_short(m.context_window) %> ctx</span>
                 <% end %>
               </div>
-            <% elsif primary_event.kind == "reprice" && (mv = primary_event.move) %>
-              <div class="hero-card-chips">
-                <%= price_change_badge(mv.input) %>
-                <%= price_change_badge(mv.output) %>
-                <% if mv.input %>
-                  <span class="hero-card-chip num"><%= usd_plain(mv.from.input_per_mtok) %> → <%= usd_plain(mv.to.input_per_mtok) %> in</span>
-                <% end %>
-                <% if mv.output %>
-                  <span class="hero-card-chip num"><%= usd_plain(mv.from.output_per_mtok) %> → <%= usd_plain(mv.to.output_per_mtok) %> out</span>
-                <% end %>
-              </div>
             <% end %>
           </div>
         <% end %>
@@ -770,12 +759,9 @@
 
 <%# ── PRICE-CHANGE TICKER ─────────────────────────────────────────── %>
 <% if @all_events %>
-  <% ticker_events = @all_events.select { |e| e.kind == "reprice" }
-                                .sort_by { |e| [ e.date, e.title ] }
-                                .reverse
-                                .first(20) %>
-  <% if ticker_events.any? %>
-    <% ticker_dur = [ ticker_events.size * 3, 24 ].max %>
+  <% t_events = ticker_events(@all_events) %>
+  <% if t_events.any? %>
+    <% ticker_dur = [ t_events.size * 3, 24 ].max %>
     <%= content_for :price_ticker do %>
       <div class="tp-ticker" aria-label="Recent price changes" role="marquee">
         <div class="tp-ticker-label">
@@ -783,24 +769,24 @@
         </div>
         <div class="tp-ticker-outer">
           <div class="tp-ticker-inner" style="--ticker-dur:<%= ticker_dur %>s">
-            <%# Items rendered twice for seamless CSS loop animation %>
-            <% 2.times do %>
-              <% ticker_events.each do |ev| %>
-                <span class="tp-ticker-item">
-                  <span class="tp-ticker-dot" aria-hidden="true"></span>
-                  <span class="tp-ticker-model"><%= ev.model.name %></span>
-                  <% if ev.move.input %>
-                    <span class="tp-ticker-delta <%= ev.move.input.negative? ? 'down' : 'up' %>">
-                      <%= ev.move.input.negative? ? '↓' : '↑' %><%= number_to_percentage(ev.move.input.abs, precision: 1) %> in
-                    </span>
-                  <% end %>
-                  <% if ev.move.output %>
-                    <span class="tp-ticker-delta <%= ev.move.output.negative? ? 'down' : 'up' %>">
-                      <%= ev.move.output.negative? ? '↓' : '↑' %><%= number_to_percentage(ev.move.output.abs, precision: 1) %> out
-                    </span>
-                  <% end %>
-                </span>
-              <% end %>
+            <%# Duplicated so translateX(-50%) loops back to an identical copy — seamless marquee %>
+            <% (t_events * 2).each do |ev| %>
+              <span class="tp-ticker-item">
+                <span class="tp-ticker-dot" aria-hidden="true"></span>
+                <span class="tp-ticker-model"><%= ev.model&.name %></span>
+                <% if (inp = ev.move.input) %>
+                  <% down = inp.negative? %>
+                  <span class="tp-ticker-delta <%= down ? 'down' : 'up' %>">
+                    <%= down ? '↓' : '↑' %><%= number_to_percentage(inp.abs, precision: 1) %> in
+                  </span>
+                <% end %>
+                <% if (out = ev.move.output) %>
+                  <% down = out.negative? %>
+                  <span class="tp-ticker-delta <%= down ? 'down' : 'up' %>">
+                    <%= down ? '↓' : '↑' %><%= number_to_percentage(out.abs, precision: 1) %> out
+                  </span>
+                <% end %>
+              </span>
             <% end %>
           </div>
         </div>

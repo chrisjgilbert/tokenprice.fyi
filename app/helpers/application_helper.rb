@@ -164,10 +164,10 @@ module ApplicationHelper
   # the "All" tab on the events page still exposes the full timeline.
   def primary_nav_items
     [
-      [ "Models", root_path ],
-      [ "Compare", compare_path ],
-      [ "Guide", guide_path ],
-      [ "Events", events_path(kind: "market") ]
+      [ "Models",  root_path,                   -> { current_page?(root_path) } ],
+      [ "Compare", compare_path,                -> { current_page?(compare_path) } ],
+      [ "Guide",   guide_path,                  -> { current_page?(guide_path) } ],
+      [ "Events",  events_path(kind: "market"), -> { events_active? } ]
     ]
   end
 
