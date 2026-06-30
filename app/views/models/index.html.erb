@@ -469,8 +469,6 @@
             <div class="hero-card-title">
               <% if primary_event.model %>
                 <%= link_to primary_event.title, model_path(primary_event.model) %>
-              <% elsif primary_event.source_url.present? %>
-                <%= link_to primary_event.title, primary_event.source_url, target: "_blank", rel: "noopener" %>
               <% else %>
                 <%= primary_event.title %>
               <% end %>
@@ -499,8 +497,6 @@
             <span style="font-size:13px;font-weight:500;color:#e8eaf0;flex:1;min-width:0">
               <% if secondary_event.model %>
                 <%= link_to secondary_event.title, model_path(secondary_event.model), style: "color:inherit;text-decoration:none" %>
-              <% elsif secondary_event.source_url.present? %>
-                <%= link_to secondary_event.title, secondary_event.source_url, target: "_blank", rel: "noopener", style: "color:inherit;text-decoration:none" %>
               <% else %>
                 <%= secondary_event.title %>
               <% end %>
@@ -514,13 +510,9 @@
             <%= link_to model_path(primary_event.model), class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
               Full price history →
             <% end %>
-          <% elsif primary_event&.source_url.present? %>
-            <%= link_to primary_event.source_url, class: "tp-btn tp-btn-ghost tp-btn-sm", target: "_blank", rel: "noopener", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-              Read more →
-            <% end %>
           <% else %>
             <%= link_to events_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-              All changes →
+              All events →
             <% end %>
           <% end %>
         </div>
