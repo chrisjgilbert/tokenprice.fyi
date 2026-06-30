@@ -596,6 +596,37 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-model-sub { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-slate-400); }
 .tp-model-sub .tp-prov-name { color: var(--color-slate-600); font-weight: 500; }
 
+/* ── Compare-from-table: select column ───────────────────────────────────── */
+/* Hover-only selection, deliberately: the select button is invisible until
+   its row is hovered or already selected — no checkbox/click-row alternative. */
+th.tp-col-select, td.tp-col-select { width: 40px; padding-left: 14px; padding-right: 0; }
+.tp-select-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1.5px solid var(--color-slate-300);
+  background: #fff;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  color: transparent;
+  opacity: 0;
+  transition: opacity .14s var(--ease-default), border-color .14s var(--ease-default), background .14s var(--ease-default), color .14s var(--ease-default);
+}
+.tp-select-btn svg { width: 13px; height: 13px; }
+table.tp-data tbody tr:hover .tp-select-btn,
+.tp-select-btn:focus-visible,
+.tp-select-btn.is-selected {
+  opacity: 1;
+}
+.tp-select-btn:hover { border-color: var(--color-indigo-400); }
+.tp-select-btn.is-selected {
+  background: var(--color-indigo-600);
+  border-color: var(--color-indigo-600);
+  color: #fff;
+}
+table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
+
 /* ============================================================ FORM CONTROLS */
 /* iOS Safari zooms the page when a focused text field's font-size is below
    16px. The design uses smaller controls, so lift every text-entry control to
@@ -900,6 +931,121 @@ footer.tp-foot {
 @media (prefers-reduced-motion: no-preference) {
   .reveal { opacity: 0; transform: translateY(14px); animation: tp-revealUp .6s var(--ease-out) forwards; }
 }
+
+/* ──────────────────────────────────────────── COMPARE TRAY (homepage table) */
+body:has(dialog[open]) { overflow: hidden; }
+
+.tp-tray {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: min(560px, calc(100vw - 32px));
+}
+.tp-tray-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg, 0 18px 44px -16px rgba(15,23,42,.28));
+}
+.tp-tray-slots { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.tp-tray-slot {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--border-strong);
+  display: flex;
+  align-items: center;
+}
+.tp-tray-slot.filled { border-style: solid; border-color: var(--border); }
+.tp-tray-slot-empty { padding: 0 12px; font-size: 12.5px; color: var(--text-mute); }
+.tp-tray-slot-content { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 8px 0 10px; min-width: 0; }
+.tp-tray-slot-content .tp-prov-sq { width: 24px; height: 24px; border-radius: 7px; font-size: 10px; flex: none; }
+.tp-tray-slot-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.tp-tray-slot-name { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-tray-slot-provider { font-size: 11px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-tray-slot-remove {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-mute);
+  cursor: pointer;
+  transition: background .14s var(--ease), color .14s var(--ease);
+}
+.tp-tray-slot-remove svg { width: 13px; height: 13px; }
+.tp-tray-slot-remove:hover { background: var(--slate-100); color: var(--text); }
+.tp-tray-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+
+@media (max-width: 620px) {
+  .tp-tray { width: calc(100vw - 24px); bottom: 12px; }
+  .tp-tray-inner { flex-wrap: wrap; }
+  .tp-tray-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ── Compare dialog: native <dialog>, centered modal ───────────────────────── */
+.tp-compare-dialog {
+  /* Tailwind's Preflight resets margin to 0 on every element, including the
+     UA stylesheet's `dialog { margin: auto }` that centers a modal dialog —
+     restore it explicitly or showModal() pins the panel to the top-left. */
+  margin: auto;
+  width: min(720px, calc(100vw - 32px));
+  max-height: 86vh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg, 0 24px 64px -16px rgba(15,23,42,.35));
+  overscroll-behavior: contain;
+}
+.tp-compare-dialog::backdrop { background: rgba(15, 23, 42, .5); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tp-compare-dialog {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+    transition: opacity .18s var(--ease), transform .18s var(--ease), overlay .18s var(--ease) allow-discrete, display .18s var(--ease) allow-discrete;
+  }
+  .tp-compare-dialog[open] { opacity: 1; transform: none; }
+  .tp-compare-dialog::backdrop {
+    opacity: 0;
+    transition: opacity .18s var(--ease), overlay .18s var(--ease) allow-discrete, display .18s var(--ease) allow-discrete;
+  }
+  .tp-compare-dialog[open]::backdrop { opacity: 1; }
+  @starting-style {
+    .tp-compare-dialog[open] { opacity: 0; transform: translateY(10px) scale(.98); }
+    .tp-compare-dialog[open]::backdrop { opacity: 0; }
+  }
+}
+
+.tp-compare-dialog-inner { position: relative; padding: 28px; overflow-y: auto; max-height: 86vh; }
+.tp-compare-dialog-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+  z-index: 1;
+  transition: border-color .14s var(--ease), color .14s var(--ease), background .14s var(--ease);
+}
+.tp-compare-dialog-close svg { width: 16px; height: 16px; }
+.tp-compare-dialog-close:hover { border-color: var(--indigo-400); color: var(--indigo-700); background: var(--indigo-50); }
 
 /* ──────────────────────────────────────────── ESTIMATOR (/cost) */
 .co-head { padding: 30px 0 22px; max-width: 46em; }
