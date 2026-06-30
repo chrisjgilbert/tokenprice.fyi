@@ -36,6 +36,13 @@ sends traffic away and is undifferentiated.
 
 ### What we are NOT doing
 
+- **Not auto-posting individual price moves.** Per-move posting off the daily
+  sync risks a noisy, unfollowable feed, and any move big enough to be worth a
+  post will surface through the curated `MarketEvent` path (P1) anyway — already
+  filtered, human-reviewed, and in our voice. Let the events do the work; don't
+  double up with a raw move firehose. (A deliberately low-frequency weekly
+  *roundup* of movement is a separate, deferred idea — see P3 — and is not the
+  same as posting each move as it lands.)
 - Not relinking the raw `NewsItem` firehose headline-by-headline
   (`NewsDigestJob` batches up to 48/day to Slack — that volume on social reads as
   spam, and unreviewed Haiku classifications occasionally surface junk under our
@@ -134,45 +141,54 @@ path a silent no-op (CI green with no secrets).
 
 ---
 
-## P2 — Auto-post price moves and new launches from the daily sync
+## P2 — Auto-post new model launches from the daily sync
 
-**Why.** Price moves are the flagship wedge content — only we can post "X dropped
-33% today, here's the history." `OpenRouter::SyncDigest` already assembles the
-exact records (`RepricedRecord` with old→new input/output and % change;
-`CreatedRecord` with launch price), so this is formatting + a job hook, not new
-detection.
+**Why.** A new model appearing is a clean, low-noise thing to post and it isn't
+reliably captured elsewhere — a launch doesn't necessarily generate a
+`MarketEvent`, so without this it goes unannounced. `OpenRouter::SyncDigest`
+already assembles the `CreatedRecord` (name, provider, launch input/output
+price), so this is formatting + a job hook, not new detection.
+
+Note: **price moves are deliberately excluded** (see "What we are NOT doing").
+A move worth a post surfaces through the curated `MarketEvent` path in P1;
+posting each sync-detected reprice would be noise. P2 is launches only.
 
 **Files.**
 - `app/models/open_router/sync_digest.rb` — add `to_bluesky` / `to_mastodon` (or
-  a `social_posts` method returning per-event strings). Reuse the same
+  a `social_posts` method) that formats the **created** records only. Reuse the
   per-record data it already formats for Slack.
 - `app/jobs/open_router_sync_job.rb` — after the existing Slack call, post the
   social variants.
 - Idempotency: the sync is append-only and runs once daily, so a per-run guard is
-  usually enough; if finer control is wanted, stamp the `PricePoint` /`AiModel`
-  (e.g. `announced_at` on the price point) rather than re-deriving "is this new".
+  usually enough; if finer control is wanted, stamp the new `AiModel`
+  (e.g. `announced_at`) rather than re-deriving "is this new".
 
 **Steps.**
-1. **Set a noise threshold.** A busy sync day can reprice many models; posting
-   each is chatty. Options (pick one, make it config): post only moves ≥ N%
-   absolute change; always post launches; roll the rest into the weekly digest
-   (P3). Recommend: launches always, moves ≥ ~5%, remainder → weekly.
-2. Format per-event in voice, one post per significant event, each linking the
-   model page. Use `AiModel#latest_price_move` / `price_change_over` for the
-   delta phrasing.
-3. `log()` what was filtered out so a quiet day isn't mistaken for a broken job.
+1. **Filter to models worth announcing.** OpenRouter's catalogue is large and a
+   single sync can create many obscure models; auto-posting every `:created`
+   record would be its own noise problem. Gate to notable launches — e.g.
+   `tier: "frontier"` (and/or a curated provider allowlist), not the long tail.
+   Make the gate config so it's tunable without a deploy.
+2. Format per launch in voice, one post each, linking the model page:
+   > New: Claude Opus 4.8 (Anthropic) — $5/M in, $25/M out, 200K context.
+   > tokenprice.fyi/models/claude-opus-4-8
+3. `log()` how many launches were created vs. posted vs. filtered, so a quiet day
+   isn't mistaken for a broken job.
 
-**Done when.** A real sync that includes a launch and a ≥-threshold reprice
-produces one well-formed post per event on both platforms, sub-threshold moves
-are suppressed (and logged), and nothing double-posts across consecutive runs.
+**Done when.** A real sync that creates a notable model produces one well-formed
+launch post on both platforms, long-tail/obscure creations are filtered (and the
+counts logged), and nothing double-posts across consecutive runs.
 
 ---
 
 ## P3 — Weekly "biggest movers" digest
 
-**Why.** A low-frequency roundup is more shareable than per-move posts, keeps the
-account active in slow weeks, and reinforces "we track everything." It's also the
-home for the sub-threshold moves P2 suppresses.
+**Why.** Since we deliberately don't post individual price moves (P2), this is
+the one place price *movement* surfaces — as a deliberately low-frequency,
+curated roundup rather than a per-move firehose. It's more shareable than
+real-time move posts, keeps the account active in slow weeks, and reinforces "we
+track everything." Deferred relative to P1/P2, but it's the sanctioned home for
+the wedge content if we want movement on the feed.
 
 **Files.**
 - New `app/models/price_digest.rb` (weekly read-model over `PricePoint` history —
@@ -208,16 +224,19 @@ links, runs on schedule, and no-ops cleanly on a week with no changes.
 
 ## Suggested order of execution
 
+**P1 and P2 are the current scope.** P3/P4 are recorded for later.
+
 | # | Task | Effort | Payoff |
 |---|------|--------|--------|
-| 1 | P1 transports + publish market events | Med | End-to-end posting on our best content |
-| 2 | P2 price moves + launches from sync | Med | Flagship wedge content, automated |
-| 3 | P3 weekly biggest-movers digest | Low | Cadence + home for small moves |
-| 4 | P4 on-this-day / news roundup / cards | Low–Med | Fill, polish, reach |
+| 1 | P1 transports + publish market events | Med | End-to-end posting on our best, human-gated content |
+| 2 | P2 new launches from sync | Med | Announces models nothing else captures, low noise |
+| 3 | P3 weekly movers digest | Low | *(deferred)* sanctioned, low-noise home for price movement |
+| 4 | P4 on-this-day / news roundup / cards | Low–Med | *(deferred)* fill, polish, reach |
 
-Highest single leverage: **P2 price moves** (the content nobody else can post).
-Cheapest path to a working pipeline: **P1** (one human-gated trigger, both
-clients exercised end to end).
+Build P1 first — one human-gated trigger that exercises both clients end to end —
+then P2 on top of the same transports. Price moves stay off the feed by design;
+if movement ever needs a presence, it comes back as the P3 weekly roundup, not
+per-move posts.
 
 ## Guardrails
 

@@ -234,9 +234,10 @@ leave the actual posting to the owner (don't post to external platforms without
 explicit go-ahead).
 
 > **Automated social presence** (BlueSky + Mastodon) gets its own plan:
-> `docs/SOCIAL_PRESENCE_PLAN.md`. It posts the pricing events the app already
-> detects (price moves, launches, published market events) by adding thin `lib/`
-> transports modelled on `SlackNotifier`. Same go-ahead rule applies.
+> `docs/SOCIAL_PRESENCE_PLAN.md`. It posts published market events and new model
+> launches by adding thin `lib/` transports modelled on `SlackNotifier`
+> (individual price moves are deliberately kept off the feed as noise). Same
+> go-ahead rule applies.
 
 ### T3.1 — Show HN, framed on the wedge
 
