@@ -338,7 +338,7 @@
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
 <% if @all_events %>
   <%
-    recent_events = hero_events(@all_events, kinds: %w[market launch])
+    recent_events = hero_events(@all_events)
     primary_event = recent_events[0]
     secondary_event = recent_events[1]
   %>

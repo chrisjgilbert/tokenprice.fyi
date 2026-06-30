@@ -52,13 +52,10 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
-  # The hero's "Latest events" slice. An optional `kinds:` list pre-filters the
-  # event pool so only matching kinds are considered. Without `kinds:` all
-  # kinds are eligible. Diversity still applies: one per kind, then fill
-  # remaining slots with the most-recent of any kind.
-  def hero_events(events, count: 2, kinds: nil)
-    candidates = kinds ? events.select { |e| kinds.include?(e.kind) } : events
-    newest_first = candidates.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
+  # The hero's "Latest events" slice: one per kind, then fill remaining slots
+  # with the most-recent of any kind.
+  def hero_events(events, count: 2)
+    newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
     picked = []
     newest_first.each do |e|
       next if picked.any? { |p| p.kind == e.kind }
