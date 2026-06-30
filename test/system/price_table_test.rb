@@ -47,12 +47,16 @@ class PriceTableTest < ApplicationSystemTestCase
     visit root_path
 
     fill_in "q", with: "deepseek"
-    assert_no_text "Claude Opus 4.8"
+    within "#models" do
+      assert_no_text "Claude Opus 4.8"
+    end
 
     click_on "Clear filters"
 
-    assert_text "Claude Opus 4.8"
-    assert_text "DeepSeek V4 Pro"
+    within "#models" do
+      assert_text "Claude Opus 4.8"
+      assert_text "DeepSeek V4 Pro"
+    end
     assert_field "q", with: ""
   end
 
