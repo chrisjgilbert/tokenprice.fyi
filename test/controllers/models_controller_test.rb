@@ -35,10 +35,10 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "updated daily"
   end
 
-  test "latest-changes widget is present and the market-event timeline strip is gone" do
+  test "latest-events widget is present and the market-event timeline strip is gone" do
     get root_url
     assert_response :success
-    assert_select ".hero-card-tag", /Latest changes/
+    assert_select ".hero-card-tag", /Latest events/
     # Dropped per audit #6: the thin, redundant market-event strip.
     assert_select ".hero-timeline", count: 0
     assert_select ".hero-card", text: /Recent activity/, count: 0
@@ -52,12 +52,14 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
-  test "hero surfaces a price change among the latest events" do
+  test "hero shows only market events and launches — no reprice chips" do
     get root_url
     assert_response :success
-    # The DeepSeek 75% cut (2026-05-31) is one of the two most recent events.
-    assert_select ".hero-card .hero-card-kind-chip.reprice", /Price change/
-    assert_select ".hero-card", /DeepSeek V4 Pro repriced/
+    # The hero card now focuses on market events and model releases; price changes
+    # moved to the ticker banner. No reprice chips should appear in the card.
+    assert_select ".hero-card .hero-card-kind-chip.reprice", count: 0
+    # At least one launch or market chip should be present.
+    assert_select ".hero-card .hero-card-kind-chip.launch, .hero-card .hero-card-kind-chip.market"
   end
 
   test "the hero (and its price-change feed) is skipped on Turbo Frame refreshes" do

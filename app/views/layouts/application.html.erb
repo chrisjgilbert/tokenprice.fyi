@@ -60,7 +60,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900" data-controller="mobile-nav">
+  <body class="min-h-screen bg-slate-50 text-slate-900<%= " has-ticker" if content_for?(:price_ticker) %>" data-controller="mobile-nav">
     <nav class="tp-nav">
       <div class="tp-nav-inner">
         <div class="tp-brand-group">
@@ -71,7 +71,7 @@
         </div>
         <div class="tp-nav-links">
           <% primary_nav_items.each do |label, path| %>
-            <%= nav_link label, path, active: current_page?(path) %>
+            <%= nav_link label, path, active: (label == "Events" ? events_active? : current_page?(path)) %>
           <% end %>
           <%# Learn dropdown groups the explainer pages. Stimulus toggles it open;
               on mobile it's replaced by the drawer's Learn section. %>
@@ -109,7 +109,7 @@
     <div class="tp-m-panel" id="tp-mobile-menu" data-mobile-nav-target="panel">
       <nav class="tp-m-links" aria-label="Primary">
         <% primary_nav_items.each do |label, path| %>
-          <%= mobile_nav_link label, path, active: current_page?(path) %>
+          <%= mobile_nav_link label, path, active: (label == "Events" ? events_active? : current_page?(path)) %>
         <% end %>
         <div class="tp-m-section">
           <span class="tp-m-eyebrow">Learn</span>
@@ -142,5 +142,6 @@
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
+    <%= yield :price_ticker %>
   </body>
 </html>

@@ -160,13 +160,22 @@ module ApplicationHelper
 
   # The single source of truth for the nav, shared by the desktop bar and the
   # mobile drawer so the two can't drift. Each item is [label, path].
+  # Events defaults to the market filter since that's the most editorial content;
+  # the "All" tab on the events page still exposes the full timeline.
   def primary_nav_items
     [
       [ "Models", root_path ],
       [ "Compare", compare_path ],
       [ "Guide", guide_path ],
-      [ "Events", events_path ]
+      [ "Events", events_path(kind: "market") ]
     ]
+  end
+
+  # True when the current page is anywhere in the events section, regardless of
+  # which kind filter is active. Used by the nav so the Events link stays lit on
+  # all /events?kind=* views, not just the default market one.
+  def events_active?
+    request.path == events_path
   end
 
   def learn_nav_items
