@@ -172,11 +172,10 @@ module ApplicationHelper
   def learn_nav_items
     [
       [ "All explainers", learn_path ],
-      [ "What a feature is made of", learn_anatomy_path ],
       [ "How pricing works", how_pricing_works_path ],
-      [ "Reasoning tokens", learn_reasoning_path ],
       [ "What drives feature cost", learn_feature_costs_path ],
-      [ "Cost-cutting strategies", learn_cost_cutting_path ]
+      [ "Cost-cutting strategies", learn_cost_cutting_path ],
+      [ "Reasoning tokens", learn_reasoning_path ]
     ]
   end
 

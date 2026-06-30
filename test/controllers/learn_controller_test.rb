@@ -1,15 +1,15 @@
 require "test_helper"
 
 class LearnControllerTest < ActionDispatch::IntegrationTest
-  test "the learn index is a lean directory of the five real explainers" do
+  test "the learn index is a lean directory of the four real explainers" do
     get learn_url
     assert_response :success
-    # Links to each of the five built explainers, including the anatomy on-ramp.
-    assert_select "a[href=?]", learn_anatomy_path
+    # Links to each of the four built explainers; anatomy was removed.
     assert_select "a[href=?]", how_pricing_works_path
     assert_select "a[href=?]", learn_reasoning_path
     assert_select "a[href=?]", learn_feature_costs_path
     assert_select "a[href=?]", learn_cost_cutting_path
+    assert_no_match(%r{href="/learn/anatomy"}, response.body)
     # The standalone /cost estimator was removed; no dead reference remains.
     assert_select ".led-cta", false
     assert_no_match(%r{href="/cost(\?[^"]*)?"}, response.body)
@@ -83,7 +83,7 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select ".lw", { minimum: 1 }, "expected the live io_ratio widget on the reasoning explainer"
     assert_match(/prices today/, response.body)
 
-    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url, learn_anatomy_url ].each do |url|
+    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url ].each do |url|
       get url
       assert_response :success
       assert_select ".lw", false, "the io_ratio widget should be gone from #{url}"
@@ -122,52 +122,6 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select "article.hp a[href=?]", how_pricing_works_path
     assert_select "article.hp a[href=?]", learn_cost_cutting_path
     assert_no_dead_cost_cta
-  end
-
-  test "the anatomy explainer renders with the locked H1 and closing callout" do
-    get learn_anatomy_url
-    assert_response :success
-    assert_select "h1", /What an AI feature is actually made of/
-    # The closing callout is locked verbatim — the canonical paired terms.
-    assert_match(
-      "The cost-driver step and the capable-model step are usually different.",
-      response.body
-    )
-    # No retired euphemisms.
-    assert_no_match(/expensive step/, response.body)
-    assert_no_match(/smart step/, response.body)
-  end
-
-  test "the anatomy explainer carries live data: a cheapest-frontier example" do
-    get learn_anatomy_url
-    assert_response :success
-    # A live frontier-model example price (mono): the cheapest frontier model's rate.
-    fm = AiModel.listed.where(tier: "frontier").select(&:current_input).min_by(&:current_input)
-    assert fm, "expected a priced frontier model in fixtures"
-    assert_match(/#{Regexp.escape(fm.name)}/, response.body)
-    assert_select "span.num"
-  end
-
-  test "the anatomy explainer renders worked call-chains from FeaturePattern, agent loop included" do
-    get learn_anatomy_url
-    assert_response :success
-    # Roles come straight off the FeaturePattern source, not a second copy.
-    rag = FeaturePattern.find("rag")
-    rag.steps.each { |s| assert_match(/#{Regexp.escape(s.role)}/, response.body) }
-    agentic = FeaturePattern.find("agentic")
-    agentic.steps.each { |s| assert_match(/#{Regexp.escape(s.role)}/, response.body) }
-    # The real agent LOOP must show (the looping subagent step), not a mislabel.
-    loop_step = agentic.steps.find(&:loops?)
-    assert loop_step, "expected the agentic pattern to have a looping step"
-    assert_match(/#{Regexp.escape(loop_step.role)}/, response.body)
-    assert_match(/loops|repeats/, response.body)
-  end
-
-  test "the anatomy explainer is the on-ramp to feature_costs and the guide, not a replacement" do
-    get learn_anatomy_url
-    assert_response :success
-    assert_select "a[href=?]", learn_feature_costs_path
-    assert_select "a[href=?]", guide_path
   end
 
   private

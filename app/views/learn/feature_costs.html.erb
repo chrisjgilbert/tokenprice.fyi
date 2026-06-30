@@ -17,7 +17,30 @@
 <% end %>
 <%= render "shared/explainer_styles" %>
 
-<article class="hp">
+<style>
+  .fc-picker {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; margin: 24px 0;
+    background: var(--color-slate-50); border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-md);
+  }
+  .fc-picker-label { font-size: 13px; font-weight: 500; color: var(--color-slate-600); white-space: nowrap; }
+  .fc-picker-select {
+    font-size: 13px; padding: 5px 8px; cursor: pointer;
+    border: 1px solid var(--color-slate-300); border-radius: var(--radius-sm);
+    background: #fff; color: var(--color-slate-800);
+  }
+</style>
+
+<% models_json = @picker_models.map { |m|
+  { slug: m.slug, name: "#{m.provider_name} #{m.name}", input: m.input, output: m.output }
+}.to_json %>
+
+<article class="hp"
+         data-controller="feature-costs"
+         data-feature-costs-models-value="<%= models_json %>"
+         data-feature-costs-small-ref-input-value="0.1"
+         data-feature-costs-default-slug-value="<%= @default_picker&.slug %>">
   <p class="hp-meta"><%= link_to "Learn", learn_path %> › Feature cost shapes · June 2026</p>
   <h1>What drives the cost of common features</h1>
   <p class="hp-subtitle">Different features cost money in different shapes — a long input, a big output, a tool-call loop that repeats. The shape tells you which lever moves the bill, before you pick a model.</p>
@@ -25,6 +48,27 @@
   <p>The sticker price, input and output per million tokens, is the same for every feature you build. What changes is the <strong>shape of the workload</strong>: how much you send, how much comes back, how often the same context repeats, and whether the task is hard enough to need a capable model. Two features on the same model can differ by 100× in cost per call purely because of shape.</p>
 
   <p>Five common shapes. For each: a worked cost breakdown, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. This is what each feature costs; for a starting model per step, the guide is the decision counterpart. Tier calls are <strong>a cost comparison, not a quality verdict</strong>. Validate against your own eval before you ship.</p>
+
+  <% if @picker_models.any? %>
+    <div class="fc-picker">
+      <span class="fc-picker-label">Model for calculations:</span>
+      <select class="fc-picker-select"
+              data-feature-costs-target="select"
+              data-action="change->feature-costs#refresh">
+        <% %w[frontier mid small].each do |tier| %>
+          <% tier_models = @picker_models.select { |m| m.tier == tier } %>
+          <% next if tier_models.empty? %>
+          <optgroup label="<%= tier.capitalize %>">
+            <% tier_models.each do |m| %>
+              <option value="<%= m.slug %>" <%= "selected" if m.slug == @default_picker&.slug %>>
+                <%= m.provider_name %> <%= m.name %>
+              </option>
+            <% end %>
+          </optgroup>
+        <% end %>
+      </select>
+    </div>
+  <% end %>
 
   <hr>
   <h2 id="rag">RAG / question-over-documents</h2>
@@ -38,11 +82,29 @@
     <div class="hp-calc-line"><span class="hp-calc-label">Total input</span><span class="hp-calc-value">4,550 tokens</span></div>
     <div class="hp-calc-line"><span class="hp-calc-label">Answer</span><span class="hp-calc-value">250 tokens (output)</span></div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Input cost <span class="hp-calc-op">4,550 × $1.00 / 1M</span></span><span class="hp-calc-value">$0.00455</span></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Output cost <span class="hp-calc-op">250 × $5.00 / 1M</span></span><span class="hp-calc-value">$0.00125</span></div>
+    <div class="hp-calc-line"
+         data-feature-costs-target="costLine"
+         data-tokens="4550"
+         data-rate-type="input">
+      <span class="hp-calc-label">Input cost <span class="hp-calc-op" data-fc-formula>4,550 × $1.00 / 1M</span></span>
+      <span class="hp-calc-value" data-fc-amount>$0.00455</span>
+    </div>
+    <div class="hp-calc-line"
+         data-feature-costs-target="costLine"
+         data-tokens="250"
+         data-rate-type="output">
+      <span class="hp-calc-label">Output cost <span class="hp-calc-op" data-fc-formula>250 × $5.00 / 1M</span></span>
+      <span class="hp-calc-value" data-fc-amount>$0.00125</span>
+    </div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Total per query</span><span class="hp-calc-value">$0.0058</span></div>
-    <div class="hp-calc-note">Input is ~<span class="num">78%</span> of the bill. Assumes a mid-tier model at $1 in / $5 out; your numbers will differ — this is the shape, not a quote.</div>
+    <div class="hp-calc-line hp-calc-total"
+         data-feature-costs-target="totalLine"
+         data-input-tokens="4550"
+         data-output-tokens="250">
+      <span class="hp-calc-label">Total per query</span>
+      <span class="hp-calc-value" data-fc-amount>$0.0058</span>
+    </div>
+    <div class="hp-calc-note">Input is ~<span class="num">78%</span> of the bill. Rates reflect the model selected above.</div>
   </div>
   <p><strong>Where the money concentrates:</strong> context, by a wide margin. The single most effective lever is <strong>retrieval precision</strong> — sending three relevant documents instead of ten cuts input cost more than any model swap. If the system prompt and document set repeat across requests, <strong>cached input</strong> (typically <span class="num">50–90%</span> off) changes which model comes out cheapest. <strong>Tier that often suffices: mid.</strong> The retrieval carries the reasoning load, so a frontier model rarely earns its premium here.</p>
 
@@ -59,7 +121,13 @@
     <div class="hp-calc-line"><span class="hp-calc-label">Cumulative input (all 10 turns)</span><span class="hp-calc-value">~18,000 tokens</span></div>
     <div class="hp-calc-line"><span class="hp-calc-label">Cumulative output</span><span class="hp-calc-value">~1,500 tokens</span></div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Conversation cost <span class="hp-calc-op">@ $1 / $5 per 1M</span></span><span class="hp-calc-value">$0.0255</span></div>
+    <div class="hp-calc-line hp-calc-total"
+         data-feature-costs-target="totalLine"
+         data-input-tokens="18000"
+         data-output-tokens="1500">
+      <span class="hp-calc-label">Conversation cost <span class="hp-calc-op" data-fc-formula>@ $1 / $5 per 1M</span></span>
+      <span class="hp-calc-value" data-fc-amount>$0.0255</span>
+    </div>
     <div class="hp-calc-note">The same 10 turns with no history accumulation would cost a fraction of this. History is the meter — the late turns cost several times what the early ones did.</div>
   </div>
   <p><strong>Where the money concentrates:</strong> re-sent history. Cost grows roughly with the square of conversation length if you do nothing. The levers: <strong>cached input</strong> (the stable prefix of the transcript is highly cacheable — the single biggest win for chat), <strong>trimming or summarising</strong> old turns once they stop being relevant, and capping context length. <strong>Tier that often suffices: small to mid</strong> for general chat; reserve frontier for genuinely hard reasoning threads.</p>
@@ -68,15 +136,26 @@
   <h2 id="classification">Classification and extraction</h2>
   <p>A document in, a label or a small JSON object out. Moderation, routing, tagging, pulling structured fields from messy text. The output is tiny — sometimes a single token — so the usual input/output balance collapses: <strong>output is a rounding error and model choice dominates everything.</strong></p>
   <div class="hp-calc">
-    <div class="hp-calc-title">Same classification call — small vs frontier tier</div>
+    <div class="hp-calc-title">Same classification call — reference small vs selected model</div>
     <div class="hp-calc-line"><span class="hp-calc-label">Document in</span><span class="hp-calc-value">800 tokens</span></div>
     <div class="hp-calc-line"><span class="hp-calc-label">Label out</span><span class="hp-calc-value">3 tokens</span></div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Small tier <span class="hp-calc-op">803 tok @ ~$0.10 in</span></span><span class="hp-calc-value">~$0.00008</span></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Frontier tier <span class="hp-calc-op">803 tok @ ~$3.00 in</span></span><span class="hp-calc-value">~$0.00241</span></div>
+    <div class="hp-calc-line">
+      <span class="hp-calc-label">Small tier ref <span class="hp-calc-op">803 tok @ ~$0.10 in</span></span>
+      <span class="hp-calc-value">~$0.00008</span>
+    </div>
+    <div class="hp-calc-line"
+         data-feature-costs-target="classificationSelected"
+         data-tokens="803">
+      <span class="hp-calc-label">Selected model <span class="hp-calc-op" data-fc-formula>803 tok @ $1.00 in</span></span>
+      <span class="hp-calc-value" data-fc-amount>~$0.00080</span>
+    </div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Cost difference</span><span class="hp-calc-value">~30×</span></div>
-    <div class="hp-calc-note">Output is so small it barely registers. At 1M documents/day that's the difference between ~$80 and ~$2,400 — every day — for the same task.</div>
+    <div class="hp-calc-line hp-calc-total">
+      <span class="hp-calc-label">Cost difference</span>
+      <span class="hp-calc-value" data-feature-costs-target="multiplier">~10×</span>
+    </div>
+    <div class="hp-calc-note">At 1M documents/day, the difference between a small reference and a capable model compounds into a meaningful daily cost gap — for the same task.</div>
   </div>
   <p><strong>Where the money concentrates:</strong> the per-token input rate, multiplied by volume. Because output is negligible, the only lever that moves the bill is <strong>tier choice</strong> — the classic shape where a small model is purpose-built for the job. Watch the real metric, though: <strong>cost per accepted result, not cost per call</strong>. A cheap model that mislabels and forces human review isn't cheap. <strong>Tier that often suffices: small.</strong> These jobs are also rarely latency-sensitive, making them prime candidates for <strong>batch pricing</strong> on top.</p>
 
@@ -88,11 +167,29 @@
     <div class="hp-calc-line"><span class="hp-calc-label">Document in</span><span class="hp-calc-value">22,000 tokens</span></div>
     <div class="hp-calc-line"><span class="hp-calc-label">Summary out</span><span class="hp-calc-value">600 tokens</span></div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Input cost <span class="hp-calc-op">22,000 × $1.00 / 1M</span></span><span class="hp-calc-value">$0.022</span></div>
-    <div class="hp-calc-line"><span class="hp-calc-label">Output cost <span class="hp-calc-op">600 × $5.00 / 1M</span></span><span class="hp-calc-value">$0.003</span></div>
+    <div class="hp-calc-line"
+         data-feature-costs-target="costLine"
+         data-tokens="22000"
+         data-rate-type="input">
+      <span class="hp-calc-label">Input cost <span class="hp-calc-op" data-fc-formula>22,000 × $1.00 / 1M</span></span>
+      <span class="hp-calc-value" data-fc-amount>$0.022</span>
+    </div>
+    <div class="hp-calc-line"
+         data-feature-costs-target="costLine"
+         data-tokens="600"
+         data-rate-type="output">
+      <span class="hp-calc-label">Output cost <span class="hp-calc-op" data-fc-formula>600 × $5.00 / 1M</span></span>
+      <span class="hp-calc-value" data-fc-amount>$0.003</span>
+    </div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Total per summary</span><span class="hp-calc-value">$0.025</span></div>
-    <div class="hp-calc-note">Input is ~<span class="num">88%</span> of the bill. Move to a frontier model at $3 in and the same job costs ~$0.069 — the document gets repriced page by page.</div>
+    <div class="hp-calc-line hp-calc-total"
+         data-feature-costs-target="totalLine"
+         data-input-tokens="22000"
+         data-output-tokens="600">
+      <span class="hp-calc-label">Total per summary</span>
+      <span class="hp-calc-value" data-fc-amount>$0.025</span>
+    </div>
+    <div class="hp-calc-note">Input is ~<span class="num">88%</span> of the bill. Moving to a higher input rate reprices every page of the document.</div>
   </div>
   <p><strong>Where the money concentrates:</strong> the input meter, scaled by document length. The dominant lever is <strong>tier choice on input price</strong>, followed by <strong>not over-sending</strong> — strip boilerplate, headers, and repeated front-matter before the document goes in. Cheap long-context models have made routine summarisation a small-tier task; pay for mid or above only when missing a clause buried mid-document actually carries a cost. <strong>Tier that often suffices: small to mid.</strong></p>
 
@@ -106,8 +203,14 @@
     <div class="hp-calc-line"><span class="hp-calc-label">Cumulative input across steps</span><span class="hp-calc-value">~360,000 tokens</span></div>
     <div class="hp-calc-line"><span class="hp-calc-label">Output + reasoning across steps</span><span class="hp-calc-value">~30,000 tokens</span></div>
     <div class="hp-calc-sep"></div>
-    <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Cost per task (frontier, cached)</span><span class="hp-calc-value">~$0.30–$1.50</span></div>
-    <div class="hp-calc-note">The same context is re-sent on every step, so most of the input is cache reads — cached-input price matters more here than the headline input rate. Without caching, the same task can cost several times as much.</div>
+    <div class="hp-calc-line hp-calc-total"
+         data-feature-costs-target="totalLine"
+         data-input-tokens="360000"
+         data-output-tokens="30000">
+      <span class="hp-calc-label">Cost per task (uncached)</span>
+      <span class="hp-calc-value" data-fc-amount>$0.51</span>
+    </div>
+    <div class="hp-calc-note">The same context is re-sent on every step, so most of the input is cache reads — cached-input price matters more here than the headline input rate. With typical caching the cost is significantly lower.</div>
   </div>
   <p><strong>Where the money concentrates:</strong> re-sent context, mostly served from cache, plus reasoning output. The levers, in order: <strong>cached input</strong> (the dominant line item — two frontier models with the same sticker can differ sharply once caching enters the maths), <strong>reasoning-effort control</strong>, and <strong>delegating sub-tasks to a cheaper tier</strong>. <strong>Tier that often suffices: frontier — for the main loop.</strong> This is the one shape where compounding per-step errors usually justify frontier prices: a model 95% as good per step is far less than 95% as good after thirty steps.</p>
 
