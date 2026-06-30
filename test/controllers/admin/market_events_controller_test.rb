@@ -88,6 +88,13 @@ class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "published", @draft.reload.status
   end
 
+  test "PATCH publish announces the event and stamps announced_at" do
+    assert_nil @draft.announced_at
+    patch publish_admin_market_event_path(@draft)
+    assert_redirected_to admin_market_events_path
+    assert_not_nil @draft.reload.announced_at
+  end
+
   # --- destroy ---------------------------------------------------------------
 
   test "DELETE destroy removes the event" do

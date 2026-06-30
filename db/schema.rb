@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_30_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -41,6 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_29_120000) do
   end
 
   create_table "market_events", force: :cascade do |t|
+    t.datetime "announced_at"
     t.datetime "created_at", null: false
     t.date "event_date", null: false
     t.string "kind", default: "market", null: false
