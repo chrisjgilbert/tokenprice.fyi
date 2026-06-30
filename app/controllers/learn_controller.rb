@@ -20,10 +20,14 @@ class LearnController < ApplicationController
   end
 
   def feature_costs
+    @catalog_last_modified = PriceCatalog.last_modified
+    return if catalog_fresh?(etag: [ :learn_feature_costs ], last_modified: @catalog_last_modified)
+
     @catalog = PriceCatalog.models
     @picker_models = @catalog.select { |m| m.input && m.output }
                              .sort_by { |m| [ m.provider_name, m.name ] }
-    @default_picker = PriceCatalog.cheapest(tier: "mid", among: @catalog) || @picker_models.first
+    @default_picker = PriceCatalog.cheapest(tier: "mid", among: @picker_models) || @picker_models.first
+    @small_ref_input = PriceCatalog.cheapest(tier: "small", among: @catalog)&.input || 0.1
   end
 
   def cost_cutting

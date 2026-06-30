@@ -1,25 +1,21 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drives the interactive model picker on /learn/feature-costs. When the user
-// selects a model, every cost receipt on the page recalculates using that
-// model's live input/output rates. The page is fully readable without JS —
-// the initial numbers are rendered server-side with a sensible default model.
 export default class extends Controller {
   static targets = [
-    "select",            // the <select> model picker
-    "costLine",          // a single cost line (tokens × rate); needs data-tokens + data-rate-type
-    "totalLine",         // a total line (sum of input + output costs); needs data-input-tokens + data-output-tokens
-    "classificationSelected", // the selected-model row in the classification comparison receipt
-    "multiplier"         // the "~Nx" cost-difference span in the classification comparison
+    "select",
+    "costLine",
+    "totalLine",
+    "classificationSelected",
+    "multiplier"
   ]
   static values = {
-    models: Array,       // [{slug, name, input, output}, …]
-    smallRefInput: Number, // hardcoded small-tier reference rate for the classification comparison
-    defaultSlug: String  // pre-selected model slug
+    models: Array,
+    smallRefInput: Number,
+    defaultSlug: String
   }
 
   connect() {
-    if (this.hasDefaultSlugValue && this.defaultSlugValue) {
+    if (this.hasSelectTarget && this.hasDefaultSlugValue && this.defaultSlugValue) {
       this.selectTarget.value = this.defaultSlugValue
     }
     this.refresh()
@@ -71,7 +67,6 @@ export default class extends Controller {
     return this.modelsValue.find(m => m.slug === slug) || this.modelsValue[0]
   }
 
-  // Matches PriceFormat: dollar+ gets 2 dp; sub-dollar gets up to 4 dp trimmed.
   fmtRate(rate) {
     if (rate === null || rate === undefined) return "—"
     const r = parseFloat(rate)
