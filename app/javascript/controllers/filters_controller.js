@@ -42,9 +42,7 @@ export default class extends Controller {
 
     // No boxes checked means "all providers" (the form omits an empty filter),
     // so the chip is only narrowed for a proper, non-empty subset.
-    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
-    const checkedCount = providers.filter((input) => input.checked).length
-    const narrowed = checkedCount > 0 && checkedCount < providers.length
+    const { checkedCount, allChecked, narrowed } = this._providerCheckboxState()
 
     const badge = this.element.querySelector('[data-facet-chip-count="provider"]')
     if (badge) {
@@ -53,7 +51,6 @@ export default class extends Controller {
       badge.closest(".tp-facet-chip")?.classList.toggle("is-active", narrowed)
     }
 
-    const allChecked = checkedCount === providers.length
     const selectAllButton = this.element.querySelector(".tp-facet-panel-action")
     if (selectAllButton) selectAllButton.textContent = allChecked ? "Clear all" : "Select all"
   }
@@ -62,10 +59,17 @@ export default class extends Controller {
   // of them when every box is already checked — mirroring the button's own
   // toggling label ("Select all" / "Clear all") computed in syncChips.
   toggleAllProviders() {
-    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
-    const allChecked = providers.every((input) => input.checked)
+    const { providers, allChecked } = this._providerCheckboxState()
     providers.forEach((input) => { input.checked = !allChecked })
     this.submit()
+  }
+
+  _providerCheckboxState() {
+    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
+    const checkedCount = providers.filter((input) => input.checked).length
+    const allChecked = checkedCount === providers.length
+    const narrowed = checkedCount > 0 && !allChecked
+    return { providers, checkedCount, allChecked, narrowed }
   }
 
   search(event) {

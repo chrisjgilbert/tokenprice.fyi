@@ -680,29 +680,13 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
   border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); z-index: -1;
 }
 
-/* Filter group: the pills plus an info button that opens a legend popover.
-   min/max-width let a long pill row (modality) shrink and wrap on a narrow
-   screen instead of overflowing the card and pushing the info button off it. */
+/* Filter group: the pills plus a dropdown chip; min/max-width let a long pill
+   row (modality) shrink and wrap on a narrow screen instead of overflowing
+   the card. */
 .tp-filter-group { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
-.tp-info {
-  display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none;
-  border-radius: 50%; border: 1px solid var(--color-slate-200); background: #fff;
-  color: var(--color-slate-400); cursor: pointer;
-  transition: color .16s var(--ease-default), border-color .16s var(--ease-default);
-}
-.tp-info:hover { color: var(--color-indigo-600); border-color: var(--color-indigo-200); }
-.tp-info:focus-visible { outline: none; border-color: var(--color-indigo-400); box-shadow: 0 0 0 4px var(--color-indigo-100); }
 
-/* Legend uses the native Popover API: top-layer (so the filters card's overflow
-   can't clip it) with built-in light-dismiss. popover_controller.js sets
-   left/top from the invoker; we opt out of the UA centering it overrides. */
-.tp-legend {
-  position: fixed; margin: 0; inset: auto; z-index: 60;
-  width: 280px; max-width: calc(100vw - 16px);
-  padding: 14px 16px; background: #fff;
-  border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg); font-family: var(--font-sans);
-}
+/* Legend list — shared by the folded-in-panel legend (_facet.html.erb) the
+   dropdown panels render today. */
 .tp-legend-title {
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--color-slate-500); margin-bottom: 10px;
@@ -741,10 +725,7 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
    popover_controller) that carries the controls plus a folded-in legend. This
    used to be mobile-only (under 760px) with the pills flowing inline on
    desktop; the chip pattern is now universal, so these rules apply
-   unconditionally. The legend's own inline info button is redundant with the
-   in-panel legend now always being one click away, so it stays hidden. */
-.tp-filter-group .tp-info { display: none; }
-
+   unconditionally. */
 .tp-facet { position: relative; }
 
 .tp-facet-chip {

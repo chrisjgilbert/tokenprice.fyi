@@ -502,7 +502,8 @@
     a controller (and its selection state) mounted inside it. Spans the
     filters form, the table frame, the tray, and the compare dialog so
     selection survives filtering and the dialog can sit beside the tray. %>
-<div data-controller="compare-tray" data-compare-tray-compare-path-value="<%= compare_path %>">
+<div data-controller="compare-tray" data-compare-tray-compare-path-value="<%= compare_path %>"
+     data-action="turbo:frame-load@document->compare-tray#frameLoaded">
 
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
 <p class="tp-section-label mb-4">Price table</p>
@@ -531,7 +532,6 @@
         The facet is a dropdown-popover button at every viewport width. %>
     <%= render layout: "facet", locals: {
           name: "tier", label: "Tier", panel_id: "tier-panel", icon: :bolt,
-          legend_id: "tier-legend", legend_title: "Tiers",
           legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
       <div class="tp-pills" role="group" aria-label="Filter by tier">
         <% tier_pill_options.each do |label, value| %>
@@ -578,7 +578,6 @@
     <% if @modality_classes.size > 1 %>
       <%= render layout: "facet", locals: {
             name: "modality", label: "Modality", panel_id: "modality-panel", icon: :brackets,
-            legend_id: "modality-legend", legend_title: "Modality categories",
             legend_button: "What the modality categories mean",
             legend_entries: ModalityClass.legend_entries(@modality_classes) } do %>
         <div class="tp-pills" role="group" aria-label="Filter by modality">

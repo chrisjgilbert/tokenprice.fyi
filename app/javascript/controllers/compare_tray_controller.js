@@ -10,7 +10,8 @@ import { Controller } from "@hotwired/stimulus"
 // (and its selection state) mounted inside it. Per-row select buttons live
 // inside the frame and still get picked up automatically by Stimulus's
 // target/action discovery — only the row highlighting needs a manual
-// re-apply after a frame reload (see frameLoaded below).
+// re-apply after a frame reload, wired declaratively below (the same
+// turbo:frame-load@document pattern filters_controller#announce uses).
 export default class extends Controller {
   static targets = ["tray", "slot", "compareBtn", "dialog", "frame"]
   static values = {
@@ -18,20 +19,18 @@ export default class extends Controller {
     slugs: { type: Array, default: [] }
   }
 
-  connect() {
-    document.addEventListener("turbo:frame-load", this.frameLoaded)
-  }
-
-  disconnect() {
-    document.removeEventListener("turbo:frame-load", this.frameLoaded)
-  }
-
   // ── Selection ──────────────────────────────────────────────────────────────
 
   // data-action="click->compare-tray#toggle:stop" — the :stop suffix keeps
   // this from also firing the row's onclick navigation.
   toggle(event) {
-    const slug = event.currentTarget.dataset.slug
+    const btn = event.currentTarget
+    const slug = btn.dataset.slug
+    // Cache the row's display data now, while its row is guaranteed live —
+    // a selection survives filtering (by design), so the row backing it can
+    // disappear from the #models frame before the tray slot next re-renders.
+    this._cacheSlotData(slug, btn)
+
     const slugs = this.slugsValue.includes(slug)
       ? this.slugsValue.filter((s) => s !== slug)
       : [...this.slugsValue, slug].slice(-2) // FIFO cap of 2: drop the oldest
@@ -66,9 +65,10 @@ export default class extends Controller {
 
   // The table frame reloads wholesale on every filter/sort change, replacing
   // the row markup entirely — re-apply selected-state classes to the fresh
-  // rows so a selection survives filtering. Mirrors filters_controller.js's
-  // own turbo:frame-load guard.
-  frameLoaded = (event) => {
+  // rows so a selection survives filtering. Wired via
+  // data-action="turbo:frame-load@document->compare-tray#frameLoaded" on the
+  // controller element; mirrors filters_controller.js's own guard.
+  frameLoaded(event) {
     if (event.target.id !== "models") return
     this._syncRowState()
   }
@@ -101,35 +101,51 @@ export default class extends Controller {
     compareBtn.textContent = slugs.length < 2 ? "Pick one more" : "Compare"
   }
 
-  // Builds the tray slot's contents by cloning the matching row's own
-  // provider-square markup — the row's DOM is the single source of truth for
-  // model display data, so this never introduces a second copy of it.
+  // Caches a row's display data (provider square markup + name) the moment
+  // it's selected, keyed by slug — see toggle() for why this can't just be
+  // re-read from the live row when a tray slot renders.
+  _cacheSlotData(slug, btn) {
+    this._slotData ||= new Map()
+    const square = btn.closest("tr")?.querySelector(".tp-prov-sq")
+    this._slotData.set(slug, {
+      name: btn.dataset.name || slug,
+      providerName: btn.dataset.providerName || "",
+      squareHTML: square?.outerHTML
+    })
+  }
+
+  // Builds the tray slot's contents from the cached selection-time data —
+  // the row backing a still-selected slug may no longer be in the #models
+  // frame (filtering doesn't clear a selection), so the cache, not a live
+  // DOM lookup, is the single source of truth here.
   _buildSlotContent(slug) {
-    const btn = this.element.querySelector(`.tp-select-btn[data-slug="${slug}"]`)
+    const data = this._slotData?.get(slug) || { name: slug, providerName: "" }
     const wrap = document.createElement("span")
     wrap.className = "tp-tray-slot-content"
 
-    const square = btn?.closest("tr")?.querySelector(".tp-prov-sq")
-    if (square) wrap.append(square.cloneNode(true))
+    if (data.squareHTML) wrap.insertAdjacentHTML("beforeend", data.squareHTML)
 
     const info = document.createElement("span")
     info.className = "tp-tray-slot-info"
     const name = document.createElement("span")
     name.className = "tp-tray-slot-name"
-    name.textContent = btn?.dataset.name || slug
+    name.textContent = data.name
     const provider = document.createElement("span")
     provider.className = "tp-tray-slot-provider"
-    provider.textContent = btn?.dataset.providerName || ""
+    provider.textContent = data.providerName
     info.append(name, provider)
     wrap.append(info)
 
     const removeBtn = document.createElement("button")
     removeBtn.type = "button"
     removeBtn.className = "tp-tray-slot-remove"
-    removeBtn.setAttribute("aria-label", `Remove ${btn?.dataset.name || slug}`)
+    removeBtn.setAttribute("aria-label", `Remove ${data.name}`)
     removeBtn.dataset.slug = slug
     removeBtn.dataset.action = "click->compare-tray#remove"
-    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'
+    // Reuse the dialog close button's already-rendered close icon (icon(:close)
+    // in the view) rather than a second hardcoded copy of the same SVG.
+    const closeIcon = this.dialogTarget.querySelector(".tp-compare-dialog-close svg")
+    if (closeIcon) removeBtn.append(closeIcon.cloneNode(true))
     wrap.append(removeBtn)
 
     return wrap
@@ -138,7 +154,7 @@ export default class extends Controller {
   // ── Dialog ─────────────────────────────────────────────────────────────────
 
   openCompare() {
-    if (this.slugsValue.length < 2) return
+    if (this.slugsValue.length < 2 || this.dialogTarget.open) return
 
     const url = new URL(this.comparePathValue, window.location.origin)
     url.searchParams.set("a", this.slugsValue[0])

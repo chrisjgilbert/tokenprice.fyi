@@ -9,12 +9,12 @@
             close_on_change (optional, defaults true — a single-select facet
             closes its popover the instant a choice is made; a multi-select
             facet like provider must stay open so further boxes stay reachable),
-            legend_id, legend_title, legend_button, legend_entries (all
-            optional together — omit for a facet with no legend, e.g. provider).
+            legend_button, legend_entries (optional together — folds a legend
+            into the panel; omit for a facet with no legend, e.g. provider).
     Yields the control inputs (the pills/checkboxes). %>
 <div class="tp-filter-group tp-facet">
   <button type="button" class="tp-facet-chip" popovertarget="<%= panel_id %>"
-          aria-label="Filter by <%= name %>">
+          aria-label="Filter by <%= name %>" aria-haspopup="listbox" aria-expanded="false">
     <%= icon(local_assigns.fetch(:icon, name.to_sym), size: 16) %>
     <span class="tp-facet-chip-label"><%= label %></span>
     <% if local_assigns[:count_badge] %>
@@ -37,9 +37,4 @@
       </div>
     <% end %>
   </div>
-
-  <% if local_assigns[:legend_entries] %>
-    <%= render "filter_legend", id: legend_id, title: legend_title,
-          button_label: legend_button, entries: legend_entries %>
-  <% end %>
 </div>
