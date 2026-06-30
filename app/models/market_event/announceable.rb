@@ -1,5 +1,5 @@
 module MarketEvent::Announceable
   def announce
-    MarketEvent::Announcement.new(self).run
+    MarketEventAnnouncementJob.perform_later(self)
   end
 end

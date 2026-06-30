@@ -18,7 +18,7 @@ class MastodonClient
       return nil
     end
 
-    uri = URI.parse("#{instance_url}/api/v1/statuses")
+    uri = URI.parse("#{instance_url.chomp('/')}/api/v1/statuses")
     unless uri.scheme == "https"
       raise "MastodonClient: instance URL must be https, got #{uri.scheme.inspect}"
     end

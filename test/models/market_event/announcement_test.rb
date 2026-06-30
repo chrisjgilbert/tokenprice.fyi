@@ -2,9 +2,12 @@ require "test_helper"
 
 class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
   # minitest/mock's #stub is not loaded in this suite (see slack_notifier_test.rb).
-  # Intercept the social clients by defining a singleton .post that captures its
-  # text (or raises), then remove it in an ensure to restore the real method.
+  # Intercept the social client's real `.post` by capturing the original method,
+  # swapping in a singleton that records its text (or raises), then restoring the
+  # original in an ensure. Restoring (not removing) matters: `.post` is a real
+  # `def self.post`, so remove_method would delete it and leak across tests.
   def stub_post(client, capture: nil, raise_with: nil)
+    original = client.singleton_class.instance_method(:post)
     client.define_singleton_method(:post) do |text:|
       capture << text if capture
       raise raise_with if raise_with
@@ -13,7 +16,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     end
     yield
   ensure
-    client.singleton_class.send(:remove_method, :post)
+    client.singleton_class.define_method(:post, original)
   end
 
   def published_event
@@ -32,7 +35,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     posts = []
     stub_post(BlueskyClient, capture: posts) do
       stub_post(MastodonClient, capture: posts) do
-        event.announce
+        MarketEvent::Announcement.new(event).run
       end
     end
 
@@ -48,7 +51,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     posts = []
     stub_post(BlueskyClient, capture: posts) do
       stub_post(MastodonClient, capture: posts) do
-        event.announce
+        MarketEvent::Announcement.new(event).run
       end
     end
 
@@ -61,7 +64,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     posts = []
     stub_post(BlueskyClient, capture: posts) do
       stub_post(MastodonClient, capture: posts) do
-        event.announce
+        MarketEvent::Announcement.new(event).run
       end
     end
 
@@ -77,7 +80,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     assert_nothing_raised do
       stub_post(BlueskyClient, raise_with: RuntimeError.new("bsky down")) do
         stub_post(MastodonClient, capture: mastodon_posts) do
-          event.announce
+          MarketEvent::Announcement.new(event).run
         end
       end
     end
@@ -91,7 +94,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     posts = []
     stub_post(BlueskyClient, capture: posts) do
       stub_post(MastodonClient, capture: posts) do
-        event.announce
+        MarketEvent::Announcement.new(event).run
       end
     end
 
@@ -109,7 +112,7 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     posts = []
     stub_post(BlueskyClient, capture: posts) do
       stub_post(MastodonClient, capture: posts) do
-        event.announce
+        MarketEvent::Announcement.new(event).run
       end
     end
 
