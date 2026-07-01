@@ -57,13 +57,19 @@ module EventsHelper
   end
 
   # The hero's "Latest events" slice: one per kind, then fill remaining slots
-  # with the most-recent of any kind. Recency leads; launch_tier_weight only
-  # breaks ties between launches on the same date (frontier > mid > small),
-  # so a same-day flagship release wins over a same-day minor one without
-  # letting an older frontier launch bury a genuinely newer story. Non-launch
-  # kinds are unaffected (launch_tier_weight is 0 for them).
+  # with the most-recent of any kind. Recency leads; launch_featured_weight and
+  # launch_tier_weight only break ties between launches on the same date.
+  #
+  # Two unrelated models launching the same day is common (see e.g. Sonnet 5
+  # and Nano Banana 2 Lite both landing 2026-06-30), and nothing about tier,
+  # price or provider reliably says which is "the story" — that's an editorial
+  # call, not something to infer. Falling through to title (the old behaviour)
+  # meant the pick was effectively reverse-alphabetical, which is how a
+  # same-tier flash-image model once outranked a flagship release by nothing
+  # more than starting with "N". `featured` lets a curator break that tie by
+  # hand; tier is still a reasonable automatic fallback when nobody has.
   def hero_events(events, count: 2)
-    newest_first = events.sort_by { |e| [ e.date, launch_tier_weight(e), e.kind, e.title ] }.reverse
+    newest_first = events.sort_by { |e| [ e.date, launch_featured_weight(e), launch_tier_weight(e), e.kind, e.title ] }.reverse
     picked = []
     newest_first.each do |e|
       next if picked.any? { |p| p.kind == e.kind }
@@ -75,6 +81,11 @@ module EventsHelper
       picked << e unless picked.include?(e)
     end
     picked
+  end
+
+  # 1 for a launch a curator has hand-flagged as the story, 0 otherwise.
+  def launch_featured_weight(event)
+    event.kind == "launch" && event.model&.featured? ? 1 : 0
   end
 
   # Higher for a higher-tier launch (frontier highest), 0 for anything else —

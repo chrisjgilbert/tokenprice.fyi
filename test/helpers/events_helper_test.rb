@@ -75,7 +75,33 @@ class EventsHelperTest < ActionView::TestCase
     assert_equal "Mid model released", picked.first.title, "recency must win over tier across different dates"
   end
 
+  # Regression: two same-day, same-tier launches used to fall through to a
+  # title comparison, which is really just reverse-alphabetical — "Nano
+  # Banana 2 Lite" beat "Claude Sonnet 5 released" on nothing more than
+  # spelling. featured lets a curator break that tie deliberately instead.
+  test "hero_events prefers a featured launch over a same-day, same-tier unfeatured one" do
+    unfeatured = build_event(30, "launch", "Nano Banana 2 Lite released", model: mid_tier_model)
+    featured   = build_event(30, "launch", "Claude Sonnet 5 released", model: mid_tier_model(featured: true))
+
+    picked = hero_events([ unfeatured, featured ], count: 2)
+
+    assert_equal "Claude Sonnet 5 released", picked.first.title
+  end
+
+  test "without a featured flag, a same-day same-tier tie falls back to title order" do
+    a = build_event(30, "launch", "Nano Banana 2 Lite released", model: mid_tier_model)
+    b = build_event(30, "launch", "Claude Sonnet 5 released", model: mid_tier_model)
+
+    picked = hero_events([ a, b ], count: 2)
+
+    assert_equal "Nano Banana 2 Lite released", picked.first.title
+  end
+
   private
+
+  def mid_tier_model(featured: false)
+    AiModel.new(tier: "mid", featured: featured)
+  end
 
   def build_event(day, kind, title, model: nil)
     EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,
