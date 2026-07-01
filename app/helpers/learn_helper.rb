@@ -1,12 +1,16 @@
 module LearnHelper
-  # The four built explainers. Each entry drives an index card and its own
-  # page header. All four have a live page; the index links straight to them.
-  # Order: pricing fundamentals first, reasoning last (most advanced topic).
+  # The five built explainers. Each entry drives an index card and its own page
+  # header. Each has a live page; the index links straight to them. Order: the
+  # two meter-mechanics pages (how pricing works, modality) first, then feature
+  # cost and the levers, reasoning last (most advanced topic).
   def learn_concepts
     [
       { title: "How LLM API pricing works", icon: :coin, tint: "#6366f1", read: "6 min",
         dek: "Tokens, the input/output split, cached reads, and why the same answer costs several times more to write than to read.",
         path: how_pricing_works_path },
+      { title: "Modality: images and audio on the meter", icon: :shapes, tint: "#0891b2", read: "6 min",
+        dek: "An image or a clip of audio still bills in tokens, but the count comes from resolution or length, not meaning — and often at its own rate.",
+        path: learn_modality_path },
       { title: "What drives the cost of common features", icon: :layers, tint: "#e11d48", read: "8 min",
         dek: "RAG, chat, classification, summarisation, a coding agent — each has a different cost shape. Here's why.",
         path: learn_feature_costs_path },
@@ -39,7 +43,8 @@ module LearnHelper
     refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
     grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
     brain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 5 9a2.5 2.5 0 0 0 .5 4.5A2.5 2.5 0 0 0 8 18a2 2 0 0 0 2-2V4Z"/><path d="M14 4a2.5 2.5 0 0 1 2.5 2.5A2.5 2.5 0 0 1 19 9a2.5 2.5 0 0 1-.5 4.5A2.5 2.5 0 0 1 16 18a2 2 0 0 1-2-2V4Z"/></svg>',
-    bot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.3"/><path d="M9 13h.01M15 13h.01"/></svg>'
+    bot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.3"/><path d="M9 13h.01M15 13h.01"/></svg>',
+    shapes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="6.5" r="3.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/><path d="M6.5 13.5 10 20.5H3l3.5-7Z"/></svg>'
   }.freeze
 
   def learn_icon(name, size: 21)

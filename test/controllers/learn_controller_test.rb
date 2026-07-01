@@ -1,11 +1,12 @@
 require "test_helper"
 
 class LearnControllerTest < ActionDispatch::IntegrationTest
-  test "the learn index is a lean directory of the four real explainers" do
+  test "the learn index is a lean directory of the built explainers" do
     get learn_url
     assert_response :success
-    # Links to each of the four built explainers; anatomy was removed.
+    # Links to each built explainer; anatomy was removed.
     assert_select "a[href=?]", how_pricing_works_path
+    assert_select "a[href=?]", learn_modality_path
     assert_select "a[href=?]", learn_reasoning_path
     assert_select "a[href=?]", learn_feature_costs_path
     assert_select "a[href=?]", learn_cost_cutting_path
@@ -83,11 +84,23 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select ".lw", { minimum: 1 }, "expected the live io_ratio widget on the reasoning explainer"
     assert_match(/prices today/, response.body)
 
-    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url ].each do |url|
+    [ learn_feature_costs_url, learn_cost_cutting_url, how_pricing_works_url, learn_modality_url ].each do |url|
       get url
       assert_response :success
       assert_select ".lw", false, "the io_ratio widget should be gone from #{url}"
     end
+  end
+
+  test "the modality explainer renders and cross-links its neighbours" do
+    get learn_modality_url
+    assert_response :success
+    assert_select "h1", /Modality/
+    # Static explainer: the levers state their own assumptions, no dead CTA.
+    assert_no_dead_cost_cta
+    assert_select ".hp-cta a"
+    # Cross-links to the meter fundamentals and the feature-cost breakdown.
+    assert_select "article.hp a[href=?]", how_pricing_works_path
+    assert_select "article.hp a[href=?]", learn_feature_costs_path
   end
 
   test "the cost-cutting explainer renders and has no dead estimator CTA" do

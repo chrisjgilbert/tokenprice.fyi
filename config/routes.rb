@@ -31,6 +31,7 @@ Rails.application.routes.draw do
   get "learn/reasoning", to: "learn#reasoning", as: :learn_reasoning
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
   get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
+  get "learn/modality",      to: "learn#modality",      as: :learn_modality
 
   # Public read-only JSON API off PriceCatalog — the citation/backlink flywheel.
   namespace :api do

@@ -32,4 +32,12 @@ class LearnController < ApplicationController
 
   def cost_cutting
   end
+
+  # The modality explainer: how images and audio land on the token meter, why the
+  # count comes from a picture's resolution or a clip's length rather than its
+  # meaning, and why non-text input and output often bill at their own rates.
+  # Static — the worked examples state their own assumptions rather than pricing
+  # off the catalog, because per-modality rates aren't modelled in PriceCatalog.
+  def modality
+  end
 end
