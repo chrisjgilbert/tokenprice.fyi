@@ -18,19 +18,7 @@ class MarketEventInsightJobTest < ActiveJob::TestCase
   # client) gets our fake web-search response.
   def stub_anthropic(text: "x", citations: [], raises: nil)
     stub_anthropic_key!
-    block = Object.new
-    block.define_singleton_method(:type) { :text }
-    block.define_singleton_method(:text) { text }
-    block.define_singleton_method(:citations) do
-      citations.map { |c| Struct.new(:url, :title).new(c[:url], c[:title]) }
-    end
-    response = Object.new
-    response.define_singleton_method(:content)     { [ block ] }
-    response.define_singleton_method(:stop_reason) { :end_turn }
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**_| raises ? (raise raises) : response }
-    fake = Object.new
-    fake.define_singleton_method(:messages) { messages }
+    fake = fake_anthropic_search_client(text: text, citations: citations, raises: raises)
     Anthropic::Client.define_singleton_method(:new) { |**_| fake }
   end
 

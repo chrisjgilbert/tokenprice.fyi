@@ -106,33 +106,10 @@ class MarketEventTest < ActiveSupport::TestCase
 
   # --- generate_insight facade ------------------------------------------------
 
-  # Fake client returning a one-text-block web-search response.
-  def insight_client(text:, citations: [])
-    block = Object.new
-    block.define_singleton_method(:type) { :text }
-    block.define_singleton_method(:text) { text }
-    block.define_singleton_method(:citations) do
-      citations.map do |c|
-        cite = Object.new
-        cite.define_singleton_method(:url)   { c[:url] }
-        cite.define_singleton_method(:title) { c[:title] }
-        cite
-      end
-    end
-    response = Object.new
-    response.define_singleton_method(:content)     { [ block ] }
-    response.define_singleton_method(:stop_reason) { :end_turn }
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**_| response }
-    client = Object.new
-    client.define_singleton_method(:messages) { messages }
-    client
-  end
-
   test "generate_insight persists the so_what, citations, and a timestamp" do
     event = MarketEvent.create!(valid_attrs)
-    client = insight_client(text: "Frontier prices fell again.",
-                            citations: [ { url: "https://example.com/a", title: "A" } ])
+    client = fake_anthropic_search_client(text: "Frontier prices fell again.",
+                                          citations: [ { url: "https://example.com/a", title: "A" } ])
 
     event.generate_insight(client: client)
     event.reload

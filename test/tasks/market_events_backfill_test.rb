@@ -17,17 +17,7 @@ class MarketEventsBackfillTaskTest < ActiveSupport::TestCase
   end
 
   def stub_anthropic_new(text:)
-    block = Object.new
-    block.define_singleton_method(:type)      { :text }
-    block.define_singleton_method(:text)      { text }
-    block.define_singleton_method(:citations) { [] }
-    response = Object.new
-    response.define_singleton_method(:content)     { [ block ] }
-    response.define_singleton_method(:stop_reason) { :end_turn }
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**_| response }
-    fake = Object.new
-    fake.define_singleton_method(:messages) { messages }
+    fake = fake_anthropic_search_client(text: text)
     Anthropic::Client.define_singleton_method(:new) { |**_| fake }
   end
 

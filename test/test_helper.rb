@@ -17,6 +17,30 @@ module ActiveSupport
       Rails.application.credentials.define_singleton_method(:anthropic_api_key) { key }
     end
 
+    # Build a fake Anthropic client whose web-search response yields the given
+    # text and citations (as SDK-shaped objects), for AnthropicClient.search_call.
+    # `citations` is an array of { url:, title: }; pass `into:` to capture the
+    # create kwargs, or `raises:` to simulate an API failure.
+    def fake_anthropic_search_client(text: "x", citations: [], into: nil, raises: nil)
+      block = Object.new
+      block.define_singleton_method(:type) { :text }
+      block.define_singleton_method(:text) { text }
+      block.define_singleton_method(:citations) do
+        citations.map { |c| Struct.new(:url, :title).new(c[:url], c[:title]) }
+      end
+      response = Object.new
+      response.define_singleton_method(:content)     { [ block ] }
+      response.define_singleton_method(:stop_reason) { :end_turn }
+      messages = Object.new
+      messages.define_singleton_method(:create) do |**kwargs|
+        into&.replace(kwargs)
+        raises ? (raise raises) : response
+      end
+      client = Object.new
+      client.define_singleton_method(:messages) { messages }
+      client
+    end
+
     teardown do
       creds = Rails.application.credentials
       if creds.singleton_methods.include?(:anthropic_api_key)

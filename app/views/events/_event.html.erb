@@ -55,8 +55,10 @@
       <div class="ev-cites">
         <span class="ev-cites-label">Sources</span>
         <% event.citations.each do |citation| %>
-          <%= link_to citation_host(citation["url"]), citation["url"], class: "ev-cite",
-                title: citation["title"].presence, target: "_blank", rel: "noopener" %>
+          <% if (href = external_href(citation["url"])) %>
+            <%= link_to citation_host(href), href, class: "ev-cite",
+                  title: citation["title"].presence, target: "_blank", rel: "noopener" %>
+          <% end %>
         <% end %>
       </div>
     <% elsif event.source_url.present? %>

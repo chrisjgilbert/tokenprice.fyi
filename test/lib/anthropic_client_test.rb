@@ -157,7 +157,7 @@ class AnthropicClientTest < ActiveSupport::TestCase
     response = search_response([
       server_block,
       text_block("It matters because ", citations: [ src ]),
-      text_block("prices fell.", citations: [ src, { "url" => "https://example.com/b", "title" => "B" } ])
+      text_block("prices fell.", citations: [ src, citation_obj(url: "https://example.com/b", title: "B") ])
     ])
     client = queue_client([ response ], captures: captures)
 
@@ -174,6 +174,24 @@ class AnthropicClientTest < ActiveSupport::TestCase
     )
     assert_equal "web_search_20260209", captures.first[:tools].first[:type]
     assert_nil captures.first[:tool_choice]
+  end
+
+  test "search_call dedupes citations by url and drops non-http links" do
+    captures = []
+    response = search_response([
+      text_block("a", citations: [ citation_obj(url: "https://example.com/a", title: "A") ]),
+      text_block("b", citations: [
+        citation_obj(url: "https://example.com/a", title: nil),          # same url, different title
+        citation_obj(url: "javascript:alert(1)", title: "evil") ])       # non-http, must be dropped
+    ])
+    client = queue_client([ response ], captures: captures)
+
+    result = AnthropicClient.search_call(
+      model: "m", system: "sys", messages: [ { role: "user", content: "why" } ],
+      max_tokens: 256, client: client
+    )
+
+    assert_equal [ { "url" => "https://example.com/a", "title" => "A" } ], result[:citations]
   end
 
   test "search_call resumes on pause_turn and accumulates across turns" do

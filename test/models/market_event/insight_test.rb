@@ -31,43 +31,10 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
     item
   end
 
-  # Fake client whose web-search response yields the given text + citations,
-  # and records the prompt it was sent.
-  def fake_client(text:, citations: [], into: {})
-    block = Object.new
-    block.define_singleton_method(:type)      { :text }
-    block.define_singleton_method(:text)      { text }
-    block.define_singleton_method(:citations) do
-      citations.map do |c|
-        cite = Object.new
-        cite.define_singleton_method(:url)   { c[:url] }
-        cite.define_singleton_method(:title) { c[:title] }
-        cite
-      end
-    end
-    response = Object.new
-    response.define_singleton_method(:content)     { [ block ] }
-    response.define_singleton_method(:stop_reason) { :end_turn }
-
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**kwargs| into.replace(kwargs); response }
-    client = Object.new
-    client.define_singleton_method(:messages) { messages }
-    client
-  end
-
-  def error_client(error)
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**_| raise error }
-    client = Object.new
-    client.define_singleton_method(:messages) { messages }
-    client
-  end
-
   test "returns the so_what prose and its citations" do
     event = stub_event(title: "Opus gets 67% cheaper", event_date: Date.new(2025, 11, 24),
                        note: "Anthropic drops Opus pricing to $5/$25.")
-    client = fake_client(
+    client = fake_anthropic_search_client(
       text: "Frontier Opus-tier inference is now a third of its former price, narrowing the gap to mid-tier models.",
       citations: [ { url: "https://anthropic.com/news", title: "Opus 4.5" } ]
     )
@@ -84,7 +51,7 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
     event = stub_event(title: "The DeepSeek moment", event_date: Date.new(2025, 1, 20),
                        note: "Near-frontier reasoning at 1/20th the price.",
                        source_url: "https://example.com/x", news_items: [ item ])
-    client = fake_client(text: "x", into: sent)
+    client = fake_anthropic_search_client(text: "x", into: sent)
 
     MarketEvent::Insight.new(event, client: client).run
 
@@ -97,7 +64,7 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
 
   test "truncates an over-long so_what" do
     event = stub_event(title: "t", event_date: Date.new(2025, 1, 1))
-    client = fake_client(text: "A" * 500)
+    client = fake_anthropic_search_client(text: "A" * 500)
 
     result = MarketEvent::Insight.new(event, client: client).run
 
@@ -107,7 +74,7 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
   test "caps the number of citations" do
     event = stub_event(title: "t", event_date: Date.new(2025, 1, 1))
     many  = Array.new(10) { |i| { url: "https://example.com/#{i}", title: "S#{i}" } }
-    client = fake_client(text: "x", citations: many)
+    client = fake_anthropic_search_client(text: "x", citations: many)
 
     result = MarketEvent::Insight.new(event, client: client).run
 
@@ -116,7 +83,7 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
 
   test "wraps an AnthropicClient error in MarketEvent::Insight::Error" do
     event = stub_event(title: "t", event_date: Date.new(2025, 1, 1))
-    client = error_client(Anthropic::Errors::Error.new("overloaded"))
+    client = fake_anthropic_search_client(raises: Anthropic::Errors::Error.new("overloaded"))
 
     error = assert_raises(MarketEvent::Insight::Error) do
       MarketEvent::Insight.new(event, client: client).run
