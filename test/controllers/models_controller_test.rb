@@ -63,7 +63,26 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "hero CTA falls back to a launch shown in the mini-timeline when the newest event has no model" do
+    # A market event newer than every fixture release becomes the primary
+    # (model-less) event; the CTA should still route to one of the launches
+    # listed below it instead of falling all the way back to "All events".
+    MarketEvent.create!(title: "Newest market event", event_date: Date.new(2026, 6, 10),
+                        kind: "market", status: "published", note: "A note.")
+
+    get root_url
+    assert_response :success
+    launch_model = AiModel.listed.order(released_on: :desc).first
+    assert_select ".hero-card a.tp-btn[href=?]", model_path(launch_model), text: /Full price history/
+  end
+
   test "hero shows only market events and launches — no reprice chips, and there is no ticker" do
+    # Without a MarketEvent in the DB this test's market-chip check would pass
+    # trivially off launch chips alone — no fixture file exists for the table,
+    # so create one directly to exercise the market side of the assertion.
+    MarketEvent.create!(title: "Test market event", event_date: Date.current,
+                        kind: "market", status: "published", note: "A note.")
+
     get root_url
     assert_response :success
     # The hero card focuses on market events and model releases; price changes
@@ -71,8 +90,8 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     # ticker banner.
     assert_select ".hero-card .hero-card-kind-chip.reprice", count: 0
     assert_select ".tp-ticker", count: 0
-    # At least one launch or market chip should be present.
-    assert_select ".hero-card .hero-card-kind-chip.launch, .hero-card .hero-card-kind-chip.market"
+    assert_select ".hero-card .hero-card-kind-chip.launch"
+    assert_select ".hero-card .hero-card-kind-chip.market"
   end
 
   test "the hero (and its price-change feed) is skipped on Turbo Frame refreshes" do

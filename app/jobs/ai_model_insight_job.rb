@@ -6,7 +6,7 @@ class AiModelInsightJob < ApplicationJob
 
   def perform(model)
     model.generate_insight
-  rescue AiModel::Insight::Error => e
+  rescue AiModel::Insight::Error, AnthropicClient::MissingApiKeyError => e
     Rails.logger.warn("AiModelInsightJob: #{e.message} (model ##{model.id})")
     Honeybadger.notify(e) if defined?(Honeybadger)
   end

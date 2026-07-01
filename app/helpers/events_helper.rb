@@ -60,9 +60,22 @@ module EventsHelper
   # any mix of kinds, newest first. No one-per-kind cap and no tie-break by
   # tier or curation — showing several events side by side means two unrelated
   # same-day launches (e.g. Sonnet 5 and Nano Banana 2 Lite, both 2026-06-30)
-  # both get to appear, so nothing has to pick a "winner" between them.
+  # both get to appear, so nothing has to pick a "winner" between them. `title`
+  # (not `kind`) is the tie-break for a same-date pair, so display order isn't
+  # decided by which kind string happens to sort later alphabetically.
+  #
+  # The one floor kept: every kind present in `events` gets at least one slot.
+  # Launches sync daily while market events are hand-curated far less often, so
+  # a pure top-N-by-date cut can eventually push every market event below the
+  # fold — this backfills the newest event of any missing kind (occasionally
+  # showing one more than `count`) rather than ever showing zero of a kind.
   def hero_events(events, count: 5)
-    events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse.first(count)
+    newest_first = events.sort_by { |e| [ e.date, e.title ] }.reverse
+    picked = newest_first.first(count)
+    present_kinds = picked.map(&:kind).uniq
+    backfill = newest_first.reject { |e| present_kinds.include?(e.kind) }
+                            .group_by(&:kind).values.map(&:first)
+    (picked + backfill).sort_by { |e| [ e.date, e.title ] }.reverse
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year

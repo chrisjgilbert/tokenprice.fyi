@@ -336,7 +336,11 @@
   <%
     recent_events = hero_events(@all_events)
     primary_event = recent_events[0]
+    # Array#[1..] returns nil (not []) when the receiver itself is empty —
+    # reachable if @all_events has zero events — so this guard is load-bearing,
+    # not defensive dead code.
     rest_events = recent_events[1..] || []
+    cta_model = recent_events.map(&:model).compact.first
   %>
 
   <div class="hero-grid">
@@ -420,8 +424,8 @@
         <% end %>
 
         <div style="margin-top:16px">
-          <% if primary_event&.model %>
-            <%= link_to model_path(primary_event.model), class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+          <% if cta_model %>
+            <%= link_to model_path(cta_model), class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
               Full price history →
             <% end %>
           <% else %>
