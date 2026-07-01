@@ -1,5 +1,5 @@
 <% content_for :title, "Modality: how images and audio are priced — tokenprice.fyi" %>
-<% content_for :description, "Text is the default unit, but a model that reads an image or a clip of audio still bills in tokens — the count comes from resolution or length, not meaning, and non-text input and output often carry their own rates. Here's how each modality lands on the meter." %>
+<% content_for :description, "Text is the default unit, but a model that reads an image or a clip of audio still bills in tokens — the count comes from resolution or length, not meaning, and non-text input and output often carry their own rates. Here's how each modality converts." %>
 <% content_for :canonical, learn_modality_url %>
 <% content_for :og_type, "article" %>
 <% content_for :head do %>
@@ -24,11 +24,11 @@
 
   <p>A price sheet quotes a rate per input token and per output token, and it's easy to read that as a rate per word. It isn't. A token is the unit the model charges in, and text is only one of the things that gets turned into tokens. When a model accepts an image, a clip of audio, or a PDF, that content is converted into tokens too — and the number of tokens it becomes has nothing to do with how much it <em>means</em> and everything to do with how large it is.</p>
 
-  <p>That's the whole idea of this page: <strong>modality is what kind of content you're metering</strong>, and each kind lands on the meter differently. A 50-word caption and a photo of the same scene are worlds apart in token count even though a person would call them equivalent. Knowing how each modality converts is what makes a multimodal bill predictable instead of surprising.</p>
+  <p>Modality just means what kind of content you're sending — text, image, audio — and each kind converts into tokens differently. A 50-word caption and a photo of the same scene turn into very different numbers of tokens, even though a person would call them equivalent. Knowing how each modality converts is what makes a multimodal bill predictable instead of surprising.</p>
 
   <hr>
-  <h2>Every input becomes tokens — but at different densities</h2>
-  <p>The mechanism is the same across modalities: the provider turns whatever you send into a token count, then charges the input rate on it. What changes is the <em>density</em> — how many tokens a given amount of content becomes.</p>
+  <h2>Every kind of input becomes tokens — just not the same number</h2>
+  <p>The process is the same across modalities: the provider converts whatever you send into a number of tokens, then charges the input rate on that count. What changes between modalities is how many tokens the same amount of content turns into.</p>
 
   <div class="hp-dims">
     <div class="hp-dim hp-dim-input">
@@ -43,12 +43,12 @@
     </div>
     <div class="hp-dim hp-dim-input">
       <div class="hp-dim-header"><span class="hp-dim-dot"></span><span class="hp-dim-name">Audio</span></div>
-      <div class="hp-dim-desc">Metered by duration — chunked into tokens per second, or billed per minute. Length is the meter.</div>
+      <div class="hp-dim-desc">Billed by duration — split into tokens per second, or charged per minute. The clip's length decides the count.</div>
       <div class="hp-dim-price">count ← seconds</div>
     </div>
     <div class="hp-dim hp-dim-input">
       <div class="hp-dim-header"><span class="hp-dim-dot"></span><span class="hp-dim-name">Documents</span></div>
-      <div class="hp-dim-desc">A PDF is usually split into a page image plus its extracted text, so it pays on both meters at once.</div>
+      <div class="hp-dim-desc">A PDF is usually split into a page image plus its extracted text, so you pay for both at once.</div>
       <div class="hp-dim-price">count ← pages × both</div>
     </div>
   </div>
@@ -56,7 +56,7 @@
   <p>Two consequences follow from this. First, the rate on the price sheet still applies — non-text input is usually billed at the same input rate as text (though some providers publish a separate image or audio rate), so the cost difference is driven by the <em>token count</em>, not a different price. Second, the conversion is set by the provider and varies between them; the numbers in the worked examples below state their assumptions rather than claim a universal formula.</p>
 
   <hr>
-  <h2>Images: resolution is the meter</h2>
+  <h2>Images: token count comes from resolution</h2>
   <p>Most models convert an image by dividing it into fixed tiles and charging a set number of tokens per tile, plus a small base cost. The practical result is that token count tracks the pixel area you send: double the resolution and you roughly quadruple the tiles. Many APIs also expose a detail setting — a low-detail mode that downsamples the image to a single small tile, and a high-detail mode that tiles the full resolution.</p>
 
   <div class="hp-calc">
@@ -70,13 +70,13 @@
     <div class="hp-calc-note">Same picture, same rate. The gap is entirely token count — how much of the image you asked the model to actually look at.</div>
   </div>
 
-  <p>The number to hold onto: a single high-detail photo often costs more than a page of text. That's fine when the task needs the pixels — reading a receipt, spotting a defect, describing a chart. It's waste when it doesn't. If you only need to know whether an image contains a cat, low detail answers it for a fraction of the tokens. Sending a 4000×3000 phone photo when a 1024-pixel version would do is the most common way an image bill runs high: the model downsamples large images anyway, so the extra resolution is tokens paid for detail that was thrown away.</p>
+  <p>A single high-detail photo often costs more than a page of text. That's fine when the task needs the pixels — reading a receipt, spotting a defect, describing a chart. It's waste when it doesn't. If you only need to know whether an image contains a cat, low detail answers it for a fraction of the tokens. Sending a 4000×3000 phone photo when a 1024-pixel version would do is the most common way an image bill runs high: the model downsamples large images anyway, so the extra resolution is tokens paid for detail that was thrown away.</p>
 
   <hr>
-  <h2>Audio: length is the meter, and output is the expensive half</h2>
-  <p>Audio is billed by duration. A model that accepts speech chunks the clip into tokens at a fixed rate per second, or bills it per minute directly — either way the meter is wall-clock length, not how much was said. A minute of dense speech and a minute of mostly silence cost the same.</p>
+  <h2>Audio: length decides the count, and output costs more than input</h2>
+  <p>Audio is billed by duration. A model that accepts speech splits the clip into tokens at a fixed rate per second, or bills per minute directly — either way, what decides the cost is the clock time of the clip, not how much was actually said. A minute of dense speech and a minute of mostly silence cost the same.</p>
 
-  <p>The part that surprises people is the input/output split. Just as text output costs several times text input, <strong>generated audio is markedly more expensive than audio in</strong> — a model that speaks its answer is billing spoken output tokens at a premium over the audio it listened to. A back-and-forth voice interface pays on both, every turn.</p>
+  <p>The input/output split works the same way it does for text, just more sharply. Just as text output costs several times text input, <strong>generated audio costs more than audio you send in</strong> — a model that speaks its answer bills those spoken tokens at a higher rate than the audio it listened to. A back-and-forth voice interface pays both rates, every turn.</p>
 
   <div class="hp-calc">
     <div class="hp-calc-title">One voice turn — 15s in, 10s spoken reply</div>
@@ -87,16 +87,16 @@
     <div class="hp-calc-line"><span class="hp-calc-label">10s spoken out <span class="hp-calc-op">~500 tokens × $200 / 1M</span></span><span class="hp-calc-value">$0.10000</span></div>
     <div class="hp-calc-sep"></div>
     <div class="hp-calc-line hp-calc-total"><span class="hp-calc-label">Cost per turn</span><span class="hp-calc-value">$0.175</span></div>
-    <div class="hp-calc-note">Speech-to-speech rates run far above text rates because both directions are audio. Rates vary widely by provider; the shape — output dearer than input — holds.</div>
+    <div class="hp-calc-note">Speech-to-speech rates run far above text rates because both directions are audio. The exact numbers vary by provider, but output costing more than input holds across all of them.</div>
   </div>
 
-  <p>The lever this hands you is a choice about how much has to stay audio. If you only need the words, transcribing speech to text first and running the reasoning on text is usually far cheaper than feeding raw audio to a multimodal model — and cheaper still if the transcription model is a small one. Keep a task in the audio modality only for the part that genuinely needs sound.</p>
+  <p>This gives you a choice about how much of a task actually needs to stay audio. If you only need the words, transcribing speech to text first and doing the reasoning on text is usually far cheaper than feeding raw audio to a multimodal model — cheaper still if the transcription model is a small one. Keep audio in the loop only for the part that genuinely needs sound.</p>
 
   <hr>
   <h2>Output modality: sometimes it isn't tokens at all</h2>
-  <p>Non-text <em>output</em> is where the token model can break down entirely. Generated images and generated speech are frequently priced per unit — per image at a given size, or per second or per character of audio — rather than per output token, because there's no natural token to count. When you compare a text model and an image or speech model, you're often comparing two different pricing units, so a naive per-token comparison doesn't line up.</p>
+  <p>Non-text <em>output</em> is where the token count can disappear entirely. Generated images and generated speech are frequently priced per unit — per image at a given size, or per second or per character of audio — rather than per output token, because there's no natural token to count. When you compare a text model and an image or speech model, you're often comparing two different pricing units, so comparing them per token doesn't work.</p>
 
-  <p>The practical takeaway is to check what the meter actually is before you estimate. For a text model reading an image, it's input tokens derived from resolution. For a model that generates an image, it's likely a flat price per image that scales with the requested size. They price the word "image" completely differently, and only reading the unit tells you which one you're in.</p>
+  <p>The practical takeaway is to check what unit you're actually being charged in before you estimate. For a text model reading an image, it's input tokens derived from resolution. For a model that generates an image, it's likely a flat price per image that scales with the requested size. The word "image" gets priced completely differently in each case, and only reading the pricing page tells you which one you're in.</p>
 
   <hr>
   <h2>Keeping a multimodal bill predictable</h2>
@@ -104,7 +104,7 @@
 
   <p><strong>Send images at the smallest size that still works.</strong> Match resolution and the detail setting to the question. A yes/no about an image doesn't need the tiles a document scan does, and oversized photos are downsampled anyway.</p>
 
-  <p><strong>Drop out of a modality as soon as you can.</strong> Transcribe audio to text when you only need the words; extract a PDF's text when you don't need its layout. Reasoning over text is the cheapest meter there is.</p>
+  <p><strong>Drop out of a modality as soon as you can.</strong> Transcribe audio to text when you only need the words; extract a PDF's text when you don't need its layout. Reasoning over plain text is the cheapest option you have.</p>
 
   <p><strong>Read the unit before you estimate.</strong> Confirm whether a modality bills per token, per second, or per image, and whether input and output carry separate rates. The per-model detail pages spell out which rates a model publishes.</p>
 

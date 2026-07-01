@@ -1,14 +1,14 @@
 module LearnHelper
   # The five built explainers. Each entry drives an index card and its own page
   # header. Each has a live page; the index links straight to them. Order: the
-  # two meter-mechanics pages (how pricing works, modality) first, then feature
+  # two pricing-mechanics pages (how pricing works, modality) first, then feature
   # cost and the levers, reasoning last (most advanced topic).
   def learn_concepts
     [
       { title: "How LLM API pricing works", icon: :coin, tint: "#6366f1", read: "6 min",
         dek: "Tokens, the input/output split, cached reads, and why the same answer costs several times more to write than to read.",
         path: how_pricing_works_path },
-      { title: "Modality: images and audio on the meter", icon: :shapes, tint: "#0891b2", read: "6 min",
+      { title: "Modality: how images and audio are priced", icon: :shapes, tint: "#0891b2", read: "6 min",
         dek: "An image or a clip of audio still bills in tokens, but the count comes from resolution or length, not meaning — and often at its own rate.",
         path: learn_modality_path },
       { title: "What drives the cost of common features", icon: :layers, tint: "#e11d48", read: "8 min",
