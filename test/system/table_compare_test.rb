@@ -73,7 +73,7 @@ class TableCompareTest < ApplicationSystemTestCase
     assert_no_selector ".tp-tray", visible: true
   end
 
-  test "clicking Compare opens the dialog with the winner-highlighted comparison content" do
+  test "clicking Compare opens the dialog with the side-by-side comparison content" do
     visit root_path
 
     select_in_table "Claude Opus 4.8"
@@ -86,7 +86,6 @@ class TableCompareTest < ApplicationSystemTestCase
       assert_selector ".cmp-table"
       assert_selector ".sel-btn-name", text: "Claude Opus 4.8"
       assert_selector ".sel-btn-name", text: "DeepSeek V4 Pro"
-      assert_selector ".cmp-cell.win", minimum: 1
     end
     assert_current_path root_path
   end

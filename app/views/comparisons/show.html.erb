@@ -67,8 +67,6 @@
   font-family: var(--font-sans);
   font-weight: 500;
 }
-.cmp-cell.win { background: var(--color-emerald-50); }
-.cmp-cell.win .val { color: var(--color-emerald-700); }
 /* Accent row for I/O price */
 .cmp-row.accent .lbl {
   background: var(--color-indigo-50);
@@ -77,22 +75,6 @@
 }
 .cmp-row.accent { border-bottom-color: var(--color-indigo-100); }
 .cmp-row.accent .cmp-cell { border-right-color: var(--color-indigo-100); }
-
-/* Win checkmark */
-.cmp-win-mark {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-emerald-500);
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  opacity: 0;
-  transform: scale(.4);
-  transition: opacity .2s var(--ease-out), transform .22s var(--ease-out);
-}
-.cmp-win-mark svg { width: 11px; height: 11px; color: #fff; }
-.cmp-cell.win .cmp-win-mark { opacity: 1; transform: scale(1); }
 
 /* ── Selector buttons ──────────────────────────────────────────────────── */
 .sel-btn {
@@ -384,26 +366,9 @@
 
   <%# ── Comparison table ─────────────────────────────────────────────────── %>
   <% if @left && @right %>
-    <%
-      # Determine numeric winner: :a, :b, or nil
-      winner_for = ->(a_val, b_val, comparison) do
-        next nil if comparison == :none
-        next nil if a_val.nil? && b_val.nil?
-        if comparison == :lower_better
-          a = a_val.nil? ? Float::INFINITY  : a_val.to_f
-          b = b_val.nil? ? Float::INFINITY  : b_val.to_f
-        else
-          a = a_val.nil? ? -Float::INFINITY : a_val.to_f
-          b = b_val.nil? ? -Float::INFINITY : b_val.to_f
-        end
-        next nil if a == b
-        comparison == :lower_better ? (a < b ? :a : :b) : (a > b ? :a : :b)
-      end
-    %>
-
     <div class="cmp-table">
 
-      <%# Row 1 — I/O price (accent, no winner) %>
+      <%# Row 1 — I/O price (accent) %>
       <div class="cmp-row accent">
         <div class="lbl">I/O price /1M</div>
         <div class="cmp-cell">
@@ -416,10 +381,10 @@
 
       <%
         numeric_rows = [
-          { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         cmp: :lower_better,  fmt: :usd },
-          { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        cmp: :lower_better,  fmt: :usd },
-          { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  cmp: :lower_better,  fmt: :usd },
-          { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
+          { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         fmt: :usd },
+          { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        fmt: :usd },
+          { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  fmt: :usd },
+          { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        fmt: :tokens },
         ]
         text_rows = [
           { label: "Δ input since launch",  a_val: @left.input_change_since_launch,  b_val: @right.input_change_since_launch,  fmt: :change },
@@ -431,18 +396,13 @@
         ]
       %>
 
-      <%# Numeric rows with winner highlighting %>
-      <% numeric_rows.each_with_index do |row, i| %>
-        <% w = winner_for.call(row[:a_val], row[:b_val], row[:cmp]) %>
+      <%# Numeric rows %>
+      <% numeric_rows.each do |row| %>
         <div class="cmp-row">
           <div class="lbl"><%= row[:label] %></div>
           <% [:a, :b].each do |side| %>
-            <% val    = side == :a ? row[:a_val] : row[:b_val] %>
-            <% is_win = w == side %>
-            <div class="cmp-cell <%= 'win' if is_win %>">
-              <span class="cmp-win-mark" aria-hidden="true" style="transition-delay:<%= is_win ? "#{i * 90}ms" : '0ms' %>">
-                <%= raw ApplicationHelper::ICONS[:check] %>
-              </span>
+            <% val = side == :a ? row[:a_val] : row[:b_val] %>
+            <div class="cmp-cell">
               <span class="val">
                 <% if row[:fmt] == :usd %>
                   <%= usd(val) %>
