@@ -24,6 +24,19 @@ module GuideHelper
 
   def guide_option_label(kind) = OPTION_KIND_LABELS.fetch(kind, "option")
 
+  # Defines every badge shown on a pipeline step (the tier ladder plus the
+  # three flags) so a reader arriving straight from search — with no prior
+  # context on the site's terms — has the meaning one click away instead of
+  # guessing from an unexplained pill. Reuses tier_legend_entries (Application
+  # Helper) so the tier wording has one home across the price table and here.
+  def guide_badge_legend_entries
+    tier_legend_entries + [
+      [ "Repeats", "This step runs more than once per task, so its per-call cost bills again on every pass." ],
+      [ "Cost-driver step", "The step that contributes the most to this task's per-call cost." ],
+      [ "Capable-model step", "The step that needs a more capable, pricier model; the rest can run on something cheaper." ]
+    ]
+  end
+
   # Pattern keys with a worked section in the feature_costs explainer; the guide
   # deep-links to the matching #anchor. Kept beside the keys (not as an in-view
   # literal) so the list has one home; mirrors the <h2 id="..."> anchors in

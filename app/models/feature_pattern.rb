@@ -174,7 +174,7 @@ class FeaturePattern
     new(
       key: "coding_agent",
       label: "Coding agent",
-      blurb: "Read a repo, plan, edit, run tools, re-check — across many steps.",
+      blurb: "Read a repo, plan, edit, run tools, and re-check, across many steps.",
       steps: [
         step(
           role: "plan",
