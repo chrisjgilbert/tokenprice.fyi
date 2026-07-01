@@ -73,7 +73,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
     launch_model = AiModel.listed.order(released_on: :desc).first
-    assert_select ".hero-card a.tp-btn[href=?]", model_path(launch_model), text: /Full price history/
+    assert_select ".hero-card a.tp-btn[href=?]", model_path(launch_model), text: /View timeline/
   end
 
   test "hero shows only market events and launches — no reprice chips, and there is no ticker" do
