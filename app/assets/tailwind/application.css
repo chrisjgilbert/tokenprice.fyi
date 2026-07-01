@@ -596,10 +596,53 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-model-sub { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-slate-400); }
 .tp-model-sub .tp-prov-name { color: var(--color-slate-600); font-weight: 500; }
 
+/* ── Compare toolbar (outside the table) ─────────────────────────────────── */
+/* The mode toggle that gates compare selection. Left of a one-line hint that
+   only shows once compare mode is on. */
+.tp-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.tp-compare-toggle[aria-pressed="true"] {
+  background: var(--color-indigo-600);
+  border-color: var(--color-indigo-600);
+  color: #fff;
+}
+.tp-compare-toggle[aria-pressed="true"]:hover { background: var(--color-indigo-700); }
+.tp-compare-hint {
+  font-size: 13px;
+  color: var(--color-slate-500);
+  display: none;
+}
+.compare-active .tp-compare-hint { display: block; }
+
+/* ── Row "open page" chevron ─────────────────────────────────────────────── */
+/* The row's navigation affordance: a chevron that fades in on hover at the
+   row's trailing edge, signalling the whole row opens the model page. Hidden
+   in compare mode, where a row click selects instead of navigating. */
+th.tp-col-go, td.tp-col-go { width: 34px; padding-left: 0; padding-right: 16px; text-align: right; }
+.tp-go-chevron {
+  display: inline-flex;
+  color: var(--color-slate-300);
+  opacity: 0;
+  transition: opacity .14s var(--ease-default), transform .14s var(--ease-default);
+}
+.tp-go-chevron svg { width: 16px; height: 16px; }
+table.tp-data tbody tr:hover .tp-go-chevron {
+  opacity: 1;
+  color: var(--color-indigo-500);
+  transform: translateX(2px);
+}
+.compare-active table.tp-data tbody tr:hover .tp-go-chevron { opacity: 0; }
+
 /* ── Compare-from-table: select column ───────────────────────────────────── */
-/* Hover-only selection, deliberately: the select button is invisible until
-   its row is hovered or already selected — no checkbox/click-row alternative. */
-th.tp-col-select, td.tp-col-select { width: 40px; padding-left: 14px; padding-right: 0; }
+/* Collapsed until compare mode is on — then the whole column and its
+   persistent checkboxes appear, so selection is explicit rather than a
+   surprise on row hover. */
+th.tp-col-select, td.tp-col-select { display: none; width: 40px; padding-left: 14px; padding-right: 0; }
+.compare-active th.tp-col-select, .compare-active td.tp-col-select { display: table-cell; }
 .tp-select-btn {
   width: 26px;
   height: 26px;
@@ -614,7 +657,7 @@ th.tp-col-select, td.tp-col-select { width: 40px; padding-left: 14px; padding-ri
   transition: opacity .14s var(--ease-default), border-color .14s var(--ease-default), background .14s var(--ease-default), color .14s var(--ease-default);
 }
 .tp-select-btn svg { width: 13px; height: 13px; }
-table.tp-data tbody tr:hover .tp-select-btn,
+.compare-active .tp-select-btn,
 .tp-select-btn:focus-visible,
 .tp-select-btn.is-selected {
   opacity: 1;

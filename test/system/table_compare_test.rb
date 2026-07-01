@@ -1,9 +1,10 @@
 require "application_system_test_case"
 
-# "Compare from the table": hover-select up to 2 models directly in the
-# homepage price table, gather them in a sticky bottom tray, and open a
-# head-to-head comparison as an in-page <dialog> + Turbo Frame that loads the
-# existing /compare page — these journeys exercise that whole loop, plus the
+# "Compare from the table": turn on compare mode, select up to 2 models
+# directly in the homepage price table, gather them in a sticky bottom tray,
+# and open a head-to-head comparison as an in-page <dialog> + Turbo Frame that
+# loads the existing /compare page — these journeys exercise that whole loop,
+# plus the
 # one correctness property that matters most: navigating inside the modal
 # must never leave root_path (see compare_controller.js#_navigate).
 class TableCompareTest < ApplicationSystemTestCase
@@ -175,13 +176,20 @@ class TableCompareTest < ApplicationSystemTestCase
 
   private
 
-  # The select button is hover-only revealed (opacity 0 until the row is
-  # hovered or already selected) — hover the row before clicking it, the way
-  # a real user would.
+  # Compare is opt-in: the select column is hidden until the "Compare models"
+  # toggle turns compare mode on. Ensure the mode is on (idempotently — a test
+  # selects several rows, and toggling per call would flip it back off), then
+  # click the now-visible, persistent select button.
   def select_in_table(model_name)
+    ensure_compare_mode
     row = find("table.tp-data tbody tr", text: model_name)
-    row.hover
     row.find(".tp-select-btn").click
+  end
+
+  def ensure_compare_mode
+    return if page.has_css?("[data-controller='compare-tray'].compare-active", wait: 0)
+    click_button "Compare models"
+    assert_selector "[data-controller='compare-tray'].compare-active"
   end
 
   def open_dialog_for(model_a, model_b)
