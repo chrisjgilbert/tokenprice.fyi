@@ -80,5 +80,5 @@ gem "honeybadger", "~> 5.0"
 gem "mission_control-jobs"
 
 group :production do
-  gem "rails_semantic_logger", "~> 4.0"
+  gem "rails_semantic_logger", "~> 5.0"
 end
