@@ -136,17 +136,16 @@ module ApplicationHelper
     end
   end
 
-  # Brand mark SVG — token-coin with $
+  # Brand mark SVG — terminal-style $ with a cursor underscore
   def brand_mark(size = 26)
     raw <<~SVG
       <svg class="tp-brand-mark" width="#{size}" height="#{size}" viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false">
         <defs><radialGradient id="bm-#{size}" cx="32%" cy="24%" r="82%">
           <stop offset="0" stop-color="#8b93ff"/><stop offset="55%" stop-color="#6366f1"/><stop offset="100%" stop-color="#4338ca"/>
         </radialGradient></defs>
-        <circle cx="20" cy="20" r="19" fill="url(#bm-#{size})"/>
-        <circle cx="20" cy="20" r="17.4" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.6" stroke-dasharray="0.5 3.1" stroke-linecap="round"/>
-        <circle cx="20" cy="20" r="14" fill="none" stroke="rgba(255,255,255,.92)" stroke-width="1.4"/>
-        <text x="20" y="20.5" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="JetBrains Mono, monospace" font-weight="700" font-size="18.5">$</text>
+        <rect x="2" y="2" width="36" height="36" rx="11" fill="url(#bm-#{size})"/>
+        <text x="15" y="20.5" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="JetBrains Mono, monospace" font-weight="700" font-size="18">$</text>
+        <rect x="23.5" y="24.5" width="9" height="3" rx="1.5" fill="rgba(255,255,255,.75)"/>
       </svg>
     SVG
   end

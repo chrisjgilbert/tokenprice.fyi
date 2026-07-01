@@ -60,7 +60,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900<%= " has-ticker" if content_for?(:price_ticker) %>" data-controller="mobile-nav">
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-controller="mobile-nav">
     <nav class="tp-nav">
       <div class="tp-nav-inner">
         <div class="tp-brand-group">
@@ -139,9 +139,9 @@
         <span>sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
+        <%= link_to "Mastodon", "https://mastodon.social/@tokenprice", rel: "me", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
-    <%= yield :price_ticker %>
   </body>
 </html>
