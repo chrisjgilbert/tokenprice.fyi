@@ -40,7 +40,17 @@
        its starting options with a per-call cost. ---- %>
   <section class="gs-pipe reveal">
     <div class="gs-pipe-head">
-      <h2>The pipeline</h2>
+      <div class="gs-pipe-head-row">
+        <h2>The pipeline</h2>
+        <button type="button" class="gs-badge-info" popovertarget="pipeline-badge-legend"
+                aria-label="What the badges below mean" aria-haspopup="true" aria-expanded="false">
+          <%= icon(:info, size: 16) %>
+        </button>
+        <div id="pipeline-badge-legend" class="gs-badge-legend" popover
+             data-controller="popover" data-action="toggle->popover#position">
+          <%= render "models/facet_legend_list", title: "Badges", entries: guide_badge_legend_entries %>
+        </div>
+      </div>
       <p>A feature is a chain of calls, each with a different job. Steps run top to bottom.</p>
     </div>
 
@@ -56,7 +66,7 @@
             <div class="gs-step-tags">
               <%= tier_badge(step.tier) %>
               <% if step.loops? %>
-                <span class="gs-flag" title="this step repeats">repeats</span>
+                <span class="gs-flag">repeats</span>
               <% end %>
               <% if step.cost_driver? %><span class="gs-flag gs-flag-cost">cost-driver step</span><% end %>
               <% if step.capability? %><span class="gs-flag gs-flag-cap">capable-model step</span><% end %>

@@ -24,6 +24,19 @@ module GuideHelper
 
   def guide_option_label(kind) = OPTION_KIND_LABELS.fetch(kind, "option")
 
+  # Defines every badge shown on a pipeline step (the tier ladder plus the
+  # three flags) so a reader arriving straight from search — with no prior
+  # context on the site's terms — has the meaning one click away instead of
+  # guessing from an unexplained pill. Reuses tier_legend_entries (Application
+  # Helper) so the tier wording has one home across the price table and here.
+  def guide_badge_legend_entries
+    tier_legend_entries + [
+      [ "Repeats", "This step runs more than once per task, so its per-call cost bills again on every pass." ],
+      [ "Cost-driver step", "The step that contributes the most to this task's per-call cost." ],
+      [ "Capable-model step", "The step that needs a more capable, pricier model; the rest can run on something cheaper." ]
+    ]
+  end
+
   # Pattern keys with a worked section in the feature_costs explainer; the guide
   # deep-links to the matching #anchor. Kept beside the keys (not as an in-view
   # literal) so the list has one home; mirrors the <h2 id="..."> anchors in
@@ -42,8 +55,8 @@ module GuideHelper
   # declaratives, grounded in each pattern's real cost shape.
   LEDES = {
     "rag" => [
-      "Retrieval does the hard part. The model reads a few fetched passages and answers without inventing, so most of the work is careful reading, not reasoning.",
-      "That makes the shape input-heavy: thousands of context tokens go in to get a short paragraph back. The retrieved context is the meter, and it runs on every query."
+      "Generate answer is the step that gets priced: it reads whatever passages retrieval fetched and answers from them, without inventing facts that aren't there. That's reading against a fixed set of passages, not reasoning from scratch, so a mid-tier model is usually enough.",
+      "The retrieved passages set the shape: thousands of tokens of context go in, and a short paragraph comes back out. That context is re-sent in full on every query, so its size is what drives the cost, not the length of the answer."
     ],
     "coding_agent" => [
       "An agent reads a repo, plans a change, edits, runs tools, then re-checks. Each loop re-sends a growing context, so the same tokens get billed again and again.",
