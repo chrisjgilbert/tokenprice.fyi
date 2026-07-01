@@ -21,6 +21,10 @@ class AnthropicClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "MissingApiKeyError is an AnthropicClient::Error, so callers only need to rescue one class" do
+    assert_operator AnthropicClient::MissingApiKeyError, :<, AnthropicClient::Error
+  end
+
   test "raises a clear error when the credential is blank" do
     with_credential("   ") do
       assert_raises(AnthropicClient::MissingApiKeyError) { AnthropicClient.build }

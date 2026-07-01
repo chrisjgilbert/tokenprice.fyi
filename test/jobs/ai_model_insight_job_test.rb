@@ -15,15 +15,7 @@ class AiModelInsightJobTest < ActiveJob::TestCase
 
   def stub_anthropic(so_what: "x", raises: nil)
     stub_anthropic_key!
-    tool_block = Object.new
-    tool_block.define_singleton_method(:type)  { :tool_use }
-    tool_block.define_singleton_method(:input) { { so_what: so_what } }
-    response = Object.new
-    response.define_singleton_method(:content) { [ tool_block ] }
-    messages = Object.new
-    messages.define_singleton_method(:create) { |**_| raises ? (raise raises) : response }
-    fake = Object.new
-    fake.define_singleton_method(:messages) { messages }
+    fake = fake_anthropic_tool_client(input: { so_what: so_what }, raises: raises)
     Anthropic::Client.define_singleton_method(:new) { |**_| fake }
   end
 
@@ -46,6 +38,14 @@ class AiModelInsightJobTest < ActiveJob::TestCase
   test "swallows an insight error without raising or persisting" do
     stub_anthropic(raises: Anthropic::Errors::Error.new("overloaded"))
 
+    assert_nothing_raised { AiModelInsightJob.perform_now(model) }
+    assert_nil model.reload.so_what
+  end
+
+  # No client injected and no key stubbed, so AnthropicClient.build hits its
+  # real credential guard — exercises the actual missing-key path end to end,
+  # not just the class hierarchy.
+  test "swallows a missing API key error without raising or persisting" do
     assert_nothing_raised { AiModelInsightJob.perform_now(model) }
     assert_nil model.reload.so_what
   end

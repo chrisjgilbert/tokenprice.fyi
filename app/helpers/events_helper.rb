@@ -73,9 +73,21 @@ module EventsHelper
     newest_first = events.sort_by { |e| [ e.date, e.title ] }.reverse
     picked = newest_first.first(count)
     present_kinds = picked.map(&:kind).uniq
-    backfill = newest_first.reject { |e| present_kinds.include?(e.kind) }
-                            .group_by(&:kind).values.map(&:first)
-    (picked + backfill).sort_by { |e| [ e.date, e.title ] }.reverse
+    # A missing kind can only come from beyond `picked` (any earlier instance
+    # of that kind would already have made present_kinds), so every backfilled
+    # event sorts no newer than picked.last — concatenating (not re-sorting)
+    # preserves newest-first order. `uniq` walks newest_first in its existing
+    # descending order, so it naturally keeps each kind's newest instance.
+    backfill = newest_first.reject { |e| present_kinds.include?(e.kind) }.uniq(&:kind)
+    picked + backfill
+  end
+
+  # The hero card's "Full price history" CTA target: the model of the first
+  # hero event that has one (not necessarily the primary event — a market
+  # event has no model, so this falls through to whatever launch is shown
+  # below it), or nil to fall back to the events timeline link.
+  def hero_cta_model(recent_events)
+    recent_events.find(&:model)&.model
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year

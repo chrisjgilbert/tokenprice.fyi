@@ -340,7 +340,7 @@
     # reachable if @all_events has zero events — so this guard is load-bearing,
     # not defensive dead code.
     rest_events = recent_events[1..] || []
-    cta_model = recent_events.map(&:model).compact.first
+    cta_model = hero_cta_model(recent_events)
   %>
 
   <div class="hero-grid">
