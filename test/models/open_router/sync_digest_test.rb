@@ -238,5 +238,41 @@ module OpenRouter
       post = digest(make_result(created_records: [ c ])).launch_posts.first
       assert_operator post.length, :<=, 300
     end
+
+    test "launch_posts includes the model's description as a news blurb" do
+      AiModel.create!(name: "Nova 1", slug: "acme-nova-1", provider: providers(:anthropic),
+                      source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
+                      description: "A fast multimodal model tuned for extraction and classification.")
+      c = make_created(model_name: "Nova 1", provider_name: "Anthropic",
+                       model_slug: "acme-nova-1", input_per_mtok: 1.0, output_per_mtok: 5.0)
+
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+      assert_includes post, "A fast multimodal model tuned for extraction"
+      assert_includes post, "https://tokenprice.fyi/models/acme-nova-1"
+      assert_operator post.length, :<=, 300
+    end
+
+    test "launch_posts truncates an overlong description but keeps the link" do
+      AiModel.create!(name: "Verbose 1", slug: "acme-verbose-1", provider: providers(:anthropic),
+                      source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
+                      description: "x" * 500)
+      c = make_created(model_name: "Verbose 1", provider_name: "Anthropic",
+                       model_slug: "acme-verbose-1")
+
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+      assert_operator post.length, :<=, 300
+      assert post.end_with?("https://tokenprice.fyi/models/acme-verbose-1")
+      assert_includes post, "…"
+    end
+
+    test "launch_posts falls back to name and price when the model has no description" do
+      c = make_created(model_name: "Claude Haiku 4.5", provider_name: "Anthropic",
+                       model_slug: "unpersisted-model",
+                       input_per_mtok: 1.0, output_per_mtok: 5.0)
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+
+      assert_equal "New model: Claude Haiku 4.5 (Anthropic) — $1/M in, $5/M out.\n\n" \
+                   "https://tokenprice.fyi/models/unpersisted-model", post
+    end
   end
 end

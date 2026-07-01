@@ -32,11 +32,18 @@ module OpenRouter
         blocks: [ header_block, *sections ] }
     end
 
+    # BlueSky caps a post at 300 characters; Mastodon's limit is higher, so the
+    # same text is valid on both.
+    LAUNCH_CHAR_LIMIT = 300
+
     # Social-post strings for the sync's new launches, one per announceable model.
+    # Each carries the model's one-line description (the sync writes one on import)
+    # so the post reads like news rather than a bare price line.
     def launch_posts
-      @result.created_records
+      records = @result.created_records
         .select { |r| ANNOUNCEABLE_PROVIDERS.include?(r.provider_name) }
-        .map { |r| launch_post(r) }
+      blurbs = AiModel.where(slug: records.map(&:model_slug)).pluck(:slug, :description).to_h
+      records.map { |r| launch_post(r, blurbs[r.model_slug]) }
     end
 
     # Total new models this run, announceable or not — lets the caller log how
@@ -45,10 +52,23 @@ module OpenRouter
 
     private
 
-    def launch_post(record)
-      "New model: #{record.model_name} (#{record.provider_name}) — " \
-        "$#{fmt(record.input_per_mtok)}/M in, $#{fmt(record.output_per_mtok)}/M out.\n" \
-        "#{BASE_URL}/models/#{record.model_slug}"
+    def launch_post(record, description)
+      headline = "New model: #{record.model_name} (#{record.provider_name}) — " \
+                 "$#{fmt(record.input_per_mtok)}/M in, $#{fmt(record.output_per_mtok)}/M out."
+      link = "#{BASE_URL}/models/#{record.model_slug}"
+      [ headline, fit_blurb(description, headline, link), link ].compact.join("\n\n")
+    end
+
+    # The description, trimmed to whatever room is left after the headline, the
+    # link, and their blank-line separators — dropped entirely if there's no room.
+    def fit_blurb(description, headline, link)
+      blurb = description.to_s.strip.presence
+      return unless blurb
+
+      budget = LAUNCH_CHAR_LIMIT - headline.length - link.length - 4
+      return if budget < 20
+
+      blurb.truncate(budget, omission: "…")
     end
 
     def header_block
