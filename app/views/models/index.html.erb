@@ -532,6 +532,22 @@
   </noscript>
 <% end %>
 
+<%# ── COMPARE TOOLBAR (outside the Turbo Frame, so the mode toggle and its
+    state survive filter/sort reloads) ───────────────────────────────
+    Compare is opt-in: off by default so a row's only hover affordance is
+    "click to open the model page". Turning it on reveals the per-row select
+    checkboxes and switches a row click from navigate to select. %>
+<div class="tp-table-toolbar">
+  <button type="button" class="tp-btn tp-btn-ghost tp-btn-sm tp-compare-toggle"
+          data-compare-tray-target="modeBtn"
+          data-action="click->compare-tray#toggleMode"
+          aria-pressed="false">
+    <%= icon(:columns, size: 15) %>
+    <span data-compare-tray-target="modeBtnLabel">Compare models</span>
+  </button>
+  <p class="tp-compare-hint">Pick two models to compare them side by side.</p>
+</div>
+
 <%# ── TABLE (Turbo Frame — refreshed on filter changes) ───────────── %>
 <% filter_params = { tier: @tier, modality: @modality, q: @query.presence, providers: @provider_slugs.presence }.compact %>
 
@@ -579,12 +595,13 @@
             <th scope="col" class="numeric <%= th_cls.('context') %>" aria-sort="<%= aria_sort_for('context', current_sort: @sort, current_dir: @dir) %>">
               <%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
+            <th scope="col" class="tp-col-go" aria-hidden="true"></th>
           </tr>
         </thead>
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="7">
+              <td colspan="8">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -604,7 +621,9 @@
                   highlighting the wrong column. Key on the price point's updated_at
                   (not effective_on) so a same-day in-place correction busts the row. %>
               <% cache [ model, model.current_price&.updated_at, sort_col ] do %>
-              <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>" onclick="location.href='<%= j(model_path(model)) %>'">
+              <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>"
+                  data-model-path="<%= model_path(model) %>"
+                  data-action="click->compare-tray#rowClick">
                 <td class="tp-col-select">
                   <button type="button" class="tp-select-btn"
                           data-action="click->compare-tray#toggle:stop"
@@ -654,6 +673,11 @@
                 <% end %>
                 <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
+                </td>
+                <%# Hover-revealed "open page" chevron — the row's navigation
+                    affordance. Hidden in compare mode, where a row click selects. %>
+                <td class="tp-col-go">
+                  <span class="tp-go-chevron"><%= icon(:chevron_right, size: 16) %></span>
                 </td>
               </tr>
               <% end %>

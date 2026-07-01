@@ -1,30 +1,82 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drives "compare from the table": hover-revealed select buttons on each
-// table row feed a sticky bottom tray (up to 2 models, FIFO), which opens a
-// head-to-head comparison as an in-page <dialog> + Turbo Frame loading the
-// existing /compare page — no comparison logic is duplicated here.
+// Drives "compare from the table". Compare is an opt-in mode: off by default,
+// so a row's only affordance is "click to open the model page" (the hover
+// chevron). A "Compare models" toggle outside the table reveals the per-row
+// select checkboxes and switches a row click from navigate to select; picking
+// two models feeds a sticky bottom tray (FIFO), which opens a head-to-head
+// comparison as an in-page <dialog> + Turbo Frame loading the existing
+// /compare page — no comparison logic is duplicated here.
 //
 // Mounted OUTSIDE turbo_frame_tag "models" on purpose: that frame re-renders
 // on every filter/sort change, which would destroy and recreate a controller
-// (and its selection state) mounted inside it. Per-row select buttons live
-// inside the frame and still get picked up automatically by Stimulus's
-// target/action discovery — only the row highlighting needs a manual
-// re-apply after a frame reload, wired declaratively below (the same
-// turbo:frame-load@document pattern filters_controller#announce uses).
+// (and its selection + mode state) mounted inside it. Per-row select buttons
+// and the row-click action live inside the frame and still get picked up
+// automatically by Stimulus's target/action discovery — only the row
+// highlighting needs a manual re-apply after a frame reload, wired
+// declaratively (the same turbo:frame-load@document pattern
+// filters_controller#announce uses). The mode toggle and the compare-active
+// class both live on the controller element itself, outside the frame, so
+// they survive reloads without any re-sync.
 export default class extends Controller {
-  static targets = ["tray", "slot", "compareBtn", "dialog", "frame", "removeIconTemplate"]
+  static targets = ["tray", "slot", "compareBtn", "dialog", "frame", "removeIconTemplate", "modeBtn", "modeBtnLabel"]
   static values = {
     comparePath: String,
+    compareMode: { type: Boolean, default: false },
     slugs: { type: Array, default: [] }
+  }
+
+  // ── Compare mode ─────────────────────────────────────────────────────────
+
+  toggleMode() {
+    this.compareModeValue = !this.compareModeValue
+  }
+
+  compareModeValueChanged() {
+    this.element.classList.toggle("compare-active", this.compareModeValue)
+    if (this.hasModeBtnTarget) {
+      this.modeBtnTarget.setAttribute("aria-pressed", this.compareModeValue ? "true" : "false")
+    }
+    if (this.hasModeBtnLabelTarget) {
+      this.modeBtnLabelTarget.textContent = this.compareModeValue ? "Done comparing" : "Compare models"
+    }
+    // Leaving compare mode drops any pending selection so the tray doesn't
+    // linger over rows that are once again plain navigation targets.
+    if (!this.compareModeValue) this.clear()
+  }
+
+  // A row click means "open the model page" normally, and "toggle selection"
+  // in compare mode. The per-row select button stops propagation (see its
+  // toggle:stop action), so it never double-fires with this.
+  rowClick(event) {
+    if (this.compareModeValue) {
+      // preventDefault here also cancels navigation from any inner <a> the
+      // click bubbled up through, so the whole row is a select target.
+      event.preventDefault()
+      const btn = event.currentTarget.querySelector(".tp-select-btn")
+      if (btn) this._toggleButton(btn)
+      return
+    }
+
+    // Let real links/buttons in the row (model name, provider) handle their
+    // own navigation; only a click on the row's "empty" area navigates.
+    if (event.target.closest("a, button")) return
+
+    const path = event.currentTarget.dataset.modelPath
+    if (!path) return
+    if (window.Turbo) window.Turbo.visit(path)
+    else window.location.href = path
   }
 
   // ── Selection ──────────────────────────────────────────────────────────────
 
   // data-action="click->compare-tray#toggle:stop" — the :stop suffix keeps
-  // this from also firing the row's onclick navigation.
+  // this from also firing the row-click handler.
   toggle(event) {
-    const btn = event.currentTarget
+    this._toggleButton(event.currentTarget)
+  }
+
+  _toggleButton(btn) {
     const slug = btn.dataset.slug
     const adding = !this.slugsValue.includes(slug)
 
