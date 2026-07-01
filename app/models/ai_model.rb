@@ -128,9 +128,9 @@ class AiModel < ApplicationRecord
 
   def priced? = current_price.present?
 
-  # Listed, but its native price (per image, …) isn't tracked yet — a directory
-  # class with no price point. The surfaces read this to show "not yet tracked"
-  # in place of the per-token price cards rather than a misleading dash or $0.
+  # A listed row can legitimately have no price: a directory class (image
+  # generation) is listed before its per-image price is curated. Surfaces read
+  # this to show "not yet tracked" rather than a per-token dash or $0.
   def directory_listing?
     ModalityClass.directory_class?(modality_class) && current_price.nil?
   end

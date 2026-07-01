@@ -199,25 +199,25 @@ module OpenRouter
 
       # A missing/blank output modality is treated as text (the lenient default),
       # so a normal model whose architecture OpenRouter omitted is still priced.
-      outputs_text = model.output_modalities.empty? || model.output_modalities.include?("text")
+      # A per-token price is recorded only for a text-output model that has one;
+      # a directory-class row keeps whatever price it has (Google prices its
+      # image model per token) but is otherwise left price-less.
+      prices_per_token = pricing && (model.output_modalities.empty? || model.output_modalities.include?("text"))
 
       # Admit a row only if it's priceable text OR a directory class we list
       # without a price. A price-less, non-directory row (free text, or an
       # unhandled media class) stays out.
-      return :skipped unless (pricing && outputs_text) || directory
+      return :skipped unless prices_per_token || directory
 
       generate_editorial(model)
       model.save!
 
-      # Record a per-token price only when the model both has one and outputs
-      # text. A directory-class row keeps whatever price it has (Google prices
-      # its image model per token) but is otherwise left price-less.
-      repriced_from = (record_price(model, pricing) if pricing && outputs_text)
+      repriced_from = (record_price(model, pricing) if prices_per_token)
 
       if created
         # Directory-class creations carry no headline price, so they're left out
         # of the digest (which formats per-token rates) rather than posting "$0".
-        if pricing && outputs_text
+        if prices_per_token
           @result.created_records << CreatedRecord.new(
             model_name:      model.name,
             provider_name:   provider.name,
