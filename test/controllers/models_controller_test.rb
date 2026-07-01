@@ -52,6 +52,17 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
+  test "hero renders a mini-timeline of several recent events, not just one" do
+    get root_url
+    assert_response :success
+    # Several fixture models have distinct released_on dates, so the hero's
+    # mini-timeline should surface more than a single launch chip — no
+    # one-per-kind cap picking a single "winner".
+    assert_select ".hero-card .hero-card-kind-chip.launch" do |chips|
+      assert_operator chips.size, :>, 1
+    end
+  end
+
   test "hero shows only market events and launches — no reprice chips, and there is no ticker" do
     get root_url
     assert_response :success

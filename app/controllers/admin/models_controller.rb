@@ -45,7 +45,7 @@ module Admin
       permitted = params.require(:ai_model).permit(
         :provider_id, :name, :slug, :source, :openrouter_id, :tier, :status,
         :context_window, :max_output_tokens, :released_on, :description,
-        :strengths, :limitations, :best_for, :so_what, :featured
+        :strengths, :limitations, :best_for, :so_what
       )
       # The slug is the model's permanent public URL (and SEO/citation target),
       # so it's set once at creation and locked thereafter. @model is nil during

@@ -32,76 +32,44 @@ class EventsHelperTest < ActionView::TestCase
     assert_includes launch.note, "per 1M"
   end
 
-  # Several events can land on the same day (e.g. a batch of curated market
-  # events); the hero must still show a mix, not two of the same kind in a row.
-  test "hero_events picks the newest event then the newest of a different kind" do
+  test "hero_events returns the N most recent events regardless of kind" do
     events = [
       build_event(27, "promo",  "Zeta promo"),
-      build_event(27, "promo",  "Alpha promo"),
+      build_event(26, "promo",  "Alpha promo"),
       build_event(20, "launch", "Gamma released"),
       build_event(10, "market", "A market event")
     ]
 
-    picked = hero_events(events, count: 2)
+    picked = hero_events(events, count: 3)
 
-    assert_equal %w[promo launch], picked.map(&:kind)
-    assert_equal "Zeta promo", picked.first.title, "primary stays the genuinely newest event"
+    assert_equal [ "Zeta promo", "Alpha promo", "Gamma released" ], picked.map(&:title)
   end
 
-  test "hero_events falls back to the same kind when no other kind is available" do
-    events = [ build_event(27, "promo", "Zeta promo"), build_event(26, "promo", "Alpha promo") ]
+  test "hero_events shows more than one event of the same kind — no one-per-kind cap" do
+    # Regression: two unrelated same-day launches (e.g. Sonnet 5 and Nano
+    # Banana 2 Lite, both 2026-06-30) should both be able to appear rather
+    # than the hero having to pick a single "winner" between them.
+    events = [
+      build_event(30, "launch", "Claude Sonnet 5 released"),
+      build_event(30, "launch", "Nano Banana 2 Lite released"),
+      build_event(29, "market", "DeepSeek V4 adds peak-valley pricing")
+    ]
 
-    picked = hero_events(events, count: 2)
+    picked = hero_events(events, count: 3)
 
-    assert_equal %w[promo promo], picked.map(&:kind)
-    assert_equal 2, picked.size
+    assert_equal %w[launch launch market], picked.map(&:kind)
   end
 
-  test "hero_events prefers a same-day frontier launch over a same-day mid-tier one" do
-    frontier_launch = build_event(20, "launch", "Frontier model released", model: ai_models(:opus))
-    mid_launch      = build_event(20, "launch", "Mid model released", model: ai_models(:sonnet))
+  test "hero_events defaults to five events and truncates a longer list" do
+    events = (1..10).map { |d| build_event(d, "launch", "Model #{d} released") }
 
-    picked = hero_events([ frontier_launch, mid_launch ], count: 2)
+    picked = hero_events(events)
 
-    assert_equal "Frontier model released", picked.first.title
-  end
-
-  test "hero_events still prefers a newer mid-tier launch over an older frontier one" do
-    older_frontier_launch = build_event(9, "launch", "Frontier model released", model: ai_models(:opus))
-    newer_mid_launch      = build_event(27, "launch", "Mid model released", model: ai_models(:sonnet))
-
-    picked = hero_events([ older_frontier_launch, newer_mid_launch ], count: 2)
-
-    assert_equal "Mid model released", picked.first.title, "recency must win over tier across different dates"
-  end
-
-  # Regression: two same-day, same-tier launches used to fall through to a
-  # title comparison, which is really just reverse-alphabetical — "Nano
-  # Banana 2 Lite" beat "Claude Sonnet 5 released" on nothing more than
-  # spelling. featured lets a curator break that tie deliberately instead.
-  test "hero_events prefers a featured launch over a same-day, same-tier unfeatured one" do
-    unfeatured = build_event(30, "launch", "Nano Banana 2 Lite released", model: mid_tier_model)
-    featured   = build_event(30, "launch", "Claude Sonnet 5 released", model: mid_tier_model(featured: true))
-
-    picked = hero_events([ unfeatured, featured ], count: 2)
-
-    assert_equal "Claude Sonnet 5 released", picked.first.title
-  end
-
-  test "without a featured flag, a same-day same-tier tie falls back to title order" do
-    a = build_event(30, "launch", "Nano Banana 2 Lite released", model: mid_tier_model)
-    b = build_event(30, "launch", "Claude Sonnet 5 released", model: mid_tier_model)
-
-    picked = hero_events([ a, b ], count: 2)
-
-    assert_equal "Nano Banana 2 Lite released", picked.first.title
+    assert_equal 5, picked.size
+    assert_equal "Model 10 released", picked.first.title
   end
 
   private
-
-  def mid_tier_model(featured: false)
-    AiModel.new(tier: "mid", featured: featured)
-  end
 
   def build_event(day, kind, title, model: nil)
     EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,

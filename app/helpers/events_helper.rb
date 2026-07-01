@@ -56,47 +56,13 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
-  # The hero's "Latest events" slice: one per kind, then fill remaining slots
-  # with the most-recent of any kind. Recency leads; launch_featured_weight and
-  # launch_tier_weight only break ties between launches on the same date.
-  #
-  # Two unrelated models launching the same day is common (see e.g. Sonnet 5
-  # and Nano Banana 2 Lite both landing 2026-06-30), and nothing about tier,
-  # price or provider reliably says which is "the story" — that's an editorial
-  # call, not something to infer. Falling through to title (the old behaviour)
-  # meant the pick was effectively reverse-alphabetical, which is how a
-  # same-tier flash-image model once outranked a flagship release by nothing
-  # more than starting with "N". `featured` lets a curator break that tie by
-  # hand; tier is still a reasonable automatic fallback when nobody has.
-  def hero_events(events, count: 2)
-    newest_first = events.sort_by { |e| [ e.date, launch_featured_weight(e), launch_tier_weight(e), e.kind, e.title ] }.reverse
-    picked = []
-    newest_first.each do |e|
-      next if picked.any? { |p| p.kind == e.kind }
-      picked << e
-      break if picked.size == count
-    end
-    newest_first.each do |e|
-      break if picked.size == count
-      picked << e unless picked.include?(e)
-    end
-    picked
-  end
-
-  # 1 for a launch a curator has hand-flagged as the story, 0 otherwise.
-  def launch_featured_weight(event)
-    event.kind == "launch" && event.model&.featured? ? 1 : 0
-  end
-
-  # Higher for a higher-tier launch (frontier highest), 0 for anything else —
-  # an unranked/unknown tier sorts as the lowest launch tier rather than above
-  # frontier. AiModel.tiers preserves declaration order (frontier, mid, small).
-  def launch_tier_weight(event)
-    return 0 unless event.kind == "launch"
-
-    tiers = AiModel.tiers.keys
-    rank = tiers.index(event.model&.tier) || tiers.size
-    tiers.size - rank
+  # The hero's "Latest events" mini-timeline: the `count` most recent events,
+  # any mix of kinds, newest first. No one-per-kind cap and no tie-break by
+  # tier or curation — showing several events side by side means two unrelated
+  # same-day launches (e.g. Sonnet 5 and Nano Banana 2 Lite, both 2026-06-30)
+  # both get to appear, so nothing has to pick a "winner" between them.
+  def hero_events(events, count: 5)
+    events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse.first(count)
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year

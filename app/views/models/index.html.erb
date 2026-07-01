@@ -226,6 +226,19 @@
     color: rgba(203,213,225,.9);
   }
 
+  /* Mini-timeline rows below the headline event — one per additional recent
+     event, so several launches/market events can show at once instead of the
+     hero having to pick a single "runner-up". */
+  .hero-card-timeline-row {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   /* Filters card: one row at every width — search box, then the tier /
      provider / modality dropdown buttons. The card's overflow is open (not
      hidden) so a facet's popover panel isn't clipped by the card bounds. */
@@ -323,7 +336,7 @@
   <%
     recent_events = hero_events(@all_events)
     primary_event = recent_events[0]
-    secondary_event = recent_events[1]
+    rest_events = recent_events[1..] || []
   %>
 
   <div class="hero-grid">
@@ -390,19 +403,19 @@
           </div>
         <% end %>
 
-        <% if secondary_event %>
-          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span class="hero-card-kind-chip <%= secondary_event.kind %>" style="font-size:10px;padding:2px 7px">
-              <%= hero_kind_chip_label(secondary_event.kind) %>
+        <% rest_events.each do |event| %>
+          <div class="hero-card-timeline-row">
+            <span class="hero-card-kind-chip <%= event.kind %>" style="font-size:10px;padding:2px 7px">
+              <%= hero_kind_chip_label(event.kind) %>
             </span>
             <span style="font-size:13px;font-weight:500;color:#e8eaf0;flex:1;min-width:0">
-              <% if secondary_event.model %>
-                <%= link_to secondary_event.title, model_path(secondary_event.model), style: "color:inherit;text-decoration:none" %>
+              <% if event.model %>
+                <%= link_to event.title, model_path(event.model), style: "color:inherit;text-decoration:none" %>
               <% else %>
-                <%= secondary_event.title %>
+                <%= event.title %>
               <% end %>
             </span>
-            <span style="font-size:11px;color:rgba(200,205,220,.5);white-space:nowrap"><%= fmt_date_full(secondary_event.date) %></span>
+            <span style="font-size:11px;color:rgba(200,205,220,.5);white-space:nowrap"><%= fmt_date_full(event.date) %></span>
           </div>
         <% end %>
 
