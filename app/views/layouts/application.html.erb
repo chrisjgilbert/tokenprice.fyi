@@ -60,7 +60,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-900<%= " has-ticker" if content_for?(:price_ticker) %>" data-controller="mobile-nav">
+  <body class="min-h-screen bg-slate-50 text-slate-900" data-controller="mobile-nav">
     <nav class="tp-nav">
       <div class="tp-nav-inner">
         <div class="tp-brand-group">
@@ -143,6 +143,5 @@
       </div>
     </footer>
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "724cce37d91248feaa60a420e5cb2c37"}'></script><!-- End Cloudflare Web Analytics -->
-    <%= yield :price_ticker %>
   </body>
 </html>

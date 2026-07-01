@@ -35,9 +35,8 @@ class ContentBrowsingTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Market events"
     assert_selector "#ev-timeline"
 
-    click_on "Price changes"
+    click_on "Market"
 
-    assert_current_path events_path(kind: "reprice")
-    assert_text "DeepSeek V4 Pro"
+    assert_current_path events_path(kind: "market")
   end
 end

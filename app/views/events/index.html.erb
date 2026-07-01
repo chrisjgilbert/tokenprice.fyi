@@ -1,5 +1,5 @@
 <% content_for :title, "Market events — LLM pricing & launch timeline — tokenprice.fyi" %>
-<% content_for :description, "A dated timeline of LLM market events and model launches — every price cut, repricing, and release tracked here, newest first." %>
+<% content_for :description, "A dated timeline of LLM market events and model launches, newest first." %>
 <% content_for :canonical, events_url %>
 <% content_for :head do %>
   <%= json_ld({
@@ -17,10 +17,9 @@
   <header class="events-header">
     <h1 class="events-h1">Market events</h1>
     <p class="events-subtitle">
-      Every price cut, repricing, and model launch we've tracked —
-      <span class="num"><%= @market_count %></span> market events,
-      <span class="num"><%= @launch_count %></span> launches, and
-      <span class="num"><%= @reprice_count %></span> price changes<% if @earliest_year %>, going back to
+      Every market event and model launch we've tracked —
+      <span class="num"><%= @market_count %></span> market events and
+      <span class="num"><%= @launch_count %></span> launches<% if @earliest_year %>, going back to
       <span class="num"><%= @earliest_year %></span><% end %>.
     </p>
   </header>
@@ -41,10 +40,6 @@
       <%= link_to events_path(kind: "launch"), class: ("on" if @kind == "launch"), data: { kind: "launch" },
             "aria-current": ("page" if @kind == "launch") do %>
         Launches <span class="events-seg-n"><%= @launch_count %></span>
-      <% end %>
-      <%= link_to events_path(kind: "reprice"), class: ("on" if @kind == "reprice"), data: { kind: "reprice" },
-            "aria-current": ("page" if @kind == "reprice") do %>
-        Price changes <span class="events-seg-n"><%= @reprice_count %></span>
       <% end %>
     </div>
   </div>
@@ -72,7 +67,7 @@
       <div class="tp-empty">
         <div class="tp-empty-icon"><%= icon(:calendar, size: 26) %></div>
         <p class="font-medium">No market events recorded yet.</p>
-        <p class="text-sm mt-1" style="color:var(--color-slate-400)">Launches and price moves will appear here as they're tracked.</p>
+        <p class="text-sm mt-1" style="color:var(--color-slate-400)">Launches and market events will appear here as they're tracked.</p>
       </div>
     <% end %>
   </div>
@@ -190,7 +185,6 @@
 .ev-node svg { width: 14px; height: 14px; }
 .ev-market { background: var(--color-rose-500); }
 .ev-launch { background: var(--color-emerald-500); }
-.ev-reprice { background: var(--color-indigo-500); }
 
 .ev-body { grid-column: 2; min-width: 0; padding-top: 1px; }
 

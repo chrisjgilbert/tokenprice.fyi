@@ -3,7 +3,6 @@ class ModelsController < ApplicationController
     "input" => ->(m) { m.current_input || Float::INFINITY },
     "output" => ->(m) { m.current_output || Float::INFINITY },
     "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
-    "change" => ->(m) { m.input_change_since_launch || 0 },
     "context" => ->(m) { m.context_window || 0 },
     "name" => ->(m) { m.name.to_s.downcase },
     "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
@@ -11,7 +10,7 @@ class ModelsController < ApplicationController
 
   # Price-based sorts that a price-less row must always sink to the bottom of —
   # regardless of direction, so it never floats above a priced row when the list
-  # is reversed. Name/tier/context/change still sort it normally: it has those.
+  # is reversed. Name/tier/context still sort it normally: it has those.
   PRICE_SORTS = %w[input output cached].freeze
 
   # Most expensive output first. The view omits these from filter URLs to keep
