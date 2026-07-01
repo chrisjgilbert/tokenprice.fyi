@@ -586,6 +586,8 @@ table.tp-data td.numeric {
 }
 td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-col-highlight { background: rgba(99,102,241,.045); }
+/* Directory listings (image generation): priced per image, not per token. */
+.tp-price-untracked { text-align: center; color: var(--color-slate-400); font-style: italic; }
 
 /* Model cell */
 .tp-model-cell { display: flex; align-items: center; gap: 13px; }

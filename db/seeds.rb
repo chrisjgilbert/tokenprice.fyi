@@ -24,7 +24,9 @@ providers = {
   mistral:   { name: "Mistral",   website: "https://mistral.ai",        accent: "#FA520F", country: "France", country_code: "FR" },
   cohere:    { name: "Cohere",    website: "https://cohere.com",        accent: "#39594D", country: "Canada", country_code: "CA" },
   alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED", country: "China", country_code: "CN" },
-  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" }
+  moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" },
+  black_forest_labs: { name: "Black Forest Labs", website: "https://blackforestlabs.ai", accent: "#111827", country: "Germany", country_code: "DE" },
+  stability: { name: "Stability AI", website: "https://stability.ai", accent: "#7C3AED", country: "United Kingdom", country_code: "GB" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -604,6 +606,40 @@ catalog = [
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-07-11",
     description: "Moonshot's first open-weight frontier model (1T total / 32B active MoE). End-of-life May 25, 2026.",
     prices: [ { on: "2025-07-11", in: 0.55, out: 2.20, cached: 0.15, src: "pricepertoken.com" } ]
+  },
+
+  # ---- Image generation (directory-first) -------------------------------
+  # Priced per image, not per token — that native price is curated separately
+  # and isn't tracked yet, so these carry no price points. They classify as
+  # image_generation via their output modality and list under the "Image
+  # generation" category. See docs/IMAGE_CATEGORY_PLAN.md.
+  {
+    provider: :openai, name: "GPT Image 1", tier: "frontier", status: "active",
+    context_window: nil, max_output_tokens: nil, released_on: "2025-04-23",
+    description: "OpenAI's natively multimodal image model, exposed through the Images and Responses APIs. Takes text and image input and returns generated or edited images. Billed per image (by size and quality).",
+    input_modalities: %w[image text], output_modalities: %w[image],
+    prices: []
+  },
+  {
+    provider: :google, name: "Imagen 4", tier: "frontier", status: "active",
+    context_window: nil, max_output_tokens: nil, released_on: "2025-05-20",
+    description: "Google's text-to-image model, available through the Gemini API and Vertex AI. Billed per generated image.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: []
+  },
+  {
+    provider: :black_forest_labs, name: "FLUX.1 [pro]", tier: "frontier", status: "active",
+    context_window: nil, max_output_tokens: nil, released_on: "2024-08-01",
+    description: "Black Forest Labs' flagship text-to-image model, served through their API and several inference providers. Billed per generated image.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: []
+  },
+  {
+    provider: :stability, name: "Stable Diffusion 3.5 Large", tier: "mid", status: "active",
+    context_window: nil, max_output_tokens: nil, released_on: "2024-10-22",
+    description: "Stability AI's 8B-parameter text-to-image model, available through the Stability API and as open weights. Billed per generated image on the hosted API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    prices: []
   }
 ]
 
@@ -850,7 +886,7 @@ raise "Editorial copy references unknown model slug(s): #{orphaned_editorial.joi
 catalog.each do |row|
   model = AiModel.find_or_initialize_by(slug: row[:name].parameterize)
   copy = editorial.fetch(row[:name].parameterize, {})
-  model.update!(
+  attrs = {
     provider:          providers.fetch(row[:provider]),
     name:              row[:name],
     tier:              row[:tier],
@@ -862,7 +898,12 @@ catalog.each do |row|
     strengths:         copy[:strengths],
     best_for:          copy[:best_for],
     limitations:       copy[:limitations]
-  )
+  }
+  # Only image-gen (and future directory) rows carry an explicit signature;
+  # text models omit it and keep the [] default that derives modality_class :text.
+  attrs[:input_modalities]  = row[:input_modalities]  if row[:input_modalities]
+  attrs[:output_modalities] = row[:output_modalities] if row[:output_modalities]
+  model.update!(**attrs)
 
   wanted_dates = row[:prices].map { |p| Date.parse(p[:on]) }
   # Keep the seed declarative: drop snapshots that are no longer listed

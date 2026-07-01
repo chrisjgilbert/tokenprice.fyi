@@ -627,15 +627,21 @@
                 <td class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
                   <%= tier_badge(model.tier) %>
                 </td>
-                <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_input) %>
-                </td>
-                <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_output) %>
-                </td>
-                <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
-                  <%= usd(model.current_cached_input) %>
-                </td>
+                <% if model.priced? %>
+                  <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_input) %>
+                  </td>
+                  <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_output) %>
+                  </td>
+                  <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                    <%= usd(model.current_cached_input) %>
+                  </td>
+                <% else %>
+                  <%# Directory listing (e.g. image generation): priced per image, %>
+                  <%# not per token, and not yet curated. %>
+                  <td class="numeric tp-price-untracked" colspan="3">Priced per image — not yet tracked</td>
+                <% end %>
                 <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
                 </td>

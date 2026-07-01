@@ -59,6 +59,9 @@ class PriceCatalog
     def provider = ProviderRef.new(name: provider_name, slug: provider_slug, accent: provider_accent)
 
     def current = snapshots.last
+    # Listed but not yet priced in its native unit — a directory class (image
+    # generation) with no price snapshot. Consumers show "not yet tracked".
+    def directory_listing? = ModalityClass.directory_class?(modality_class) && current.nil?
     def input  = current&.input
     def output = current&.output
     def cached = current&.cached

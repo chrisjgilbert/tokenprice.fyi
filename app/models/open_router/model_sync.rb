@@ -171,15 +171,22 @@ module OpenRouter
     # Returns the outcome symbol: :created, :enriched, :repriced or :skipped.
     #
     # A per-token PricePoint is written only for a text-output model with a
-    # per-token price. Anything else — free / malformed, or a non-text-output
-    # model we don't price here (image-gen, TTS, embedding, …) — is skipped; a
-    # per-token PricePoint is NEVER written for a non-text-output model, as it
-    # would read as a misleading $0.
+    # per-token price; it is NEVER written for a non-text-output row, as it would
+    # read as a misleading $0. A directory-class row (image generation) is still
+    # admitted when it has no usable per-token price — listed "not yet tracked"
+    # until its per-image price is curated. Everything else un-priceable
+    # (free / malformed text rows) is skipped.
     def import(row)
-      pricing = parse_pricing(row["pricing"])
-      return :skipped unless pricing
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
+
+      pricing = parse_pricing(row["pricing"])
+
+      # Cheap pre-check off the raw row so a genuinely un-priceable, non-directory
+      # row (free text, an unhandled media class) is dropped before we create a
+      # provider for it. The authoritative check below uses the model's own
+      # (possibly curated) signature after enrich.
+      return :skipped if pricing.nil? && !row_directory_class?(row)
 
       provider, new_provider = resolve_provider(row)
       model                  = find_or_build_model(row, provider)
@@ -188,26 +195,38 @@ module OpenRouter
       created = model.new_record?
       enrich(model, row)
 
-      # A per-token price only describes a text-output model. A missing/blank
-      # output modality is treated as text (the lenient default), so a normal
-      # model whose architecture OpenRouter omitted is still priced.
-      outputs_text = model.output_modalities.empty? || model.output_modalities.include?("text")
-      return :skipped unless outputs_text
+      directory = ModalityClass.directory_class?(model.modality_class)
+
+      # A missing/blank output modality is treated as text (the lenient default),
+      # so a normal model whose architecture OpenRouter omitted is still priced.
+      # A per-token price is recorded only for a text-output model that has one;
+      # a directory-class row keeps whatever price it has (Google prices its
+      # image model per token) but is otherwise left price-less.
+      prices_per_token = pricing && (model.output_modalities.empty? || model.output_modalities.include?("text"))
+
+      # Admit a row only if it's priceable text OR a directory class we list
+      # without a price. A price-less, non-directory row (free text, or an
+      # unhandled media class) stays out.
+      return :skipped unless prices_per_token || directory
 
       generate_editorial(model)
       model.save!
 
-      repriced_from = record_price(model, pricing)
+      repriced_from = (record_price(model, pricing) if prices_per_token)
 
       if created
-        @result.created_records << CreatedRecord.new(
-          model_name:      model.name,
-          provider_name:   provider.name,
-          model_slug:      model.slug,
-          new_provider:    new_provider,
-          input_per_mtok:  pricing[:input],
-          output_per_mtok: pricing[:output]
-        )
+        # Directory-class creations carry no headline price, so they're left out
+        # of the digest (which formats per-token rates) rather than posting "$0".
+        if prices_per_token
+          @result.created_records << CreatedRecord.new(
+            model_name:      model.name,
+            provider_name:   provider.name,
+            model_slug:      model.slug,
+            new_provider:    new_provider,
+            input_per_mtok:  pricing[:input],
+            output_per_mtok: pricing[:output]
+          )
+        end
         :created
       elsif repriced_from   # Hash of old pricing — truthy only when repriced
         # A snapshot was written, but the Slack digest only reports the headline
@@ -301,6 +320,15 @@ module OpenRouter
     # degrades to the `text` class.
     def modality_signature(row, key)
       ModalityClass.normalize(row.dig("architecture", key))
+    end
+
+    # Whether the raw row's signature classifies as a directory class (image
+    # generation) we list without a per-token price. Read off the row so a
+    # price-less row can be dropped before a provider is ever created for it.
+    def row_directory_class?(row)
+      klass = ModalityClass.for(input: modality_signature(row, "input_modalities"),
+                                output: modality_signature(row, "output_modalities"))
+      ModalityClass.directory_class?(klass)
     end
 
     # Append a snapshot only when the price moved. If it moved twice in one day,

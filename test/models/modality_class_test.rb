@@ -1,23 +1,29 @@
 require "test_helper"
 
 class ModalityClassTest < ActiveSupport::TestCase
-  # The signature → class table. Only token-priced classes are derived now; a
-  # non-text-output media signature degrades to :other. [input, output, expected]
+  # The signature → class table. image_generation is a directory class (any
+  # image output); other non-text-output media signatures (audio, video) still
+  # degrade to :other, pending the same treatment. [input, output, expected]
   TAXONOMY = [
-    [ %w[text],              %w[text],      :text ],
-    [ %w[image text],        %w[text],      :multimodal ],
-    [ %w[image text video],  %w[text],      :multimodal ],
-    [ %w[text],              %w[embedding], :embedding ],
-    [ %w[image],             %w[embedding], :embedding ],
-    [ %w[image text],        %w[image text], :any_to_any ],
-    [ %w[file],              %w[text],      :multimodal ],
-    [ %w[video],             %w[file],      :other ],
-    # Non-text-output media signatures are no longer priced or classed; they
-    # degrade to :other rather than image_generation / text_to_audio / etc.
-    [ %w[text],              %w[image],     :other ],
-    [ %w[text],              %w[audio],     :other ],
-    [ %w[audio],             %w[text],      :multimodal ],
-    [ %w[text],              %w[video],     :other ]
+    [ %w[text],              %w[text],       :text ],
+    [ %w[image text],        %w[text],       :multimodal ],
+    [ %w[image text video],  %w[text],       :multimodal ],
+    [ %w[text],              %w[embedding],  :embedding ],
+    [ %w[image],             %w[embedding],  :embedding ],
+    [ %w[file],              %w[text],       :multimodal ],
+    [ %w[video],             %w[file],       :other ],
+    # Any image output is image generation — text-to-image, image editing, and
+    # the image+text signature of a model like Gemini's image model ("nano
+    # banana"), which must land here rather than in the omni catch-all.
+    [ %w[text],              %w[image],      :image_generation ],
+    [ %w[image text],        %w[image],      :image_generation ],
+    [ %w[image text],        %w[image text], :image_generation ],
+    # Non-image, non-text output still degrades to :other for now.
+    [ %w[text],              %w[audio],      :other ],
+    [ %w[audio],             %w[text],       :multimodal ],
+    [ %w[text],              %w[video],      :other ],
+    # A multi-output non-text signature with no image still catches any_to_any.
+    [ %w[text],              %w[text audio], :any_to_any ]
   ].freeze
 
   TAXONOMY.each do |input, output, expected|
@@ -28,6 +34,14 @@ class ModalityClassTest < ActiveSupport::TestCase
 
   test "the omni class is labelled Omnimodal" do
     assert_equal "Omnimodal", ModalityClass.label(:any_to_any)
+  end
+
+  test "image generation is labelled and marked a directory class" do
+    assert_equal "Image generation", ModalityClass.label(:image_generation)
+    assert ModalityClass.directory_class?(:image_generation)
+    assert ModalityClass.directory_class?("image_generation")
+    refute ModalityClass.directory_class?(:text)
+    refute ModalityClass.directory_class?(:any_to_any)
   end
 
   test "empty input and output degrade to text" do

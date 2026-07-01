@@ -113,6 +113,25 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not_includes AiModel.listed, model
   end
 
+  test "listed includes a price-less image-generation directory row" do
+    # A directory class is listed without a price point — its native per-image
+    # price is curated separately and reads "not yet tracked" until then.
+    model = ai_models(:image_gen)
+    assert_equal :image_generation, model.modality_class
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert model.directory_listing?
+    assert_not model.priced?
+  end
+
+  test "a directory row stops being a directory_listing once it has a price" do
+    model = ai_models(:image_gen)
+    model.price_points.create!(effective_on: Date.current, input_per_mtok: 1, output_per_mtok: 2)
+    model.forget_price_cache!
+    assert_not model.directory_listing?
+    assert model.priced?
+  end
+
   test "sort_for_display sinks price-less rows to the bottom on a price sort in both directions" do
     priced    = ai_models(:opus)       # has price points
     priceless = ai_models(:no_price)   # no price points

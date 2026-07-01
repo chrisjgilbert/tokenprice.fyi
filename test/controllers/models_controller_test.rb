@@ -220,11 +220,27 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "index only offers modality facets present among listed models" do
     get root_url
     assert_response :success
-    # The multimodal sonnet fixture is listed; media classes aren't tracked, so
-    # they're never offered as facets.
+    # The multimodal sonnet and the directory-class image_gen fixtures are both
+    # listed, so their classes are offered as facets; a class no listed row has
+    # (video_generation) is not.
     assert_select "input[name=modality][value=multimodal]"
-    assert_select "input[name=modality][value=image_generation]", count: 0
+    assert_select "input[name=modality][value=image_generation]"
     assert_select "input[name=modality][value=video_generation]", count: 0
+  end
+
+  test "index can be filtered to image-generation models" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "tbody td", text: /Test Image Model/
+    # Text and multimodal rows drop out of an image-generation-only view.
+    assert_select "tbody td", text: /DeepSeek V4 Pro/, count: 0
+    assert_select "tbody td", text: /Guide Sonnet Fixture/, count: 0
+  end
+
+  test "index shows a directory listing's price as not yet tracked, never a dash or $0" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "td.tp-price-untracked", text: /not yet tracked/i
   end
 
   test "index renders a modality badge on multimodal rows only" do
@@ -256,6 +272,15 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get model_url(ai_models(:opus))
     assert_response :success
     assert_select ".tp-modality-badge", count: 0
+  end
+
+  test "show renders a directory listing with a not-yet-tracked note and no price history" do
+    get model_url(ai_models(:image_gen))
+    assert_response :success
+    assert_select ".tp-modality-badge", text: "Image generation"
+    assert_select "p", text: /Priced per image — not yet tracked/
+    # No per-token price cards and no price-history section for a price-less row.
+    assert_select "h2", text: "Price history", count: 0
   end
 
   test "show renders a model and its price history chart" do

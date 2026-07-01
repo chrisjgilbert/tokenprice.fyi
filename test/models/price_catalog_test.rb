@@ -7,8 +7,19 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_includes slugs, "claude-opus-4-8"
     assert_includes slugs, "deepseek-v4-pro"
     assert_includes slugs, "claude-fable-5" # suspended is still listed
+    assert_includes slugs, "test-image-model" # directory class, listed price-less
     refute_includes slugs, "claude-no-price"  # no price points
     refute_includes slugs, "claude-instant-1" # retired
+  end
+
+  test "a directory-class entry is listed price-less and flagged directory_listing?" do
+    entry = PriceCatalog.model("test-image-model")
+
+    assert entry.directory_listing?
+    assert_nil entry.current
+    assert_nil entry.input
+    assert_equal :image_generation, entry.modality_class
+    assert_empty entry.extra_billing
   end
 
   test "an entry exposes current prices, context, tier, and provider" do

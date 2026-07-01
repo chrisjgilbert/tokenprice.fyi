@@ -72,6 +72,24 @@ sonnet:
   output_modalities:
     - text
 
+# A directory-class listing: image generation, priced per image (not tracked
+# yet) so it has NO price points, yet is still listed via its modality_class.
+# modality_class is set explicitly because fixtures bypass the derive callback,
+# and the `listed` scope filters on that column in SQL.
+image_gen:
+  provider: anthropic
+  name: Test Image Model
+  slug: test-image-model
+  tier: mid
+  status: active
+  source: openrouter
+  modality_class: image_generation
+  input_modalities:
+    - text
+  output_modalities:
+    - image
+  description: Price-less image-generation directory listing.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
