@@ -340,7 +340,6 @@
     # reachable if @all_events has zero events — so this guard is load-bearing,
     # not defensive dead code.
     rest_events = recent_events[1..] || []
-    cta_model = hero_cta_model(recent_events)
   %>
 
   <div class="hero-grid">
@@ -424,14 +423,8 @@
         <% end %>
 
         <div style="margin-top:16px">
-          <% if cta_model %>
-            <%= link_to model_path(cta_model), class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-              View timeline →
-            <% end %>
-          <% else %>
-            <%= link_to events_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
-              All events →
-            <% end %>
+          <%= link_to events_path, class: "tp-btn tp-btn-ghost tp-btn-sm", style: "color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);width:100%;justify-content:center" do %>
+            View timeline →
           <% end %>
         </div>
       </div>

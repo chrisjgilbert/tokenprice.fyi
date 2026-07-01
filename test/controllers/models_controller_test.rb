@@ -47,8 +47,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "hero card has exactly one primary call to action" do
     get root_url
     assert_response :success
-    # The CTA links to the primary event's destination (its model page or source
-    # URL), falling back to the events timeline; there is always exactly one.
+    # The CTA always links to the events timeline; there is exactly one.
     assert_select ".hero-card a.tp-btn", count: 1
   end
 
@@ -63,17 +62,15 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "hero CTA falls back to a launch shown in the mini-timeline when the newest event has no model" do
+  test "hero CTA always routes to the events timeline" do
     # A market event newer than every fixture release becomes the primary
-    # (model-less) event; the CTA should still route to one of the launches
-    # listed below it instead of falling all the way back to "All events".
+    # (model-less) event; the CTA should still route to /events regardless.
     MarketEvent.create!(title: "Newest market event", event_date: Date.new(2026, 6, 10),
                         kind: "market", status: "published", note: "A note.")
 
     get root_url
     assert_response :success
-    launch_model = AiModel.listed.order(released_on: :desc).first
-    assert_select ".hero-card a.tp-btn[href=?]", model_path(launch_model), text: /View timeline/
+    assert_select ".hero-card a.tp-btn[href=?]", events_path, text: /View timeline/
   end
 
   test "hero shows only market events and launches — no reprice chips, and there is no ticker" do

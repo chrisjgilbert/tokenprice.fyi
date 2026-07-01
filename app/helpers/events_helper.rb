@@ -82,14 +82,6 @@ module EventsHelper
     picked + backfill
   end
 
-  # The hero card's "View timeline" CTA target: the model of the first
-  # hero event that has one (not necessarily the primary event — a market
-  # event has no model, so this falls through to whatever launch is shown
-  # below it), or nil to fall back to the events timeline link.
-  def hero_cta_model(recent_events)
-    recent_events.find(&:model)&.model
-  end
-
   # Group a timeline into [year, events] pairs for the events page: newest year
   # first, and within each year newest event first. Order-independent of the
   # input — it sorts both the years and each group itself — so it produces the
