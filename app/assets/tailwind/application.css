@@ -627,6 +627,83 @@ table.tp-data tbody tr:hover .tp-select-btn,
 }
 table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 
+/* ── Card reflow for data tables on phones ─────────────────────────────────
+   A wide, horizontally-scrolling table hides its most important columns —
+   the prices — below the fold of a phone's viewport. Under 640px every row
+   collapses into a self-contained card: the lead cell is the title and each
+   remaining cell becomes a label/value line, its label pulled from the cell's
+   `data-label`. Shared by the models index, provider, and snapshot tables via
+   the `tp-cardify` / `tp-cardify-wrap` markers. Unlayered, so it wins over the
+   Tailwind utilities on the utility-class tables without !important. */
+@media (max-width: 640px) {
+  .tp-cardify-wrap {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    border-radius: 0;
+  }
+  .tp-cardify-wrap .tp-table-scroll { overflow-x: visible; }
+
+  table.tp-cardify { display: block; width: 100%; min-width: 0; }
+  table.tp-cardify thead {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  table.tp-cardify tbody { display: block; }
+  table.tp-cardify tbody tr {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--color-slate-100);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  table.tp-cardify tbody tr:last-child { margin-bottom: 0; }
+
+  table.tp-cardify td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+    border: none;
+    text-align: right;
+  }
+  table.tp-cardify td:empty { display: none; }
+  table.tp-cardify td::before {
+    content: attr(data-label);
+    flex: none;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    text-transform: none;
+    color: var(--color-slate-400);
+    text-align: left;
+  }
+  /* Per-column sort tint is meaningless once columns become rows. */
+  table.tp-cardify td.tp-col-highlight { background: transparent; }
+  /* Hover-only compare control has no place on touch. */
+  table.tp-cardify td.tp-col-select { display: none; }
+
+  /* Lead cell = card title: full width, no label, a rule beneath it. */
+  table.tp-cardify td.tp-card-title {
+    display: block;
+    text-align: left;
+    padding: 0 0 11px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--color-slate-100);
+  }
+  table.tp-cardify td.tp-card-title::before { content: none; }
+
+  /* Directory listings span the full card width as a plain note. */
+  table.tp-cardify td.tp-price-untracked { display: block; text-align: left; }
+  table.tp-cardify td.tp-price-untracked::before { content: none; }
+}
+
 /* ============================================================ FORM CONTROLS */
 /* iOS Safari zooms the page when a focused text field's font-size is below
    16px. The design uses smaller controls, so lift every text-entry control to

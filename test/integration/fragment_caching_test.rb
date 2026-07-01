@@ -65,7 +65,7 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
 
       # The 1st numeric td is input, 2nd is output. Under sort=output the output
       # column (2nd) must be the highlighted one.
-      numeric_classes = row.scan(/<td class="numeric ?([a-z-]*)"/).flatten
+      numeric_classes = row.scan(/<td [^>]*class="numeric ?([a-z-]*)"/).flatten
       assert_equal "tp-col-highlight", numeric_classes[1],
         "output-sorted row must highlight the output column, not a stale input one"
       assert_equal "", numeric_classes[0],
