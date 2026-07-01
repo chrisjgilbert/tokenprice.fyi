@@ -11,7 +11,6 @@ class MarketEvent::Insight
 
   MODEL         = "claude-sonnet-5"
   MAX_TOKENS    = 2048
-  SO_WHAT_LIMIT = 320
   MAX_CITATIONS = 4
 
   SYSTEM_PROMPT = <<~PROMPT.strip
@@ -43,7 +42,7 @@ class MarketEvent::Insight
     )
 
     {
-      so_what:   result[:text].to_s.strip.truncate(SO_WHAT_LIMIT),
+      so_what:   SoWhat.clamp(result[:text]),
       citations: result[:citations].first(MAX_CITATIONS)
     }
   rescue AnthropicClient::Error => e

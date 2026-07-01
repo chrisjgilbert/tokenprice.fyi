@@ -9,8 +9,7 @@
 class AiModel::Insight
   class Error < StandardError; end
 
-  MODEL         = "claude-sonnet-5"
-  SO_WHAT_LIMIT = 320
+  MODEL = "claude-sonnet-5"
 
   TOOL_DEFINITION = {
     name:        "write_launch_so_what",
@@ -52,7 +51,7 @@ class AiModel::Insight
       client:     @client
     )
 
-    { so_what: input[:so_what].to_s.strip.truncate(SO_WHAT_LIMIT) }
+    { so_what: SoWhat.clamp(input[:so_what]) }
   rescue AnthropicClient::Error => e
     raise Error, e.message
   end

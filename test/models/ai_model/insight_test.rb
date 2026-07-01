@@ -46,6 +46,6 @@ class AiModel::InsightTest < ActiveSupport::TestCase
 
     result = AiModel::Insight.new(model, client: client).run
 
-    assert_operator result[:so_what].length, :<=, AiModel::Insight::SO_WHAT_LIMIT
+    assert_operator result[:so_what].length, :<=, SoWhat::LIMIT
   end
 end

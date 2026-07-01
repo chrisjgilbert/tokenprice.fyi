@@ -68,7 +68,7 @@ class MarketEvent::InsightTest < ActiveSupport::TestCase
 
     result = MarketEvent::Insight.new(event, client: client).run
 
-    assert result[:so_what].length <= MarketEvent::Insight::SO_WHAT_LIMIT
+    assert result[:so_what].length <= SoWhat::LIMIT
   end
 
   test "caps the number of citations" do
