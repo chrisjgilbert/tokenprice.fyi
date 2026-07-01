@@ -12,14 +12,35 @@ class PriceCatalogTest < ActiveSupport::TestCase
     refute_includes slugs, "claude-instant-1" # retired
   end
 
-  test "a directory-class entry is listed price-less and flagged directory_listing?" do
+  test "a price-less directory-class entry is flagged directory_listing?, not native_priced?" do
     entry = PriceCatalog.model("test-image-model")
 
     assert entry.directory_listing?
+    assert_not entry.native_priced?
     assert_nil entry.current
     assert_nil entry.input
     assert_equal :image_generation, entry.modality_class
     assert_empty entry.extra_billing
+  end
+
+  test "a curated native-priced entry exposes its price and is not directory_listing?" do
+    entry = PriceCatalog.model("test-priced-image-model")
+
+    assert entry.native_priced?
+    assert_not entry.directory_listing?
+    assert_equal "per_image", entry.pricing_model
+    assert_equal "$0.04 / image", entry.price_summary
+    assert entry.price_source.present?
+    assert_nil entry.current
+  end
+
+  test "the catalog seam agrees with the model on directory_listing? and native_priced?" do
+    %w[test-image-model test-priced-image-model].each do |slug|
+      entry = PriceCatalog.model(slug)
+      model = AiModel.find_by!(slug: slug)
+      assert_equal model.directory_listing?, entry.directory_listing?, slug
+      assert_equal model.native_priced?, entry.native_priced?, slug
+    end
   end
 
   test "an entry exposes current prices, context, tier, and provider" do

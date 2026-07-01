@@ -132,6 +132,40 @@ class AiModelTest < ActiveSupport::TestCase
     assert model.priced?
   end
 
+  test "native_priced? is true only for a model with a curated price_summary" do
+    assert ai_models(:image_priced).native_priced?, "a curated-price image model is natively priced"
+    assert_not ai_models(:image_gen).native_priced?, "a price-less image model is not natively priced"
+    assert_not ai_models(:opus).native_priced?, "a token-priced text model is not natively priced"
+  end
+
+  test "a natively-priced image row is listed but not a directory_listing" do
+    model = ai_models(:image_priced)
+    assert_equal :image_generation, model.modality_class
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert_not model.priced?, "no price point, so not token-priced"
+    assert model.native_priced?, "but it carries a curated native price"
+    assert_not model.directory_listing?, "a curated price means it's no longer awaiting one"
+  end
+
+  test "a price-less image row is still a directory_listing" do
+    assert ai_models(:image_gen).directory_listing?
+    assert_not ai_models(:image_gen).native_priced?
+  end
+
+  test "pricing_model_label maps each pricing model to a human label" do
+    assert_equal "Per image", ai_models(:image_priced).pricing_model_label
+    assert_nil ai_models(:opus).pricing_model_label, "a text model has no pricing_model"
+
+    model = ai_models(:image_priced)
+    { "per_image" => "Per image", "per_image_tiered" => "Per image",
+      "per_megapixel" => "Per megapixel", "token_based" => "Token-based",
+      "credit_based" => "Credits" }.each do |value, label|
+      model.pricing_model = value
+      assert_equal label, model.pricing_model_label
+    end
+  end
+
   test "sort_for_display sinks price-less rows to the bottom on a price sort in both directions" do
     priced    = ai_models(:opus)       # has price points
     priceless = ai_models(:no_price)   # no price points

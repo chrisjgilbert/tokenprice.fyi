@@ -243,6 +243,20 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td.tp-price-untracked", text: /not yet tracked/i
   end
 
+  test "index renders a natively-priced image row's price summary, not the untracked note" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    # The curated per-image price shows as a real value in the row.
+    assert_select "td", text: /\$0\.04 \/ image/
+    assert_select "td:match('class', ?)", /tp-price-untracked/, text: /\$0\.04 \/ image/, count: 0
+  end
+
+  test "index still shows a price-less image row as not yet tracked" do
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "td.tp-price-untracked", text: /not yet tracked/i
+  end
+
   test "index renders a modality badge on multimodal rows only" do
     get root_url
     assert_response :success
@@ -281,6 +295,31 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /Priced per image — not yet tracked/
     # No per-token price cards and no price-history section for a price-less row.
     assert_select "h2", text: "Price history", count: 0
+  end
+
+  test "show meta description reflects a native-priced image model, not empty token prices" do
+    get model_url(ai_models(:image_priced))
+    assert_response :success
+    # The directory_listing? re-key must not drop these rows to the per-token
+    # description branch, which would emit "— input / — output per 1M tokens".
+    assert_select "meta[name=description]" do |tags|
+      content = tags.first["content"]
+      assert_includes content, "$0.04 / image"
+      assert_not_includes content, "per 1M tokens"
+      assert_not_includes content, "—"
+    end
+  end
+
+  test "show renders a natively-priced image model with its price summary, label and source, but no price history" do
+    model = ai_models(:image_priced)
+    get model_url(model)
+    assert_response :success
+    assert_select "*", text: /\$0\.04 \/ image/
+    assert_select "*", text: /Per image/
+    assert_select "*", text: /example\.com\/pricing/
+    # A curated native price still isn't a per-token history.
+    assert_select "h2", text: "Price history", count: 0
+    assert_select "p", text: /Priced per image — not yet tracked/, count: 0
   end
 
   test "show renders a model and its price history chart" do

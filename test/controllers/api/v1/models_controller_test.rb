@@ -61,6 +61,21 @@ module Api
         assert_nil opus["price_per_unit"]["request_usd"]
       end
 
+      test "exposes curated native pricing for image models, null for text models" do
+        get api_v1_models_url(format: :json)
+        models = JSON.parse(@response.body)["models"]
+
+        img = models.find { |m| m["slug"] == "test-priced-image-model" } # image_priced fixture
+        assert_equal "per_image", img["native_price"]["pricing_model"]
+        assert_equal "$0.04 / image", img["native_price"]["summary"]
+        assert img["native_price"]["source"].present?
+
+        # A per-token text model reports null native pricing, not a fabricated one.
+        opus = models.find { |m| m["slug"] == "claude-opus-4-8" }
+        assert_nil opus["native_price"]["pricing_model"]
+        assert_nil opus["native_price"]["summary"]
+      end
+
       test "is cross-origin readable" do
         get api_v1_models_url(format: :json)
         assert_equal "*", @response.headers["Access-Control-Allow-Origin"]

@@ -26,7 +26,16 @@ providers = {
   alibaba:   { name: "Alibaba",   website: "https://qwen.ai",           accent: "#615CED", country: "China", country_code: "CN" },
   moonshot:  { name: "Moonshot AI", website: "https://www.moonshot.ai", accent: "#2D2A6E", country: "China", country_code: "CN" },
   black_forest_labs: { name: "Black Forest Labs", website: "https://blackforestlabs.ai", accent: "#111827", country: "Germany", country_code: "DE" },
-  stability: { name: "Stability AI", website: "https://stability.ai", accent: "#7C3AED", country: "United Kingdom", country_code: "GB" }
+  stability: { name: "Stability AI", website: "https://stability.ai", accent: "#7C3AED", country: "United Kingdom", country_code: "GB" },
+  ideogram:  { name: "Ideogram",    website: "https://ideogram.ai",     accent: "#FF5C38", country: "United States", country_code: "US" },
+  recraft:   { name: "Recraft",     website: "https://www.recraft.ai",  accent: "#E5484D", country: "United States", country_code: "US" },
+  luma:      { name: "Luma AI",     website: "https://lumalabs.ai",     accent: "#1A1A2E", country: "United States", country_code: "US" },
+  reve:      { name: "Reve",        website: "https://reve.art",        accent: "#7C3AED", country: "United States", country_code: "US" },
+  bria:      { name: "Bria AI",     website: "https://bria.ai",         accent: "#2563EB", country: "Israel", country_code: "IL" },
+  bytedance: { name: "ByteDance",   website: "https://www.bytedance.com", accent: "#325AB4", country: "China", country_code: "CN" },
+  amazon:    { name: "Amazon",      website: "https://aws.amazon.com",  accent: "#FF9900", country: "United States", country_code: "US" },
+  adobe:     { name: "Adobe",       website: "https://www.adobe.com",   accent: "#EB1000", country: "United States", country_code: "US" },
+  leonardo:  { name: "Leonardo AI", website: "https://leonardo.ai",     accent: "#B45309", country: "Australia", country_code: "AU" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -609,36 +618,210 @@ catalog = [
   },
 
   # ---- Image generation (directory-first) -------------------------------
-  # Priced per image, not per token — that native price is curated separately
-  # and isn't tracked yet, so these carry no price points. They classify as
-  # image_generation via their output modality and list under the "Image
+  # Priced per image, not per token — the native price is curated on the model
+  # (pricing_model / price_summary / price_detail / price_source / priced_as_of)
+  # rather than as per-token price points, so these carry `prices: []`. Figures,
+  # source URLs, and pricing-model classifications come from
+  # docs/IMAGE_MODEL_PRICING.md; anything that doc lists as unconfirmed is left
+  # unpublished (Qwen-Image carries a price_detail but no price). They classify
+  # as image_generation via their output modality and list under the "Image
   # generation" category. See docs/IMAGE_CATEGORY_PLAN.md.
   {
-    provider: :openai, name: "GPT Image 1", tier: "frontier", status: "active",
-    context_window: nil, max_output_tokens: nil, released_on: "2025-04-23",
-    description: "OpenAI's natively multimodal image model, exposed through the Images and Responses APIs. Takes text and image input and returns generated or edited images. Billed per image (by size and quality).",
-    input_modalities: %w[image text], output_modalities: %w[image],
+    provider: :openai, name: "GPT Image 2", tier: "mid", status: "active",
+    description: "OpenAI's current flagship image model, exposed through the Images and Responses APIs.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.006–$0.211 / image",
+    price_detail: "Billed in tokens (text input $5, image input $8, image output $30 per 1M); the per-image range spans low, medium, and high quality at 1024².",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-01",
     prices: []
   },
   {
-    provider: :google, name: "Imagen 4", tier: "frontier", status: "active",
-    context_window: nil, max_output_tokens: nil, released_on: "2025-05-20",
-    description: "Google's text-to-image model, available through the Gemini API and Vertex AI. Billed per generated image.",
+    provider: :openai, name: "GPT Image 1.5", tier: "mid", status: "legacy",
+    description: "Previous-generation OpenAI image model, still callable while it winds down.",
     input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.009–$0.133 / image",
+    price_detail: "Billed in tokens; the per-image range spans low to high quality at 1024². Retires 2026-12-01.",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-01",
     prices: []
   },
   {
-    provider: :black_forest_labs, name: "FLUX.1 [pro]", tier: "frontier", status: "active",
-    context_window: nil, max_output_tokens: nil, released_on: "2024-08-01",
-    description: "Black Forest Labs' flagship text-to-image model, served through their API and several inference providers. Billed per generated image.",
+    provider: :openai, name: "GPT Image 1 Mini", tier: "mid", status: "legacy",
+    description: "Smaller, cheaper OpenAI image model from the GPT Image 1 line.",
     input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.005–$0.036 / image",
+    price_detail: "Billed in tokens; the per-image range spans low to high quality at 1024². Retires 2026-12-01.",
+    price_source: "https://developers.openai.com/api/docs/deprecations", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :openai, name: "GPT Image 1", tier: "mid", status: "legacy",
+    description: "OpenAI's first natively multimodal image model, now deprecated.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.011–$0.167 / image",
+    price_detail: "Billed in tokens; the per-image figures are a low-confidence legacy fallback for low to high quality at 1024². Retires 2026-10-23.",
+    price_source: "https://developers.openai.com/api/docs/deprecations", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :google, name: "Nano Banana Pro", tier: "mid", status: "active",
+    description: "Google's current flagship image model (Gemini 3 Pro Image), via the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.134–$0.24 / image",
+    price_detail: "Billed in tokens (image output $120 per 1M); about $0.134 per image at 1–2K resolution, rising to $0.24 at 4K.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :google, name: "Nano Banana 2", tier: "mid", status: "active",
+    description: "Google's Gemini 3.1 Flash Image model, via the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "$0.045–$0.151 / image",
+    price_detail: "Billed in tokens (image output $60 per 1M); per-image cost scales with resolution from $0.045 at 0.5K to $0.151 at 4K.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :google, name: "Gemini 2.5 Flash Image", tier: "mid", status: "active",
+    description: "Google's \"Nano Banana\" image model, available in preview through the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "token_based", price_summary: "≈ $0.039 / image",
+    price_detail: "Billed in tokens; a ≤1024² image is about 1,290 tokens at $30 per 1M image output, roughly $0.039.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :google, name: "Imagen 4", tier: "mid", status: "legacy",
+    description: "Google's text-to-image model, via the Gemini API and Vertex AI.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image_tiered", price_summary: "$0.02–$0.06 / image",
+    price_detail: "Priced per generated image by tier — $0.02 Fast, $0.04 Standard, $0.06 Ultra. Retires 2026-08-17.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :black_forest_labs, name: "FLUX1.1 [pro]", tier: "mid", status: "active",
+    description: "Black Forest Labs' text-to-image model, served through their API and inference partners.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.04 / image",
+    price_detail: "A flat $0.04 per generated image.",
+    price_source: "https://docs.bfl.ml/quick_start/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :black_forest_labs, name: "FLUX.2 [pro]", tier: "mid", status: "active",
+    description: "Black Forest Labs' current flagship text-to-image model.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_megapixel", price_summary: "from $0.03 / MP",
+    price_detail: "Priced per megapixel — $0.03 for the first megapixel plus $0.015 per additional megapixel, so cost scales with output resolution.",
+    price_source: "https://docs.bfl.ml/quick_start/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :ideogram, name: "Ideogram 3.0", tier: "mid", status: "active",
+    description: "Ideogram's text-to-image model, built to render legible text and typography within the image, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image_tiered", price_summary: "$0.03–$0.09 / image",
+    price_detail: "Priced per image by rendering tier — $0.03 Turbo, $0.06 Default, $0.09 Quality.",
+    price_source: "https://ideogram.ai/features/api-pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :recraft, name: "Recraft V3", tier: "mid", status: "active",
+    description: "Recraft's text-to-image model with raster and vector output, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.04 raster · $0.08 vector",
+    price_detail: "Priced per image — $0.04 for a raster image and $0.08 for a vector (SVG).",
+    price_source: "https://www.recraft.ai/docs/api-reference/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :amazon, name: "Nova Canvas", tier: "mid", status: "active",
+    description: "Amazon's text-to-image model, available through Amazon Bedrock.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image_tiered", price_summary: "$0.04–$0.08 / image",
+    price_detail: "Priced per image by quality and resolution — $0.04–$0.06 at 1024² and $0.06–$0.08 at 2048².",
+    price_source: "https://aws.amazon.com/nova/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :luma, name: "Photon", tier: "mid", status: "active",
+    description: "Luma AI's text-to-image model, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.015 / image",
+    price_detail: "A flat $0.015 per generated image (Photon Flash $0.002).",
+    price_source: "https://docs.lumalabs.ai", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :xai, name: "Grok Imagine Image", tier: "mid", status: "active",
+    description: "xAI's text-to-image model, via the xAI API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.02–$0.05 / image",
+    price_detail: "Priced per image — $0.02 standard and $0.05 quality.",
+    price_source: "https://docs.x.ai/developers/models/grok-imagine-image", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :bytedance, name: "Seedream 4.5", tier: "mid", status: "active",
+    description: "ByteDance's text-to-image model, served through BytePlus ModelArk.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.04 / image",
+    price_detail: "A flat $0.04 per generated image, up to 4K.",
+    price_source: "https://docs.byteplus.com/en/docs/ModelArk", priced_as_of: "2026-07-01",
     prices: []
   },
   {
     provider: :stability, name: "Stable Diffusion 3.5 Large", tier: "mid", status: "active",
-    context_window: nil, max_output_tokens: nil, released_on: "2024-10-22",
-    description: "Stability AI's 8B-parameter text-to-image model, available through the Stability API and as open weights. Billed per generated image on the hosted API.",
+    description: "Stability AI's 8B-parameter text-to-image model, on the hosted API and as open weights.",
     input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "credit_based", price_summary: "6.5 credits ≈ $0.065",
+    price_detail: "Billed in credits at $0.01 each — 6.5 credits (about $0.065) per generated image; also available as open weights.",
+    price_source: "https://platform.stability.ai/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :reve, name: "Reve", tier: "mid", status: "active",
+    description: "Reve's text-to-image model, in beta, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "credit_based", price_summary: "5 credits ≈ $0.0067",
+    price_detail: "Billed in credits (7,500 credits for $10) — about 5 credits, roughly $0.0067, per generated image.",
+    price_source: "https://api.reve.com/console/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :bria, name: "Bria", tier: "mid", status: "active",
+    description: "Bria AI's commercially-licensed text-to-image models, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "per_image", price_summary: "$0.02–$0.03 / image",
+    price_detail: "Pay-as-you-go per generated image — about $0.02 (Fibo Lite) to $0.03 (Fibo).",
+    price_source: "https://bria.ai/pricing", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :adobe, name: "Firefly", tier: "mid", status: "active",
+    description: "Adobe's text-to-image model, offered through Firefly Services for enterprises.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "credit_based", price_summary: "~10 credits / image",
+    price_detail: "Billed in generative credits — about 10 per standard image — under an enterprise plan; Adobe publishes no per-image dollar rate.",
+    price_source: "https://business.adobe.com/products/firefly-business", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :leonardo, name: "Leonardo AI", tier: "mid", status: "active",
+    description: "Leonardo AI's text-to-image platform, via its API.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    pricing_model: "credit_based", price_summary: "Varies by model & resolution",
+    price_detail: "Billed in API credits that vary by model and resolution; no fixed per-image dollar rate is published.",
+    price_source: "https://docs.leonardo.ai", priced_as_of: "2026-07-01",
+    prices: []
+  },
+  {
+    provider: :alibaba, name: "Qwen-Image", tier: "mid", status: "active",
+    description: "Alibaba's open-weight text-to-image model, on Model Studio and as open weights.",
+    input_modalities: %w[text], output_modalities: %w[image],
+    # No published per-image API rate: Alibaba's "$0.10" is an illustrative
+    # example, not a rate, so no price is asserted (see IMAGE_MODEL_PRICING.md).
+    price_detail: "Alibaba doesn't publish a per-image API rate for Qwen-Image; it's released as open weights under the Apache 2.0 license.",
     prices: []
   }
 ]
@@ -903,6 +1086,11 @@ catalog.each do |row|
   # text models omit it and keep the [] default that derives modality_class :text.
   attrs[:input_modalities]  = row[:input_modalities]  if row[:input_modalities]
   attrs[:output_modalities] = row[:output_modalities] if row[:output_modalities]
+  # Curated native-unit pricing (image-generation rows): assigned only when the
+  # row provides it, so text models keep their nil pricing columns.
+  %i[pricing_model price_summary price_detail price_source priced_as_of].each do |key|
+    attrs[key] = row[key] if row[key]
+  end
   model.update!(**attrs)
 
   wanted_dates = row[:prices].map { |p| Date.parse(p[:on]) }

@@ -23,6 +23,12 @@ module Api
             },
             price_per_unit: {
               image_input_usd: m.image_input, request_usd: m.request
+            },
+            # Native pricing for models billed outside the per-token axis (image
+            # generation: per image / per megapixel / credits). Nil for text models.
+            native_price: {
+              pricing_model: m.pricing_model, summary: m.price_summary,
+              source: m.price_source, as_of: m.priced_as_of
             }
           }
         end

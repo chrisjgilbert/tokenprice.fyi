@@ -128,11 +128,30 @@ class AiModel < ApplicationRecord
 
   def priced? = current_price.present?
 
-  # A listed row can legitimately have no price: a directory class (image
-  # generation) is listed before its per-image price is curated. Surfaces read
-  # this to show "not yet tracked" rather than a per-token dash or $0.
+  # Human labels for the curated `pricing_model` string — the native billing
+  # shape of a directory-class model whose price doesn't fit the per-token
+  # table, rendered as a badge beside its price. `pricing_model_label` returns
+  # nil only when `pricing_model` is unset (the per-token text models).
+  PRICING_MODEL_LABELS = {
+    "per_image"        => "Per image",
+    "per_image_tiered" => "Per image",
+    "per_megapixel"    => "Per megapixel",
+    "token_based"      => "Token-based",
+    "credit_based"     => "Credits"
+  }.freeze
+
+  # A directory-class model whose price we've curated as a native-unit string
+  # (per image, credits, …) rather than a per-token price point.
+  def native_priced? = price_summary.present?
+
+  def pricing_model_label = PRICING_MODEL_LABELS[pricing_model]
+
+  # A listed directory-class row still awaiting any price: no price point AND no
+  # curated native price. Surfaces read this to show "not yet tracked" rather
+  # than a per-token dash or $0. Once a native price_summary is curated the row
+  # is `native_priced?` instead and renders its price.
   def directory_listing?
-    ModalityClass.directory_class?(modality_class) && current_price.nil?
+    ModalityClass.directory_class?(modality_class) && current_price.nil? && price_summary.blank?
   end
 
   # Priced on the per-token axis the listing tables sort by — a row with an input
