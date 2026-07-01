@@ -32,36 +32,85 @@ class EventsHelperTest < ActionView::TestCase
     assert_includes launch.note, "per 1M"
   end
 
-  # Several events can land on the same day (e.g. a batch of curated market
-  # events); the hero must still show a mix, not two of the same kind in a row.
-  test "hero_events picks the newest event then the newest of a different kind" do
+  test "hero_events returns the N most recent events regardless of kind" do
     events = [
       build_event(27, "promo",  "Zeta promo"),
-      build_event(27, "promo",  "Alpha promo"),
+      build_event(26, "promo",  "Alpha promo"),
+      build_event(20, "launch", "Gamma released")
+    ]
+
+    picked = hero_events(events, count: 3)
+
+    assert_equal [ "Zeta promo", "Alpha promo", "Gamma released" ], picked.map(&:title)
+  end
+
+  # Launches sync daily while market events are hand-curated far less often, so
+  # a pure top-N-by-date cut can push every market event below the fold once
+  # enough launches accumulate. hero_events backfills the newest event of any
+  # missing kind rather than ever showing zero of a kind — occasionally
+  # returning one more than `count`.
+  test "hero_events backfills the newest event of a kind pushed out of the top N" do
+    events = [
+      build_event(27, "promo",  "Zeta promo"),
+      build_event(26, "promo",  "Alpha promo"),
       build_event(20, "launch", "Gamma released"),
       build_event(10, "market", "A market event")
     ]
 
-    picked = hero_events(events, count: 2)
+    picked = hero_events(events, count: 3)
 
-    assert_equal %w[promo launch], picked.map(&:kind)
-    assert_equal "Zeta promo", picked.first.title, "primary stays the genuinely newest event"
+    assert_equal %w[promo promo launch market], picked.map(&:kind)
+    assert_equal "A market event", picked.last.title, "the backfilled kind stays in date order, not tacked on at the end"
   end
 
-  test "hero_events falls back to the same kind when no other kind is available" do
-    events = [ build_event(27, "promo", "Zeta promo"), build_event(26, "promo", "Alpha promo") ]
+  test "hero_events doesn't inflate past count when every kind already has a slot" do
+    events = [
+      build_event(27, "launch", "Zeta launch"),
+      build_event(26, "market", "Alpha market"),
+      build_event(20, "launch", "Gamma launch")
+    ]
 
-    picked = hero_events(events, count: 2)
+    picked = hero_events(events, count: 3)
 
-    assert_equal %w[promo promo], picked.map(&:kind)
-    assert_equal 2, picked.size
+    assert_equal 3, picked.size
+  end
+
+  test "hero_events shows more than one event of the same kind — no one-per-kind cap" do
+    # Regression: two unrelated same-day launches (e.g. Sonnet 5 and Nano
+    # Banana 2 Lite, both 2026-06-30) should both be able to appear rather
+    # than the hero having to pick a single "winner" between them.
+    events = [
+      build_event(30, "launch", "Claude Sonnet 5 released"),
+      build_event(30, "launch", "Nano Banana 2 Lite released"),
+      build_event(29, "market", "DeepSeek V4 adds peak-valley pricing")
+    ]
+
+    picked = hero_events(events, count: 3)
+
+    assert_equal %w[launch launch market], picked.map(&:kind)
+  end
+
+  test "hero_events returns an empty array, never nil, for no events" do
+    # app/views/models/index.html.erb relies on this: `recent_events[1..]`
+    # returns nil (not []) when recent_events itself is empty, so the view's
+    # `|| []` guard only works if hero_events never itself returns nil.
+    assert_equal [], hero_events([])
+  end
+
+  test "hero_events defaults to five events and truncates a longer list" do
+    events = (1..10).map { |d| build_event(d, "launch", "Model #{d} released") }
+
+    picked = hero_events(events)
+
+    assert_equal 5, picked.size
+    assert_equal "Model 10 released", picked.first.title
   end
 
   private
 
-  def build_event(day, kind, title)
+  def build_event(day, kind, title, model: nil)
     EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,
-                            note: nil, model: nil, provider: nil, source_url: nil,
+                            note: nil, model: model, provider: nil, source_url: nil,
                             so_what: nil, citations: [])
   end
 end

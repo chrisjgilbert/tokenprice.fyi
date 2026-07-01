@@ -41,6 +41,25 @@ module ActiveSupport
       client
     end
 
+    # Build a fake Anthropic client whose forced-tool-call response yields the
+    # given input hash, for AnthropicClient.tool_call. Pass `into:` to capture
+    # the create kwargs, or `raises:` to simulate an API failure.
+    def fake_anthropic_tool_client(input: {}, into: nil, raises: nil)
+      tool_block = Object.new
+      tool_block.define_singleton_method(:type)  { :tool_use }
+      tool_block.define_singleton_method(:input) { input }
+      response = Object.new
+      response.define_singleton_method(:content) { [ tool_block ] }
+      messages = Object.new
+      messages.define_singleton_method(:create) do |**kwargs|
+        into&.replace(kwargs)
+        raises ? (raise raises) : response
+      end
+      client = Object.new
+      client.define_singleton_method(:messages) { messages }
+      client
+    end
+
     teardown do
       creds = Rails.application.credentials
       if creds.singleton_methods.include?(:anthropic_api_key)

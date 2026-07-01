@@ -11,8 +11,12 @@ require "anthropic"
 # verbatim as the x-api-key header — which otherwise surfaces as a confusing 401
 # "invalid x-api-key" deep inside a job.
 module AnthropicClient
-  class MissingApiKeyError < StandardError; end
   class Error < StandardError; end
+  # A subclass of Error (not a sibling) so every caller's existing
+  # `rescue AnthropicClient::Error` already catches this without also having
+  # to name it explicitly — the callers all treat "the key is missing" the
+  # same as any other transport failure.
+  class MissingApiKeyError < Error; end
 
   def self.build
     key = Rails.application.credentials.anthropic_api_key

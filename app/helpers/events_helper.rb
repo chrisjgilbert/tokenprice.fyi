@@ -44,7 +44,7 @@ module EventsHelper
         model: m,
         provider: m.provider,
         source_url: nil,
-        so_what: nil,
+        so_what: m.so_what,
         citations: []
       )
     end
@@ -56,21 +56,38 @@ module EventsHelper
     events.sort_by { |e| [ e.date, e.kind, e.title ] }
   end
 
-  # The hero's "Latest events" slice: one per kind, then fill remaining slots
-  # with the most-recent of any kind.
-  def hero_events(events, count: 2)
-    newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
-    picked = []
-    newest_first.each do |e|
-      next if picked.any? { |p| p.kind == e.kind }
-      picked << e
-      break if picked.size == count
-    end
-    newest_first.each do |e|
-      break if picked.size == count
-      picked << e unless picked.include?(e)
-    end
-    picked
+  # The hero's "Latest events" mini-timeline: the `count` most recent events,
+  # any mix of kinds, newest first. No one-per-kind cap and no tie-break by
+  # tier or curation — showing several events side by side means two unrelated
+  # same-day launches (e.g. Sonnet 5 and Nano Banana 2 Lite, both 2026-06-30)
+  # both get to appear, so nothing has to pick a "winner" between them. `title`
+  # (not `kind`) is the tie-break for a same-date pair, so display order isn't
+  # decided by which kind string happens to sort later alphabetically.
+  #
+  # The one floor kept: every kind present in `events` gets at least one slot.
+  # Launches sync daily while market events are hand-curated far less often, so
+  # a pure top-N-by-date cut can eventually push every market event below the
+  # fold — this backfills the newest event of any missing kind (occasionally
+  # showing one more than `count`) rather than ever showing zero of a kind.
+  def hero_events(events, count: 5)
+    newest_first = events.sort_by { |e| [ e.date, e.title ] }.reverse
+    picked = newest_first.first(count)
+    present_kinds = picked.map(&:kind).uniq
+    # A missing kind can only come from beyond `picked` (any earlier instance
+    # of that kind would already have made present_kinds), so every backfilled
+    # event sorts no newer than picked.last — concatenating (not re-sorting)
+    # preserves newest-first order. `uniq` walks newest_first in its existing
+    # descending order, so it naturally keeps each kind's newest instance.
+    backfill = newest_first.reject { |e| present_kinds.include?(e.kind) }.uniq(&:kind)
+    picked + backfill
+  end
+
+  # The hero card's "View timeline" CTA target: the model of the first
+  # hero event that has one (not necessarily the primary event — a market
+  # event has no model, so this falls through to whatever launch is shown
+  # below it), or nil to fall back to the events timeline link.
+  def hero_cta_model(recent_events)
+    recent_events.find(&:model)&.model
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year
