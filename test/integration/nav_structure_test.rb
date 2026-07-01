@@ -11,8 +11,7 @@ class NavStructureTest < ActionDispatch::IntegrationTest
     get root_path
     assert_response :success
     assert_select "nav.tp-nav a[href=?]", root_path
-    # Events nav now defaults to the market filter
-    assert_select "nav.tp-nav a[href=?]", events_path(kind: "market")
+    assert_select "nav.tp-nav a[href=?]", events_path
   end
 
   test "primary nav now carries a Guide tab" do
