@@ -23,8 +23,8 @@ class ModelsController < ApplicationController
 
     scope = AiModel.listed.includes(:provider, :price_points)
 
-    @tier = params[:tier].presence_in(AiModel.tiers.keys)
-    scope = scope.where(tier: @tier) if @tier
+    @tiers = Array(params[:tier]).map(&:to_s) & AiModel.tiers.keys
+    scope = scope.where(tier: @tiers) if @tiers.any?
 
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
@@ -39,7 +39,7 @@ class ModelsController < ApplicationController
     # the full known class set (no query) so it can ride the etag; the facet of
     # classes actually present is derived from the loaded rows after the 304
     # check, so a conditional hit pays for no extra load.
-    @modality = params[:modality].presence_in(ModalityClass::LABELS.keys.map(&:to_s))
+    @modalities = Array(params[:modality]).map(&:to_s) & ModalityClass::LABELS.keys.map(&:to_s)
 
     # Conditional GET. The page varies by every filter/sort param, so they MUST
     # ride in the etag — otherwise a conditional request for one filtered view
@@ -47,7 +47,7 @@ class ModelsController < ApplicationController
     # last_modified spans the catalog AND the market events + model rows the hero
     # renders (helpers.build_all_events), so editing a market event or a model
     # busts the cache instead of serving a stale hero. Renders 304 on a match.
-    return if catalog_fresh?(etag: [ :index, @tier, @provider_slugs.sort, @sort, @dir, @query, @modality ],
+    return if catalog_fresh?(etag: [ :index, @tiers.sort, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
       last_modified: helpers.timeline_last_modified)
 
     models = scope.to_a
@@ -63,7 +63,7 @@ class ModelsController < ApplicationController
     # so no pill leads to an empty table. Derived before the modality filter is
     # applied so switching between classes stays possible.
     @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
-    models.select! { |m| m.modality_class.to_s == @modality } if @modality
+    models.select! { |m| @modalities.include?(m.modality_class.to_s) } if @modalities.any?
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
       price_sort: PRICE_SORTS.include?(@sort))
 

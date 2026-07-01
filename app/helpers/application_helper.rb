@@ -74,19 +74,29 @@ module ApplicationHelper
 
   def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
 
-  # [label, value] for the tier pills, sourced from TIER_LABELS so the tier set
-  # and its order live in one place. The leading "All" pill clears the filter.
-  def tier_pill_options = [ [ "All", "" ] ] + TIER_LABELS.map { |value, label| [ label, value ] }
+  # [value, label] for the tier checkboxes, sourced from TIER_LABELS so the tier
+  # set and its order live in one place. No "All" entry — an empty selection
+  # already means "all tiers", the same convention the provider facet uses.
+  def tier_options = TIER_LABELS.map { |value, label| [ value, label ] }
 
   # [term, description] rows for the tier legend, off the same single source.
   def tier_legend_entries = TIER_LABELS.map { |value, label| [ label, tier_description(value) ] }
 
-  # The active state is CSS-driven off the checked radio (.tp-pill:has(input:checked)),
-  # so the label just wraps the visually hidden input.
-  def filter_pill(name, value, label, checked:)
-    tag.label class: "tp-pill" do
-      radio_button_tag(name, value, checked, class: "sr-only",
-        data: { action: "change->filters#submit" }) + label
+  # A multi-select filter checkbox styled as a .tp-check row — the shared shape
+  # for every facet (tier / provider / modality). `leading` renders before the
+  # check box (e.g. a provider's brand square); the block is the row's label.
+  # Active state is CSS-driven off :checked (.tp-check:has(:checked)), so nothing
+  # here needs a render-time class — the rows sit outside the Turbo frame the
+  # filter form replaces and a class wouldn't refresh.
+  def filter_check(name, value, checked:, leading: nil, &label)
+    tag.label class: "tp-check" do
+      safe_join([
+        check_box_tag("#{name}[]", value, checked, id: "#{name}_#{value}",
+          data: { action: "change->filters#submit" }),
+        leading,
+        tag.span(icon(:check, size: 12), class: "tp-check-box"),
+        capture(&label)
+      ].compact)
     end
   end
 

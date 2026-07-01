@@ -10,15 +10,14 @@ export default class extends Controller {
   // Turbo restoration visits (Back/Forward) render cached snapshots that
   // don't capture typed input state, so the form can lag the URL/table.
   // Re-seed it from the query string whenever the controller (re)connects.
+  // Every facet is a multi-select checkbox group now, so a box is checked iff
+  // its value is present under its field name (tier[], providers[], modality[]).
   connect() {
     const params = new URLSearchParams(window.location.search)
-    const providers = params.getAll("providers[]")
 
     this.element.querySelectorAll("input").forEach((input) => {
       if (input.type === "checkbox") {
-        input.checked = providers.includes(input.value)
-      } else if (input.type === "radio") {
-        input.checked = (params.get(input.name) || "") === input.value
+        input.checked = params.getAll(input.name).includes(input.value)
       } else if (input.type === "search" || input.type === "text") {
         input.value = params.get(input.name) || ""
       }
@@ -27,52 +26,41 @@ export default class extends Controller {
     this.syncChips()
   }
 
-  // Keep the facet dropdown chips in step with the controls inside their
+  // Keep the facet dropdown chips in step with the checkboxes inside their
   // panels: the chips live outside the Turbo frame, so nothing else refreshes
-  // them. The tier/modality chips echo the chosen value; the provider chip
-  // shows a count badge when the selection is narrowed to a proper subset.
+  // them. No boxes checked means "all" (the form omits an empty filter), so a
+  // chip's count badge shows only when the selection is a proper, non-empty
+  // subset, and its select-all button flips to "Clear all" once every box is on.
   syncChips() {
-    this.element.querySelectorAll("[data-facet-chip]").forEach((slot) => {
-      const checked = this.element.querySelector(`input[name="${slot.dataset.facetChip}"]:checked`)
-      const value = checked?.value
-      const label = value ? checked.closest(".tp-pill")?.textContent.trim() : ""
-      slot.textContent = label ? ` · ${label}` : ""
-      slot.closest(".tp-facet-chip")?.classList.toggle("is-active", Boolean(value))
-    })
+    this.element.querySelectorAll("[data-facet-chip-count]").forEach((badge) => {
+      const field = badge.dataset.facetChipCount
+      const { checkedCount, allChecked, narrowed } = this._checkboxState(field)
 
-    // No boxes checked means "all providers" (the form omits an empty filter),
-    // so the chip is only narrowed for a proper, non-empty subset.
-    const { checkedCount, allChecked, narrowed } = this._providerCheckboxState()
-
-    const badge = this.element.querySelector('[data-facet-chip-count="provider"]')
-    if (badge) {
       badge.textContent = narrowed ? checkedCount : ""
       badge.hidden = !narrowed
       badge.closest(".tp-facet-chip")?.classList.toggle("is-active", narrowed)
-    }
 
-    // Scoped to the provider panel specifically — a bare ".tp-facet-panel-action"
-    // query would silently grab the wrong button if a second multi-select facet
-    // ever grows its own select-all header.
-    const selectAllButton = this.element.querySelector("#provider-panel .tp-facet-panel-action")
-    if (selectAllButton) selectAllButton.textContent = allChecked ? "Clear all" : "Select all"
+      const selectAll = this.element.querySelector(`[data-facet-select-all="${field}"]`)
+      if (selectAll) selectAll.textContent = allChecked ? "Clear all" : "Select all"
+    })
   }
 
-  // Checks every providers[] box when none/some are checked, or unchecks all
+  // Checks every box in the facet when none/some are checked, or unchecks all
   // of them when every box is already checked — mirroring the button's own
   // toggling label ("Select all" / "Clear all") computed in syncChips.
-  toggleAllProviders() {
-    const { providers, allChecked } = this._providerCheckboxState()
-    providers.forEach((input) => { input.checked = !allChecked })
+  toggleAll(event) {
+    const field = event.currentTarget.dataset.facetSelectAll
+    const { boxes, allChecked } = this._checkboxState(field)
+    boxes.forEach((input) => { input.checked = !allChecked })
     this.submit()
   }
 
-  _providerCheckboxState() {
-    const providers = [...this.element.querySelectorAll('input[name="providers[]"]')]
-    const checkedCount = providers.filter((input) => input.checked).length
-    const allChecked = checkedCount === providers.length
+  _checkboxState(field) {
+    const boxes = [...this.element.querySelectorAll(`input[name="${field}[]"]`)]
+    const checkedCount = boxes.filter((input) => input.checked).length
+    const allChecked = boxes.length > 0 && checkedCount === boxes.length
     const narrowed = checkedCount > 0 && !allChecked
-    return { providers, checkedCount, allChecked, narrowed }
+    return { boxes, checkedCount, allChecked, narrowed }
   }
 
   search(event) {
