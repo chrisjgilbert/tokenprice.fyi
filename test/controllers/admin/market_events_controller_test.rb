@@ -82,6 +82,24 @@ class Admin::MarketEventsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "GPT-4 cuts 50%", @published.reload.title
   end
 
+  test "PATCH update saves a hand-edited so_what" do
+    patch admin_market_event_path(@published), params: {
+      market_event: { title: @published.title, event_date: @published.event_date,
+                      kind: "market", status: "published", so_what: "Edited by hand." }
+    }
+    assert_redirected_to admin_market_events_path
+    assert_equal "Edited by hand.", @published.reload.so_what
+  end
+
+  # --- regenerate insight ----------------------------------------------------
+
+  test "POST insight enqueues a regeneration job and redirects" do
+    assert_enqueued_with(job: MarketEventInsightJob, args: [ @published ]) do
+      post admin_market_event_insight_path(@published)
+    end
+    assert_redirected_to admin_market_events_path
+  end
+
   # --- publish ---------------------------------------------------------------
 
   test "PATCH publish flips status to published" do

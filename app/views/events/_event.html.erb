@@ -20,6 +20,10 @@
       <p class="ev-note"><%= event.note %></p>
     <% end %>
 
+    <% if event.so_what.present? %>
+      <p class="ev-sowhat"><%= event.so_what %></p>
+    <% end %>
+
     <% if event.kind == "launch" && (m = event.model) %>
       <div class="ev-tags">
         <%= link_to provider_path(event.provider), class: "ev-provider" do %>
@@ -30,6 +34,16 @@
         <span class="ev-tag"><%= io_price(m, tag: true) %></span>
         <% if m.context_window %>
           <span class="ev-tag num"><%= tokens_short(m.context_window) %> ctx</span>
+        <% end %>
+      </div>
+    <% elsif event.citations.present? %>
+      <div class="ev-cites">
+        <span class="ev-cites-label">Sources</span>
+        <% event.citations.each do |citation| %>
+          <% if (href = external_href(citation["url"])) %>
+            <%= link_to citation_host(href), href, class: "ev-cite",
+                  title: citation["title"].presence, target: "_blank", rel: "noopener" %>
+          <% end %>
         <% end %>
       </div>
     <% elsif event.source_url.present? %>

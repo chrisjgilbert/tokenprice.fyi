@@ -32,7 +32,10 @@ class MarketEvent::Announcement
   end
 
   def post_text
-    body = [ @event.title, @event.note.to_s.strip.presence ].compact.join("\n\n")
+    # The "so what" is the more shareable line, so it leads the body when present;
+    # the note is the fallback for events that haven't been given one yet.
+    blurb = (@event.so_what.presence || @event.note).to_s.strip.presence
+    body = [ @event.title, blurb ].compact.join("\n\n")
     suffix = "\n\n#{EVENTS_URL}"
     "#{body.truncate(CHAR_LIMIT - suffix.length, omission: '…')}#{suffix}"
   end

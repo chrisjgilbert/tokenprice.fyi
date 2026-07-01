@@ -13,6 +13,18 @@ class EventsHelperTest < ActionView::TestCase
     assert_includes build_all_events.select { |e| e.model == ai_models(:deepseek_v4) }.map(&:kind), "launch"
   end
 
+  test "build_all_events carries the so_what and citations onto market events" do
+    me = MarketEvent.create!(title: "Opus gets cheaper", event_date: Date.new(2025, 11, 24),
+                             kind: "market", status: "published",
+                             so_what: "Frontier prices fell a third.",
+                             citations: [ { "url" => "https://example.com", "title" => "Src" } ])
+
+    event = build_all_events(market_events: [ me ], models: []).find { |e| e.kind == "market" }
+
+    assert_equal "Frontier prices fell a third.", event.so_what
+    assert_equal [ { "url" => "https://example.com", "title" => "Src" } ], event.citations
+  end
+
   test "a priced model's launch note names its per-token rates" do
     launch = build_all_events.find { |e| e.kind == "launch" && e.model == ai_models(:opus) }
 
@@ -49,6 +61,7 @@ class EventsHelperTest < ActionView::TestCase
 
   def build_event(day, kind, title)
     EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,
-                            note: nil, model: nil, provider: nil, source_url: nil)
+                            note: nil, model: nil, provider: nil, source_url: nil,
+                            so_what: nil, citations: [])
   end
 end

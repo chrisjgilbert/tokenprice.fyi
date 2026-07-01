@@ -56,7 +56,7 @@ module Admin
 
     def event_params
       params.require(:market_event).permit(
-        :title, :note, :event_date, :kind, :status, :source, :source_url
+        :title, :note, :so_what, :event_date, :kind, :status, :source, :source_url
       )
     end
   end

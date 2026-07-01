@@ -97,4 +97,25 @@ class MarketEventTest < ActiveSupport::TestCase
     event.destroy
     assert_nil item.reload.market_event_id
   end
+
+  # --- citations default ------------------------------------------------------
+
+  test "citations default to an empty array" do
+    assert_equal [], MarketEvent.create!(valid_attrs).citations
+  end
+
+  # --- generate_insight facade ------------------------------------------------
+
+  test "generate_insight persists the so_what, citations, and a timestamp" do
+    event = MarketEvent.create!(valid_attrs)
+    client = fake_anthropic_search_client(text: "Frontier prices fell again.",
+                                          citations: [ { url: "https://example.com/a", title: "A" } ])
+
+    event.generate_insight(client: client)
+    event.reload
+
+    assert_equal "Frontier prices fell again.", event.so_what
+    assert_equal [ { "url" => "https://example.com/a", "title" => "A" } ], event.citations
+    assert_not_nil event.so_what_generated_at
+  end
 end

@@ -1,5 +1,6 @@
 class MarketEvent < ApplicationRecord
   include Announceable
+  include Insightful
 
   has_many :news_items, foreign_key: :market_event_id, dependent: :nullify
 

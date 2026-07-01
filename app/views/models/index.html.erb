@@ -202,6 +202,14 @@
     line-height: 1.5;
     margin-bottom: 12px;
   }
+  .hero-card-sowhat {
+    font-size: 13px;
+    color: rgba(226,232,240,.92);
+    line-height: 1.5;
+    padding-left: 10px;
+    border-left: 2px solid rgba(244,63,94,.7);
+    margin-bottom: 12px;
+  }
   .hero-card-chips {
     display: flex;
     flex-wrap: wrap;
@@ -390,7 +398,9 @@
               <% end %>
             </div>
             <div class="hero-card-date"><%= fmt_date_full(primary_event.date) %></div>
-            <% if primary_event.note.present? %>
+            <% if primary_event.so_what.present? %>
+              <div class="hero-card-sowhat"><%= primary_event.so_what %></div>
+            <% elsif primary_event.note.present? %>
               <div class="hero-card-note"><%= primary_event.note %></div>
             <% end %>
             <% if primary_event.kind == "launch" && (m = primary_event.model) %>
