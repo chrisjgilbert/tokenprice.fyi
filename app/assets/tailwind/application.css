@@ -693,28 +693,33 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 .tp-legend-list dt { font-size: 13px; font-weight: 600; color: var(--color-slate-900); }
 .tp-legend-list dd { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--color-slate-600); }
 
-/* Checkbox chips */
-.tp-check-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Checkbox list — the provider facet's panel content. A plain stacked
+   checklist (one row per provider, full width) rather than a wrapped chip
+   grid: the real provider count (40+ via the OpenRouter sync) made a
+   flex-wrap pill grid balloon the popover past the viewport with no way to
+   scroll it back into view. max-height + overflow-y keeps the panel itself a
+   fixed, predictable size regardless of how many providers exist; the
+   select-all header (outside this element) stays visible above the scroll. */
+.tp-check-row { display: flex; flex-direction: column; gap: 1px; max-height: 320px; overflow-y: auto; }
 .tp-check {
   position: relative;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 13px 8px 11px; border-radius: var(--radius-pill);
-  border: 1px solid var(--color-slate-300); background: #fff;
-  font-size: 13.5px; font-weight: 500; cursor: pointer; user-select: none;
-  box-shadow: var(--shadow-xs); transition: border-color .16s var(--ease-default), background .16s var(--ease-default), color .16s var(--ease-default);
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 8px 8px 6px; border-radius: var(--radius-sm);
+  border: none; background: none;
+  font-size: 13.5px; font-weight: 500; cursor: pointer; user-select: none; text-align: left;
+  transition: background .14s var(--ease-default);
 }
-.tp-check:hover { border-color: var(--color-slate-400); }
+.tp-check:hover { background: var(--color-slate-100); }
 .tp-check input { position: absolute; opacity: 0; width: 0; height: 0; }
 .tp-check-box {
   width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid var(--color-slate-300);
   display: grid; place-items: center; transition: all .16s var(--ease-default); flex: none;
 }
 .tp-check-box svg { width: 12px; height: 12px; color: #fff; opacity: 0; transform: scale(.5); transition: all .16s var(--ease-default); }
-.tp-check:has(:checked) { border-color: var(--color-indigo-400); background: var(--color-indigo-50); color: var(--color-indigo-700); }
+.tp-check:has(:checked) { color: var(--color-indigo-700); }
 .tp-check:has(:checked) .tp-check-box { background: var(--color-indigo-600); border-color: var(--color-indigo-600); }
 .tp-check:has(:checked) .tp-check-box svg { opacity: 1; transform: scale(1); }
-.tp-check:not(:has(:checked)) { border-color: var(--color-slate-200); background: var(--color-slate-50); color: var(--color-slate-400); }
-.tp-check:not(:has(:checked)):hover { border-color: var(--color-slate-300); color: var(--color-slate-500); }
+.tp-check:not(:has(:checked)) { color: var(--color-slate-600); }
 
 /* ============================================================ FILTER FACETS
    A facet (tier/provider/modality) is a dropdown-popover button at every
