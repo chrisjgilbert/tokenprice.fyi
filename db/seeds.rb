@@ -82,13 +82,7 @@ catalog = [
     prices: [ { on: "2025-05-22", in: 15, out: 75, cached: 1.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Sonnet 5", tier: "mid", status: "active",
-    context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-07-01",
-    description: "Latest Sonnet generation, succeeding 4.6. Anthropic's best balance of speed and intelligence, at the same $3/$15 price point Sonnet has held since Claude 4.",
-    prices: [ { on: "2026-07-01", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
-  },
-  {
-    provider: :anthropic, name: "Claude Sonnet 4.6", tier: "mid", status: "legacy",
+    provider: :anthropic, name: "Claude Sonnet 4.6", tier: "mid", status: "active",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-02-17",
     description: "Anthropic's best balance of speed and intelligence. 1M context window. Sonnet pricing has held flat at $3/$15 across all 4.x releases.",
     prices: [ { on: "2026-02-17", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
@@ -657,15 +651,10 @@ editorial = {
     best_for: "Reproducing results from the original Claude 4 launch.",
     limitations: "Expensive early pricing, fully superseded by cheaper, better Opus releases."
   },
-  "claude-sonnet-5" => {
+  "claude-sonnet-4-6" => {
     strengths: "The best speed-to-intelligence balance in the line, with a 1M-token context.",
     best_for: "Production apps, coding assistants and agents that need quality without Opus prices.",
     limitations: "Not as deep as Opus on the very hardest reasoning tasks."
-  },
-  "claude-sonnet-4-6" => {
-    strengths: "Prior Sonnet generation with the same speed-to-intelligence balance and 1M-token context.",
-    best_for: "Existing integrations that haven't moved to Sonnet 5 yet.",
-    limitations: "Superseded by Sonnet 5 at identical pricing."
   },
   "claude-sonnet-4-5" => {
     strengths: "Capable mid-tier Sonnet at the durable Sonnet price.",
