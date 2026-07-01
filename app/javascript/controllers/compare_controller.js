@@ -133,12 +133,31 @@ export default class extends Controller {
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
+  // On the standalone /compare page, window.location.href IS the compare URL,
+  // so a full Turbo.visit replace is correct: it re-renders the server HTML
+  // and updates the browser URL. The same "comparison" turbo-frame markup also
+  // loads inside the homepage's compare dialog — there, window.location is the
+  // homepage and a top-level Turbo.visit would navigate the whole page away,
+  // blowing the modal away with it. The enclosing <dialog> is what's unique to
+  // the embedded copy (the turbo-frame wrapper is present either way), so it's
+  // the only check needed: update the frame's src directly so Turbo loads it
+  // scoped to the frame, leaving the homepage and modal untouched; otherwise
+  // fall back to today's behavior.
   _navigate() {
+    const dialog = this.element.closest("dialog")
+
+    if (dialog) {
+      const frame = this.element.closest("turbo-frame")
+      const url = new URL(frame.src || window.location.href)
+      url.searchParams.set("a", this.slugAValue)
+      url.searchParams.set("b", this.slugBValue)
+      frame.src = url.toString()
+      return
+    }
+
     const url = new URL(window.location.href)
     url.searchParams.set("a", this.slugAValue)
     url.searchParams.set("b", this.slugBValue)
-    // Turbo.visit does a full page replace which re-renders the server HTML
-    // and updates the browser URL — exactly what we need.
     window.Turbo?.visit(url.toString(), { action: "replace" })
   }
 }

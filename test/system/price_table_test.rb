@@ -43,6 +43,22 @@ class PriceTableTest < ApplicationSystemTestCase
     end
   end
 
+  test "filtering by tier via the dropdown at desktop width narrows the table" do
+    visit root_path
+
+    assert_no_selector "#tier-panel label.tp-pill"
+    find(".tp-facet-chip", text: "Tier").click
+    within "#tier-panel" do
+      choose "tier_frontier", allow_label_click: true
+    end
+
+    within "#models" do
+      assert_text "Claude Opus 4.8"
+      assert_selector "[data-models-count]", text: /model/
+    end
+    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier", normalize_ws: true
+  end
+
   test "clearing filters restores the full table" do
     visit root_path
 
@@ -97,8 +113,9 @@ class PriceTableTest < ApplicationSystemTestCase
     resize_to_mobile
     visit root_path
 
-    # Below 760px the tier pills collapse behind a chip; they only become
-    # reachable once its popover is open.
+    # The tier pills always sit behind a dropdown chip now; they only become
+    # reachable once its popover is open. This pattern is no longer mobile-only,
+    # but the test still exercises it at mobile width as a real-device check.
     assert_no_selector "#tier-panel label.tp-pill"
     find(".tp-facet-chip", text: "Tier").click
     within "#tier-panel" do
@@ -118,21 +135,90 @@ class PriceTableTest < ApplicationSystemTestCase
     resize_to_mobile
     visit root_path
 
-    find("summary.tp-provider-summary").click
+    open_provider_filter
     check "provider_anthropic", allow_label_click: true
 
     within "#models" do
       assert_text "Claude Opus 4.8"
       assert_no_text "DeepSeek V4 Pro"
     end
-    assert_selector ".tp-provider-summary.is-active"
+    assert_selector ".tp-facet-chip", text: "Provider"
+  end
+
+  test "provider select all and clear all toggle every checkbox and resubmit" do
+    visit root_path
+
+    open_provider_filter
+    within "#provider-panel" do
+      check "provider_anthropic", allow_label_click: true
+      uncheck "provider_deepseek", allow_label_click: true
+    end
+
+    within "#models" do
+      assert_no_text "DeepSeek V4 Pro"
+    end
+
+    within "#provider-panel" do
+      click_on "Select all"
+      all('input[name="providers[]"]').each { |cb| assert cb.checked? }
+    end
+
+    within "#models" do
+      assert_text "DeepSeek V4 Pro"
+      assert_text "Claude Opus 4.8"
+    end
+
+    within "#provider-panel" do
+      click_on "Clear all"
+      all('input[name="providers[]"]').each { |cb| assert_not cb.checked? }
+    end
+
+    # An empty providers[] submission is indistinguishable from "every box
+    # checked" server-side (ModelsController#index only applies the where
+    # clause when @provider_slugs is non-empty) — "Clear all" resets to the
+    # unfiltered table, same as "Select all", not an empty result.
+    within "#models" do
+      assert_text "DeepSeek V4 Pro"
+      assert_text "Claude Opus 4.8"
+    end
+  end
+
+  test "provider chip shows a count badge only when narrowed to a subset" do
+    visit root_path
+
+    provider_chip = find(".tp-facet-chip", text: "Provider")
+    within provider_chip do
+      assert_no_selector ".tp-facet-chip-count", visible: :visible
+    end
+    assert_not provider_chip[:class].include?("is-active")
+
+    open_provider_filter
+    within "#provider-panel" do
+      check "provider_anthropic", allow_label_click: true
+    end
+
+    within ".tp-facet-chip", text: "Provider" do
+      assert_selector ".tp-facet-chip-count", visible: :visible, text: "1"
+    end
+    assert_selector ".tp-facet-chip.is-active", text: "Provider"
+
+    # The panel stays open across checkbox changes (it's multi-select) — pick
+    # it back up from the open popover rather than re-querying the page.
+    within "#provider-panel" do
+      click_on "Select all"
+    end
+
+    within ".tp-facet-chip", text: "Provider" do
+      assert_no_selector ".tp-facet-chip-count", visible: :visible
+    end
+    assert_not provider_chip[:class].include?("is-active")
   end
 
   private
 
-  # The provider checkboxes live inside a <details> that only auto-opens when a
-  # provider is already selected, so open it before toggling.
+  # The provider checkboxes live inside the same dropdown-popover pattern as
+  # tier/modality now — open it before toggling.
   def open_provider_filter
-    find("summary.tp-provider-summary").click
+    find(".tp-facet-chip", text: "Provider").click
   end
 end

@@ -226,50 +226,25 @@
     color: rgba(203,213,225,.9);
   }
 
-  /* Filters card */
+  /* Filters card: one row at every width — search box, then the tier /
+     provider / modality dropdown buttons. The card's overflow is open (not
+     hidden) so a facet's popover panel isn't clipped by the card bounds. */
   .filters-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
     background: #fff;
     border: 1px solid var(--color-slate-200);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     margin-bottom: 16px;
-    overflow: hidden;
+    padding: 16px;
+    overflow: visible;
   }
-  .filters-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 20px;
-    flex-wrap: wrap;
-  }
-  .filters-divider {
-    height: 1px;
-    background: var(--color-slate-100);
-    border: none;
-    margin: 0;
-  }
-  .filters-bottom {
-    padding: 14px 20px;
-  }
+  .filters-card fieldset { display: contents; }
 
-  /* Under 760px the inline filter row collapses into a single chip cluster:
-     search on its own line, then the tier / modality / provider dropdown chips
-     wrapping below it. The section wrappers flatten (display:contents) so every
-     chip becomes a sibling in one wrapping flex row, and the card lets the
-     provider dropdown panel escape its bounds. */
   @media (max-width: 760px) {
-    .filters-card {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      padding: 16px;
-      overflow: visible;
-    }
-    .filters-top,
-    .filters-bottom,
-    .filters-card fieldset { display: contents; }
-    .filters-divider { display: none; }
     .tp-search { flex-basis: 100%; min-width: 0; }
   }
 
@@ -447,6 +422,15 @@
   </div>
 <% end %>
 
+<%# ── COMPARE TRAY WRAPPER ────────────────────────────────────────────
+    Mounted outside turbo_frame_tag "models" deliberately: that frame
+    re-renders on every filter/sort change, which would destroy and recreate
+    a controller (and its selection state) mounted inside it. Spans the
+    filters form, the table frame, the tray, and the compare dialog so
+    selection survives filtering and the dialog can sit beside the tray. %>
+<div data-controller="compare-tray" data-compare-tray-compare-path-value="<%= compare_path %>"
+     data-action="turbo:frame-load@document->compare-tray#frameLoaded">
+
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
 <p class="tp-section-label mb-4">Price table</p>
 
@@ -460,84 +444,76 @@
   <p class="sr-only" role="status" data-filters-target="status"></p>
 
   <div class="filters-card">
-    <div class="filters-top">
-      <%# Search %>
-      <div class="tp-search">
-        <%= icon(:search, size: 18) %>
-        <label for="q" class="sr-only">Search models or providers</label>
-        <%= search_field_tag :q, @query, placeholder: "anthropic, openai, gpt-4o, …", autocomplete: "off",
-              data: { action: "input->filters#search" } %>
-      </div>
+    <%# Search %>
+    <div class="tp-search">
+      <%= icon(:search, size: 18) %>
+      <label for="q" class="sr-only">Search models or providers</label>
+      <%= search_field_tag :q, @query, placeholder: "anthropic, openai, gpt-4o, …", autocomplete: "off",
+            data: { action: "input->filters#search" } %>
+    </div>
 
-      <%# Tier radio pills. Active state is driven by the checked radio in CSS
-          (.tp-pill:has(input:checked)), not a render-time class — the pills sit
-          outside the Turbo frame the form replaces, so a class wouldn't refresh.
-          The facet layout keeps the pills inline on desktop and collapses them
-          into a dropdown chip under 760px. %>
+    <%# Tier radio pills. Active state is driven by the checked radio in CSS
+        (.tp-pill:has(input:checked)), not a render-time class — the pills sit
+        outside the Turbo frame the form replaces, so a class wouldn't refresh.
+        The facet is a dropdown-popover button at every viewport width. %>
+    <%= render layout: "facet", locals: {
+          name: "tier", label: "Tier", panel_id: "tier-panel", icon: :bolt,
+          legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
+      <div class="tp-pills" role="group" aria-label="Filter by tier">
+        <% tier_pill_options.each do |label, value| %>
+          <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Provider checkboxes. The only multi-select facet, so its chip carries a
+        count badge instead of a single value-text, and its panel opens with a
+        select-all/clear-all header instead of a legend. %>
+    <%= render layout: "facet", locals: {
+          name: "provider", label: "Provider", panel_id: "provider-panel", icon: :server,
+          count_badge: true, close_on_change: false } do %>
+      <fieldset>
+        <legend class="sr-only">Filter by provider</legend>
+        <div class="tp-facet-panel-header">
+          <button type="button" class="tp-facet-panel-action" data-action="click->filters#toggleAllProviders">
+            <%# Label flips with selection state in JS (toggleAllProviders/syncChips); a
+                non-empty default keeps no-JS submission sane (the fieldset still works). %>
+            Select all
+          </button>
+        </div>
+        <div class="tp-check-row">
+          <% @providers.each do |provider| %>
+            <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
+            <label class="tp-check">
+              <input type="checkbox" name="providers[]" value="<%= provider.slug %>"
+                     id="provider_<%= provider.slug %>"
+                     <% if checked %>checked<% end %>
+                     data-action="change->filters#submit">
+              <%= provider_square(provider, size: :sm) %>
+              <span class="tp-check-box">
+                <%= icon(:check, size: 12) %>
+              </span>
+              <%= provider.name %>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+    <% end %>
+
+    <%# Modality radio pills — only the classes present among listed models. %>
+    <% if @modality_classes.size > 1 %>
       <%= render layout: "facet", locals: {
-            name: "tier", label: "Tier", panel_id: "tier-panel",
-            legend_id: "tier-legend", legend_title: "Tiers",
-            legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
-        <div class="tp-pills" role="group" aria-label="Filter by tier">
-          <% tier_pill_options.each do |label, value| %>
-            <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
+            name: "modality", label: "Modality", panel_id: "modality-panel", icon: :brackets,
+            legend_button: "What the modality categories mean",
+            legend_entries: ModalityClass.legend_entries(@modality_classes) } do %>
+        <div class="tp-pills" role="group" aria-label="Filter by modality">
+          <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
+          <% @modality_classes.each do |klass| %>
+            <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
           <% end %>
         </div>
       <% end %>
-
-      <%# Modality radio pills — only the classes present among listed models. %>
-      <% if @modality_classes.size > 1 %>
-        <%= render layout: "facet", locals: {
-              name: "modality", label: "Modality", panel_id: "modality-panel",
-              legend_id: "modality-legend", legend_title: "Modality categories",
-              legend_button: "What the modality categories mean",
-              legend_entries: ModalityClass.legend_entries(@modality_classes) } do %>
-          <div class="tp-pills" role="group" aria-label="Filter by modality">
-            <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
-            <% @modality_classes.each do |klass| %>
-              <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
-    </div>
-
-    <hr class="filters-divider">
-
-    <%# Provider checkboxes %>
-    <div class="filters-bottom">
-      <fieldset>
-        <legend class="sr-only">Filter by provider</legend>
-        <details class="tp-provider-details" <%= 'open' if @provider_slugs.any? %>>
-          <summary class="tp-provider-summary">
-            <span class="tp-provider-summary-text">
-              <% if @provider_slugs.any? %>
-                <%= pluralize(@provider_slugs.size, "provider") %> selected
-              <% else %>
-                All <%= @providers.size %> providers
-              <% end %>
-            </span>
-            <span class="tp-provider-caret"><%= icon(:chevron_down, size: 14) %></span>
-          </summary>
-          <div class="tp-check-row">
-            <% @providers.each do |provider| %>
-              <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
-              <label class="tp-check">
-                <input type="checkbox" name="providers[]" value="<%= provider.slug %>"
-                       id="provider_<%= provider.slug %>"
-                       <% if checked %>checked<% end %>
-                       data-action="change->filters#submit">
-                <%= provider_square(provider, size: :sm) %>
-                <span class="tp-check-box">
-                  <%= icon(:check, size: 12) %>
-                </span>
-                <%= provider.name %>
-              </label>
-            <% end %>
-          </div>
-        </details>
-      </fieldset>
-    </div>
+    <% end %>
   </div>
 
   <noscript>
@@ -574,6 +550,7 @@
                cls
              } %>
           <tr>
+            <th scope="col" class="tp-col-select" aria-hidden="true" title="Select to compare"></th>
             <th scope="col" class="<%= th_cls.('name') %>" aria-sort="<%= aria_sort_for('name', current_sort: @sort, current_dir: @dir) %>">
               <%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params %>
             </th>
@@ -597,7 +574,7 @@
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="6">
+              <td colspan="7">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -618,6 +595,17 @@
                   (not effective_on) so a same-day in-place correction busts the row. %>
               <% cache [ model, model.current_price&.updated_at, sort_col ] do %>
               <tr class="clickable <%= 'tp-row-suspended' if model.suspended? %>" onclick="location.href='<%= j(model_path(model)) %>'">
+                <td class="tp-col-select">
+                  <button type="button" class="tp-select-btn"
+                          data-action="click->compare-tray#toggle:stop"
+                          data-slug="<%= model.slug %>"
+                          data-name="<%= model.name %>"
+                          data-provider-name="<%= model.provider.name %>"
+                          aria-pressed="false"
+                          aria-label="Select <%= model.name %> to compare">
+                    <%= icon(:check, size: 13) %>
+                  </button>
+                </td>
                 <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">
                     <%= link_to model_path(model) do %>
@@ -664,3 +652,49 @@
 <p class="mt-4 text-xs text-slate-400">
   Sorted by output price by default — output tokens are typically 3–5× more expensive than input and dominate the bill for generation-heavy workloads. Sort by input or cached input when your mix differs.
 </p>
+
+<%# ── COMPARE TRAY ──────────────────────────────────────────────────
+    Hidden (via .tp-tray:not(:has(.tp-tray-slot.filled))) until at least one
+    model is selected. Slot contents are cloned from the selected row's own
+    markup in JS — no second client-side model-data source. %>
+<div class="tp-tray" data-compare-tray-target="tray" hidden>
+  <%# A slot's remove button clones this rather than reaching into the dialog's
+      unrelated close button for its icon — keeps the two independent. %>
+  <template data-compare-tray-target="removeIconTemplate"><%= icon(:close, size: 14) %></template>
+  <div class="tp-tray-inner">
+    <div class="tp-tray-slots">
+      <div class="tp-tray-slot" data-compare-tray-target="slot" data-slot-index="0">
+        <span class="tp-tray-slot-empty">Select a model</span>
+      </div>
+      <div class="tp-tray-slot" data-compare-tray-target="slot" data-slot-index="1">
+        <span class="tp-tray-slot-empty">Select a model</span>
+      </div>
+    </div>
+    <div class="tp-tray-actions">
+      <button type="button" class="tp-btn tp-btn-ghost tp-btn-sm" data-action="click->compare-tray#clear">
+        Clear
+      </button>
+      <button type="button" class="tp-btn tp-btn-primary tp-btn-sm" data-compare-tray-target="compareBtn"
+              data-action="click->compare-tray#openCompare" disabled>
+        Pick one more
+      </button>
+    </div>
+  </div>
+</div>
+
+<%# ── COMPARE DIALOG ────────────────────────────────────────────────
+    Native <dialog>: Esc-to-close and focus trap come free from showModal().
+    Backdrop-click-to-close and the open trigger are the only behaviour this
+    needs to wire up; the comparison content itself is the existing /compare
+    page, loaded into the nested frame so nothing about the comparison logic
+    is duplicated here. %>
+<dialog class="tp-compare-dialog" data-compare-tray-target="dialog" data-action="click->compare-tray#backdropClose" aria-label="Compare models">
+  <div class="tp-compare-dialog-inner">
+    <button type="button" class="tp-compare-dialog-close" data-action="click->compare-tray#closeDialog" aria-label="Close comparison">
+      <%= icon(:close, size: 18) %>
+    </button>
+    <%= turbo_frame_tag "comparison", data: { compare_tray_target: "frame" } %>
+  </div>
+</dialog>
+
+</div><%# /[data-controller="compare-tray"] %>

@@ -9,10 +9,14 @@ import { Controller } from "@hotwired/stimulus"
 // that re-renders the markup just gets a fresh controller.
 export default class extends Controller {
   position(event) {
-    if (event.newState !== "open") return
-
     const invoker = document.querySelector(`[popovertarget="${this.element.id}"]`)
     if (!invoker) return
+
+    // The Popover API has no built-in ARIA wiring (unlike <details>/<summary>,
+    // which this replaced for the provider facet); mirror the open/closed
+    // state onto the trigger ourselves so it's announced.
+    invoker.setAttribute("aria-expanded", event.newState === "open" ? "true" : "false")
+    if (event.newState !== "open") return
 
     const margin = 8
     const gap = 6
@@ -28,8 +32,8 @@ export default class extends Controller {
   }
 
   // Dismiss after a single-select pick (the tier/modality facet dropdowns).
-  // A no-op on desktop, where the panel lays out inline and is never an open
-  // popover — hidePopover() would otherwise throw on a panel that isn't open.
+  // A no-op for a panel that isn't currently open — hidePopover() would
+  // otherwise throw.
   close() {
     if (this.element.matches(":popover-open")) this.element.hidePopover()
   }
