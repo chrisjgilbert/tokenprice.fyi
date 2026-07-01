@@ -55,8 +55,8 @@ module GuideHelper
   # declaratives, grounded in each pattern's real cost shape.
   LEDES = {
     "rag" => [
-      "Retrieval does the hard part. The model reads a few fetched passages and answers without inventing, so most of the work is careful reading, not reasoning.",
-      "That makes the shape input-heavy: thousands of context tokens go in to get a short paragraph back. The retrieved context is the meter, and it runs on every query."
+      "Generate answer is the step that gets priced: it reads whatever passages retrieval fetched and answers from them, without inventing facts that aren't there. That's reading against a fixed set of passages, not reasoning from scratch, so a mid-tier model is usually enough.",
+      "The retrieved passages set the shape: thousands of tokens of context go in, and a short paragraph comes back out. That context is re-sent in full on every query, so its size is what drives the cost, not the length of the answer."
     ],
     "coding_agent" => [
       "An agent reads a repo, plans a change, edits, runs tools, then re-checks. Each loop re-sends a growing context, so the same tokens get billed again and again.",
