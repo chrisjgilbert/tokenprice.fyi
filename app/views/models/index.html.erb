@@ -660,10 +660,19 @@
                   <td data-label="Cached in /1M" class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
                     <%= usd(model.current_cached_input) %>
                   </td>
+                <% elsif model.native_priced? %>
+                  <%# Directory listing with a curated native-unit price (per image, %>
+                  <%# credits, …) that doesn't fit the per-token columns. %>
+                  <td class="numeric tp-price-native" colspan="3">
+                    <span class="tp-price-native-val"><%= model.price_summary %></span>
+                    <% if model.pricing_model_label %>
+                      <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
+                    <% end %>
+                  </td>
                 <% else %>
-                  <%# Directory listing (e.g. image generation): priced per image, %>
-                  <%# not per token, and not yet curated. %>
-                  <td class="numeric tp-price-untracked" colspan="3">Priced per image — not yet tracked</td>
+                  <%# Directory listing with no curated price: either awaiting one, %>
+                  <%# or one the provider doesn't publish (price_detail says which). %>
+                  <td class="numeric tp-price-untracked" colspan="3"><%= model.price_detail.present? ? "Pricing not published" : "Not yet tracked" %></td>
                 <% end %>
                 <td data-label="Context" class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>

@@ -24,7 +24,8 @@ class PriceCatalog
   class Entry
     attr_reader :slug, :name, :tier, :context_window, :released_on, :status,
                 :provider_name, :provider_slug, :provider_accent, :snapshots,
-                :input_modalities, :output_modalities, :modality_class
+                :input_modalities, :output_modalities, :modality_class,
+                :pricing_model, :price_summary, :price_detail, :price_source, :priced_as_of
 
     def initialize(model)
       @slug           = model.slug
@@ -36,6 +37,11 @@ class PriceCatalog
       @input_modalities  = model.input_modalities
       @output_modalities = model.output_modalities
       @modality_class    = model.modality_class
+      @pricing_model  = model.pricing_model
+      @price_summary  = model.price_summary
+      @price_detail   = model.price_detail
+      @price_source   = model.price_source
+      @priced_as_of   = model.priced_as_of
       @provider_name  = model.provider.name
       @provider_slug  = model.provider.slug
       @provider_accent = model.provider.accent
@@ -59,9 +65,13 @@ class PriceCatalog
     def provider = ProviderRef.new(name: provider_name, slug: provider_slug, accent: provider_accent)
 
     def current = snapshots.last
-    # Listed but not yet priced in its native unit — a directory class (image
-    # generation) with no price snapshot. Consumers show "not yet tracked".
-    def directory_listing? = ModalityClass.directory_class?(modality_class) && current.nil?
+    # A directory class whose price we've curated as a native-unit string (per
+    # image, credits, …) rather than a per-token snapshot.
+    def native_priced? = price_summary.present?
+    # Listed but not priced at all — a directory class with neither a price
+    # snapshot nor a curated native price. Consumers show "not yet tracked".
+    # Kept in lockstep with AiModel#directory_listing?.
+    def directory_listing? = ModalityClass.directory_class?(modality_class) && current.nil? && price_summary.blank?
     def input  = current&.input
     def output = current&.output
     def cached = current&.cached

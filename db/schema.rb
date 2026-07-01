@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_150000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -23,6 +23,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_140000) do
     t.string "name", null: false
     t.string "openrouter_id"
     t.json "output_modalities", default: [], null: false
+    t.text "price_detail"
+    t.string "price_source"
+    t.string "price_summary"
+    t.date "priced_as_of"
+    t.string "pricing_model"
     t.integer "provider_id", null: false
     t.date "released_on"
     t.string "slug", null: false
