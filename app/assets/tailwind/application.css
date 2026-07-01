@@ -736,30 +736,8 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 .tp-search input::placeholder { color: var(--color-slate-400); }
 .tp-search input:focus-visible { outline: none; border-color: var(--color-indigo-400); box-shadow: 0 0 0 4px var(--color-indigo-100); }
 
-/* Pill radio group */
-.tp-pills {
-  display: inline-flex; flex-wrap: wrap; min-width: 0; padding: 4px; gap: 3px;
-  background: var(--color-slate-100); border-radius: var(--radius-pill);
-  border: 1px solid var(--color-slate-200);
-}
-.tp-pill {
-  padding: 7px 16px; border-radius: var(--radius-pill); font-size: 13.5px; font-weight: 600;
-  color: var(--color-slate-600); cursor: pointer; user-select: none; border: none; background: transparent;
-  font-family: var(--font-sans); transition: color .16s var(--ease-default); position: relative; letter-spacing: -0.01em;
-}
-.tp-pill:hover { color: var(--color-slate-900); }
-/* Active state derives from the checked radio (like .tp-check below), not a
-   server-rendered class: the pills sit outside the Turbo frame the filter form
-   replaces, so a render-time class would never refresh on a filter change. */
-.tp-pill:has(input:checked) { color: var(--color-indigo-700); }
-.tp-pill:has(input:checked)::before {
-  content: ""; position: absolute; inset: 0; background: #fff;
-  border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); z-index: -1;
-}
-
-/* Filter group: the pills plus a dropdown chip; min/max-width let a long pill
-   row (modality) shrink and wrap on a narrow screen instead of overflowing
-   the card. */
+/* Filter group: a facet's dropdown chip. min/max-width let the row shrink and
+   wrap on a narrow screen instead of overflowing the card. */
 .tp-filter-group { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 
 /* Legend list — shared by the folded-in-panel legend (_facet.html.erb) the
@@ -772,13 +750,14 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 .tp-legend-list dt { font-size: 13px; font-weight: 600; color: var(--color-slate-900); }
 .tp-legend-list dd { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--color-slate-600); }
 
-/* Checkbox list — the provider facet's panel content. A plain stacked
-   checklist (one row per provider, full width) rather than a wrapped chip
-   grid: the real provider count (40+ via the OpenRouter sync) made a
-   flex-wrap pill grid balloon the popover past the viewport with no way to
-   scroll it back into view. max-height + overflow-y keeps the panel itself a
-   fixed, predictable size regardless of how many providers exist; the
-   select-all header (outside this element) stays visible above the scroll. */
+/* Checkbox list — every facet's panel content (tier / provider / modality). A
+   plain stacked checklist (one row per option, full width) rather than a
+   wrapped chip grid: the real provider count (40+ via the OpenRouter sync) made
+   a flex-wrap grid balloon the popover past the viewport with no way to scroll
+   it back into view, and a stacked list reads the same for the shorter tier and
+   modality facets. max-height + overflow-y keeps the panel itself a fixed,
+   predictable size regardless of how many options exist; the select-all header
+   (outside this element) stays visible above the scroll. */
 .tp-check-row { display: flex; flex-direction: column; gap: 1px; max-height: 320px; overflow-y: auto; }
 .tp-check {
   position: relative;
@@ -802,12 +781,11 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 
 /* ============================================================ FILTER FACETS
    A facet (tier/provider/modality) is a dropdown-popover button at every
-   viewport width: a primary control reading icon · label · current value ·
+   viewport width: a primary control reading icon · label · count badge ·
    caret, opening a native popover (top-layer, light-dismiss, positioned by
-   popover_controller) that carries the controls plus a folded-in legend. This
-   used to be mobile-only (under 760px) with the pills flowing inline on
-   desktop; the chip pattern is now universal, so these rules apply
-   unconditionally. */
+   popover_controller) that carries a multi-select checkbox list plus a
+   folded-in legend. All three facets share this one shape — an empty selection
+   means "all", so the badge shows only when narrowed to a proper subset. */
 .tp-facet { position: relative; }
 
 .tp-facet-chip {
@@ -851,7 +829,6 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
   border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
 }
-.tp-facet-panel .tp-pills { display: flex; }
 .tp-facet-panel-title {
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--color-slate-500); margin-bottom: 10px;

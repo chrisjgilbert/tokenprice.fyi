@@ -462,66 +462,60 @@
             data: { action: "input->filters#search" } %>
     </div>
 
-    <%# Tier radio pills. Active state is driven by the checked radio in CSS
-        (.tp-pill:has(input:checked)), not a render-time class — the pills sit
-        outside the Turbo frame the form replaces, so a class wouldn't refresh.
-        The facet is a dropdown-popover button at every viewport width. %>
+    <%# Tier checkboxes. Every facet is a multi-select checkbox list behind the
+        same dropdown chip; an empty selection means "all tiers". Active state is
+        CSS-driven off :checked, not a render-time class — the rows sit outside
+        the Turbo frame the form replaces, so a class wouldn't refresh. %>
     <%= render layout: "facet", locals: {
           name: "tier", label: "Tier", panel_id: "tier-panel", icon: :bolt,
           legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
-      <div class="tp-pills" role="group" aria-label="Filter by tier">
-        <% tier_pill_options.each do |label, value| %>
-          <%= filter_pill :tier, value, label, checked: @tier == value.presence %>
-        <% end %>
-      </div>
-    <% end %>
-
-    <%# Provider checkboxes. The only multi-select facet, so its chip carries a
-        count badge instead of a single value-text, and its panel opens with a
-        select-all/clear-all header instead of a legend. %>
-    <%= render layout: "facet", locals: {
-          name: "provider", label: "Provider", panel_id: "provider-panel", icon: :server,
-          count_badge: true, close_on_change: false } do %>
       <fieldset>
-        <legend class="sr-only">Filter by provider</legend>
-        <div class="tp-facet-panel-header">
-          <button type="button" class="tp-facet-panel-action" data-action="click->filters#toggleAllProviders">
-            <%# Label flips with selection state in JS (toggleAllProviders/syncChips); a
-                non-empty default keeps no-JS submission sane (the fieldset still works). %>
-            Select all
-          </button>
-        </div>
+        <legend class="sr-only">Filter by tier</legend>
         <div class="tp-check-row">
-          <% @providers.each do |provider| %>
-            <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
-            <label class="tp-check">
-              <input type="checkbox" name="providers[]" value="<%= provider.slug %>"
-                     id="provider_<%= provider.slug %>"
-                     <% if checked %>checked<% end %>
-                     data-action="change->filters#submit">
-              <%= provider_square(provider, size: :sm) %>
-              <span class="tp-check-box">
-                <%= icon(:check, size: 12) %>
-              </span>
-              <%= provider.name %>
-            </label>
+          <% tier_options.each do |value, _label| %>
+            <%= filter_check "tier", value, checked: @tiers.empty? || @tiers.include?(value) do %>
+              <%= tier_badge(value) %>
+            <% end %>
           <% end %>
         </div>
       </fieldset>
     <% end %>
 
-    <%# Modality radio pills — only the classes present among listed models. %>
+    <%# Provider checkboxes. Field name is "providers[]" while the facet is named
+        "provider", so it passes field: explicitly for the count/select-all wiring. %>
+    <%= render layout: "facet", locals: {
+          name: "provider", label: "Provider", panel_id: "provider-panel", icon: :server,
+          field: "providers" } do %>
+      <fieldset>
+        <legend class="sr-only">Filter by provider</legend>
+        <div class="tp-check-row">
+          <% @providers.each do |provider| %>
+            <% checked = @provider_slugs.empty? || @provider_slugs.include?(provider.slug) %>
+            <%= filter_check "providers", provider.slug, checked: checked,
+                  leading: provider_square(provider, size: :sm) do %>
+              <%= provider.name %>
+            <% end %>
+          <% end %>
+        </div>
+      </fieldset>
+    <% end %>
+
+    <%# Modality checkboxes — only the classes present among listed models. %>
     <% if @modality_classes.size > 1 %>
       <%= render layout: "facet", locals: {
             name: "modality", label: "Modality", panel_id: "modality-panel", icon: :brackets,
             legend_button: "What the modality categories mean",
             legend_entries: ModalityClass.legend_entries(@modality_classes) } do %>
-        <div class="tp-pills" role="group" aria-label="Filter by modality">
-          <%= filter_pill :modality, "", "All", checked: @modality.nil? %>
-          <% @modality_classes.each do |klass| %>
-            <%= filter_pill :modality, klass, ModalityClass.label(klass), checked: @modality == klass %>
-          <% end %>
-        </div>
+        <fieldset>
+          <legend class="sr-only">Filter by modality</legend>
+          <div class="tp-check-row">
+            <% @modality_classes.each do |klass| %>
+              <%= filter_check "modality", klass, checked: @modalities.empty? || @modalities.include?(klass) do %>
+                <%= ModalityClass.label(klass) %>
+              <% end %>
+            <% end %>
+          </div>
+        </fieldset>
       <% end %>
     <% end %>
   </div>
@@ -533,7 +527,7 @@
 <% end %>
 
 <%# ── TABLE (Turbo Frame — refreshed on filter changes) ───────────── %>
-<% filter_params = { tier: @tier, modality: @modality, q: @query.presence, providers: @provider_slugs.presence }.compact %>
+<% filter_params = { tier: @tiers.presence, modality: @modalities.presence, q: @query.presence, providers: @provider_slugs.presence }.compact %>
 
 <%# target="_top": links in here (model/provider rows, clear-filters) are real
     page navigations — only the sort links opt back into the frame. %>

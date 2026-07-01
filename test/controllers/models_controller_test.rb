@@ -250,9 +250,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     # The multimodal sonnet and the directory-class image_gen fixtures are both
     # listed, so their classes are offered as facets; a class no listed row has
     # (video_generation) is not.
-    assert_select "input[name=modality][value=multimodal]"
-    assert_select "input[name=modality][value=image_generation]"
-    assert_select "input[name=modality][value=video_generation]", count: 0
+    assert_select "input[value=multimodal][name=?]", "modality[]"
+    assert_select "input[value=image_generation][name=?]", "modality[]"
+    assert_select "input[value=video_generation][name=?]", "modality[]", count: 0
   end
 
   test "index can be filtered to image-generation models" do

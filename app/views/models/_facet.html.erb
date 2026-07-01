@@ -1,35 +1,37 @@
 <%# A filter facet: a dropdown-popover button at every viewport width. The
     button opens a native popover panel (positioned by popover_controller)
-    carrying the controls, an optional header (e.g. provider's select-all row),
-    and an optional folded-in legend.
+    carrying a multi-select checkbox list, a select-all/clear-all header, and an
+    optional folded-in legend. Every facet (tier / provider / modality) is a
+    multi-select checkbox group — an empty selection means "all", so the chip
+    carries a count badge that shows only when the selection is a proper subset.
 
     locals: name, label, panel_id, icon (optional, defaults to the facet name),
-            count_badge (optional — renders an empty numeric badge slot instead
-            of the single-value chip text; for the multi-select provider facet),
-            close_on_change (optional, defaults true — a single-select facet
-            closes its popover the instant a choice is made; a multi-select
-            facet like provider must stay open so further boxes stay reachable),
+            field (optional — the checkbox field name, defaults to name; the
+            provider facet is named "provider" but posts "providers[]"),
             legend_button, legend_entries (optional together — folds a legend
             into the panel; omit for a facet with no legend, e.g. provider).
-    Yields the control inputs (the pills/checkboxes). %>
+    Yields the checkbox rows. %>
+<% field = local_assigns.fetch(:field, name) %>
 <div class="tp-filter-group tp-facet">
   <button type="button" class="tp-facet-chip" popovertarget="<%= panel_id %>"
           aria-label="Filter by <%= name %>" aria-haspopup="true" aria-expanded="false">
     <%= icon(local_assigns.fetch(:icon, name.to_sym), size: 16) %>
     <span class="tp-facet-chip-label"><%= label %></span>
-    <% if local_assigns[:count_badge] %>
-      <span class="tp-facet-chip-count" data-facet-chip-count="<%= name %>" hidden></span>
-    <% else %>
-      <span class="tp-facet-chip-val" data-facet-chip="<%= name %>"></span>
-    <% end %>
+    <span class="tp-facet-chip-count" data-facet-chip-count="<%= field %>" hidden></span>
     <span class="tp-facet-caret"><%= icon(:chevron_down, size: 14) %></span>
   </button>
 
-  <% close_on_change = local_assigns.fetch(:close_on_change, true) %>
   <div id="<%= panel_id %>" class="tp-facet-panel" popover
        data-controller="popover"
-       data-action="toggle->popover#position<%= ' change->popover#close' if close_on_change %>">
+       data-action="toggle->popover#position">
     <p class="tp-facet-panel-title"><%= label %></p>
+    <div class="tp-facet-panel-header">
+      <%# Label flips with selection state in JS (toggleAll/syncChips); a
+          non-empty default keeps no-JS submission sane. %>
+      <button type="button" class="tp-facet-panel-action"
+              data-facet-select-all="<%= field %>"
+              data-action="click->filters#toggleAll">Select all</button>
+    </div>
     <%= yield %>
     <% if local_assigns[:legend_entries] %>
       <div class="tp-facet-legend">

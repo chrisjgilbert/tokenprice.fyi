@@ -33,7 +33,7 @@ class PriceTableTest < ApplicationSystemTestCase
     # No box checked means "all providers"; checking one narrows to it. The real
     # checkbox is visually hidden behind a styled label, so click through the
     # label the way a user does.
-    check "provider_anthropic", allow_label_click: true
+    check "providers_anthropic", allow_label_click: true
 
     # Scope to the table: the hero card mentions DeepSeek too, and it lives
     # outside the Turbo frame the filter refreshes.
@@ -46,17 +46,22 @@ class PriceTableTest < ApplicationSystemTestCase
   test "filtering by tier via the dropdown at desktop width narrows the table" do
     visit root_path
 
-    assert_no_selector "#tier-panel label.tp-pill"
+    assert_no_selector "#tier-panel label.tp-check"
     find(".tp-facet-chip", text: "Tier").click
     within "#tier-panel" do
-      choose "tier_frontier", allow_label_click: true
+      check "tier_frontier", allow_label_click: true
     end
 
     within "#models" do
       assert_text "Claude Opus 4.8"
       assert_selector "[data-models-count]", text: /model/
     end
-    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier", normalize_ws: true
+    # One of three tiers checked narrows the table, so the chip lights up and
+    # carries a count badge rather than echoing a single value.
+    assert_selector ".tp-facet-chip.is-active", text: "Tier"
+    within ".tp-facet-chip", text: "Tier" do
+      assert_selector ".tp-facet-chip-count", text: "1"
+    end
   end
 
   test "clearing filters restores the full table" do
@@ -113,22 +118,24 @@ class PriceTableTest < ApplicationSystemTestCase
     resize_to_mobile
     visit root_path
 
-    # The tier pills always sit behind a dropdown chip now; they only become
+    # The tier checkboxes always sit behind a dropdown chip now; they only become
     # reachable once its popover is open. This pattern is no longer mobile-only,
     # but the test still exercises it at mobile width as a real-device check.
-    assert_no_selector "#tier-panel label.tp-pill"
+    assert_no_selector "#tier-panel label.tp-check"
     find(".tp-facet-chip", text: "Tier").click
     within "#tier-panel" do
-      choose "tier_frontier", allow_label_click: true
+      check "tier_frontier", allow_label_click: true
     end
 
     within "#models" do
       assert_text "Claude Opus 4.8"
       assert_selector "[data-models-count]", text: /model/
     end
-    # The chip echoes the active value and lights up. normalize_ws collapses the
-    # newline the button's markup puts between the label and the value span.
-    assert_selector ".tp-facet-chip.is-active", text: "Tier · Frontier", normalize_ws: true
+    # The chip lights up and shows a count badge for the narrowed selection.
+    assert_selector ".tp-facet-chip.is-active", text: "Tier"
+    within ".tp-facet-chip", text: "Tier" do
+      assert_selector ".tp-facet-chip-count", text: "1"
+    end
   end
 
   test "mobile provider dropdown chip filters the table" do
@@ -136,7 +143,7 @@ class PriceTableTest < ApplicationSystemTestCase
     visit root_path
 
     open_provider_filter
-    check "provider_anthropic", allow_label_click: true
+    check "providers_anthropic", allow_label_click: true
 
     within "#models" do
       assert_text "Claude Opus 4.8"
@@ -150,8 +157,8 @@ class PriceTableTest < ApplicationSystemTestCase
 
     open_provider_filter
     within "#provider-panel" do
-      check "provider_anthropic", allow_label_click: true
-      uncheck "provider_deepseek", allow_label_click: true
+      check "providers_anthropic", allow_label_click: true
+      uncheck "providers_deepseek", allow_label_click: true
     end
 
     within "#models" do
@@ -194,7 +201,7 @@ class PriceTableTest < ApplicationSystemTestCase
 
     open_provider_filter
     within "#provider-panel" do
-      check "provider_anthropic", allow_label_click: true
+      check "providers_anthropic", allow_label_click: true
     end
 
     within ".tp-facet-chip", text: "Provider" do

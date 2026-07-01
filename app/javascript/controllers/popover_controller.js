@@ -30,11 +30,4 @@ export default class extends Controller {
     this.element.style.left = `${left}px`
     this.element.style.top = `${top}px`
   }
-
-  // Dismiss after a single-select pick (the tier/modality facet dropdowns).
-  // A no-op for a panel that isn't currently open — hidePopover() would
-  // otherwise throw.
-  close() {
-    if (this.element.matches(":popover-open")) this.element.hidePopover()
-  }
 }

@@ -104,7 +104,7 @@
                   </span>
                 </div>
               <% end %>
-              <%= link_to root_path(tier: step.tier), class: "gs-opt-more" do %>
+              <%= link_to root_path(tier: [ step.tier ]), class: "gs-opt-more" do %>
                 <%= safe_join([ "See all #{step.tier}-tier models in the price table", co_icon(:arrow_right, size: 13) ]) %>
               <% end %>
             </div>
