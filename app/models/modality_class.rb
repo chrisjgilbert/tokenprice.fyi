@@ -6,14 +6,24 @@
 # A value object in the codebase's style: no state worth holding, just a pure
 # function over two modality sets exposed as `ModalityClass.for(input:, output:)`.
 #
-# The site tracks token-priced models only, so the taxonomy stops at classes that
-# bill per token: text, multimodal (non-text input → text output), embedding, and
-# the catch-all omnimodal (any_to_any). A non-text-output media model (image-gen,
-# TTS, video, …) isn't priced here and degrades to :other.
+# Most classes here bill per token — text, multimodal (non-text input → text
+# output), embedding, and the catch-all omnimodal (any_to_any). One "directory
+# class" is admitted without a per-token price: image_generation, whose native
+# per-image price is curated separately and reads "not yet tracked" until then
+# (see DIRECTORY_CLASSES and docs/IMAGE_CATEGORY_PLAN.md). Other non-text-output
+# media signatures (TTS, video, …) still degrade to :other, pending the same
+# treatment.
 class ModalityClass
   # Closed modality vocabulary. Anything outside this is dropped before
   # classifying so a stray token from the source can't reshape the signature.
   VOCABULARY = %w[text image audio video file embedding].freeze
+
+  # Classes we list without a per-token price: their native unit (per image, …)
+  # is curated, so a row can be listed and filterable before it's priced. The
+  # one place that knows which classes get the "not yet tracked" treatment.
+  DIRECTORY_CLASSES = %i[image_generation].freeze
+
+  def self.directory_class?(symbol) = DIRECTORY_CLASSES.include?(symbol.to_sym)
 
   def self.for(input:, output:)
     new(input, output).classify
@@ -23,11 +33,12 @@ class ModalityClass
   # term (per the plan's copy rules): "Omnimodal", not "any-to-any". The keys are
   # the full class set — the signature-derived rules plus :other.
   LABELS = {
-    text:       "Text",
-    multimodal: "Multimodal",
-    embedding:  "Embedding",
-    any_to_any: "Omnimodal",
-    other:      "Other"
+    text:             "Text",
+    multimodal:       "Multimodal",
+    image_generation: "Image generation",
+    embedding:        "Embedding",
+    any_to_any:       "Omnimodal",
+    other:            "Other"
   }.freeze
 
   def self.label(symbol) = LABELS.fetch(symbol.to_sym, symbol.to_s.tr("_", " ").capitalize)
@@ -35,11 +46,12 @@ class ModalityClass
   # One-line descriptions for the filter legend, naming each class by its
   # input→output shape — the same signature the rules below match on, in plain words.
   DESCRIPTIONS = {
-    text:       "Text in, text out.",
-    multimodal: "Accepts images, audio, or other media as input; produces text.",
-    embedding:  "Text or an image in, a vector embedding out.",
-    any_to_any: "Produces several output modalities, including non-text.",
-    other:      "Modality signatures that don't fit the categories above."
+    text:             "Text in, text out.",
+    multimodal:       "Accepts images, audio, or other media as input; produces text.",
+    image_generation: "Text (and optionally an image) in, an image out.",
+    embedding:        "Text or an image in, a vector embedding out.",
+    any_to_any:       "Produces several output modalities, including non-text.",
+    other:            "Modality signatures that don't fit the categories above."
   }.freeze
 
   def self.description(symbol) = DESCRIPTIONS.fetch(symbol.to_sym, nil)
@@ -78,12 +90,17 @@ class ModalityClass
   def nontext_input? = @input.any? { |m| m != "text" }
 
   # Each rule is evaluated in order against the normalised signature; the first
-  # truthy match wins. any_to_any is last: it's the catch for a signature that
-  # produces several modalities including a non-text one.
+  # truthy match wins. image_generation sits before any_to_any deliberately: a
+  # model that emits an image is doing image generation in the visitor's mental
+  # model whether or not it also emits text, so an image+text signature (e.g.
+  # Gemini's image model) lands in image_generation, not the omni catch-all.
+  # any_to_any is last: the catch for a signature producing several modalities
+  # including a non-text one.
   SIGNATURE_RULES = {
-    text:       -> { @input == %w[text] && text_output? },
-    multimodal: -> { nontext_input? && text_output? },
-    embedding:  -> { (@input - %w[image text]).empty? && @input.any? && embedding_output? },
-    any_to_any: -> { @output.size > 1 && @output.any? { |m| m != "text" } }
+    text:             -> { @input == %w[text] && text_output? },
+    multimodal:       -> { nontext_input? && text_output? },
+    image_generation: -> { @output.include?("image") },
+    embedding:        -> { (@input - %w[image text]).empty? && @input.any? && embedding_output? },
+    any_to_any:       -> { @output.size > 1 && @output.any? { |m| m != "text" } }
   }.freeze
 end

@@ -70,6 +70,31 @@ module OpenRouter
       assert_nil Provider.find_by(slug: "freeco")
     end
 
+    test "a price-less directory row is left out of the Slack digest" do
+      rows = [ or_model(id: "blackforest/flux-1", name: "Black Forest Labs: FLUX.1",
+                        prompt: "0", completion: "0", output_modalities: [ "image" ]) ]
+
+      result = sync(rows)
+      assert_equal 1, result.created
+      assert_empty result.created_records
+    end
+
+    test "an image+text output model keeps its per-token price and classes as image generation" do
+      # Gemini's image model ("nano banana") emits image and text and is priced
+      # per token; it lands in image_generation, not the omni catch-all, and
+      # keeps its price rather than being treated as a price-less directory row.
+      rows = [ or_model(id: "google/gemini-image", name: "Google: Gemini Image",
+                        prompt: "0.0000003", completion: "0.0000025",
+                        output_modalities: [ "image", "text" ]) ]
+      sync(rows)
+
+      model = AiModel.find_by!(openrouter_id: "google/gemini-image")
+      assert_equal :image_generation, model.modality_class
+      assert model.priced?
+      assert_in_delta 0.3, model.current_input, 0.0001
+      assert_not model.directory_listing?
+    end
+
     test "a created model is mapped onto our schema" do
       sync([ or_model(id: "anthropic/claude-haiku-4.5", name: "Anthropic: Claude Haiku 4.5",
                       prompt: "0.000001", completion: "0.000005", context: 200_000,
@@ -502,17 +527,21 @@ module OpenRouter
       assert_equal :text, model.modality_class
     end
 
-    # --- non-text-output models are skipped (not priced here) ---------------
+    # --- directory classes are admitted; other non-text outputs are skipped ---
 
-    test "an image-generation row is skipped — no model, no price point" do
-      result = assert_no_difference("AiModel.count") do
+    test "an image-generation row is admitted as a price-less directory listing" do
+      result = assert_difference("AiModel.count", 1) do
         sync([ or_model(id: "google/imagen-4", name: "Google: Imagen 4",
                         prompt: "0", completion: "0", image: "0.04",
                         input_modalities: [ "text" ], output_modalities: [ "image" ]) ])
       end
 
-      assert_equal 1, result.skipped
-      assert_nil AiModel.find_by(openrouter_id: "google/imagen-4")
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "google/imagen-4")
+      assert_equal :image_generation, model.modality_class
+      assert_empty model.price_points
+      assert model.directory_listing?
+      assert_includes AiModel.listed, model
     end
 
     test "a non-text-output row with a real token price is still skipped (output gate)" do
@@ -538,15 +567,17 @@ module OpenRouter
       assert_equal 1.0, model.current_price.input_per_mtok
     end
 
-    test "a genuinely free row with no non-text price is still skipped" do
+    test "a non-directory media row with no price is still skipped" do
+      # An audio-output (TTS) row degrades to :other — not a directory class yet —
+      # so with no usable price it's skipped rather than admitted price-less.
       result = assert_no_difference("AiModel.count") do
-        sync([ or_model(id: "freeco/free-img", name: "FreeCo: Free Img",
-                        prompt: "0", completion: "0", image: "0",
-                        output_modalities: [ "image" ]) ])
+        sync([ or_model(id: "someco/tts-1", name: "SomeCo: TTS 1",
+                        prompt: "0", completion: "0",
+                        output_modalities: [ "audio" ]) ])
       end
 
       assert_equal 1, result.skipped
-      assert_nil AiModel.find_by(openrouter_id: "freeco/free-img")
+      assert_nil AiModel.find_by(openrouter_id: "someco/tts-1")
     end
 
     test "a text-output row with only a partial token price is skipped, not mislabelled" do

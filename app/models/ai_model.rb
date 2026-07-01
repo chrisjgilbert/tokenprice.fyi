@@ -39,11 +39,15 @@ class AiModel < ApplicationRecord
   before_validation :normalize_openrouter_id
   before_save :assign_modality_class, if: :modality_signature_changed?
 
-  # Visible in the public directory: not retired and priced (has at least one
-  # price point). A price-less row stays hidden — we simply have no data on it.
+  # Visible in the public directory: not retired, and either priced (has a price
+  # point) or a directory class we list without a per-token price (image
+  # generation — priced per image, curated separately). A price-less text row
+  # stays hidden — we simply have no data on it.
   scope :listed, -> {
     where.not(status: "retired")
-      .where("ai_models.id IN (SELECT ai_model_id FROM price_points)")
+      .where("ai_models.id IN (SELECT ai_model_id FROM price_points)" \
+             " OR ai_models.modality_class IN (?)",
+             ModalityClass::DIRECTORY_CLASSES.map(&:to_s))
   }
   scope :by_release, -> { order(Arel.sql("released_on IS NULL"), released_on: :desc) }
   scope :curated, -> { where(source: MANUAL_SOURCE) }
@@ -123,6 +127,13 @@ class AiModel < ApplicationRecord
   end
 
   def priced? = current_price.present?
+
+  # Listed, but its native price (per image, …) isn't tracked yet — a directory
+  # class with no price point. The surfaces read this to show "not yet tracked"
+  # in place of the per-token price cards rather than a misleading dash or $0.
+  def directory_listing?
+    ModalityClass.directory_class?(modality_class) && current_price.nil?
+  end
 
   # Priced on the per-token axis the listing tables sort by — a row with an input
   # rate. A row without one sinks to the bottom of a price sort rather than
