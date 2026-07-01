@@ -1,4 +1,6 @@
 class AiModel < ApplicationRecord
+  include Insightful
+
   # Trailing windows for the "% change over time" indicators, in display order.
   # A window is the price in effect that long ago vs. now; :launch spans
   # the whole history. Prices are a step function (a snapshot holds until the

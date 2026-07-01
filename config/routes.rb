@@ -55,6 +55,9 @@ Rails.application.routes.draw do
     resources :providers, except: :show
     resources :models, except: :show do
       resources :price_points, only: %i[new create edit update destroy]
+      # Regenerate the launch "so what" out of band. A namespaced sub-resource
+      # with a standard action, per the house style, rather than a custom verb.
+      resource :insight, only: :create, controller: "ai_model_insights"
     end
     resources :market_events, except: :show do
       member { patch :publish }

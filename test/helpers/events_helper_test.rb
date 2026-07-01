@@ -57,11 +57,29 @@ class EventsHelperTest < ActionView::TestCase
     assert_equal 2, picked.size
   end
 
+  test "hero_events prefers a same-day frontier launch over a same-day mid-tier one" do
+    frontier_launch = build_event(20, "launch", "Frontier model released", model: ai_models(:opus))
+    mid_launch      = build_event(20, "launch", "Mid model released", model: ai_models(:sonnet))
+
+    picked = hero_events([ frontier_launch, mid_launch ], count: 2)
+
+    assert_equal "Frontier model released", picked.first.title
+  end
+
+  test "hero_events still prefers a newer mid-tier launch over an older frontier one" do
+    older_frontier_launch = build_event(9, "launch", "Frontier model released", model: ai_models(:opus))
+    newer_mid_launch      = build_event(27, "launch", "Mid model released", model: ai_models(:sonnet))
+
+    picked = hero_events([ older_frontier_launch, newer_mid_launch ], count: 2)
+
+    assert_equal "Mid model released", picked.first.title, "recency must win over tier across different dates"
+  end
+
   private
 
-  def build_event(day, kind, title)
+  def build_event(day, kind, title, model: nil)
     EventsHelper::Event.new(date: Date.new(2026, 6, day), title: title, kind: kind,
-                            note: nil, model: nil, provider: nil, source_url: nil,
+                            note: nil, model: model, provider: nil, source_url: nil,
                             so_what: nil, citations: [])
   end
 end

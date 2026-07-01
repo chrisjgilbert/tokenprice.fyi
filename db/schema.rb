@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_30_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -26,6 +26,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_130000) do
     t.integer "provider_id", null: false
     t.date "released_on"
     t.string "slug", null: false
+    t.text "so_what"
+    t.datetime "so_what_generated_at"
     t.string "source", default: "manual", null: false
     t.string "status", default: "active", null: false
     t.text "strengths"

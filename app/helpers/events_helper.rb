@@ -44,7 +44,7 @@ module EventsHelper
         model: m,
         provider: m.provider,
         source_url: nil,
-        so_what: nil,
+        so_what: m.so_what,
         citations: []
       )
     end
@@ -57,9 +57,13 @@ module EventsHelper
   end
 
   # The hero's "Latest events" slice: one per kind, then fill remaining slots
-  # with the most-recent of any kind.
+  # with the most-recent of any kind. Recency leads; launch_tier_weight only
+  # breaks ties between launches on the same date (frontier > mid > small),
+  # so a same-day flagship release wins over a same-day minor one without
+  # letting an older frontier launch bury a genuinely newer story. Non-launch
+  # kinds are unaffected (launch_tier_weight is 0 for them).
   def hero_events(events, count: 2)
-    newest_first = events.sort_by { |e| [ e.date, e.kind, e.title ] }.reverse
+    newest_first = events.sort_by { |e| [ e.date, launch_tier_weight(e), e.kind, e.title ] }.reverse
     picked = []
     newest_first.each do |e|
       next if picked.any? { |p| p.kind == e.kind }
@@ -71,6 +75,17 @@ module EventsHelper
       picked << e unless picked.include?(e)
     end
     picked
+  end
+
+  # Higher for a higher-tier launch (frontier highest), 0 for anything else —
+  # an unranked/unknown tier sorts as the lowest launch tier rather than above
+  # frontier. AiModel.tiers preserves declaration order (frontier, mid, small).
+  def launch_tier_weight(event)
+    return 0 unless event.kind == "launch"
+
+    tiers = AiModel.tiers.keys
+    rank = tiers.index(event.model&.tier) || tiers.size
+    tiers.size - rank
   end
 
   # Group a timeline into [year, events] pairs for the events page: newest year
