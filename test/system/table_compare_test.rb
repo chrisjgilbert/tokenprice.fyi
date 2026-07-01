@@ -11,7 +11,10 @@ class TableCompareTest < ApplicationSystemTestCase
   # price-change ticker (and, once a model is selected, the fixed compare
   # tray) covering the row being interacted with — taller than the shared
   # desktop default so every row clears both bars without scroll gymnastics.
-  setup { page.current_window.resize_to(1400, 2000) }
+  # The hero's mini-timeline (EventsHelper#hero_events) grew the homepage's
+  # above-the-fold height by ~170px, so this needs a bit more headroom on
+  # top of that to keep clicks on the fixed compare tray unambiguous.
+  setup { page.current_window.resize_to(1400, 2200) }
 
   test "selecting 2 rows shows the tray with both slots filled" do
     visit root_path
