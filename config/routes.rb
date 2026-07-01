@@ -58,6 +58,9 @@ Rails.application.routes.draw do
     end
     resources :market_events, except: :show do
       member { patch :publish }
+      # Regenerate the "so what" out of band. A namespaced sub-resource with a
+      # standard action, per the house style, rather than another custom verb.
+      resource :insight, only: :create, controller: "market_event_insights"
     end
 
     # Active Job / Solid Queue dashboard, behind the admin session auth above.

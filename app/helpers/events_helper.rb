@@ -1,5 +1,5 @@
 module EventsHelper
-  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move)
+  Event = Data.define(:date, :title, :kind, :note, :model, :provider, :source_url, :move, :so_what, :citations)
 
   # The launch-timeline blurb for a model: "ships X at $Y in / $Z out per 1M".
   # Every listed model is priced, so the else is a defensive fallback only.
@@ -24,7 +24,9 @@ module EventsHelper
         model: nil,
         provider: nil,
         source_url: me.source_url,
-        move: nil
+        move: nil,
+        so_what: me.so_what,
+        citations: me.citations
       )
     end
 
@@ -43,7 +45,9 @@ module EventsHelper
           model: m,
           provider: m.provider,
           source_url: nil,
-          move: nil
+          move: nil,
+          so_what: nil,
+          citations: []
         )
       end
 
@@ -56,7 +60,9 @@ module EventsHelper
           model: m,
           provider: m.provider,
           source_url: nil,
-          move: move
+          move: move,
+          so_what: nil,
+          citations: []
         )
       end
     end
@@ -149,5 +155,13 @@ module EventsHelper
 
   def event_kind_icon(kind)
     EVENT_KINDS.dig(kind, :icon) || :calendar
+  end
+
+  # The bare host for a citation chip — "techcrunch.com" reads better than a long
+  # title or full URL. The full title rides along as the link's tooltip.
+  def citation_host(url)
+    URI.parse(url).host&.delete_prefix("www.") || url
+  rescue URI::InvalidURIError
+    url
   end
 end

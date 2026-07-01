@@ -47,4 +47,77 @@ module AnthropicClient
   rescue Anthropic::Errors::Error => e
     raise Error, "Anthropic API error: #{e.message}"
   end
+
+  WEB_SEARCH_TOOL = { type: "web_search_20260209", name: "web_search" }.freeze
+
+  # Run a web-search-grounded generation and return the model's prose plus the
+  # sources it cited: { text:, citations: } where citations is an array of
+  # { "url" =>, "title" => } hashes (string keys, so they survive a round-trip
+  # through a JSON column unchanged).
+  #
+  # The web search tool runs a server-side loop; when it reaches its per-turn
+  # cap the response comes back with stop_reason :pause_turn and must be re-sent
+  # to resume (no extra user message — the server picks up from the trailing
+  # server_tool_use). We accumulate text and citations across those turns and
+  # bound the resumes with max_continuations so a stuck loop can't run forever.
+  def self.search_call(model:, system:, messages:, max_tokens:, max_searches: 5, max_continuations: 4, client: nil)
+    client ||= build
+    tool = WEB_SEARCH_TOOL.merge(max_uses: max_searches)
+
+    convo     = messages.dup
+    text      = +""
+    citations = []
+    continuations = 0
+
+    loop do
+      response = client.messages.create(
+        model:      model,
+        max_tokens: max_tokens,
+        system_:    system,
+        messages:   convo,
+        tools:      [ tool ]
+      )
+
+      collect_text_and_citations(response, text, citations)
+      convo += [ { role: "assistant", content: response.content } ]
+
+      break unless response.stop_reason == :pause_turn
+
+      continuations += 1
+      break if continuations > max_continuations
+    end
+
+    { text: text.strip, citations: citations.uniq }
+  rescue Anthropic::Errors::Error => e
+    raise Error, "Anthropic API error: #{e.message}"
+  end
+
+  def self.collect_text_and_citations(response, text, citations)
+    response.content.each do |block|
+      next unless block.type == :text
+
+      text << block.text.to_s
+      block_citations(block).each do |citation|
+        url = citation_field(citation, :url).to_s
+        next if url.strip.empty?
+
+        citations << { "url" => url, "title" => citation_field(citation, :title).to_s.presence }
+      end
+    end
+  end
+  private_class_method :collect_text_and_citations
+
+  def self.block_citations(block)
+    Array(block.respond_to?(:citations) ? block.citations : nil)
+  end
+  private_class_method :block_citations
+
+  def self.citation_field(citation, key)
+    if citation.respond_to?(key)
+      citation.public_send(key)
+    elsif citation.respond_to?(:[])
+      citation[key] || citation[key.to_s]
+    end
+  end
+  private_class_method :citation_field
 end

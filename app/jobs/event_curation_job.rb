@@ -124,6 +124,10 @@ class EventCurationJob < ApplicationJob
 
       ids = Array(draft[:news_item_ids]).map(&:to_i).select(&:positive?)
       NewsItem.where(id: ids).update_all(market_event_id: event.id) if ids.any?
+
+      # Generate the cited "so what" out of band — a separate web-search call the
+      # forced-tool curation request above can't make, kept off this job's path.
+      MarketEventInsightJob.perform_later(event)
       created += 1
     rescue Date::Error, ActiveRecord::RecordInvalid => e
       Rails.logger.warn("EventCurationJob: skipping malformed draft — #{e.message}")

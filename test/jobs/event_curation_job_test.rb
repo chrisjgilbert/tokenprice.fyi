@@ -77,6 +77,12 @@ class EventCurationJobTest < ActiveJob::TestCase
     assert_equal good[:title], MarketEvent.last.title
   end
 
+  test "enqueues an insight job for each created draft" do
+    assert_enqueued_jobs 1, only: MarketEventInsightJob do
+      EventCurationJob.perform_now
+    end
+  end
+
   # --- early exit ------------------------------------------------------------
 
   test "does nothing when no relevant unattached news items exist" do

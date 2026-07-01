@@ -104,6 +104,21 @@ class MarketEvent::AnnouncementTest < ActiveSupport::TestCase
     assert_operator text.length, :<=, 300
   end
 
+  test "post text uses the so_what in place of the note when present" do
+    event = published_event
+    event.update!(so_what: "Output-token costs for chained agent calls drop a third overnight.")
+    posts = []
+    stub_post(BlueskyClient, capture: posts) do
+      stub_post(MastodonClient, capture: posts) do
+        MarketEvent::Announcement.new(event).run
+      end
+    end
+
+    text = posts.first
+    assert_includes text, "Output-token costs for chained agent calls"
+    assert_not_includes text, event.note
+  end
+
   test "an overlong note is truncated but the link is preserved" do
     event = MarketEvent.create!(
       title: "Big pricing shift", note: "x" * 500,

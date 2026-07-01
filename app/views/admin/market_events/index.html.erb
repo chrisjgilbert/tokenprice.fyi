@@ -24,6 +24,9 @@
               <% if event.note.present? %>
                 <div class="text-xs text-slate-500 mt-0.5 max-w-lg"><%= truncate(event.note, length: 100) %></div>
               <% end %>
+              <% if event.so_what.present? %>
+                <div class="text-xs text-rose-600 mt-0.5 max-w-lg">So what: <%= truncate(event.so_what, length: 100) %></div>
+              <% end %>
             </th>
             <td class="px-4 py-3 text-slate-600 tabular-nums whitespace-nowrap"><%= event.event_date.strftime("%-d %b %Y") %></td>
             <td class="px-4 py-3 text-slate-500 whitespace-nowrap">
@@ -73,6 +76,9 @@
               <%= link_to event.title, edit_admin_market_event_path(event), class: "font-medium text-slate-900 hover:text-indigo-600" %>
               <% if event.note.present? %>
                 <div class="text-xs text-slate-500 mt-0.5 max-w-lg"><%= truncate(event.note, length: 100) %></div>
+              <% end %>
+              <% if event.so_what.present? %>
+                <div class="text-xs text-rose-600 mt-0.5 max-w-lg">So what: <%= truncate(event.so_what, length: 100) %></div>
               <% end %>
             </th>
             <td class="px-4 py-3 text-slate-600 tabular-nums whitespace-nowrap"><%= event.event_date.strftime("%-d %b %Y") %></td>
