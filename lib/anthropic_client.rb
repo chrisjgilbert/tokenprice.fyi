@@ -70,9 +70,10 @@ module AnthropicClient
     convo     = messages.dup
     text      = +""
     citations = []
-    continuations = 0
 
-    loop do
+    # One initial request plus up to max_continuations resumes; the iteration
+    # count is the bound, so a stuck pause_turn loop can't run forever.
+    (max_continuations + 1).times do
       response = client.messages.create(
         model:      model,
         max_tokens: max_tokens,
@@ -96,9 +97,6 @@ module AnthropicClient
       convo += [ { role: "assistant", content: response.content } ]
 
       break unless response.stop_reason == :pause_turn
-
-      continuations += 1
-      break if continuations > max_continuations
     end
 
     { text: text.strip, citations: citations.uniq { |c| c["url"] } }
