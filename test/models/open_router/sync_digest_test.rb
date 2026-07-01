@@ -43,6 +43,17 @@ module OpenRouter
       SyncDigest.new(result, date: date)
     end
 
+    # A persisted model launch_posts can look the description up by slug. Only
+    # slug and description matter here; the post's name/provider come from the
+    # CreatedRecord.
+    def make_model(slug:, description:)
+      AiModel.create!(
+        name: slug, slug: slug, provider: providers(:anthropic),
+        source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
+        description: description
+      )
+    end
+
     # --- nil when nothing changed -------------------------------------------
 
     test "returns nil when both records arrays are empty" do
@@ -240,9 +251,8 @@ module OpenRouter
     end
 
     test "launch_posts includes the model's description as a news blurb" do
-      AiModel.create!(name: "Nova 1", slug: "acme-nova-1", provider: providers(:anthropic),
-                      source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
-                      description: "A fast multimodal model tuned for extraction and classification.")
+      make_model(slug: "acme-nova-1",
+                 description: "A fast multimodal model tuned for extraction and classification.")
       c = make_created(model_name: "Nova 1", provider_name: "Anthropic",
                        model_slug: "acme-nova-1", input_per_mtok: 1.0, output_per_mtok: 5.0)
 
@@ -253,9 +263,7 @@ module OpenRouter
     end
 
     test "launch_posts truncates an overlong description but keeps the link" do
-      AiModel.create!(name: "Verbose 1", slug: "acme-verbose-1", provider: providers(:anthropic),
-                      source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
-                      description: "x" * 500)
+      make_model(slug: "acme-verbose-1", description: "x" * 500)
       c = make_created(model_name: "Verbose 1", provider_name: "Anthropic",
                        model_slug: "acme-verbose-1")
 
@@ -263,6 +271,15 @@ module OpenRouter
       assert_operator post.length, :<=, 300
       assert post.end_with?("https://tokenprice.fyi/models/acme-verbose-1")
       assert_includes post, "…"
+    end
+
+    test "launch_posts flattens whitespace in a multi-line description" do
+      make_model(slug: "acme-multi-1", description: "First line.\n\nSecond   line.")
+      c = make_created(model_name: "Multi 1", provider_name: "Anthropic",
+                       model_slug: "acme-multi-1")
+
+      post = digest(make_result(created_records: [ c ])).launch_posts.first
+      assert_includes post, "First line. Second line."
     end
 
     test "launch_posts falls back to name and price when the model has no description" do

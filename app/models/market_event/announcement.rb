@@ -5,7 +5,6 @@
 class MarketEvent::Announcement
   BASE_URL = "https://tokenprice.fyi"
   EVENTS_URL = "#{BASE_URL}/events"
-  CHAR_LIMIT = 300
 
   def initialize(event)
     @event = event
@@ -37,6 +36,6 @@ class MarketEvent::Announcement
     blurb = (@event.so_what.presence || @event.note).to_s.strip.presence
     body = [ @event.title, blurb ].compact.join("\n\n")
     suffix = "\n\n#{EVENTS_URL}"
-    "#{body.truncate(CHAR_LIMIT - suffix.length, omission: '…')}#{suffix}"
+    "#{body.truncate(SocialBroadcast::CHAR_LIMIT - suffix.length, omission: '…')}#{suffix}"
   end
 end

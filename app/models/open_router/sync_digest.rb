@@ -1,9 +1,11 @@
 module OpenRouter
-  # Formats a ModelSync::Result into a Slack Block Kit payload for posting
-  # to the team's #token-price channel.
+  # Presents a ModelSync::Result two ways: the Slack Block Kit payload for the
+  # team's #token-price channel, and the public social launch posts (which also
+  # look up each launched model's description to read like news).
   #
   #   digest = OpenRouter::SyncDigest.new(result)
   #   payload = digest.to_slack_payload   # => Hash or nil (nothing changed)
+  #   digest.launch_posts                 # => Array<String>
   class SyncDigest
     BASE_URL = "https://tokenprice.fyi"
 
@@ -32,9 +34,8 @@ module OpenRouter
         blocks: [ header_block, *sections ] }
     end
 
-    # BlueSky caps a post at 300 characters; Mastodon's limit is higher, so the
-    # same text is valid on both.
-    LAUNCH_CHAR_LIMIT = 300
+    # Below this, drop the description rather than post a stub fragment.
+    MIN_BLURB_CHARS = 20
 
     # Social-post strings for the sync's new launches, one per announceable model.
     # Each carries the model's one-line description (the sync writes one on import)
@@ -56,17 +57,17 @@ module OpenRouter
       headline = "New model: #{record.model_name} (#{record.provider_name}) — " \
                  "$#{fmt(record.input_per_mtok)}/M in, $#{fmt(record.output_per_mtok)}/M out."
       link = "#{BASE_URL}/models/#{record.model_slug}"
-      [ headline, fit_blurb(description, headline, link), link ].compact.join("\n\n")
+      # Two blank-line separators (4 chars) join the up-to-three parts.
+      budget = SocialBroadcast::CHAR_LIMIT - headline.length - link.length - 4
+      [ headline, fit_blurb(description, budget), link ].compact.join("\n\n")
     end
 
-    # The description, trimmed to whatever room is left after the headline, the
-    # link, and their blank-line separators — dropped entirely if there's no room.
-    def fit_blurb(description, headline, link)
-      blurb = description.to_s.strip.presence
-      return unless blurb
-
-      budget = LAUNCH_CHAR_LIMIT - headline.length - link.length - 4
-      return if budget < 20
+    # The description, squished onto one line (a multi-line upstream blurb would
+    # break the paragraph structure) and trimmed to the budget left after the
+    # headline and link — dropped entirely when there's too little room.
+    def fit_blurb(description, budget)
+      blurb = description.to_s.squish.presence
+      return if blurb.nil? || budget < MIN_BLURB_CHARS
 
       blurb.truncate(budget, omission: "…")
     end
