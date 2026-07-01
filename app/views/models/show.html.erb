@@ -200,8 +200,8 @@
 
 <section class="mb-10">
   <h2 class="mb-3 text-lg font-semibold">Snapshots</h2>
-  <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-    <table class="min-w-full divide-y divide-slate-200 text-sm">
+  <div class="tp-cardify-wrap overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <table class="tp-cardify min-w-full divide-y divide-slate-200 text-sm">
       <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
         <tr>
           <th class="px-4 py-3 font-medium">Effective</th>
@@ -215,12 +215,12 @@
       <tbody class="divide-y divide-slate-100">
         <% @price_points.reverse_each do |pp| %>
           <tr>
-            <td class="px-4 py-3 whitespace-nowrap"><%= pp.effective_on.strftime("%-d %b %Y") %></td>
-            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.input_per_mtok) %></td>
-            <td class="px-4 py-3 text-right tabular-nums"><%= usd(pp.output_per_mtok) %></td>
-            <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(pp.cached_input_per_mtok) %></td>
-            <td class="px-4 py-3 text-slate-500"><%= pp.note %></td>
-            <td class="px-4 py-3 text-slate-500"><%= pp.source %></td>
+            <td class="tp-card-title px-4 py-3 whitespace-nowrap"><%= pp.effective_on.strftime("%-d %b %Y") %></td>
+            <td data-label="Input" class="px-4 py-3 text-right tabular-nums"><%= usd(pp.input_per_mtok) %></td>
+            <td data-label="Output" class="px-4 py-3 text-right tabular-nums"><%= usd(pp.output_per_mtok) %></td>
+            <td data-label="Cached in" class="px-4 py-3 text-right tabular-nums text-slate-500"><%= usd(pp.cached_input_per_mtok) %></td>
+            <td data-label="Note" class="px-4 py-3 text-slate-500"><%= pp.note %></td>
+            <td data-label="Source" class="px-4 py-3 text-slate-500"><%= pp.source %></td>
           </tr>
         <% end %>
       </tbody>

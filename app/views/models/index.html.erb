@@ -549,9 +549,9 @@
     <% end %>
   </div>
 
-  <div class="tp-table-wrap">
+  <div class="tp-table-wrap tp-cardify-wrap">
     <div class="tp-table-scroll">
-      <table class="tp-data">
+      <table class="tp-data tp-cardify">
         <thead>
           <% th_cls = ->(key) {
                cls = "sortable"
@@ -616,7 +616,7 @@
                     <%= icon(:check, size: 13) %>
                   </button>
                 </td>
-                <td class="<%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
+                <td class="tp-card-title <%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                   <div class="tp-model-cell">
                     <%= link_to model_path(model) do %>
                       <%= provider_square(model.provider, size: :md) %>
@@ -634,17 +634,17 @@
                     </div>
                   </div>
                 </td>
-                <td class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
+                <td data-label="Tier" class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
                   <%= tier_badge(model.tier) %>
                 </td>
                 <% if model.priced? %>
-                  <td class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                  <td data-label="Input /1M" class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
                     <%= usd(model.current_input) %>
                   </td>
-                  <td class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                  <td data-label="Output /1M" class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
                     <%= usd(model.current_output) %>
                   </td>
-                  <td class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                  <td data-label="Cached in /1M" class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
                     <%= usd(model.current_cached_input) %>
                   </td>
                 <% else %>
@@ -652,7 +652,7 @@
                   <%# not per token, and not yet curated. %>
                   <td class="numeric tp-price-untracked" colspan="3">Priced per image — not yet tracked</td>
                 <% end %>
-                <td class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
+                <td data-label="Context" class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
                   <%= tokens_short(model.context_window) %>
                 </td>
               </tr>

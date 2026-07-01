@@ -43,8 +43,8 @@
   and price moves across the market, see the <%= link_to "market-events timeline", events_path, class: "text-indigo-600 hover:underline" %>.
 </p>
 
-<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-  <table class="min-w-full divide-y divide-slate-200 text-sm">
+<div class="tp-cardify-wrap overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="tp-cardify min-w-full divide-y divide-slate-200 text-sm">
     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
       <tr>
         <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link("Model", "name", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
@@ -58,15 +58,15 @@
     <tbody class="divide-y divide-slate-100">
       <% @models.each do |model| %>
         <tr class="hover:bg-slate-50 <%= 'opacity-60 grayscale hover:opacity-100 hover:grayscale-0' if model.suspended? %>">
-          <td class="px-4 py-3">
+          <td class="tp-card-title px-4 py-3">
             <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
             <%= status_badge(model.status) %>
           </td>
-          <td class="px-4 py-3"><%= tier_badge(model.tier) %></td>
-          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
-          <td class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
-          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
-          <td class="px-4 py-3 text-right tabular-nums text-slate-500"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
+          <td data-label="Tier" class="px-4 py-3"><%= tier_badge(model.tier) %></td>
+          <td data-label="Input" class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
+          <td data-label="Output" class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
+          <td data-label="Context" class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
+          <td data-label="Released" class="px-4 py-3 text-right tabular-nums text-slate-500"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
         </tr>
       <% end %>
     </tbody>

@@ -242,6 +242,28 @@
   }
   .cmp-swap-col { display: none; }
 }
+/* Below ~520px two model cards side by side get too cramped to read (the wider
+   one clips), and the three-column comparison rows overflow the viewport and
+   are clipped by the table's overflow:hidden — the values become unreachable.
+   Stack the selectors, and give each metric a full-width label with the two
+   models side by side beneath it. */
+@media (max-width: 520px) {
+  .cmp-selectors { grid-template-columns: 1fr; }
+  .cmp-row { grid-template-columns: 1fr 1fr; }
+  .cmp-row .lbl {
+    grid-column: 1 / -1;
+    border-right: none;
+    border-bottom: 1px solid var(--color-slate-100);
+    padding: 11px 16px;
+  }
+  .cmp-row.accent .lbl { border-bottom-color: var(--color-indigo-100); }
+  .cmp-cell {
+    padding: 14px 16px;
+    font-size: 15px;
+    align-items: baseline;
+    gap: 7px;
+  }
+}
 
 /* Selector info layout */
 .sel-btn-info { flex: 1; min-width: 0; }
