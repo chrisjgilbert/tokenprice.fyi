@@ -231,6 +231,11 @@ methodical, unhurried. Everything else should feel like the same person wrote it
   use two sentences.
 - **Earn technical vocabulary.** Terms like "cost-driver step" are fine when they're doing
   real work. Cut them when they're just flavor or atmosphere.
+- **No ungrounded claims.** A sentence that asserts a verdict without naming the mechanism
+  behind it is filler, and an unexplained metaphor is the same failure in different clothes.
+  "Retrieval does the hard part" says nothing until it says what the hard part is; "the
+  retrieved context is the meter" evokes without informing. Name the step, the tier, the
+  number — swap the atmosphere for the fact.
 - **No rhetorical devices.** No "Your X is Y." No fragments for drama. No questions that are
   actually statements. No "No fabricated X, no Y" disclaimers that double as marketing.
 - **Cut filler.** If a sentence restates what the reader can already see, delete it. Section
@@ -247,6 +252,9 @@ methodical, unhurried. Everything else should feel like the same person wrote it
   step, see the guide" — not shorthand that assumes the reader knows the product.
 - **Empty/loading states:** functional, not cute.
 - **Tooltips:** the fact, not an intro to the fact.
+- **Lede claims:** ground the assertion in the mechanism — "Generate answer reads retrieved
+  passages and answers without inventing, so a mid-tier model is usually enough" over
+  "Retrieval does the hard part."
 
 ## Testing
 
