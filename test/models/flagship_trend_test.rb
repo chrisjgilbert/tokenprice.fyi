@@ -35,6 +35,25 @@ class FlagshipTrendTest < ActiveSupport::TestCase
     assert_nil deepseek.input_change_pct
   end
 
+  test "excludes a frontier model whose launch input price is zero" do
+    provider = Provider.create!(name: "Free Labs", slug: "free-labs", accent: "#222222")
+    model = provider.ai_models.create!(name: "Free Frontier", tier: "frontier",
+                                       status: "active", released_on: Date.new(2025, 1, 1),
+                                       source: AiModel::MANUAL_SOURCE)
+    model.price_points.create!(effective_on: Date.new(2025, 1, 1), input_per_mtok: 0, output_per_mtok: 0)
+
+    # A $0 launch price can't anchor a log-axis step and isn't a real flagship
+    # rate; the provider must not produce a trend.
+    assert_nil FlagshipTrend.all.find { |t| t.provider_slug == "free-labs" }
+  end
+
+  test "last_modified reflects a frontier-model metadata edit that touches no price row" do
+    before = FlagshipTrend.last_modified
+    ai_models(:opus).update!(released_on: ai_models(:opus).released_on - 1.day)
+
+    assert_operator FlagshipTrend.last_modified, :>, before
+  end
+
   test "includes superseded flagships that the public catalog hides" do
     provider = Provider.create!(name: "Historic Labs", slug: "historic-labs", accent: "#123456")
     model = provider.ai_models.create!(name: "Historic Frontier One", tier: "frontier",

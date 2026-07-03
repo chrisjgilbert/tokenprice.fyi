@@ -27,4 +27,19 @@ class TrendsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert response.etag.present?
   end
+
+  test "editing a flagship's metadata busts the cache even with no price write" do
+    get trends_url
+    etag = response.etag
+
+    # released_on sets a flagship's x-position but touches no price row. Advance
+    # past the current second so the edit lands on a later Last-Modified — the
+    # etag stamp is second-precision, as any HTTP cache validator is, and a real
+    # admin edit is always seconds after the cached render.
+    travel 2.seconds do
+      ai_models(:opus).update!(released_on: ai_models(:opus).released_on - 1.day)
+      get trends_url, headers: { "If-None-Match" => etag }
+    end
+    assert_response :success, "a frontier metadata edit must not 304 off the old etag"
+  end
 end

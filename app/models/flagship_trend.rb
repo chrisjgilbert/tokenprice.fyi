@@ -42,6 +42,16 @@ class FlagshipTrend
   end
 
   class << self
+    # Freshness stamp for conditional GET on the trends page. The chart is driven
+    # by frontier-model metadata (name, released_on, tier, status) as much as by
+    # prices, and none of those writes touch a price row — a tier flip even moves
+    # a model in or out of the series — so fold in the newest AiModel write, not
+    # just PriceCatalog's price-point stamp. (The daily x-axis advance is handled
+    # separately, by dating the controller's etag.)
+    def last_modified
+      [ PriceCatalog.last_modified, AiModel.maximum(:updated_at) ].compact.max
+    end
+
     # One trend per provider that has at least one priced frontier model with a
     # release date, richest histories first so the busiest lines lead the legend.
     # Reads the full frontier history (superseded models included) — they're the
@@ -58,9 +68,10 @@ class FlagshipTrend
     private
 
     # A frontier model we can place on the timeline: it has a release date and a
-    # launch per-token price to anchor the step.
+    # positive launch input price to anchor the step (the chart's log axis can't
+    # plot 0, and a $0 "price" isn't a real flagship rate anyway).
     def frontier_flagship?(entry)
-      entry.tier == "frontier" && entry.released_on && entry.snapshots.first&.input
+      entry.tier == "frontier" && entry.released_on && entry.snapshots.first&.input&.positive?
     end
 
     def build(entries)

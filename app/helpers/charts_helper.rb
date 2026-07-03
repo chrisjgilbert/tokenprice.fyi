@@ -199,15 +199,18 @@ module ChartsHelper
     plot_h = height - pad[:t] - pad[:b]
     x_right = pad[:l] + plot_w
 
-    all_dates = trends.flat_map { |t| t.steps.map(&:date) }
-    xmin_t = all_dates.min.to_time.to_i
+    first_date = trends.flat_map { |t| t.steps.map(&:date) }.min
+    xmin_t = first_date.to_time.to_i
     xmax_t = Date.current.to_time.to_i
     xspan  = [ xmax_t - xmin_t, 1 ].max
     sx = ->(date) { (pad[:l] + ((date.to_time.to_i - xmin_t).to_f / xspan) * plot_w).round(1) }
 
-    vals = trends.flat_map { |t| t.steps.map(&:input) }
+    # A log axis needs strictly-positive prices; steps are only built with a real
+    # launch price, but filter defensively so a stray 0 can't reach Math.log10.
+    vals = trends.flat_map { |t| t.steps.map(&:input) }.select(&:positive?)
     lo = 10.0**Math.log10(vals.min).floor
     hi = 10.0**Math.log10(vals.max).ceil
+    hi = lo * 10 if hi <= lo # every price in one decade → widen so the scale can't divide by zero
     loglo, loghi = Math.log10(lo), Math.log10(hi)
     sy = ->(v) { (pad[:t] + (1 - (Math.log10(v) - loglo) / (loghi - loglo)) * plot_h).round(1) }
 
@@ -223,7 +226,6 @@ module ChartsHelper
     svg << %(<title id="#{uid}-title">Provider flagship input price over time</title>)
     svg << %(<desc id="#{uid}-desc">#{ERB::Util.html_escape(desc)}</desc>)
 
-    # Decade gridlines with a $ label in the left gutter.
     decade = lo
     while decade <= hi + 1e-9
       gy = sy.(decade)
@@ -232,10 +234,9 @@ module ChartsHelper
       decade *= 10
     end
 
-    # Year ticks — a faint vertical at each 1 Jan in range, labelled below.
-    (all_dates.min.year..Date.current.year).each do |year|
+    (first_date.year..Date.current.year).each do |year|
       jan1 = Date.new(year, 1, 1)
-      next if jan1 < all_dates.min
+      next if jan1 < first_date
 
       gx = sx.(jan1)
       svg << %(<line x1="#{gx}" y1="#{pad[:t]}" x2="#{gx}" y2="#{pad[:t] + plot_h}" stroke="#f1f5f9" stroke-width="1"/>)
@@ -243,18 +244,24 @@ module ChartsHelper
     end
 
     # Resolve end-label positions up front so we can declutter them: labels want
-    # to sit at the line's final y, but several flagships cluster at low prices,
-    # so nudge overlapping labels apart (top-down, min 16px gap) and draw a leader
-    # from the true line end to the moved label.
+    # to sit at the line's final y (`ideal`), but several flagships cluster at low
+    # prices, so nudge overlapping labels apart (top-down, min 16px gap) and draw a
+    # leader from the true line end to the moved label.
     label_gap = 16.0
+    plot_bottom = pad[:t] + plot_h
     labels = trends.map do |t|
-      { trend: t, y: sy.(t.current.input).to_f, ideal: sy.(t.current.input).to_f }
+      y0 = sy.(t.current.input).to_f
+      { trend: t, y: y0, ideal: y0 }
     end.sort_by { |l| l[:y] }
     prev = -Float::INFINITY
     labels.each do |l|
       l[:y] = [ l[:y], prev + label_gap ].max
       prev = l[:y]
     end
+    # A tall low-price cluster can push the last labels past the plot; shift the
+    # whole run up by the overflow (clamped to the top) so none clip off-canvas.
+    overflow = labels.any? ? labels.last[:y] - plot_bottom : 0
+    labels.each { |l| l[:y] = [ l[:y] - overflow, pad[:t].to_f ].max } if overflow.positive?
 
     # One stepped line per provider. A step holds the old price to the next
     # release date, then jumps — a price is a step function, not a slope — and the
@@ -277,7 +284,6 @@ module ChartsHelper
       svg << "</g>"
     end
 
-    # End labels: "Provider $price", coloured to the line, decluttered above.
     labels.each do |l|
       t = l[:trend]
       ly = l[:y].round(1)
