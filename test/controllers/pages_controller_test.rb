@@ -1,10 +1,18 @@
 require "test_helper"
 
 class PagesControllerTest < ActionDispatch::IntegrationTest
-  test "which-model 301s to the guide" do
+  test "the legacy which-model URL 301s to the homepage" do
     get "/which-model"
     assert_response :moved_permanently
-    assert_redirected_to "/guide"
+    assert_redirected_to "/"
+  end
+
+  test "the removed guide URLs 301 to the homepage" do
+    [ "/guide", "/guide/rag", "/guide/coding-agent", "/guide/coding_agent" ].each do |path|
+      get path
+      assert_response :moved_permanently, "expected #{path} to redirect"
+      assert_redirected_to "/"
+    end
   end
 
   test "how-pricing-works is public" do

@@ -21,18 +21,11 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, embeddings_url
   end
 
-  test "the sitemap advertises the guide and its task pages, not which-model" do
+  test "the sitemap advertises the trends chart, not the removed guide or which-model" do
     get sitemap_url
     assert_response :success
-    assert_includes @response.body, guide_url
-    assert_includes @response.body, guide_task_url(FeaturePattern.all.first.key)
+    assert_includes @response.body, trends_url
+    assert_not_includes @response.body, "/guide"
     assert_not_includes @response.body, "/which-model"
-  end
-
-  test "the sitemap lists the coding agent at its hyphenated slug" do
-    get sitemap_url
-    assert_response :success
-    assert_includes @response.body, guide_task_url("coding-agent")
-    assert_not_includes @response.body, "/guide/coding_agent"
   end
 end

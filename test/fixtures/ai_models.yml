@@ -40,9 +40,9 @@ suspended_fable:
   status: suspended
   description: Suspended test model — still listed but flagged as suspended.
 
-# Two real Guide starting-option slugs, on the EXISTING anthropic provider so
-# the provider count stays stable. They give the Guide a positive per-call path
-# to render (the RAG "generate answer" step's cheap/quality options).
+# Two Anthropic-provider models with known slugs, prices, and tiers, on the
+# EXISTING anthropic provider so the provider count stays stable. Used by the
+# comparison, models-table, and price-catalog tests.
 haiku:
   provider: anthropic
   name: Guide Haiku Fixture
@@ -52,7 +52,7 @@ haiku:
   max_output_tokens: 64000
   released_on: 2026-04-01
   status: active
-  description: Cheap small-tier model — a Guide starting option. Name kept distinct from the OpenRouter sync test's "Claude Haiku 4.5" so dedup-by-name stays unaffected; the slug is what FeaturePattern::Cost resolves.
+  description: Cheap small-tier model. Name kept distinct from the OpenRouter sync test's "Claude Haiku 4.5" so dedup-by-name stays unaffected.
 
 sonnet:
   provider: anthropic
@@ -63,7 +63,7 @@ sonnet:
   max_output_tokens: 128000
   released_on: 2026-04-01
   status: active
-  description: Mid-tier step-up model — a Guide starting option. Name kept distinct from the sync test's Sonnet rows; the slug is what FeaturePattern::Cost resolves.
+  description: Mid-tier step-up model. Name kept distinct from the sync test's Sonnet rows.
   # A multimodal-input signature (text + image in → text out) so the modality
   # facet, badge, signature line, and API keys have a non-text row to assert on.
   input_modalities:

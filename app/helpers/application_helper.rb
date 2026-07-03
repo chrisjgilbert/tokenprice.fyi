@@ -181,7 +181,6 @@ module ApplicationHelper
     [
       [ "Models",  root_path,    -> { current_page?(root_path) } ],
       [ "Compare", compare_path, -> { current_page?(compare_path) } ],
-      [ "Guide",   guide_path,   -> { current_page?(guide_path) } ],
       [ "Trends",  trends_path,  -> { current_page?(trends_path) } ],
       [ "Events",  events_path,  -> { events_active? } ]
     ]

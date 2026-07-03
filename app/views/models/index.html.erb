@@ -97,7 +97,7 @@
     letter-spacing: .01em;
   }
 
-  /* Hero CTAs: task guide + how pricing works */
+  /* Hero CTAs: how pricing works + flagship trends */
   .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
   /* Latest update card */
@@ -307,8 +307,8 @@
       </p>
 
       <div class="hero-cta">
-        <%= link_to guide_path, class: "tp-btn tp-btn-primary" do %>Find a model for your task<% end %>
-        <%= link_to how_pricing_works_path, class: "tp-btn tp-btn-ghost" do %>How pricing works<% end %>
+        <%= link_to how_pricing_works_path, class: "tp-btn tp-btn-primary" do %>How pricing works<% end %>
+        <%= link_to trends_path, class: "tp-btn tp-btn-ghost" do %>Flagship prices over time<% end %>
       </div>
     </div>
 

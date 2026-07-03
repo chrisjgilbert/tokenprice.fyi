@@ -47,7 +47,7 @@
 
   <p>The sticker price, input and output per million tokens, is the same for every feature you build. What changes is the <strong>shape of the workload</strong>: how much you send, how much comes back, how often the same context repeats, and whether the task is hard enough to need a capable model. Two features on the same model can differ by 100× in cost per call purely because of shape.</p>
 
-  <p>Five common shapes. For each: a worked cost breakdown, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. This is what each feature costs; for a starting model per step, the guide is the decision counterpart. Tier calls are <strong>a cost comparison, not a quality verdict</strong>. Validate against your own eval before you ship.</p>
+  <p>Five common shapes. For each: a worked cost breakdown, where the money concentrates, the dominant lever, and the cheaper tier that often does the job. This is what each feature costs. Tier calls are <strong>a cost comparison, not a quality verdict</strong>. Validate against your own eval before you ship.</p>
 
   <% if @picker_models.any? %>
     <div class="fc-picker">
@@ -223,10 +223,8 @@
     <%= link_to learn_cost_cutting_path, class: "hp-cta-ghost" do %>
       Cost-cutting strategies
     <% end %>
-    <%# The conceptual twin of this page: same shapes, applied to a specific job
-        with a starting model and per-call cost per step. %>
-    <%= link_to guide_path, class: "hp-cta-ghost" do %>
-      See starting models per step in the guide
+    <%= link_to how_pricing_works_path, class: "hp-cta-ghost" do %>
+      How LLM pricing works
     <% end %>
   </div>
 </article>

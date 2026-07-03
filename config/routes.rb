@@ -21,15 +21,13 @@ Rails.application.routes.draw do
   # Flagship price-over-time chart — surfaces the full frontier history, retired
   # models included. Reclaims the /trends URL that used to 301 to /events.
   get "trends",  to: "trends#show",       as: :trends
-  get "which-model", to: redirect("/guide", status: 301)
-
-  # The Guide — browse-by-task model picker. Index is the task chooser; each
-  # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.
-  get "guide", to: "guide#index", as: :guide
-  # The coding-agent slug shipped with an underscore; 301 the legacy URL to the
-  # hyphenated one to preserve link equity. Must precede the generic task route.
-  get "guide/coding_agent", to: redirect("/guide/coding-agent", status: 301)
-  get "guide/:task", to: "guide#show", as: :guide_task
+  # The task-based Guide was removed. 301 its URLs — and the legacy /which-model
+  # alias that used to point at it — to the homepage so inbound links and
+  # bookmarks keep landing on the models table. The /guide/:task catch covers
+  # every former task page (including the old /guide/coding_agent spelling).
+  get "which-model", to: redirect("/", status: 301)
+  get "guide", to: redirect("/", status: 301)
+  get "guide/:task", to: redirect("/", status: 301)
   get "how-pricing-works", to: "pages#how_pricing_works", as: :how_pricing_works
 
   # Education layer — directory index + explainers (each with live-data

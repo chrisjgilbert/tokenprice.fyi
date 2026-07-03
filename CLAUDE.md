@@ -55,12 +55,12 @@ Don't deviate silently.
 
 1. **MVC, for real.** Logic lives on rich models — both Active Record models
    *and* plain Ruby objects in `app/models/`. "Model" means *any* domain object,
-   not just `ActiveRecord::Base`. `FeaturePattern`, `CostEstimate`, and
-   `PriceCatalog` are the model of the right shape: plain-Ruby domain POROs
+   not just `ActiveRecord::Base`. `PriceCatalog`, `ModelCategory`, and
+   `FlagshipTrend` are the model of the right shape: plain-Ruby domain POROs
    (often `Data.define` + a frozen registry) living in `app/models/`.
 
 2. **Controllers stay thin.** They authenticate, load a record, call one method
-   on it, and render. The read controllers (`models`, `providers`, `guide`,
+   on it, and render. The read controllers (`models`, `providers`, `trends`,
    `learn`) already read *through* `PriceCatalog` rather than via ad-hoc
    `AiModel` queries — keep that seam.
 
@@ -136,10 +136,10 @@ kept as a map of where each class went and why.
 | `hn_algolia_fetcher.rb`               | `lib/hn_algolia_fetcher.rb`                          | generic HTTP fetcher                             |
 | `news_feed_fetcher.rb`                | `lib/news_feed_fetcher.rb`                           | generic RSS/HTTP fetcher                         |
 | `slack_notifier.rb`                   | `lib/slack_notifier.rb`                              | generic webhook transport                        |
-| `cost_estimate.rb`                    | `app/models/cost_estimate.rb`                        | domain value object (already a PORO)             |
+| `cost_estimate.rb`                    | removed with the Guide (was `app/models/cost_estimate.rb`) | its only consumer was the Guide's cost lens  |
 | `price_catalog.rb`                    | `app/models/price_catalog.rb`                        | domain read-model facade over value objects      |
 | `cost_format.rb`, `price_format.rb`   | still in `app/services/` (deferred, see plan doc)    | shared formatting value modules                  |
-| `guide_cost.rb`                       | `app/models/feature_pattern/cost.rb` (operation)     | prices a (slug, shape) pair for a FeaturePattern |
+| `guide_cost.rb`                       | removed with the Guide (was `app/models/feature_pattern/cost.rb`) | priced a (slug, shape) pair for the Guide  |
 | `news_classifier.rb`                  | `app/models/news_item/classification.rb` (operation) | reached via `news_item.classify`                 |
 | `model_description_generator.rb`      | `app/models/ai_model/description.rb` (operation)     | reached via an `AiModel` method                  |
 | `open_router/model_sync.rb`           | `app/models/open_router/model_sync.rb` (coordinator) | multi-entity process owned by no single record   |
@@ -180,11 +180,9 @@ app/
     news_item/
       classifiable.rb         # facade concern → delegates
       classification.rb       # operation object (noun)
-    feature_pattern.rb        # domain PORO (already idiomatic)
-    feature_pattern/
-      cost.rb                 # operation object
     price_catalog.rb          # domain read-model facade
-    cost_estimate.rb          # domain value object
+    model_category.rb         # domain PORO (Data.define + frozen registry)
+    flagship_trend.rb         # domain PORO (per-provider flagship price series)
     open_router/
       model_sync.rb           # top-level coordinator (noun)
       sync_digest.rb

@@ -94,14 +94,6 @@ class ConditionalGetTest < ActionDispatch::IntegrationTest
       "a same-day price correction must invalidate the show etag, not 304"
   end
 
-  test "guide#index supports conditional GET" do
-    assert_not_modified_on_replay(guide_url)
-  end
-
-  test "guide#show supports conditional GET" do
-    assert_not_modified_on_replay(guide_task_url("coding-agent"))
-  end
-
   test "how_pricing_works supports conditional GET" do
     assert_not_modified_on_replay(how_pricing_works_url)
   end
