@@ -1,0 +1,238 @@
+<% content_for :title, "Flagship prices over time — how much the top model costs — tokenprice.fyi" %>
+<% content_for :description, "Every provider's most-powerful model, priced at launch and tracked over time — the frontier price history on one chart." %>
+<% content_for :canonical, trends_url %>
+<% content_for :head do %>
+  <%= json_ld({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: "Flagship prices over time",
+        url: trends_url,
+        description: "Every provider's most-powerful (frontier-tier) model, priced at launch, over time.",
+        isPartOf: { "@type": "WebSite", "@id": "#{request.base_url}/#website" }
+      }) %>
+<% end %>
+
+<%
+  flagship_count = @trends.sum { |t| t.steps.size }
+  earliest = @trends.flat_map { |t| t.steps.map(&:date) }.min
+  inputs = @trends.flat_map { |t| t.steps.map(&:input) }
+  cheapest, priciest = inputs.minmax
+%>
+
+<div class="trends-page">
+  <header class="trends-header">
+    <h1 class="trends-h1">Flagship prices over time</h1>
+    <p class="trends-subtitle">
+      Each provider's most-powerful model, priced at launch, as the flagship
+      changed hands over time — <span class="num"><%= @trends.size %></span>
+      providers and <span class="num"><%= flagship_count %></span> frontier
+      releases<% if earliest %>, back to <span class="num"><%= earliest.strftime("%B %Y") %></span><% end %>.
+      The line steps each time a newer frontier model takes over; the price shown
+      is what that model cost at release, per 1M input tokens.
+      <% if cheapest&.positive? %>
+        The axis is logarithmic — flagship prices span about
+        <span class="num"><%= (priciest / cheapest).round %>×</span>, from
+        <span class="num"><%= flagship_axis_price(cheapest) %></span> to
+        <span class="num"><%= flagship_axis_price(priciest) %></span>.
+      <% end %>
+    </p>
+  </header>
+
+  <div class="tp-card trends-card" data-controller="flagship-chart">
+    <%= provider_flagship_chart(@trends) %>
+
+    <ul class="trends-legend" aria-label="Providers">
+      <% @trends.each do |t| %>
+        <li>
+          <%= link_to provider_path(t.provider_slug), class: "trends-legend-item",
+                data: { provider: t.provider_slug,
+                        action: "mouseenter->flagship-chart#highlight mouseleave->flagship-chart#reset" } do %>
+            <span class="trends-swatch" style="background:<%= t.accent %>"></span>
+            <span class="trends-legend-name"><%= t.provider_name %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <%# Accessible backing data: every flagship on the chart, newest reign first. %>
+  <section class="trends-table-section" aria-label="Flagship history by provider">
+    <h2 class="trends-h2">The flagships, provider by provider</h2>
+    <div class="trends-tables">
+      <% @trends.each do |t| %>
+        <details class="trends-detail"<%= " open".html_safe if t.steps.size >= 5 %>>
+          <summary class="trends-summary">
+            <span class="trends-swatch" style="background:<%= t.accent %>"></span>
+            <span class="trends-summary-name"><%= t.provider_name %></span>
+            <span class="trends-summary-meta">
+              <span class="num"><%= t.steps.size %></span>
+              <%= "flagship".pluralize(t.steps.size) %>
+              <% if (chg = t.input_change_pct) %>
+                <% down = chg <= 0 %>
+                · <span class="trends-chg <%= down ? "down" : "up" %>">
+                  <%= down ? "−" : "+" %><%= chg.abs %>%
+                </span> input since first
+              <% end %>
+            </span>
+          </summary>
+          <table class="trends-table">
+            <thead>
+              <tr>
+                <th scope="col">Released</th>
+                <th scope="col">Model</th>
+                <th scope="col" class="r">Input</th>
+                <th scope="col" class="r">Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% t.steps.reverse_each do |s| %>
+                <tr>
+                  <td class="num"><%= s.date.strftime("%b %Y") %></td>
+                  <td><%= link_to s.model_name, model_path(s.model_slug), class: "trends-model-link" %></td>
+                  <td class="r num"><%= usd_plain(s.input) %></td>
+                  <td class="r num"><%= usd_plain(s.output) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </details>
+      <% end %>
+    </div>
+  </section>
+</div>
+
+<style>
+/* ── Trends page ─────────────────────────────────────────────────────── */
+.trends-page {
+  max-width: 960px;
+  padding-top: 36px;
+  padding-bottom: 64px;
+}
+.trends-header { margin-bottom: 24px; }
+.trends-h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.033em;
+  line-height: 1.05;
+  color: var(--color-slate-900);
+}
+.trends-subtitle {
+  margin-top: 14px;
+  max-width: 60em;
+  color: var(--color-slate-500);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* ── Chart card ──────────────────────────────────────────────────────── */
+.trends-card { padding: 22px 24px 20px; }
+@media (max-width: 560px) { .trends-card { padding: 16px 12px 14px; } }
+
+/* Dim non-hovered lines/labels while a provider is focused (via the controller). */
+.flagship-line, .flagship-endlabel { transition: opacity .12s var(--ease-default); }
+.is-dim { opacity: 0.14; }
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+.trends-legend {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--color-slate-100);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.trends-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-600);
+  text-decoration: none;
+  transition: color .14s var(--ease-default), opacity .12s var(--ease-default);
+}
+.trends-legend-item:hover { color: var(--color-slate-900); }
+/* When a chip is dimmed by the controller, fade the whole chip. */
+.trends-legend-item.is-dim { opacity: 0.3; }
+.trends-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex: none;
+}
+
+/* ── Backing data tables ─────────────────────────────────────────────── */
+.trends-table-section { margin-top: 40px; }
+.trends-h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-slate-900);
+  margin-bottom: 16px;
+}
+.trends-tables { display: grid; gap: 10px; }
+.trends-detail {
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-lg, 12px);
+  background: #fff;
+  overflow: hidden;
+}
+.trends-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.trends-summary::-webkit-details-marker { display: none; }
+.trends-summary:hover { background: var(--color-slate-50); }
+.trends-summary-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-slate-900);
+}
+.trends-summary-meta {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--color-slate-500);
+}
+.trends-chg { font-weight: 700; }
+.trends-chg.down { color: var(--color-emerald-600); }
+.trends-chg.up { color: var(--color-rose-600); }
+
+.trends-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.trends-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-slate-400);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 8px 16px;
+  border-top: 1px solid var(--color-slate-100);
+  background: var(--color-slate-50);
+}
+.trends-table td {
+  padding: 9px 16px;
+  border-top: 1px solid var(--color-slate-100);
+  color: var(--color-slate-700);
+}
+.trends-table .r { text-align: right; }
+.trends-table .num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.trends-model-link {
+  color: var(--color-slate-800);
+  font-weight: 500;
+  text-decoration: none;
+}
+.trends-model-link:hover { color: var(--color-indigo-700); text-decoration: underline; text-underline-offset: 2px; }
+</style>

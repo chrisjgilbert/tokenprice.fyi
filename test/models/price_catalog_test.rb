@@ -12,6 +12,21 @@ class PriceCatalogTest < ActiveSupport::TestCase
     refute_includes slugs, "claude-instant-1" # retired
   end
 
+  test "frontier_history includes superseded frontier models the public list hides" do
+    provider = Provider.create!(name: "Historic Labs", slug: "historic-labs", accent: "#123456")
+    retired = provider.ai_models.create!(name: "Historic Frontier One", tier: "frontier",
+                                         status: "retired", released_on: Date.new(2024, 1, 1),
+                                         source: AiModel::MANUAL_SOURCE)
+    retired.price_points.create!(effective_on: Date.new(2024, 1, 1), input_per_mtok: 40, output_per_mtok: 80)
+
+    slugs = PriceCatalog.frontier_history.map(&:slug)
+
+    assert_includes slugs, "historic-frontier-one"        # retired, but a former flagship
+    assert_includes slugs, "claude-opus-4-8"              # active frontier
+    refute_includes slugs, "claude-haiku-4-5"             # small tier, not frontier
+    refute_includes PriceCatalog.models.map(&:slug), "historic-frontier-one"
+  end
+
   test "a price-less directory-class entry is flagged directory_listing?, not native_priced?" do
     entry = PriceCatalog.model("test-image-model")
 

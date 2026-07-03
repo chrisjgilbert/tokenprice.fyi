@@ -134,12 +134,6 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     assert_select "link[rel=canonical][href=?]", events_url
   end
 
-  test "the retired /trends URL redirects permanently to /events" do
-    get "/trends"
-    assert_response :moved_permanently
-    assert_redirected_to "/events"
-  end
-
   private
 
   # Publish n market events on distinct, descending recent dates — enough to push

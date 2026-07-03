@@ -124,7 +124,11 @@ decrypt. The admin area is `noindex` and `Disallow`ed in robots.txt.
 
 `/events` is a timeline of the LLM market, newest first: the curated **market events** that moved
 prices alongside every model launch, filterable by kind (`EventsHelper#build_all_events` merges
-the two streams). `/trends` 301-redirects here.
+the two streams).
+
+`/trends` charts each provider's most-powerful (frontier-tier) model priced at launch over time —
+one stepped line per provider on a log axis, built by `FlagshipTrend` reading the full frontier
+history (retired models included) through `PriceCatalog.frontier_history`.
 
 The market events are fed by a news pipeline: `ReleaseWatchJob` polls provider feeds and
 `NewsScanJob` searches Hacker News, both classifying items with Claude; `NewsDigestJob` posts a

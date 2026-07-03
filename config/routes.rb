@@ -18,10 +18,10 @@ Rails.application.routes.draw do
   get "compare", to: "comparisons#show", as: :compare
   get "events",  to: "events#index",     as: :events
   get "sources", to: "sources#index",    as: :sources
+  # Flagship price-over-time chart — surfaces the full frontier history, retired
+  # models included. Reclaims the /trends URL that used to 301 to /events.
+  get "trends",  to: "trends#show",       as: :trends
   get "which-model", to: redirect("/guide", status: 301)
-  # The market-events timeline replaced the old price-trends chart; 301 the
-  # retired URL to preserve inbound links and bookmarks.
-  get "trends", to: redirect("/events", status: 301)
 
   # The Guide — browse-by-task model picker. Index is the task chooser; each
   # :task is a FeaturePattern key (e.g. rag, coding_agent). Unknown task → 404.

@@ -74,9 +74,7 @@ module ChartsHelper
     # the left gutter (the design's "$/1M" axis). The step is chosen so ~4–6
     # lines land on clean numbers across every price scale (cents to tens).
     chart_gridlines(ymax).each do |v|
-      gy = sy.(v).round(1)
-      svg << %(<line x1="#{pad[:l]}" y1="#{gy}" x2="#{pad[:l] + plot_w}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>)
-      svg << %(<text x="#{pad[:l] - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{usd_plain(v)}</text>)
+      svg << chart_hgridline(pad[:l], pad[:l] + plot_w, sy.(v).round(1), usd_plain(v))
     end
 
     series.each do |s|
@@ -134,6 +132,15 @@ module ChartsHelper
     end
   end
 
+  # One horizontal gridline across the plot with its value label in the left
+  # gutter. Shared by both charts (linear and log) so the axis styling — hairline
+  # colour, label size/colour, gutter offset — lives in one place and can't drift.
+  # `label` is already formatted; `gy` is the pre-scaled y.
+  def chart_hgridline(x_left, x_right, gy, label)
+    %(<line x1="#{x_left}" y1="#{gy}" x2="#{x_right}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>) +
+      %(<text x="#{x_left - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{label}</text>)
+  end
+
   # Round dollar values to draw gridlines at, from 0 up to (but not past) the
   # plot ceiling. The step is the 1/2/5 × 10ⁿ value nearest ymax/4, so labels
   # stay clean whether prices are in cents or tens of dollars.
@@ -175,6 +182,131 @@ module ChartsHelper
         <path d="#{line}" fill="none" stroke="var(--color-indigo-500)" stroke-width="2" stroke-linejoin="round"/>
       </svg>
     SVG
+  end
+
+  # Multi-line step chart of every provider's flagship (most-powerful) model
+  # input price over time — one stepped line per provider, drawn in the
+  # provider's accent colour. Server-rendered SVG so it's identical for crawlers,
+  # no-JS clients and screen readers; the flagship_chart controller only adds a
+  # dim-the-rest hover highlight on top.
+  #
+  # The y-axis is logarithmic: flagship input prices span ~$0.15 to $75 (500×),
+  # a range a linear axis would crush into a flat line near zero for all but the
+  # priciest models. Decade gridlines ($0.10 / $1 / $10 / $100) keep it readable.
+  #
+  # `trends` is an array of FlagshipTrend, each with chronological steps.
+  def provider_flagship_chart(trends, width: 900, height: 460)
+    trends = trends.reject { |t| t.steps.empty? }
+    if trends.empty?
+      return content_tag(:p, "No flagship history on record yet.", class: "text-sm text-slate-500")
+    end
+
+    pad = { l: 48, r: 158, t: 16, b: 34 }
+    plot_w = width - pad[:l] - pad[:r]
+    plot_h = height - pad[:t] - pad[:b]
+    x_right = pad[:l] + plot_w
+
+    first_date = trends.flat_map { |t| t.steps.map(&:date) }.min
+    xmin_t = first_date.to_time.to_i
+    xmax_t = Date.current.to_time.to_i
+    xspan  = [ xmax_t - xmin_t, 1 ].max
+    sx = ->(date) { (pad[:l] + ((date.to_time.to_i - xmin_t).to_f / xspan) * plot_w).round(1) }
+
+    # A log axis needs strictly-positive prices; steps are only built with a real
+    # launch price, but filter defensively so a stray 0 can't reach Math.log10.
+    vals = trends.flat_map { |t| t.steps.map(&:input) }.select(&:positive?)
+    lo = 10.0**Math.log10(vals.min).floor
+    hi = 10.0**Math.log10(vals.max).ceil
+    hi = lo * 10 if hi <= lo # every price in one decade → widen so the scale can't divide by zero
+    loglo, loghi = Math.log10(lo), Math.log10(hi)
+    sy = ->(v) { (pad[:t] + (1 - (Math.log10(v) - loglo) / (loghi - loglo)) * plot_h).round(1) }
+
+    uid  = "flagship-chart"
+    lead = trends.max_by { |t| t.steps.size }
+    desc = "#{lead.provider_name}'s flagship input price went from " \
+           "#{usd_plain(lead.launch.input)} to #{usd_plain(lead.current.input)} " \
+           "per 1M tokens between #{lead.launch.date.strftime('%b %Y')} and " \
+           "#{lead.current.date.strftime('%b %Y')}; #{trends.size} providers shown."
+
+    svg = []
+    svg << %(<svg viewBox="0 0 #{width} #{height}" class="w-full h-auto" role="img" aria-labelledby="#{uid}-title #{uid}-desc">)
+    svg << %(<title id="#{uid}-title">Provider flagship input price over time</title>)
+    svg << %(<desc id="#{uid}-desc">#{ERB::Util.html_escape(desc)}</desc>)
+
+    decade = lo
+    while decade <= hi + 1e-9
+      svg << chart_hgridline(pad[:l], x_right, sy.(decade), flagship_axis_price(decade))
+      decade *= 10
+    end
+
+    (first_date.year..Date.current.year).each do |year|
+      jan1 = Date.new(year, 1, 1)
+      next if jan1 < first_date
+
+      gx = sx.(jan1)
+      svg << %(<line x1="#{gx}" y1="#{pad[:t]}" x2="#{gx}" y2="#{pad[:t] + plot_h}" stroke="#f1f5f9" stroke-width="1"/>)
+      svg << %(<text x="#{gx}" y="#{height - 8}" font-size="11" fill="#94a3b8" text-anchor="middle">#{year}</text>)
+    end
+
+    # Resolve end-label positions up front so we can declutter them: labels want
+    # to sit at the line's final y (`ideal`), but several flagships cluster at low
+    # prices, so nudge overlapping labels apart (top-down, min 16px gap) and draw a
+    # leader from the true line end to the moved label.
+    label_gap = 16.0
+    plot_bottom = pad[:t] + plot_h
+    labels = trends.map do |t|
+      y0 = sy.(t.current.input).to_f
+      { trend: t, y: y0, ideal: y0 }
+    end.sort_by { |l| l[:y] }
+    prev = -Float::INFINITY
+    labels.each do |l|
+      l[:y] = [ l[:y], prev + label_gap ].max
+      prev = l[:y]
+    end
+    # A tall low-price cluster can push the last labels past the plot; shift the
+    # whole run up by the overflow (clamped to the top) so none clip off-canvas.
+    overflow = labels.any? ? labels.last[:y] - plot_bottom : 0
+    labels.each { |l| l[:y] = [ l[:y] - overflow, pad[:t].to_f ].max } if overflow.positive?
+
+    # One stepped line per provider. A step holds the old price to the next
+    # release date, then jumps — a price is a step function, not a slope — and the
+    # final segment extends flat to today at the current flagship price.
+    trends.each do |t|
+      pts = t.steps.map { |s| [ sx.(s.date), sy.(s.input) ] }
+      d = +"M#{pts.first[0]},#{pts.first[1]}"
+      pts.each_cons(2) { |(_, prev_y), (x, y)| d << " L#{x},#{prev_y} L#{x},#{y}" }
+      d << " L#{x_right},#{pts.last[1]}"
+
+      svg << %(<g class="flagship-line" data-provider="#{t.provider_slug}" data-action="mouseenter->flagship-chart#highlight mouseleave->flagship-chart#reset">)
+      svg << %(<path d="#{d}" fill="none" stroke="#{t.accent}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>)
+      t.steps.zip(pts).each do |s, (cx, cy)|
+        svg << %(<circle cx="#{cx}" cy="#{cy}" r="3.25" fill="#fff" stroke="#{t.accent}" stroke-width="2"><title>#{ERB::Util.html_escape("#{t.provider_name} — #{s.model_name}, #{s.date.strftime('%b %Y')}: #{usd_plain(s.input)} in / #{usd_plain(s.output)} out per 1M")}</title></circle>)
+      end
+      svg << "</g>"
+    end
+
+    labels.each do |l|
+      t = l[:trend]
+      ly = l[:y].round(1)
+      if (l[:y] - l[:ideal]).abs > 1
+        svg << %(<line x1="#{x_right}" y1="#{l[:ideal].round(1)}" x2="#{x_right + 8}" y2="#{ly}" stroke="#{t.accent}" stroke-width="1" opacity="0.4"/>)
+      end
+      svg << %(<text class="flagship-endlabel" data-provider="#{t.provider_slug}" x="#{x_right + 11}" y="#{ly + 4}" font-size="12" font-weight="600" fill="#{t.accent}">#{ERB::Util.html_escape(t.provider_name)} <tspan fill="#64748b" font-weight="500">#{flagship_axis_price(t.current.input)}</tspan></text>)
+    end
+
+    svg << "</svg>"
+
+    content_tag(:div, svg.join.html_safe, class: "flagship-chart")
+  end
+
+  # Compact dollar label for the flagship chart's axis and end labels: whole
+  # dollars drop the ".00" ($30, not $30.00), sub-dollar keeps significant
+  # digits ($0.15). usd_plain always shows 2dp above $1, which reads noisy here.
+  def flagship_axis_price(value)
+    v = value.to_f
+    return "$#{v.round}" if v >= 1 && (v - v.round).abs < 0.005
+
+    usd_plain(v)
   end
 
   def chart_legend

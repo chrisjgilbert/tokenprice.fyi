@@ -121,6 +121,15 @@ class PriceCatalog
       models.find { |e| e.slug == slug }
     end
 
+    # Every frontier model ever tracked — legacy, retired and suspended included —
+    # as catalog Entries. The public `models` list hides superseded rows, but a
+    # historical series like the flagship-price timeline needs them: a retired
+    # model is exactly a *former* flagship. Read through here so that series stays
+    # on the catalog seam rather than reaching for AiModel directly.
+    def frontier_history
+      AiModel.where(tier: "frontier").includes(:provider, :price_points).map { |m| Entry.new(m) }
+    end
+
     # The cheapest listed model of `tier`, by current input price — a representative
     # "entry-price" example for the education pages. Requires an output rate too, so
     # it means the cheapest per-token *chat* model: an embedding (input-only, ~$0.02)
