@@ -5,7 +5,11 @@ class ModelsController < ApplicationController
     "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
     "context" => ->(m) { m.context_window || 0 },
     "name" => ->(m) { m.name.to_s.downcase },
-    "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) }
+    "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) },
+    # Image-category sorts: it has no per-token axis, so it ranks by provider and
+    # release date instead. A nil release sorts oldest rather than to the top.
+    "provider" => ->(m) { m.provider.name.to_s.downcase },
+    "released" => ->(m) { m.released_on || Date.new(1970, 1, 1) }
   }.freeze
 
   # Price-based sorts that a price-less row must always sink to the bottom of —
@@ -13,13 +17,12 @@ class ModelsController < ApplicationController
   # is reversed. Name/tier/context still sort it normally: it has those.
   PRICE_SORTS = %w[input output cached].freeze
 
-  # Most expensive output first. The view omits these from filter URLs to keep
-  # them clean, so it reads the same constants rather than repeating the literals.
-  DEFAULT_SORT = "output"
-  DEFAULT_DIR  = "desc"
-
   def index
     @providers = Provider.order(:name).to_a
+
+    # The pricing-family tab. Every param the category governs (sort keys,
+    # defaults, SEO) is read off it, so a new tab is a registry + route change.
+    @category = ModelCategory.for(params[:category])
 
     scope = AiModel.listed.includes(:provider, :price_points)
 
@@ -29,8 +32,8 @@ class ModelsController < ApplicationController
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
-    @sort = params[:sort].presence_in(SORTS.keys) || DEFAULT_SORT
-    @dir = params[:dir].presence_in(%w[asc desc]) || DEFAULT_DIR
+    @sort = params[:sort].presence_in(@category.sorts) || @category.default_sort
+    @dir = params[:dir].presence_in(%w[asc desc]) || @category.default_dir
 
     # Capped so a pathological query can't burn CPU in the fuzzy matcher.
     @query = params[:q].to_s.strip[0, 100]
@@ -39,16 +42,35 @@ class ModelsController < ApplicationController
     # the full known class set (no query) so it can ride the etag; the facet of
     # classes actually present is derived from the loaded rows after the 304
     # check, so a conditional hit pays for no extra load.
-    @modalities = Array(params[:modality]).map(&:to_s) & ModalityClass::LABELS.keys.map(&:to_s)
+    # Scope the modality facet to classes that belong to THIS tab, so a stale
+    # inbound link like /?modality=image_generation (image moved to its own tab)
+    # is ignored rather than filtering the language rows down to an empty table.
+    @modalities = (Array(params[:modality]).map(&:to_s) & ModalityClass::LABELS.keys.map(&:to_s))
+      .select { |mc| @category.member?(mc.to_sym) }
 
-    # Conditional GET. The page varies by every filter/sort param, so they MUST
-    # ride in the etag — otherwise a conditional request for one filtered view
-    # would 304 off a different view's cache. Renders 304 and halts on a match.
+    # Per-category SEO the view reads for <title>, meta description, and canonical
+    # (the tab is an indexable URL, not a query permutation, so each owns its own).
+    @page_title = @category.title
+    @page_description = @category.meta_description
+    @canonical_url = send("#{@category.path_name}_url")
+
+    # Conditional GET. The page varies by every filter/sort param AND the category
+    # tab, so they MUST ride in the etag — otherwise a conditional request for one
+    # view would 304 off another's cache (a tab off a sibling tab included).
     # last_modified spans the catalog AND the market events + model rows the hero
     # renders (helpers.build_all_events), so editing a market event or a model
     # busts the cache instead of serving a stale hero. Renders 304 on a match.
-    return if catalog_fresh?(etag: [ :index, @tiers.sort, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
+    return if catalog_fresh?(etag: [ :index, @category.slug, @tiers.sort, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
       last_modified: helpers.timeline_last_modified)
+
+    # Tab labels: how many listed models fall in each category. Classified via the
+    # SAME derived modality_class the row filter uses (not the denormalised column),
+    # so a badge count always equals its tab's row count. One light load, not a
+    # query per tab.
+    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
+    @category_counts = ModelCategory.all.to_h { |category|
+      [ category.slug, listed_classes.count { |mc| category.member?(mc) } ]
+    }
 
     models = scope.to_a
     if @query.match?(/[a-z0-9]/i)
@@ -59,6 +81,9 @@ class ModelsController < ApplicationController
         models.select! { |m| m.matches?(@query) }
       end
     end
+    # Restrict to the current tab's pricing family before deriving facets, so both
+    # the modality facet options and the row set reflect only this category.
+    models.select! { |m| @category.member?(m.modality_class) }
     # Facet options: the classes present among the rows the other filters left,
     # so no pill leads to an empty table. Derived before the modality filter is
     # applied so switching between classes stays possible.

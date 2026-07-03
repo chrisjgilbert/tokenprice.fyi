@@ -904,6 +904,41 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 }
 .tp-facet-panel-action:hover { color: var(--color-indigo-700); text-decoration: underline; }
 
+/* ── Category tabs ──────────────────────────────────
+   Full-page navigation between pricing families (language / image). Each tab is
+   its own indexable URL, so these are links, not a client-side toggle. The look
+   borrows the segmented-control / facet-pill vocabulary: a grey track holding
+   pills, the current one raised on white with an indigo count badge. */
+.tp-tabs {
+  display: inline-flex; flex-wrap: wrap; gap: 4px;
+  padding: 4px; margin-bottom: 16px;
+  background: var(--color-slate-100);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+}
+.tp-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--color-slate-600); text-decoration: none;
+  transition: background .16s var(--ease-default), color .16s var(--ease-default);
+}
+.tp-tab:hover { color: var(--color-slate-900); }
+.tp-tab[aria-current="page"] {
+  background: #fff; color: var(--color-indigo-700);
+  box-shadow: var(--shadow-xs);
+}
+.tp-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 18px; padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-slate-200); color: var(--color-slate-600);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+}
+.tp-tab[aria-current="page"] .tp-tab-count {
+  background: var(--color-indigo-600); color: #fff;
+}
+
 /* Segmented control */
 .tp-seg {
   display: inline-flex; padding: 3px; gap: 2px;

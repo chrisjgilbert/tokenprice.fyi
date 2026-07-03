@@ -43,10 +43,19 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     assert_equal body_without_caching(root_url), body_with_caching(root_url)
   end
 
-  test "homepage still renders every expected model row with caching on" do
+  test "the language tab renders every language model row with caching on" do
     body = body_with_caching(root_url)
-    AiModel.listed.find_each do |m|
+    language = ModelCategory.for("language")
+    AiModel.listed.select { |m| language.member?(m.modality_class) }.each do |m|
       assert_includes body, m.name, "cached homepage is missing #{m.name}"
+    end
+  end
+
+  test "the image tab renders every image model row with caching on" do
+    body = body_with_caching(image_generation_url)
+    image = ModelCategory.for("image")
+    AiModel.listed.select { |m| image.member?(m.modality_class) }.each do |m|
+      assert_includes body, m.name, "cached image tab is missing #{m.name}"
     end
   end
 

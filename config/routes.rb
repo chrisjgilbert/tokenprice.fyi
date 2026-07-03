@@ -5,6 +5,11 @@ Rails.application.routes.draw do
   # The comparison table is the homepage — it's the page we want indexed.
   root "models#index"
 
+  # The models table tabs by pricing family. Language is the root (per-token
+  # prices); image generation gets its own indexable URL (native per-image
+  # pricing). Both render models#index, resolved via the `category` param.
+  get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation
+
   resources :models, only: [ :index, :show ]
   resources :providers, only: [ :show ]
 
