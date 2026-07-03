@@ -12,10 +12,10 @@ class Branded404Test < ActionDispatch::IntegrationTest
     assert_match(/\.fyi/, page)
   end
 
-  test "404 links back to the homepage and the guide" do
+  test "404 links back to the homepage and the trends chart" do
     body = page
     assert_match %r{href="/"}, body, "expected a link back to the homepage"
-    assert_match %r{href="/guide"}, body, "expected a link to the guide"
+    assert_match %r{href="/trends"}, body, "expected a link to the trends chart"
   end
 
   test "404 is noindexed and self-contained (no asset-pipeline deps)" do

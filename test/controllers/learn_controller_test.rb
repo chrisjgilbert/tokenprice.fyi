@@ -48,30 +48,12 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hp-cta a"
   end
 
-  test "the feature-costs explainer cross-links to the guide (the reverse link)" do
+  test "the feature-costs intro is a cost-breakdown angle, not best-model" do
     get learn_feature_costs_url
     assert_response :success
-    # feature_costs is the conceptual twin of the guide: it must link back to it
-    # from within the article body (the global nav link doesn't count).
-    assert_select "article.hp a[href=?]", guide_path
-  end
-
-  # --- AUDIT #3: feature_costs holds the INFORMATIONAL "what X costs" intent so
-  # it stops competing with the guide's "best model for X" decision intent.
-
-  test "the feature-costs intro is reframed to a cost-breakdown angle, not best-model" do
-    get learn_feature_costs_url
-    assert_response :success
-    # The intent split: this page is about what features cost, not which model to pick.
+    # This page holds the informational "what X costs" intent, not "which model to pick".
     assert_match(/what (each|a) feature costs/i, response.body)
     assert_select "h1", /What (LLM features cost|drives the cost)/
-  end
-
-  test "the feature-costs guide cross-link points at the guide as the decision counterpart" do
-    get learn_feature_costs_url
-    assert_response :success
-    # The reciprocal "see starting models" link into the guide (decision intent).
-    assert_select "article.hp a[href=?]", guide_path, text: /starting model/i
   end
 
   # The io_ratio widget was removed from the explainers as awkward, except on the

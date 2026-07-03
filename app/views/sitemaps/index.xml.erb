@@ -12,10 +12,6 @@
   <url><loc><%= learn_reasoning_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc><%= learn_feature_costs_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc><%= learn_cost_cutting_url %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc><%= guide_url %></loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <% FeaturePattern.all.each do |pattern| %>
-    <url><loc><%= guide_task_url(pattern.slug) %></loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <% end %>
   <% @providers.each do |provider| %>
     <url><loc><%= provider_url(provider) %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <% end %>

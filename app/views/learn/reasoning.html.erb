@@ -83,7 +83,7 @@
 
   <p>Output is already the expensive meter. It runs <%= link_to "several times the input rate", how_pricing_works_path %> because the model generates each token sequentially. Reasoning multiplies that meter specifically, so a reasoning-heavy call can spend more on thinking the reader never sees than on its entire input and visible answer combined.</p>
 
-  <p>The effect is largest in <%= link_to "agent loops", guide_task_path("coding-agent") %>. An agent makes many calls per task, and when each step reasons, the thinking tax lands on every step, on top of a transcript that grows each turn. The per-step reasoning and the lengthening transcript compound, so the cost of a reasoning agent climbs faster than either effect would on its own.</p>
+  <p>The effect is largest in agent loops. An agent makes many calls per task, and when each step reasons, the thinking tax lands on every step, on top of a transcript that grows each turn. The per-step reasoning and the lengthening transcript compound, so the cost of a reasoning agent climbs faster than either effect would on its own.</p>
 
   <h2>There's no fixed multiplier per model</h2>
 

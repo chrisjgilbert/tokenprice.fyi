@@ -4,7 +4,6 @@ class PagesController < ApplicationController
 
   def llms_txt
     @providers = Provider.all.order(:name)
-    @patterns  = FeaturePattern.all
   end
 
   def atproto_did
