@@ -6,8 +6,10 @@ Rails.application.routes.draw do
   root "models#index"
 
   # The models table tabs by pricing family. Language is the root (per-token
-  # prices); image generation gets its own indexable URL (native per-image
-  # pricing). Both render models#index, resolved via the `category` param.
+  # prices); embeddings (per input token) and image generation (native per-image
+  # pricing) each get their own indexable URL. All render models#index, resolved
+  # via the `category` param.
+  get "embeddings", to: "models#index", defaults: { category: "embeddings" }, as: :embeddings
   get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation
 
   resources :models, only: [ :index, :show ]

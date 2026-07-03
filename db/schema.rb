@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "dimensions"
     t.json "input_modalities", default: [], null: false
     t.text "limitations"
     t.integer "max_output_tokens"
@@ -95,7 +96,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_150000) do
     t.decimal "image_input_usd", precision: 12, scale: 6
     t.decimal "input_per_mtok", precision: 12, scale: 6, null: false
     t.string "note"
-    t.decimal "output_per_mtok", precision: 12, scale: 6, null: false
+    t.decimal "output_per_mtok", precision: 12, scale: 6
     t.decimal "request_usd", precision: 12, scale: 6
     t.string "source"
     t.datetime "updated_at", null: false

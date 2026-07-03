@@ -17,8 +17,11 @@ class PricePoint < ApplicationRecord
   private
 
   # A snapshot carries both per-token rates or neither. One without the other is a
-  # half-entered price.
+  # half-entered price — except an embedding model bills per input token with no
+  # output tokens, so an input-only rate is a complete price there.
   def text_rates_present_together
+    output_optional = ai_model&.embedding?
+    return if output_optional && input_per_mtok.present? && output_per_mtok.blank?
     return if input_per_mtok.blank? == output_per_mtok.blank?
 
     errors.add(:base, "input and output per-token rates must be set together")

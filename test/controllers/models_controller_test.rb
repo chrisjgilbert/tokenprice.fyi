@@ -255,11 +255,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[value=video_generation][name=?]", "modality[]", count: 0
   end
 
-  test "the index renders a category tab strip with both families and their counts, language active" do
+  test "the index renders a category tab strip with all three families and their counts, language active" do
     get root_url
     assert_response :success
-    assert_select ".tp-tabs .tp-tab", count: 2
+    assert_select ".tp-tabs .tp-tab", count: 3
     assert_select ".tp-tabs .tp-tab", text: /Language models/
+    assert_select ".tp-tabs .tp-tab", text: /Embeddings/
     assert_select ".tp-tabs .tp-tab", text: /Image generation/
     # The current tab is the language one and carries aria-current.
     assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Language models/
@@ -336,14 +337,62 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "td.tp-price-untracked", text: /not yet tracked/i
   end
 
-  test "the language tab (root) excludes image-generation models" do
+  test "the language tab (root) excludes image-generation and embedding models" do
     get root_url
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /Guide Sonnet Fixture/
-    # Image-generation rows moved to their own tab.
+    # Image-generation and embedding rows moved to their own tabs.
     assert_select "tbody td", text: /Test Image Model/, count: 0
     assert_select "tbody td", text: /Test Priced Image Model/, count: 0
+    assert_select "tbody td", text: /Test Embedding Model/, count: 0
+  end
+
+  test "the embeddings tab lists embedding models with an input and dimensions column, no output or pricing" do
+    get embeddings_url
+    assert_response :success
+    # The input-only embedding row lists here, priced per input token.
+    assert_select "tbody td", text: /Test Embedding Model/
+    assert_select "thead th", text: %r{Input /1M}
+    assert_select "thead th", text: /Dimensions/
+    # Embeddings have no output/cached rate and no native pricing column.
+    assert_select "thead th", text: %r{Output /1M}, count: 0
+    assert_select "thead th", text: /Pricing/, count: 0
+    # Its vector dimensions render in the row.
+    assert_select "tbody td", text: /1536/
+    # Text and image rows live on their own tabs, not here.
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+    assert_select "tbody td", text: /Test Image Model/, count: 0
+    # The embeddings tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Embeddings/
+  end
+
+  test "the embeddings tab canonicalizes to its own path and carries embedding SEO" do
+    get embeddings_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", embeddings_url
+    assert_select "title", /embedding/i
+    assert_select "meta[name=description][content*=?]", "input token"
+  end
+
+  test "the embeddings tab hides the tier facet but keeps search and provider facets" do
+    get embeddings_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
+  end
+
+  test "embeddings-tab sort links stay on the embeddings path and default to cheapest input" do
+    get embeddings_url
+    assert_response :success
+    assert_select "thead a[href*=?]", "/embeddings"
+    # Default is cheapest input first, so no sort/dir ride in the filter form.
+    assert_select "input[type=hidden][name=sort]", count: 0
+
+    get embeddings_url(sort: "input", dir: "asc")
+    assert_response :success
+    assert_select "tbody td", text: /Test Embedding Model/
   end
 
   test "a stale modality param outside the current tab is ignored, not a dead empty table" do

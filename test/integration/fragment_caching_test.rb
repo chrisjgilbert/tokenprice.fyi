@@ -59,6 +59,14 @@ class FragmentCachingTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the embeddings tab renders every embedding model row with caching on" do
+    body = body_with_caching(embeddings_url)
+    embeddings = ModelCategory.for("embeddings")
+    AiModel.listed.select { |m| embeddings.member?(m.modality_class) }.each do |m|
+      assert_includes body, m.name, "cached embeddings tab is missing #{m.name}"
+    end
+  end
+
   test "a cached row highlights the column for the CURRENT sort, not the primed one" do
     # The row markup carries a per-sort `tp-col-highlight` class, so the cache
     # key must vary by sort. Prime the store with the input sort, then request the

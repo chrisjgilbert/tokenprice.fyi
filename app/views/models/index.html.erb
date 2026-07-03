@@ -529,6 +529,20 @@
     <% end %>
   </div>
 
+  <%# The table shape is data: @category.columns lists the column keys left→right,
+      COL_LABELS maps each to its header, NUMERIC_COLS marks the right-aligned
+      number/price columns. A column is sortable iff its key is in the category's
+      sorts (e.g. Pricing and Dimensions have no sort axis). %>
+  <%
+    numeric_cols = %i[input output cached context dimensions]
+    col_labels = {
+      name: "Model", tier: "Tier",
+      input: "Input /1M", output: "Output /1M", cached: "Cached in /1M",
+      context: "Context", provider: "Provider", released: "Released",
+      pricing: "Pricing", dimensions: "Dimensions"
+    }
+  %>
+
   <div class="tp-table-wrap tp-cardify-wrap">
     <div class="tp-table-scroll">
       <table class="tp-data tp-cardify">
@@ -541,34 +555,17 @@
              } %>
           <tr>
             <th scope="col" class="tp-col-select" aria-hidden="true" title="Select to compare"></th>
-            <th scope="col" class="<%= th_cls.('name') %>" aria-sort="<%= aria_sort_for('name', current_sort: @sort, current_dir: @dir) %>">
-              <%= sort_link "Model", "name", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-            </th>
-            <% unless @category.token_columns %>
-              <th scope="col" class="<%= th_cls.('provider') %>" aria-sort="<%= aria_sort_for('provider', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Provider", "provider", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-              <%# Pricing is native (per image / credits), so it has no sort axis. %>
-              <th scope="col">Pricing</th>
-              <th scope="col" class="<%= th_cls.('released') %>" aria-sort="<%= aria_sort_for('released', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Released", "released", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-            <% else %>
-              <th scope="col" class="<%= th_cls.('tier') %>" aria-sort="<%= aria_sort_for('tier', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Tier", "tier", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-              <th scope="col" class="numeric <%= th_cls.('input') %>" aria-sort="<%= aria_sort_for('input', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Input /1M", "input", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-              <th scope="col" class="numeric <%= th_cls.('output') %>" aria-sort="<%= aria_sort_for('output', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Output /1M", "output", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-              <th scope="col" class="numeric <%= th_cls.('cached') %>" aria-sort="<%= aria_sort_for('cached', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Cached in /1M", "cached", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
-              <th scope="col" class="numeric <%= th_cls.('context') %>" aria-sort="<%= aria_sort_for('context', current_sort: @sort, current_dir: @dir) %>">
-                <%= sort_link "Context", "context", current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
-              </th>
+            <% @category.columns.each do |key| %>
+              <% numeric = numeric_cols.include?(key) %>
+              <% if @category.sorts.include?(key.to_s) %>
+                <th scope="col" class="<%= 'numeric ' if numeric %><%= th_cls.(key.to_s) %>" aria-sort="<%= aria_sort_for(key.to_s, current_sort: @sort, current_dir: @dir) %>">
+                  <%= sort_link col_labels[key], key.to_s, current_sort: @sort, current_dir: @dir, filters: filter_params, &cat_path %>
+                </th>
+              <% elsif numeric %>
+                <th scope="col" class="numeric"><%= col_labels[key] %></th>
+              <% else %>
+                <th scope="col"><%= col_labels[key] %></th>
+              <% end %>
             <% end %>
             <th scope="col" class="tp-col-go" aria-hidden="true"></th>
           </tr>
@@ -576,7 +573,7 @@
         <tbody>
           <% if @models.empty? %>
             <tr>
-              <td colspan="<%= @category.empty_colspan %>">
+              <td colspan="<%= @category.table_colspan %>">
                 <div class="tp-empty">
                   <div class="tp-empty-icon">
                     <%= icon(:empty, size: 26) %>
@@ -612,77 +609,74 @@
                     <%= icon(:check, size: 13) %>
                   </button>
                 </td>
-                <td class="tp-card-title <%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
-                  <div class="tp-model-cell">
-                    <%= link_to model_path(model) do %>
-                      <%= provider_square(model.provider, size: :md) %>
-                    <% end %>
-                    <div class="tp-model-meta">
-                      <div class="tp-model-name">
-                        <%= link_to model.name, model_path(model), style: "color:inherit;text-decoration:none" %>
-                      </div>
-                      <div class="tp-model-sub">
+                <% @category.columns.each do |key| %>
+                  <% case key %>
+                  <% when :name %>
+                      <td class="tp-card-title <%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
+                        <div class="tp-model-cell">
+                          <%= link_to model_path(model) do %>
+                            <%= provider_square(model.provider, size: :md) %>
+                          <% end %>
+                          <div class="tp-model-meta">
+                            <div class="tp-model-name">
+                              <%= link_to model.name, model_path(model), style: "color:inherit;text-decoration:none" %>
+                            </div>
+                            <div class="tp-model-sub">
+                              <%= link_to model.provider.name, provider_path(model.provider),
+                                    class: "tp-prov-name hover:underline" %>
+                              <%= status_badge(model.status) %>
+                              <%= modality_badge(model) %>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    <% when :tier %>
+                      <td data-label="Tier" class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
+                        <%= tier_badge(model.tier) %>
+                      </td>
+                    <% when :input %>
+                      <td data-label="Input /1M" class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+                        <%= usd(model.current_input) %>
+                      </td>
+                    <% when :output %>
+                      <td data-label="Output /1M" class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+                        <%= usd(model.current_output) %>
+                      </td>
+                    <% when :cached %>
+                      <td data-label="Cached in /1M" class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+                        <%= usd(model.current_cached_input) %>
+                      </td>
+                    <% when :context %>
+                      <td data-label="Context" class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
+                        <%= tokens_short(model.context_window) %>
+                      </td>
+                    <% when :provider %>
+                      <td data-label="Provider" class="<%= sort_col == 'provider' ? 'tp-col-highlight' : '' %>">
                         <%= link_to model.provider.name, provider_path(model.provider),
                               class: "tp-prov-name hover:underline" %>
-                        <%= status_badge(model.status) %>
-                        <%= modality_badge(model) %>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <% unless @category.token_columns %>
-                  <td data-label="Provider" class="<%= sort_col == 'provider' ? 'tp-col-highlight' : '' %>">
-                    <%= link_to model.provider.name, provider_path(model.provider),
-                          class: "tp-prov-name hover:underline" %>
-                  </td>
-                  <%# Native pricing (per image / credits) through the same
-                      priced / native / untracked branch the language cell uses. %>
-                  <% if model.priced? %>
-                    <td data-label="Pricing" class="numeric"><%= io_price(model) %></td>
-                  <% elsif model.native_priced? %>
-                    <td data-label="Pricing" class="tp-price-native">
-                      <span class="tp-price-native-val"><%= model.price_summary %></span>
-                      <% if model.pricing_model_label %>
-                        <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
+                      </td>
+                    <% when :released %>
+                      <td data-label="Released" class="<%= sort_col == 'released' ? 'tp-col-highlight' : '' %>">
+                        <%= fmt_date(model.released_on) %>
+                      </td>
+                    <% when :dimensions %>
+                      <td data-label="Dimensions" class="numeric"><%= model.dimensions || "—" %></td>
+                    <% when :pricing %>
+                      <%# Native pricing (per image / credits) through the same
+                          priced / native / untracked branch the token cells use. %>
+                      <% if model.priced? %>
+                        <td data-label="Pricing" class="numeric"><%= io_price(model) %></td>
+                      <% elsif model.native_priced? %>
+                        <td data-label="Pricing" class="tp-price-native">
+                          <span class="tp-price-native-val"><%= model.price_summary %></span>
+                          <% if model.pricing_model_label %>
+                            <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
+                          <% end %>
+                        </td>
+                      <% else %>
+                        <td data-label="Pricing" class="tp-price-untracked"><%= model.price_detail.present? ? "Pricing not published" : "Not yet tracked" %></td>
                       <% end %>
-                    </td>
-                  <% else %>
-                    <td data-label="Pricing" class="tp-price-untracked"><%= model.price_detail.present? ? "Pricing not published" : "Not yet tracked" %></td>
-                  <% end %>
-                  <td data-label="Released" class="<%= sort_col == 'released' ? 'tp-col-highlight' : '' %>">
-                    <%= fmt_date(model.released_on) %>
-                  </td>
-                <% else %>
-                  <td data-label="Tier" class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
-                    <%= tier_badge(model.tier) %>
-                  </td>
-                  <% if model.priced? %>
-                    <td data-label="Input /1M" class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
-                      <%= usd(model.current_input) %>
-                    </td>
-                    <td data-label="Output /1M" class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
-                      <%= usd(model.current_output) %>
-                    </td>
-                    <td data-label="Cached in /1M" class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
-                      <%= usd(model.current_cached_input) %>
-                    </td>
-                  <% elsif model.native_priced? %>
-                    <%# Directory listing with a curated native-unit price (per image, %>
-                    <%# credits, …) that doesn't fit the per-token columns. %>
-                    <td class="numeric tp-price-native" colspan="3">
-                      <span class="tp-price-native-val"><%= model.price_summary %></span>
-                      <% if model.pricing_model_label %>
-                        <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
-                      <% end %>
-                    </td>
-                  <% else %>
-                    <%# Directory listing with no curated price: either awaiting one, %>
-                    <%# or one the provider doesn't publish (price_detail says which). %>
-                    <td class="numeric tp-price-untracked" colspan="3"><%= model.price_detail.present? ? "Pricing not published" : "Not yet tracked" %></td>
-                  <% end %>
-                  <td data-label="Context" class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
-                    <%= tokens_short(model.context_window) %>
-                  </td>
+                    <% end %>
                 <% end %>
                 <%# Hover-revealed "open page" chevron — the row's navigation
                     affordance. Hidden in compare mode, where a row click selects. %>
@@ -699,7 +693,7 @@
   </div>
 <% end %>
 
-<% if @category.token_columns %>
+<% if @category.columns.include?(:output) %>
   <p class="mt-4 text-xs text-slate-400">
     Sorted by output price by default — output tokens are typically 3–5× more expensive than input and dominate the bill for generation-heavy workloads. Sort by input or cached input when your mix differs.
   </p>

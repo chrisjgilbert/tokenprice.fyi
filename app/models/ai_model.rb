@@ -130,6 +130,9 @@ class AiModel < ApplicationRecord
 
   def priced? = current_price.present?
 
+  # Bills per input token with no output tokens — the output is a vector.
+  def embedding? = modality_class == :embedding
+
   # Human labels for the curated `pricing_model` string — the native billing
   # shape of a directory-class model whose price doesn't fit the per-token
   # table, rendered as a badge beside its price. `pricing_model_label` returns

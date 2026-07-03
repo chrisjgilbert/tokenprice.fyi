@@ -544,18 +544,68 @@ module OpenRouter
       assert_includes AiModel.listed, model
     end
 
-    test "a non-text-output row with a real token price is still skipped (output gate)" do
-      # Embeddings carry a real prompt price with completion 0, so parse_pricing
-      # returns a price — but output isn't text, so no per-token PricePoint may be
-      # written (it would render a misleading $0 output) and the row is skipped.
-      result = assert_no_difference("AiModel.count") do
-        sync([ or_model(id: "openai/text-embedding-3", name: "OpenAI: Text Embedding 3",
+    test "an embedding row is admitted and priced input-only" do
+      # Embeddings carry a real prompt price with completion "0" (meaningless for a
+      # vector output). The row is admitted and priced on INPUT only: the price
+      # point stores the input rate with a nil — not $0 — output.
+      result = assert_difference("AiModel.count", 1) do
+        sync([ or_model(id: "openai/text-embedding-3-small", name: "OpenAI: Text Embedding 3 Small",
                         prompt: "0.00000002", completion: "0",
                         input_modalities: [ "text" ], output_modalities: [ "embedding" ]) ])
       end
 
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "openai/text-embedding-3-small")
+      assert_equal :embedding, model.modality_class
+      assert model.token_priced?
+      assert_includes AiModel.listed, model
+
+      price = model.current_price
+      assert_equal 0.02, price.input_per_mtok
+      assert_nil price.output_per_mtok # nil, not a misleading $0
+    end
+
+    test "an embedding-output row whose input is omitted is skipped, not priced with a $0 output" do
+      # Without an input modality the row classifies as :other (not :embedding), so
+      # embedding? is false. Admission keys on embedding? — not the raw output
+      # signature — so the row stays out rather than storing a misleading $0 output
+      # and posting a "$0" digest line on a model that wouldn't even list here.
+      result = assert_no_difference("AiModel.count") do
+        sync([ or_model(id: "someco/mystery-embed", name: "SomeCo: Mystery Embed",
+                        prompt: "0.00000002", completion: "0",
+                        input_modalities: [], output_modalities: [ "embedding" ]) ])
+      end
+
       assert_equal 1, result.skipped
-      assert_nil AiModel.find_by(openrouter_id: "openai/text-embedding-3")
+      assert_empty result.created_records
+      assert_nil AiModel.find_by(openrouter_id: "someco/mystery-embed")
+    end
+
+    test "re-syncing an embedding row does not churn a duplicate snapshot" do
+      row = or_model(id: "openai/text-embedding-3-small", name: "OpenAI: Text Embedding 3 Small",
+                     prompt: "0.00000002", completion: "0",
+                     output_modalities: [ "embedding" ])
+      sync([ row ])
+      model = AiModel.find_by!(openrouter_id: "openai/text-embedding-3-small")
+      assert_equal 1, model.price_points.count
+
+      # The completion "0" must not read as a price change against the stored nil
+      # output — an embedding is reprice-stable across runs.
+      assert_no_difference "PricePoint.count" do
+        result = sync([ row ], today: Date.current + 1)
+        assert_equal 0, result.repriced
+      end
+    end
+
+    test "an embedding row is left out of the Slack digest (no $0 output line)" do
+      # The digest formats an input/output pair; an embedding has no output rate,
+      # so — like a price-less directory row — it's kept out rather than posting $0.
+      result = sync([ or_model(id: "openai/text-embedding-3-small", name: "OpenAI: Text Embedding 3 Small",
+                               prompt: "0.00000002", completion: "0",
+                               output_modalities: [ "embedding" ]) ])
+
+      assert_equal 1, result.created
+      assert_empty result.created_records
     end
 
     test "a text model still records a price point (regression)" do

@@ -35,7 +35,8 @@ providers = {
   bytedance: { name: "ByteDance",   website: "https://www.bytedance.com", accent: "#325AB4", country: "China", country_code: "CN" },
   amazon:    { name: "Amazon",      website: "https://aws.amazon.com",  accent: "#FF9900", country: "United States", country_code: "US" },
   adobe:     { name: "Adobe",       website: "https://www.adobe.com",   accent: "#EB1000", country: "United States", country_code: "US" },
-  leonardo:  { name: "Leonardo AI", website: "https://leonardo.ai",     accent: "#B45309", country: "Australia", country_code: "AU" }
+  leonardo:  { name: "Leonardo AI", website: "https://leonardo.ai",     accent: "#B45309", country: "Australia", country_code: "AU" },
+  voyage:    { name: "Voyage AI",   website: "https://www.voyageai.com", accent: "#4338CA", country: "United States", country_code: "US" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -823,6 +824,150 @@ catalog = [
     # example, not a rate, so no price is asserted (see IMAGE_MODEL_PRICING.md).
     price_detail: "Alibaba doesn't publish a per-image API rate for Qwen-Image; it's released as open weights under the Apache 2.0 license.",
     prices: []
+  },
+
+  # ---- Text embeddings --------------------------------------------------
+  # Text in → a vector out, so they classify as :embedding and bill per INPUT
+  # token only (no output charge — the output is the vector). Each carries a
+  # real per-token price point with an `in:` rate and NO `out:`, which the
+  # nullable output column + the embedding-only price validation now allow.
+  # `dimensions` records the native output vector size. Figures, sources, and
+  # confidence come from docs/EMBEDDING_MODEL_PRICING.md; the price effective
+  # date is that doc's as-of date. Only H- and M-confidence rows are seeded —
+  # anything the doc rates L ("do not publish as fact") is omitted, since a
+  # shaky price shouldn't be published and an unpriced embedding wouldn't list
+  # anyway. Omitted: Jina v3/v4, Nomic v1.5/v2-moe (all L), Google
+  # text-embedding-005 (Vertex, character-billed, L). The open-weight rows the
+  # doc lists as auto-synced (Qwen3, bge-m3, Perplexity, Nemotron) are left to
+  # the OpenRouter sync rather than curated here.
+  {
+    provider: :openai, name: "text-embedding-3-small", tier: "small", status: "active",
+    context_window: 8_191, released_on: "2024-01-25",
+    description: "OpenAI's smaller embedding model. Native 1536 dimensions, truncatable via the dimensions parameter down to 512.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
+    prices: [ { on: "2026-07-03", in: 0.02, src: "developers.openai.com/api/docs/models/text-embedding-3-small", note: "Standard tier; batch tier $0.01" } ]
+  },
+  {
+    provider: :openai, name: "text-embedding-3-large", tier: "mid", status: "active",
+    context_window: 8_191, released_on: "2024-01-25",
+    description: "OpenAI's larger embedding model. Native 3072 dimensions, truncatable down to 256.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
+    prices: [ { on: "2026-07-03", in: 0.13, src: "developers.openai.com/api/docs/models/text-embedding-3-large", note: "Standard tier; batch tier $0.065" } ]
+  },
+  {
+    provider: :openai, name: "text-embedding-ada-002", tier: "small", status: "legacy",
+    context_window: 8_191, released_on: "2022-12-15",
+    description: "OpenAI's original second-generation embedding model, superseded by the text-embedding-3 family.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
+    prices: [ { on: "2026-07-03", in: 0.10, src: "openai.com/pricing", note: "Legacy; price widely published, primary page de-emphasised (M confidence)" } ]
+  },
+  {
+    provider: :cohere, name: "Embed 4", tier: "mid", status: "active",
+    context_window: 128_000,
+    description: "Cohere's multimodal embedding model (embed-v4.0). Matryoshka dimensions of 256/512/1024/1536; the figure is the text-token rate.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
+    prices: [ { on: "2026-07-03", in: 0.12, src: "docs.cohere.com/docs/cohere-embed", note: "Text-token rate corroborated across docs + Bedrock/reseller calculators (M confidence)" } ]
+  },
+  {
+    provider: :cohere, name: "Embed English v3", tier: "mid", status: "active",
+    context_window: 512,
+    description: "Cohere's English embedding model (embed-english-v3.0), 1024 dimensions.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.10, src: "docs.cohere.com/docs/models", note: "Corroborated across docs + AWS Marketplace (M confidence)" } ]
+  },
+  {
+    provider: :cohere, name: "Embed Multilingual v3", tier: "mid", status: "active",
+    context_window: 512,
+    description: "Cohere's multilingual embedding model (embed-multilingual-v3.0), 1024 dimensions across 100+ languages.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.10, src: "docs.cohere.com/docs/models", note: "Corroborated across docs + AWS Marketplace (M confidence)" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-4-large", tier: "mid", status: "active",
+    context_window: 32_000,
+    description: "Voyage AI's largest general embedding model in the voyage-4 family. Matryoshka dimensions of 256/512/1024/2048, default 1024.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.12, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-4", tier: "mid", status: "active",
+    context_window: 32_000,
+    description: "Voyage AI's balanced general embedding model. Matryoshka dimensions, default 1024.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.06, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-4-lite", tier: "small", status: "active",
+    context_window: 32_000,
+    description: "Voyage AI's entry tier in the voyage-4 family. Matryoshka dimensions, default 1024.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.02, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-3-large", tier: "mid", status: "legacy",
+    context_window: 32_000,
+    description: "Previous-generation Voyage general embedding model, still listed alongside the voyage-4 family.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-3.5", tier: "mid", status: "legacy",
+    context_window: 32_000,
+    description: "Previous-generation Voyage embedding model, superseded by voyage-4.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.06, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-3.5-lite", tier: "small", status: "legacy",
+    context_window: 32_000,
+    description: "Previous-generation cheap Voyage embedding model, superseded by voyage-4-lite.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.02, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-code-3", tier: "mid", status: "active",
+    context_window: 32_000,
+    description: "Voyage AI's code-specialised embedding model. Matryoshka dimensions, default 1024.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :voyage, name: "voyage-context-3", tier: "mid", status: "active",
+    context_window: 32_000,
+    description: "Voyage AI's contextualised-chunk embedding model. Matryoshka dimensions, default 1024.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
+  },
+  {
+    provider: :google, name: "gemini-embedding-001", tier: "mid", status: "active",
+    context_window: 2_048,
+    description: "Google's Gemini embedding model. Native 3072 dimensions with Matryoshka truncation (e.g. 1536/768/256).",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
+    prices: [ { on: "2026-07-03", in: 0.15, src: "ai.google.dev/gemini-api/docs/pricing", note: "Standard tier; batch tier $0.075" } ]
+  },
+  {
+    provider: :google, name: "gemini-embedding-2", tier: "mid", status: "active",
+    context_window: 2_048,
+    # Price is primary-sourced (H); the doc flags the 3072-dim/2,048-token specs
+    # as inferred from the -001 lineage and "do not publish as fact", so no
+    # dimensions are asserted here.
+    description: "Google's next Gemini embedding model. Its price is primary-confirmed; dimensions are not yet confirmed on a primary source.",
+    input_modalities: %w[text], output_modalities: %w[embedding],
+    prices: [ { on: "2026-07-03", in: 0.20, src: "ai.google.dev/gemini-api/docs/pricing", note: "Standard tier; batch tier $0.10. Dimensions/context not primary-confirmed (M)" } ]
+  },
+  {
+    provider: :mistral, name: "Mistral Embed", tier: "mid", status: "active",
+    context_window: 8_192,
+    description: "Mistral's general embedding model (mistral-embed-2312), 1024 dimensions.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
+    prices: [ { on: "2026-07-03", in: 0.10, src: "mistral.ai/pricing", note: "Widely cited; API pricing table JS-rendered (M confidence)" } ]
+  },
+  {
+    provider: :mistral, name: "Codestral Embed", tier: "mid", status: "active",
+    context_window: 8_192,
+    description: "Mistral's code-specialised embedding model (codestral-embed-2505). Native 3072 dimensions, default 1536, MRL-truncatable.",
+    input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
+    prices: [ { on: "2026-07-03", in: 0.15, src: "mistral.ai/news/codestral-embed", note: "Price primary-sourced (H); batch tier 50% off" } ]
   }
 ]
 
@@ -1086,6 +1231,8 @@ catalog.each do |row|
   # text models omit it and keep the [] default that derives modality_class :text.
   attrs[:input_modalities]  = row[:input_modalities]  if row[:input_modalities]
   attrs[:output_modalities] = row[:output_modalities] if row[:output_modalities]
+  # Embedding rows carry a native output vector size; other classes leave it nil.
+  attrs[:dimensions] = row[:dimensions] if row[:dimensions]
   # Curated native-unit pricing (image-generation rows): assigned only when the
   # row provides it, so text models keep their nil pricing columns.
   %i[pricing_model price_summary price_detail price_source priced_as_of].each do |key|
