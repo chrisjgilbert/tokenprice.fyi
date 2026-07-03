@@ -54,6 +54,13 @@ class FlagshipTrendTest < ActiveSupport::TestCase
     assert_operator FlagshipTrend.last_modified, :>, before
   end
 
+  test "last_modified reflects a provider edit — the chart renders provider names and accents" do
+    before = FlagshipTrend.last_modified
+    providers(:anthropic).update!(accent: "#123123")
+
+    assert_operator FlagshipTrend.last_modified, :>, before
+  end
+
   test "includes superseded flagships that the public catalog hides" do
     provider = Provider.create!(name: "Historic Labs", slug: "historic-labs", accent: "#123456")
     model = provider.ai_models.create!(name: "Historic Frontier One", tier: "frontier",

@@ -5,8 +5,8 @@ class TrendsController < ApplicationController
     # 304 past a data edit: FlagshipTrend.last_modified busts on any price/model
     # write, and Date.current busts daily since the chart's right edge and year
     # ticks track today.
-    return if catalog_fresh?(etag: [ :trends, Date.current, FlagshipTrend.last_modified ],
-      last_modified: FlagshipTrend.last_modified)
+    stamp = FlagshipTrend.last_modified
+    return if catalog_fresh?(etag: [ :trends, Date.current, stamp ], last_modified: stamp)
 
     @trends = FlagshipTrend.all
   end

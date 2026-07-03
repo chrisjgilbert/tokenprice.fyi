@@ -74,9 +74,7 @@ module ChartsHelper
     # the left gutter (the design's "$/1M" axis). The step is chosen so ~4–6
     # lines land on clean numbers across every price scale (cents to tens).
     chart_gridlines(ymax).each do |v|
-      gy = sy.(v).round(1)
-      svg << %(<line x1="#{pad[:l]}" y1="#{gy}" x2="#{pad[:l] + plot_w}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>)
-      svg << %(<text x="#{pad[:l] - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{usd_plain(v)}</text>)
+      svg << chart_hgridline(pad[:l], pad[:l] + plot_w, sy.(v).round(1), usd_plain(v))
     end
 
     series.each do |s|
@@ -132,6 +130,15 @@ module ChartsHelper
           data: { price_chart_target: "tooltip" })
       ])
     end
+  end
+
+  # One horizontal gridline across the plot with its value label in the left
+  # gutter. Shared by both charts (linear and log) so the axis styling — hairline
+  # colour, label size/colour, gutter offset — lives in one place and can't drift.
+  # `label` is already formatted; `gy` is the pre-scaled y.
+  def chart_hgridline(x_left, x_right, gy, label)
+    %(<line x1="#{x_left}" y1="#{gy}" x2="#{x_right}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>) +
+      %(<text x="#{x_left - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{label}</text>)
   end
 
   # Round dollar values to draw gridlines at, from 0 up to (but not past) the
@@ -228,9 +235,7 @@ module ChartsHelper
 
     decade = lo
     while decade <= hi + 1e-9
-      gy = sy.(decade)
-      svg << %(<line x1="#{pad[:l]}" y1="#{gy}" x2="#{x_right}" y2="#{gy}" stroke="#e2e8f0" stroke-width="1"/>)
-      svg << %(<text x="#{pad[:l] - 8}" y="#{gy + 4}" font-size="11" fill="#94a3b8" text-anchor="end" style="font-variant-numeric:tabular-nums">#{flagship_axis_price(decade)}</text>)
+      svg << chart_hgridline(pad[:l], x_right, sy.(decade), flagship_axis_price(decade))
       decade *= 10
     end
 
@@ -269,17 +274,13 @@ module ChartsHelper
     trends.each do |t|
       pts = t.steps.map { |s| [ sx.(s.date), sy.(s.input) ] }
       d = +"M#{pts.first[0]},#{pts.first[1]}"
-      pts.each_with_index do |(x, y), i|
-        next if i.zero?
-
-        d << " L#{x},#{pts[i - 1][1]} L#{x},#{y}"
-      end
+      pts.each_cons(2) { |(_, prev_y), (x, y)| d << " L#{x},#{prev_y} L#{x},#{y}" }
       d << " L#{x_right},#{pts.last[1]}"
 
       svg << %(<g class="flagship-line" data-provider="#{t.provider_slug}" data-action="mouseenter->flagship-chart#highlight mouseleave->flagship-chart#reset">)
       svg << %(<path d="#{d}" fill="none" stroke="#{t.accent}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>)
-      t.steps.each_with_index do |s, i|
-        svg << %(<circle cx="#{pts[i][0]}" cy="#{pts[i][1]}" r="3.25" fill="#fff" stroke="#{t.accent}" stroke-width="2"><title>#{ERB::Util.html_escape("#{t.provider_name} — #{s.model_name}, #{s.date.strftime('%b %Y')}: #{usd_plain(s.input)} in / #{usd_plain(s.output)} out per 1M")}</title></circle>)
+      t.steps.zip(pts).each do |s, (cx, cy)|
+        svg << %(<circle cx="#{cx}" cy="#{cy}" r="3.25" fill="#fff" stroke="#{t.accent}" stroke-width="2"><title>#{ERB::Util.html_escape("#{t.provider_name} — #{s.model_name}, #{s.date.strftime('%b %Y')}: #{usd_plain(s.input)} in / #{usd_plain(s.output)} out per 1M")}</title></circle>)
       end
       svg << "</g>"
     end

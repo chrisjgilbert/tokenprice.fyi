@@ -43,13 +43,16 @@ class FlagshipTrend
 
   class << self
     # Freshness stamp for conditional GET on the trends page. The chart is driven
-    # by frontier-model metadata (name, released_on, tier, status) as much as by
-    # prices, and none of those writes touch a price row — a tier flip even moves
-    # a model in or out of the series — so fold in the newest AiModel write, not
-    # just PriceCatalog's price-point stamp. (The daily x-axis advance is handled
+    # by prices, frontier-model metadata (name, released_on, tier, status — a tier
+    # flip even moves a model in or out of the series), and provider rows (the
+    # legend names, line colours, and links), and edits to the latter two touch no
+    # price row — so fold in the newest AiModel and Provider writes, not just
+    # PriceCatalog's price-point stamp. (The daily x-axis advance is handled
     # separately, by dating the controller's etag.)
     def last_modified
-      [ PriceCatalog.last_modified, AiModel.maximum(:updated_at) ].compact.max
+      [ PriceCatalog.last_modified,
+        AiModel.maximum(:updated_at),
+        Provider.maximum(:updated_at) ].compact.max
     end
 
     # One trend per provider that has at least one priced frontier model with a

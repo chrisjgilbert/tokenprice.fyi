@@ -68,8 +68,9 @@
               <span class="num"><%= t.steps.size %></span>
               <%= "flagship".pluralize(t.steps.size) %>
               <% if (chg = t.input_change_pct) %>
-                · <span class="trends-chg <%= chg <= 0 ? "down" : "up" %>">
-                  <%= chg <= 0 ? "−" : "+" %><%= chg.abs %>%
+                <% down = chg <= 0 %>
+                · <span class="trends-chg <%= down ? "down" : "up" %>">
+                  <%= down ? "−" : "+" %><%= chg.abs %>%
                 </span> input since first
               <% end %>
             </span>
