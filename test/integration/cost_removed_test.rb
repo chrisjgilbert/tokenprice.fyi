@@ -1,9 +1,9 @@
 require "test_helper"
 
 # The standalone /cost estimator page was removed: its monthly-bill framing and
-# ranking table are retired. The per-call pricing math (CostEstimate) survives
-# and is consumed by FeaturePattern::Cost (the model-detail embed was later
-# removed too).
+# ranking table are retired, and the model-detail embed was later removed too.
+# The per-call pricing math (CostEstimate) and the Guide that consumed it
+# (FeaturePattern::Cost) have since been removed as well.
 # Guard against the route, helpers, nav entry, or sitemap URL creeping back.
 class CostRemovedTest < ActionDispatch::IntegrationTest
   test "/cost is not routable" do

@@ -4,7 +4,7 @@
 # natively (per image, credits, …). Each needs its own columns, sorts, and SEO,
 # so splitting them into their own indexable URLs is what this registry drives.
 #
-# A plain-Ruby domain PORO in the FeaturePattern / ModalityClass idiom: a
+# A plain-Ruby domain PORO in the ModalityClass idiom: a
 # Data.define value object with a frozen, ordered registry. Adding a later tab
 # (speech, video, …) is a registry addition plus a route — the controller, view,
 # and sitemap read everything they need off the category.
