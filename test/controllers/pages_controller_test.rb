@@ -13,6 +13,14 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /How LLM pricing works/
   end
 
+  test "llms.txt renders as plain text" do
+    get llms_txt_url
+    assert_response :success
+    assert_equal "text/plain", response.media_type
+    assert_match "llms.txt — tokenprice.fyi", response.body
+    assert_match root_url, response.body
+  end
+
   test "how-pricing-works emits a self-canonical link that ignores query params" do
     get how_pricing_works_url(ref: "twitter")
     assert_response :success
