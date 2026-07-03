@@ -244,44 +244,157 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", text: /DeepSeek V4 Pro/
   end
 
-  test "index only offers modality facets present among listed models" do
+  test "index only offers modality facets present among the current category" do
     get root_url
     assert_response :success
-    # The multimodal sonnet and the directory-class image_gen fixtures are both
-    # listed, so their classes are offered as facets; a class no listed row has
-    # (video_generation) is not.
+    # The language tab offers the classes its listed rows have — text and the
+    # multimodal sonnet — but not image_generation (now its own tab) nor a class
+    # no listed row has (video_generation).
     assert_select "input[value=multimodal][name=?]", "modality[]"
-    assert_select "input[value=image_generation][name=?]", "modality[]"
+    assert_select "input[value=image_generation][name=?]", "modality[]", count: 0
     assert_select "input[value=video_generation][name=?]", "modality[]", count: 0
   end
 
-  test "index can be filtered to image-generation models" do
-    get root_url(modality: "image_generation")
+  test "the index renders a category tab strip with both families and their counts, language active" do
+    get root_url
+    assert_response :success
+    assert_select ".tp-tabs .tp-tab", count: 2
+    assert_select ".tp-tabs .tp-tab", text: /Language models/
+    assert_select ".tp-tabs .tp-tab", text: /Image generation/
+    # The current tab is the language one and carries aria-current.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Language models/
+    language = ModelCategory.for("language")
+    language_count = AiModel.listed.count { |m| language.member?(m.modality_class) }
+    assert_select ".tp-tabs .tp-tab[aria-current=page] .tp-tab-count", text: language_count.to_s
+  end
+
+  test "the image tab swaps in a Pricing column and drops the per-token headers" do
+    get image_generation_url
+    assert_response :success
+    assert_select "thead th", text: /Pricing/
+    assert_select "thead th", text: %r{Input /1M}, count: 0
+    assert_select "thead th", text: /Context/, count: 0
+    # The image tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Image generation/
+    # A natively-priced image row shows its curated per-image summary.
+    assert_select "tbody td", text: %r{\$0\.04 / image}
+  end
+
+  test "the language tab keeps the per-token headers and has no Pricing column" do
+    get root_url
+    assert_response :success
+    assert_select "thead th", text: %r{Input /1M}
+    assert_select "thead th", text: /Pricing/, count: 0
+  end
+
+  test "image-tab sort links stay on the image path and sorting by name returns 200" do
+    get image_generation_url
+    assert_response :success
+    # Every sortable header links back to the image path, not the root tab.
+    assert_select "thead a[href*=?]", "/image-generation"
+    assert_select "thead a[href*='sort=provider'][href*='/image-generation']"
+
+    get image_generation_url(sort: "name", dir: "asc")
     assert_response :success
     assert_select "tbody td", text: /Test Image Model/
-    # Text and multimodal rows drop out of an image-generation-only view.
+  end
+
+  test "the image tab hides the tier facet but keeps search and provider facets" do
+    get image_generation_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
+  end
+
+  test "the image tab lists image-generation models" do
+    get image_generation_url
+    assert_response :success
+    assert_select "tbody td", text: /Test Image Model/
+    # Text and multimodal rows live on the language tab, not here.
     assert_select "tbody td", text: /DeepSeek V4 Pro/, count: 0
     assert_select "tbody td", text: /Guide Sonnet Fixture/, count: 0
   end
 
-  test "index shows a directory listing's price as not yet tracked, never a dash or $0" do
-    get root_url(modality: "image_generation")
+  test "the image tab shows a directory listing's price as not yet tracked, never a dash or $0" do
+    get image_generation_url
     assert_response :success
     assert_select "td.tp-price-untracked", text: /not yet tracked/i
   end
 
-  test "index renders a natively-priced image row's price summary, not the untracked note" do
-    get root_url(modality: "image_generation")
+  test "the image tab renders a natively-priced image row's price summary, not the untracked note" do
+    get image_generation_url
     assert_response :success
     # The curated per-image price shows as a real value in the row.
     assert_select "td", text: /\$0\.04 \/ image/
     assert_select "td:match('class', ?)", /tp-price-untracked/, text: /\$0\.04 \/ image/, count: 0
   end
 
-  test "index still shows a price-less image row as not yet tracked" do
-    get root_url(modality: "image_generation")
+  test "the image tab still shows a price-less image row as not yet tracked" do
+    get image_generation_url
     assert_response :success
     assert_select "td.tp-price-untracked", text: /not yet tracked/i
+  end
+
+  test "the language tab (root) excludes image-generation models" do
+    get root_url
+    assert_response :success
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "tbody td", text: /Guide Sonnet Fixture/
+    # Image-generation rows moved to their own tab.
+    assert_select "tbody td", text: /Test Image Model/, count: 0
+    assert_select "tbody td", text: /Test Priced Image Model/, count: 0
+  end
+
+  test "a stale modality param outside the current tab is ignored, not a dead empty table" do
+    # /?modality=image_generation used to list image rows; they now have their own
+    # tab. On the language tab that modality doesn't apply, so it's dropped rather
+    # than filtering every language row out into a 'no models match' state.
+    get root_url(modality: "image_generation")
+    assert_response :success
+    assert_select "tbody td", text: /Claude Opus 4.8/
+    assert_select "td", text: /No models match your filters/, count: 0
+  end
+
+  test "the result count denominator is the current tab's total, not the whole catalog" do
+    get root_url
+    assert_response :success
+    language_total = AiModel.listed.count { |m| ModelCategory.for("language").member?(m.modality_class) }
+    assert_operator language_total, :<, AiModel.listed.count, "fixtures must include image rows for this to be meaningful"
+    assert_select ".result-count", text: /of #{language_total}\b/
+  end
+
+  test "the image tab canonicalizes to the image path and carries image-specific SEO" do
+    get image_generation_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", image_generation_url
+    assert_select "title", /Image generation/
+    assert_select "meta[name=description][content*=?]", "per image"
+  end
+
+  test "the image tab sorts by name and falls back to its default for a token-price sort" do
+    get image_generation_url(sort: "name", dir: "asc")
+    assert_response :success
+    assert_select "tbody td", text: /Test Image Model/
+
+    # "input" is a language-only sort; on the image tab it is not offered, so it
+    # falls back to the category default rather than erroring.
+    get image_generation_url(sort: "input")
+    assert_response :success
+    assert_select "tbody td", text: /Test Image Model/
+  end
+
+  test "the language and image tabs do not share a conditional-GET cache key" do
+    get root_url
+    assert_response :success
+    language_etag = @response.headers["ETag"]
+
+    get image_generation_url
+    assert_response :success
+    image_etag = @response.headers["ETag"]
+
+    assert_not_equal language_etag, image_etag,
+      "category tabs must not collide on one conditional-GET cache key"
   end
 
   test "index renders a modality badge on multimodal rows only" do

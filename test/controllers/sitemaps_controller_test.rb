@@ -9,6 +9,12 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "<urlset"
   end
 
+  test "the sitemap lists the image-generation tab as its own URL" do
+    get sitemap_url
+    assert_response :success
+    assert_includes @response.body, image_generation_url
+  end
+
   test "the sitemap advertises the guide and its task pages, not which-model" do
     get sitemap_url
     assert_response :success
