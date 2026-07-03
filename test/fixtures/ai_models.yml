@@ -112,6 +112,25 @@ image_priced:
   priced_as_of: 2026-07-01
   description: Image-generation directory listing with curated per-image pricing.
 
+# An embedding-class model: billed per INPUT token with no output tokens (the
+# output is a vector). modality_class is set explicitly because fixtures bypass
+# the derive callback; `dimensions` is the native output vector size, only
+# embeddings set it.
+embedding_model:
+  provider: anthropic
+  name: Test Embedding Model
+  slug: test-embedding-model
+  tier: small
+  status: active
+  source: openrouter
+  modality_class: embedding
+  input_modalities:
+    - text
+  output_modalities:
+    - embedding
+  dimensions: 1536
+  description: Input-only embedding model — priced per input token, no output rate.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro

@@ -34,6 +34,14 @@ sonnet_launch:
   request_usd: 0.01
   source: anthropic.com/pricing
 
+# Input-only price: an embedding model has an input rate but no output tokens,
+# so output_per_mtok is omitted (NULL).
+embedding_model_launch:
+  ai_model: embedding_model
+  effective_on: 2026-06-01
+  input_per_mtok: 0.02
+  source: openrouter
+
 deepseek_launch:
   ai_model: deepseek_v4
   effective_on: 2026-02-01

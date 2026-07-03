@@ -11,6 +11,19 @@ class PricePointTest < ActiveSupport::TestCase
     assert pp.valid?, pp.errors.full_messages.to_sentence
   end
 
+  test "an input-only point is valid for an embedding model" do
+    pp = PricePoint.new(ai_model: ai_models(:embedding_model), effective_on: Date.new(2026, 7, 1),
+                        input_per_mtok: 0.02)
+    assert pp.valid?, pp.errors.full_messages.to_sentence
+  end
+
+  test "an input-only point is invalid for a text model (both-together still fires)" do
+    pp = PricePoint.new(ai_model: ai_models(:opus), effective_on: Date.new(2026, 7, 1),
+                        input_per_mtok: 5)
+    assert_not pp.valid?
+    assert pp.errors[:base].any?
+  end
+
   test "a point that prices nothing is invalid" do
     pp = PricePoint.new(ai_model: ai_models(:opus), effective_on: Date.new(2026, 7, 1))
     assert_not pp.valid?

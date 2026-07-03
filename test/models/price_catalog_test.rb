@@ -125,6 +125,17 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_in_delta frontier_inputs.min, result.input, 1e-9
   end
 
+  test "cheapest ignores embeddings — it means the cheapest per-token chat model" do
+    # The small-tier embedding fixture has the lowest input of any small model
+    # ($0.02 vs Haiku's $1), but no output rate. cheapest must skip it and return
+    # the cheapest small model that actually bills per token, not misrepresent the
+    # tier with an embedding rate.
+    result = PriceCatalog.cheapest(tier: "small")
+    assert result, "expected a small-tier chat model"
+    assert_not_equal "test-embedding-model", result.slug
+    assert result.output, "cheapest must be a model with an output rate"
+  end
+
   test "cheapest reuses an injected catalog and returns nil when none qualify" do
     # Entry is identity-compared, so match on slug: the injected catalog yields
     # the same model as the default load.

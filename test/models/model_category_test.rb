@@ -3,6 +3,7 @@ require "test_helper"
 class ModelCategoryTest < ActiveSupport::TestCase
   test "for resolves the known params" do
     assert_equal "language", ModelCategory.for("language").slug
+    assert_equal "embeddings", ModelCategory.for("embeddings").slug
     assert_equal "image", ModelCategory.for("image").slug
   end
 
@@ -13,23 +14,62 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.default.slug
   end
 
-  test "all is the ordered tab strip, language first" do
-    assert_equal %w[language image], ModelCategory.all.map(&:slug)
+  test "all is the ordered tab strip, language then embeddings then image" do
+    assert_equal %w[language embeddings image], ModelCategory.all.map(&:slug)
   end
 
-  test "member? splits image generation from every other class" do
+  test "each non-language category claims its class; language is what none claim" do
     image = ModelCategory.for("image")
+    embeddings = ModelCategory.for("embeddings")
     language = ModelCategory.for("language")
 
     assert image.member?(:image_generation)
     refute image.member?(:text)
-    refute image.member?(:multimodal)
+    refute image.member?(:embedding)
 
+    assert embeddings.member?(:embedding)
+    refute embeddings.member?(:image_generation)
+    refute embeddings.member?(:text)
+
+    # Language claims only what no other category matches — not image or embedding.
     refute language.member?(:image_generation)
+    refute language.member?(:embedding)
     assert language.member?(:text)
     assert language.member?(:multimodal)
-    assert language.member?(:embedding)
     assert language.member?(:any_to_any)
+  end
+
+  test "unclaimed? is true only for classes no non-language matcher claims" do
+    assert ModelCategory.unclaimed?(:text)
+    assert ModelCategory.unclaimed?(:multimodal)
+    assert ModelCategory.unclaimed?(:any_to_any)
+    refute ModelCategory.unclaimed?(:embedding)
+    refute ModelCategory.unclaimed?(:image_generation)
+  end
+
+  test "columns and table_colspan describe each category's table shape" do
+    assert_equal %i[name tier input output cached context], ModelCategory.for("language").columns
+    assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
+    assert_equal %i[name provider pricing released], ModelCategory.for("image").columns
+
+    # colspan = columns + the leading select and trailing go columns.
+    assert_equal 8, ModelCategory.for("language").table_colspan
+    assert_equal 8, ModelCategory.for("embeddings").table_colspan
+    assert_equal 6, ModelCategory.for("image").table_colspan
+
+    assert ModelCategory.for("language").shows_tier_facet
+    refute ModelCategory.for("embeddings").shows_tier_facet
+    refute ModelCategory.for("image").shows_tier_facet
+  end
+
+  test "the embeddings category ranks cheapest input first with token-price SEO" do
+    embeddings = ModelCategory.for("embeddings")
+    assert_equal "input", embeddings.default_sort
+    assert_equal "asc", embeddings.default_dir
+    assert_includes embeddings.sorts, "input"
+    refute_includes embeddings.sorts, "output"
+    assert_match(/embedding/i, embeddings.title)
+    assert_match(/input token/i, embeddings.meta_description)
   end
 
   test "member? accepts a string as well as a symbol" do

@@ -170,12 +170,13 @@ module OpenRouter
 
     # Returns the outcome symbol: :created, :enriched, :repriced or :skipped.
     #
-    # A per-token PricePoint is written only for a text-output model with a
-    # per-token price; it is NEVER written for a non-text-output row, as it would
-    # read as a misleading $0. A directory-class row (image generation) is still
-    # admitted when it has no usable per-token price — listed "not yet tracked"
-    # until its per-image price is curated. Everything else un-priceable
-    # (free / malformed text rows) is skipped.
+    # A per-token PricePoint is written for a text-output model with a per-token
+    # price, and for an embedding row — which is token-priced on INPUT only, its
+    # "output" being a vector rather than text (record_price stores a nil, never
+    # a misleading $0, output for it). A directory-class row (image generation) is
+    # still admitted when it has no usable per-token price — listed "not yet
+    # tracked" until its per-image price is curated. Everything else un-priceable
+    # (free / malformed text rows, other non-text media) is skipped.
     def import(row)
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
@@ -199,10 +200,17 @@ module OpenRouter
 
       # A missing/blank output modality is treated as text (the lenient default),
       # so a normal model whose architecture OpenRouter omitted is still priced.
-      # A per-token price is recorded only for a text-output model that has one;
-      # a directory-class row keeps whatever price it has (Google prices its
-      # image model per token) but is otherwise left price-less.
-      prices_per_token = pricing && (model.output_modalities.empty? || model.output_modalities.include?("text"))
+      # A per-token price is recorded for a text-output model that has one, and for
+      # an embedding (text/image in → a single "embedding" out), which is priced on
+      # input only. A directory-class row keeps whatever price it has (Google prices
+      # its image model per token) but is otherwise left price-less.
+      # Detect embeddings via the derived class, not the raw output signature, so
+      # the admission gate agrees with the output-nil normalisation and the digest
+      # guards below (all keyed on `embedding?`). An embedding-output row whose
+      # input OpenRouter omitted classifies as :other, not :embedding — it stays
+      # out rather than being priced with a misleading $0 output.
+      outputs_text     = model.output_modalities.empty? || model.output_modalities.include?("text")
+      prices_per_token = pricing && (outputs_text || model.embedding?)
 
       # Admit a row only if it's priceable text OR a directory class we list
       # without a price. A price-less, non-directory row (free text, or an
@@ -215,9 +223,10 @@ module OpenRouter
       repriced_from = (record_price(model, pricing) if prices_per_token)
 
       if created
-        # Directory-class creations carry no headline price, so they're left out
-        # of the digest (which formats per-token rates) rather than posting "$0".
-        if prices_per_token
+        # Directory-class creations carry no headline price, and embeddings carry
+        # no output rate, so both are left out of the digest (which formats an
+        # input/output pair) rather than posting a misleading "$0".
+        if prices_per_token && !model.embedding?
           @result.created_records << CreatedRecord.new(
             model_name:      model.name,
             provider_name:   provider.name,
@@ -232,8 +241,10 @@ module OpenRouter
         # A snapshot was written, but the Slack digest only reports the headline
         # rates. Announce a reprice only when one of those actually moved — an
         # extra-dimension-only change (e.g. cache write) would otherwise post a
-        # confusing "$3→$3 · +0.0%" line.
-        if headline_moved?(repriced_from, pricing)
+        # confusing "$3→$3 · +0.0%" line. Embeddings are left out entirely (the
+        # line formats an output rate they don't have), mirroring the digest on
+        # create.
+        if !model.embedding? && headline_moved?(repriced_from, pricing)
           old_input = repriced_from[:input].to_f
           pct = old_input.nonzero? ? ((pricing[:input] - old_input) / old_input * 100).round(1) : 0.0
 
@@ -339,6 +350,12 @@ module OpenRouter
     #   nil    — first-ever price snapshot (no old pricing to compare)
     #   Hash   — repriced; value is the old pricing { input:, output:, cached: }
     def record_price(model, pricing)
+      # An embedding bills on input only — OpenRouter's completion "0" is
+      # meaningless for a vector, so persist a nil (not $0) output. Normalising it
+      # here also keeps same_price? honest: stored nil compared against nil, so an
+      # unchanged embedding doesn't churn a fresh snapshot every run.
+      pricing = pricing.merge(output: nil) if model.embedding?
+
       current = model.current_price
       return false if current && same_price?(current, pricing)
 
@@ -456,6 +473,23 @@ module OpenRouter
       # `created` is when OpenRouter listed the model, only an approximation of
       # the release date, so set it once and never churn it.
       model.released_on ||= released
+
+      # Fill the embedding vector size if the payload happens to carry one; it's
+      # stable, so set it once. OpenRouter doesn't document this field today, so in
+      # practice it stays nil and seeds/curation supply it — we don't invent it.
+      model.dimensions ||= embedding_dimensions(row)
+    end
+
+    # The embedding output vector size, read from the most likely payload spots.
+    # nil when absent (the common case): we never guess a dimension count.
+    def embedding_dimensions(row)
+      value = row.dig("architecture", "output_dimensions") || row["dimensions"]
+      # Guard the type: a Matryoshka/list value (e.g. [256, 512, 1024]) has no
+      # meaningful .to_i and would raise, aborting the whole sync run.
+      return unless value.is_a?(Integer) || value.is_a?(String)
+
+      dim = value.to_i
+      dim if dim.positive?
     end
 
     # A model we've already written editorial copy for. Its description and

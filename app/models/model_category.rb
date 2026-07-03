@@ -1,35 +1,44 @@
 # ModelCategory — the pricing families the models table tabs between. Language
-# models bill per token (input/output/cached); image generation bills natively
-# (per image, credits, …), so the two need different columns, sorts, and SEO.
-# Splitting them into their own indexable URLs is what this registry drives.
+# models bill per token (input/output/cached); embeddings bill per input token
+# only (the output is a vector, sized by `dimensions`); image generation bills
+# natively (per image, credits, …). Each needs its own columns, sorts, and SEO,
+# so splitting them into their own indexable URLs is what this registry drives.
 #
 # A plain-Ruby domain PORO in the FeaturePattern / ModalityClass idiom: a
 # Data.define value object with a frozen, ordered registry. Adding a later tab
-# (embeddings, speech, …) is a registry addition plus a route — the controller,
-# view, and sitemap read everything they need off the category.
+# (speech, video, …) is a registry addition plus a route — the controller, view,
+# and sitemap read everything they need off the category.
 class ModelCategory
-  # `matcher` maps a model's modality_class (symbol) to whether it belongs here,
-  # so the split stays data rather than a controller conditional. `path_name` is
-  # the Rails route-helper prefix the link/canonical is built from (:root →
-  # root_path/root_url, :image_generation → image_generation_path/_url).
-  # `matcher` decides membership from a model's modality_class. `token_columns`
-  # picks the column layout (per-token vs native price); `shows_tier_facet` and
-  # `empty_colspan` are the other bits of layout that vary by category, kept as
-  # data here so the view asks the category rather than branching on its slug.
+  # `matcher` decides membership from a model's modality_class (symbol). Every
+  # NON-language category declares its own, so adding a tab never touches
+  # language: language's matcher is nil and it claims whatever no other category
+  # does (`member?` → `ModelCategory.unclaimed?`). `columns` is the ordered
+  # left→right list of column keys the view renders — the one source of truth for
+  # the per-category table shape, replacing the old token/native boolean.
+  # `path_name` is the Rails route-helper prefix the link/canonical is built from
+  # (:root → root_path/root_url, :embeddings → embeddings_path/_url).
   Category = Data.define(
     :slug, :label, :param, :path_name,
     :sorts, :default_sort, :default_dir,
-    :title, :meta_description, :matcher,
-    :token_columns, :shows_tier_facet, :empty_colspan
+    :title, :meta_description, :matcher, :columns
   ) do
-    def member?(modality_class) = matcher.call(modality_class.to_sym)
+    def member?(modality_class)
+      mc = modality_class.to_sym
+      matcher ? matcher.call(mc) : ModelCategory.unclaimed?(mc)
+    end
+
+    # The empty-state row spans every column plus the leading select and trailing
+    # go columns the layout always renders.
+    def table_colspan = columns.size + 2
+
+    def shows_tier_facet = columns.include?(:tier)
   end
 
-  # Language is the catch-all: every listed model that isn't billed in a native
-  # unit (text, multimodal, embedding, omnimodal). It excludes ALL directory
-  # classes, not just image, so a future native-priced class (video, …) doesn't
-  # fall onto the per-token table before it has its own tab. It leads the strip
-  # and owns the root URL, so a bare visit lands on the per-token table.
+  # Language is the fallback: every listed model whose class no other tab claims
+  # (text, multimodal, omnimodal, …). A nil matcher plus the `unclaimed?` check
+  # means a future native-priced class doesn't fall onto the per-token table
+  # before it has its own tab. It leads the strip and owns the root URL, so a
+  # bare visit lands on the per-token table.
   LANGUAGE = Category.new(
     slug: "language",
     label: "Language models",
@@ -41,10 +50,26 @@ class ModelCategory
     title: "LLM API token prices, per model — tokenprice.fyi",
     meta_description: "LLM API token prices for Claude, GPT-5, Gemini, Grok, and DeepSeek. " \
                       "Input, output, and cached rates per 1M tokens, updated daily.",
-    matcher: ->(modality_class) { !ModalityClass.directory_class?(modality_class) },
-    token_columns: true,
-    shows_tier_facet: true,
-    empty_colspan: 8
+    matcher: nil,
+    columns: %i[name tier input output cached context]
+  )
+
+  # Embeddings bill per input token only — the output is a vector, so there is no
+  # output or cached rate. `dimensions` is that vector's size, shown instead. The
+  # default sort is cheapest input first.
+  EMBEDDINGS = Category.new(
+    slug: "embeddings",
+    label: "Embeddings",
+    param: "embeddings",
+    path_name: :embeddings,
+    sorts: %w[input context name provider released],
+    default_sort: "input",
+    default_dir: "asc",
+    title: "Text embedding API prices, per model — tokenprice.fyi",
+    meta_description: "Text embedding model prices, billed per 1M input tokens. " \
+                      "Input rates and vector dimensions, updated as providers publish them.",
+    matcher: ->(mc) { mc == :embedding },
+    columns: %i[name provider input dimensions context released]
   )
 
   IMAGE = Category.new(
@@ -58,13 +83,11 @@ class ModelCategory
     title: "Image generation API pricing — tokenprice.fyi",
     meta_description: "Image generation model pricing, billed per image rather than per token. " \
                       "Native per-image rates and pricing models, updated as providers publish them.",
-    matcher: ->(modality_class) { modality_class == :image_generation },
-    token_columns: false,
-    shows_tier_facet: false,
-    empty_colspan: 6
+    matcher: ->(mc) { mc == :image_generation },
+    columns: %i[name provider pricing released]
   )
 
-  ALL = [ LANGUAGE, IMAGE ].freeze
+  ALL = [ LANGUAGE, EMBEDDINGS, IMAGE ].freeze
 
   BY_PARAM = ALL.index_by(&:param).freeze
 
@@ -77,4 +100,8 @@ class ModelCategory
   # The category for a route/query param, falling back to the default for nil,
   # blank, or an unknown value so a bad param can never 404 the homepage.
   def self.for(param) = BY_PARAM.fetch(param.to_s, default)
+
+  # A modality_class is language's iff no other category's matcher claims it —
+  # the seam that keeps language as the fallback without listing every class.
+  def self.unclaimed?(mc) = ALL.none? { |c| c.matcher && c.matcher.call(mc) }
 end

@@ -122,10 +122,12 @@ class PriceCatalog
     end
 
     # The cheapest listed model of `tier`, by current input price — a representative
-    # "entry-price" example for the education pages. Pass `among:` to reuse an
+    # "entry-price" example for the education pages. Requires an output rate too, so
+    # it means the cheapest per-token *chat* model: an embedding (input-only, ~$0.02)
+    # would otherwise win and misrepresent the tier. Pass `among:` to reuse an
     # already-loaded catalog and avoid a second `models` load. Nil if none qualify.
     def cheapest(tier:, among: nil)
-      (among || models).select { |e| e.tier == tier && e.input }.min_by(&:input)
+      (among || models).select { |e| e.tier == tier && e.input && e.output }.min_by(&:input)
     end
 
     # The catalog's freshness timestamp for conditional GET (Last-Modified /

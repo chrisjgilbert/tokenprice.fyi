@@ -188,6 +188,18 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal [ priceless, priced ], sorted, "non-price sort orders by name, no sink"
   end
 
+  test "an embedding model is listed and priced on its input rate alone" do
+    model = ai_models(:embedding_model)
+    assert model.embedding?
+    assert_equal :embedding, model.modality_class
+    assert_equal 1536, model.dimensions
+    assert_includes AiModel.listed, model
+    assert model.priced?
+    assert model.token_priced?, "has an input rate"
+    assert_equal 0.02, model.current_input
+    assert_nil model.current_output, "no output tokens — the output is a vector"
+  end
+
   test "token_priced? is true for a priced model and false for a price-less one" do
     assert ai_models(:opus).token_priced?, "a model with per-token rates is token-priced"
     assert_not ai_models(:no_price).token_priced?, "a price-less model is not token-priced"
