@@ -1,6 +1,33 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "net/http"
+
+# Fail loudly on any real external HTTP in the suite. Every transport client
+# here is meant to be stubbed (see test/lib/*_client_test.rb) or to no-op on a
+# blank credential; a request that reaches a real host means a test is missing
+# its stub — and for the social clients that would post to the live accounts
+# whenever the suite runs with the master key present (credentials decrypt, so
+# the "no credentials in test" no-op no longer applies). Stubs that replace
+# Net::HTTP.new with a fake object never create a real instance, so they never
+# reach this guard.
+module BlockExternalHTTPInTests
+  # Loopback and bind-only forms the in-process server, rack-test, and the
+  # system-test drivers legitimately connect to. A nil/blank address is
+  # Capybara's default health-check host (server_host defaults to nil) and
+  # resolves to loopback, so it must be allowed too.
+  ALLOWED_HOSTS = [ "localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0" ].freeze
+
+  def start(*)
+    host = address
+    unless host.nil? || host.empty? || ALLOWED_HOSTS.include?(host)
+      raise "Blocked real HTTP connection to #{host.inspect} in test. Stub the " \
+            "client (see test/lib/*_client_test.rb) or allow the host in test_helper.rb."
+    end
+    super
+  end
+end
+Net::HTTP.prepend(BlockExternalHTTPInTests)
 
 module ActiveSupport
   class TestCase
