@@ -18,24 +18,22 @@
   <header class="trends-header">
     <h1 class="trends-h1">Flagship prices over time</h1>
     <p class="trends-subtitle">
-      Each line is one provider's flagship — its most-powerful model — at the
-      price it launched with.
       <% if summary.compared? %>
         <% if summary.mixed? %>
           The frontier hasn't moved in one direction: since
           <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
           <span class="num"><%= summary.cheaper.size %></span>
-          <%= "provider".pluralize(summary.cheaper.size) %> launch their
-          flagship cheaper than their first tracked one and
-          <span class="num"><%= summary.pricier.size %></span> launch it dearer.
+          <%= "provider".pluralize(summary.cheaper.size) %>' flagships — their
+          most-powerful models — cost less at launch than their first, and
+          <span class="num"><%= summary.pricier.size %></span> cost more.
         <% elsif summary.cheaper.any? %>
           Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          every provider with more than one flagship launches its latest cheaper
-          than its first.
+          every provider's flagship — its most-powerful model — has cost less at
+          launch than its first.
         <% else %>
           Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          every provider with more than one flagship launches its latest dearer
-          than its first.
+          every provider's flagship — its most-powerful model — has cost more at
+          launch than its first.
         <% end %>
         <% if summary.biggest_cut %>
           <%= summary.biggest_cut.provider_name %>'s has fallen furthest, down
