@@ -22,18 +22,20 @@
         <% if summary.mixed? %>
           The frontier hasn't moved in one direction: since
           <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          <span class="num"><%= summary.cheaper.size %></span>
-          <%= "provider".pluralize(summary.cheaper.size) %>' flagships — their
-          most-powerful models — cost less at launch than their first, and
-          <span class="num"><%= summary.pricier.size %></span> cost more.
+          the launch price of the flagship — a provider's most-powerful model —
+          has fallen for <span class="num"><%= summary.cheaper.size %></span>
+          <%= "provider".pluralize(summary.cheaper.size) %> and risen for
+          <span class="num"><%= summary.pricier.size %></span>.
         <% elsif summary.cheaper.any? %>
           Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          every provider's flagship — its most-powerful model — has cost less at
-          launch than its first.
+          the launch price of the flagship — a provider's most-powerful model —
+          has fallen for <span class="num"><%= summary.cheaper.size %></span>
+          <%= "provider".pluralize(summary.cheaper.size) %> and risen for none.
         <% else %>
           Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          every provider's flagship — its most-powerful model — has cost more at
-          launch than its first.
+          the launch price of the flagship — a provider's most-powerful model —
+          has risen for <span class="num"><%= summary.pricier.size %></span>
+          <%= "provider".pluralize(summary.pricier.size) %> and fallen for none.
         <% end %>
         <% if summary.biggest_cut %>
           <%= summary.biggest_cut.provider_name %>'s has fallen furthest, down

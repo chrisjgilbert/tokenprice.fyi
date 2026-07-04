@@ -22,13 +22,18 @@ class FlagshipTrend::Summary
   def mixed?    = cheaper.any? && pricier.any?
 
   # Spread of today's flagship input prices — the dispersion the chart shows but
-  # can't put a number on. Nil unless at least two are positively priced.
+  # can't put a number on. Nil unless at least two are positively priced and the
+  # spread rounds to a real multiple (a sub-2× spread isn't worth a "range"
+  # claim, and 1× reads as no spread at all).
   def price_span
     prices = @trends.map { |t| t.current.input }.compact.select(&:positive?)
     return if prices.size < 2
 
     low, high = prices.minmax
-    { low:, high:, multiple: (high / low).round }
+    multiple = (high / low).round
+    return if multiple < 2
+
+    { low:, high:, multiple: }
   end
 
   private

@@ -56,6 +56,15 @@ class FlagshipTrend::SummaryTest < ActiveSupport::TestCase
     assert_nil summary.price_span
   end
 
+  test "price_span is nil when the spread rounds below 2×" do
+    summary = FlagshipTrend::Summary.new([
+      trend("Near",  steps: [ step("2025-01-01", 2) ]),
+      trend("Close", steps: [ step("2025-01-01", 2.5) ])
+    ])
+
+    assert_nil summary.price_span
+  end
+
   private
 
   def step(date, input)
