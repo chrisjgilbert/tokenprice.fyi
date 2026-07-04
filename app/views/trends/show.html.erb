@@ -1,5 +1,5 @@
 <% content_for :title, "Flagship prices over time — how much the top model costs — tokenprice.fyi" %>
-<% content_for :description, "Every provider's most-powerful model, priced at launch and tracked over time — the frontier price history on one chart." %>
+<% content_for :description, "Every provider's most-powerful model, priced at launch and tracked over time as newer flagships shipped." %>
 <% content_for :canonical, trends_url %>
 <% content_for :head do %>
   <%= json_ld({
@@ -23,14 +23,14 @@
   <header class="trends-header">
     <h1 class="trends-h1">Flagship prices over time</h1>
     <p class="trends-subtitle">
-      Each provider's most-powerful model, priced at launch, as the flagship
-      changed hands over time — <span class="num"><%= @trends.size %></span>
-      providers and <span class="num"><%= flagship_count %></span> frontier
+      Each provider's most-powerful model, priced at launch —
+      <span class="num"><%= @trends.size %></span> providers and
+      <span class="num"><%= flagship_count %></span> frontier
       releases<% if earliest %>, back to <span class="num"><%= earliest.strftime("%B %Y") %></span><% end %>.
-      The line steps each time a newer frontier model takes over; the price shown
+      The line steps each time a provider ships a new flagship; the price shown
       is what that model cost at release, per 1M input tokens.
       <% if cheapest&.positive? %>
-        The axis is logarithmic — flagship prices span about
+        The axis is logarithmic: flagship prices span about
         <span class="num"><%= (priciest / cheapest).round %>×</span>, from
         <span class="num"><%= flagship_axis_price(cheapest) %></span> to
         <span class="num"><%= flagship_axis_price(priciest) %></span>.
