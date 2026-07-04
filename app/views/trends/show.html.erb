@@ -12,28 +12,47 @@
       }) %>
 <% end %>
 
-<%
-  flagship_count = @trends.sum { |t| t.steps.size }
-  earliest = @trends.flat_map { |t| t.steps.map(&:date) }.min
-  inputs = @trends.flat_map { |t| t.steps.map(&:input) }
-  cheapest, priciest = inputs.minmax
-%>
+<% summary = FlagshipTrend::Summary.new(@trends) %>
 
 <div class="trends-page">
   <header class="trends-header">
     <h1 class="trends-h1">Flagship prices over time</h1>
     <p class="trends-subtitle">
-      Each provider's most-powerful model, priced at launch —
-      <span class="num"><%= @trends.size %></span> providers and
-      <span class="num"><%= flagship_count %></span> frontier
-      releases<% if earliest %>, back to <span class="num"><%= earliest.strftime("%B %Y") %></span><% end %>.
-      The line steps each time a provider ships a new flagship; the price shown
-      is what that model cost at release, per 1M input tokens.
-      <% if cheapest&.positive? %>
-        The axis is logarithmic: flagship prices span about
-        <span class="num"><%= (priciest / cheapest).round %>×</span>, from
-        <span class="num"><%= flagship_axis_price(cheapest) %></span> to
-        <span class="num"><%= flagship_axis_price(priciest) %></span>.
+      Each line is one provider's flagship — its most-powerful model — at the
+      price it launched with.
+      <% if summary.compared? %>
+        <% if summary.mixed? %>
+          The frontier hasn't moved in one direction: since
+          <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
+          <span class="num"><%= summary.cheaper.size %></span>
+          <%= "provider".pluralize(summary.cheaper.size) %> launch their
+          flagship cheaper than their first tracked one and
+          <span class="num"><%= summary.pricier.size %></span> launch it dearer.
+        <% elsif summary.cheaper.any? %>
+          Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
+          every provider with more than one flagship launches its latest cheaper
+          than its first.
+        <% else %>
+          Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
+          every provider with more than one flagship launches its latest dearer
+          than its first.
+        <% end %>
+        <% if summary.biggest_cut %>
+          <%= summary.biggest_cut.provider_name %>'s has fallen furthest, down
+          <span class="num"><%= summary.biggest_cut.input_change_pct.abs %>%</span><% if summary.biggest_rise %>;
+          <%= summary.biggest_rise.provider_name %>'s has climbed
+          <span class="num"><%= summary.biggest_rise.input_change_pct %>%</span><% end %>.
+        <% elsif summary.biggest_rise %>
+          <%= summary.biggest_rise.provider_name %>'s has climbed furthest, up
+          <span class="num"><%= summary.biggest_rise.input_change_pct %>%</span>.
+        <% end %>
+      <% end %>
+      <% if (span = summary.price_span) %>
+        Today's flagships range about
+        <span class="num"><%= span[:multiple] %>×</span> apart, from
+        <span class="num"><%= flagship_axis_price(span[:low]) %></span> to
+        <span class="num"><%= flagship_axis_price(span[:high]) %></span>
+        per 1M input tokens.
       <% end %>
     </p>
   </header>
