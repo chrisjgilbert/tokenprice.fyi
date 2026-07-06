@@ -21,6 +21,12 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, embeddings_url
   end
 
+  test "the sitemap lists the speech-to-text tab as its own URL" do
+    get sitemap_url
+    assert_response :success
+    assert_includes @response.body, speech_to_text_url
+  end
+
   test "the sitemap advertises the trends chart, not the removed guide or which-model" do
     get sitemap_url
     assert_response :success

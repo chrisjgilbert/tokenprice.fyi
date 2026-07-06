@@ -4,6 +4,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
   test "for resolves the known params" do
     assert_equal "language", ModelCategory.for("language").slug
     assert_equal "embeddings", ModelCategory.for("embeddings").slug
+    assert_equal "speech-to-text", ModelCategory.for("speech-to-text").slug
     assert_equal "image", ModelCategory.for("image").slug
   end
 
@@ -14,8 +15,8 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.default.slug
   end
 
-  test "all is the ordered tab strip, language then embeddings then image" do
-    assert_equal %w[language embeddings image], ModelCategory.all.map(&:slug)
+  test "all is the ordered tab strip, language then embeddings then speech-to-text then image" do
+    assert_equal %w[language embeddings speech-to-text image], ModelCategory.all.map(&:slug)
   end
 
   test "each non-language category claims its class; language is what none claim" do
@@ -31,6 +32,12 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute embeddings.member?(:image_generation)
     refute embeddings.member?(:text)
 
+    speech = ModelCategory.for("speech-to-text")
+    assert speech.member?(:speech_to_text)
+    refute speech.member?(:multimodal)
+    refute speech.member?(:text)
+    refute language.member?(:speech_to_text)
+
     # Language claims only what no other category matches — not image or embedding.
     refute language.member?(:image_generation)
     refute language.member?(:embedding)
@@ -45,21 +52,35 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert ModelCategory.unclaimed?(:any_to_any)
     refute ModelCategory.unclaimed?(:embedding)
     refute ModelCategory.unclaimed?(:image_generation)
+    refute ModelCategory.unclaimed?(:speech_to_text)
   end
 
   test "columns and table_colspan describe each category's table shape" do
     assert_equal %i[name tier input output cached context], ModelCategory.for("language").columns
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
+    assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("image").columns
 
     # colspan = columns + the leading select and trailing go columns.
     assert_equal 8, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
+    assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
     assert_equal 6, ModelCategory.for("image").table_colspan
 
     assert ModelCategory.for("language").shows_tier_facet
     refute ModelCategory.for("embeddings").shows_tier_facet
+    refute ModelCategory.for("speech-to-text").shows_tier_facet
     refute ModelCategory.for("image").shows_tier_facet
+  end
+
+  test "the speech-to-text category ranks cheapest per-minute first with transcription SEO" do
+    speech = ModelCategory.for("speech-to-text")
+    assert_equal "native_price", speech.default_sort
+    assert_equal "asc", speech.default_dir
+    assert_includes speech.sorts, "native_price"
+    refute_includes speech.sorts, "input"
+    assert_match(/speech-to-text/i, speech.title)
+    assert_match(/per minute/i, speech.meta_description)
   end
 
   test "the embeddings category ranks cheapest input first with token-price SEO" do

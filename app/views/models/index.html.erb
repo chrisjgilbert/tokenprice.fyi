@@ -534,12 +534,12 @@
       number/price columns. A column is sortable iff its key is in the category's
       sorts (e.g. Pricing and Dimensions have no sort axis). %>
   <%
-    numeric_cols = %i[input output cached context dimensions]
+    numeric_cols = %i[input output cached context dimensions native_price]
     col_labels = {
       name: "Model", tier: "Tier",
       input: "Input /1M", output: "Output /1M", cached: "Cached in /1M",
       context: "Context", provider: "Provider", released: "Released",
-      pricing: "Pricing", dimensions: "Dimensions"
+      pricing: "Pricing", dimensions: "Dimensions", native_price: "Price"
     }
   %>
 
@@ -661,6 +661,17 @@
                       </td>
                     <% when :dimensions %>
                       <td data-label="Dimensions" class="numeric"><%= model.dimensions || "—" %></td>
+                    <% when :native_price %>
+                      <%# Speech-to-text's numeric per-minute rate, shown through the
+                          same single-source price_headline the model page uses. A
+                          row still awaiting a price reads "not yet tracked". %>
+                      <% if model.native_priced? %>
+                        <td data-label="Price" class="numeric tp-price-native <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>">
+                          <span class="tp-price-native-val"><%= model.price_headline %></span>
+                        </td>
+                      <% else %>
+                        <td data-label="Price" class="tp-price-untracked">Not yet tracked</td>
+                      <% end %>
                     <% when :pricing %>
                       <%# Native pricing (per image / credits) through the same
                           priced / native / untracked branch the token cells use. %>

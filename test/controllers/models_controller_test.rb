@@ -255,12 +255,13 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[value=video_generation][name=?]", "modality[]", count: 0
   end
 
-  test "the index renders a category tab strip with all three families and their counts, language active" do
+  test "the index renders a category tab strip with all families and their counts, language active" do
     get root_url
     assert_response :success
-    assert_select ".tp-tabs .tp-tab", count: 3
+    assert_select ".tp-tabs .tp-tab", count: 4
     assert_select ".tp-tabs .tp-tab", text: /Language models/
     assert_select ".tp-tabs .tp-tab", text: /Embeddings/
+    assert_select ".tp-tabs .tp-tab", text: /Speech to text/
     assert_select ".tp-tabs .tp-tab", text: /Image generation/
     # The current tab is the language one and carries aria-current.
     assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Language models/
@@ -342,10 +343,11 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /Guide Sonnet Fixture/
-    # Image-generation and embedding rows moved to their own tabs.
+    # Image-generation, embedding and speech-to-text rows moved to their own tabs.
     assert_select "tbody td", text: /Test Image Model/, count: 0
     assert_select "tbody td", text: /Test Priced Image Model/, count: 0
     assert_select "tbody td", text: /Test Embedding Model/, count: 0
+    assert_select "tbody td", text: /Test Transcribe/, count: 0
   end
 
   test "the embeddings tab lists embedding models with an input and dimensions column, no output or pricing" do
@@ -393,6 +395,52 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get embeddings_url(sort: "input", dir: "asc")
     assert_response :success
     assert_select "tbody td", text: /Test Embedding Model/
+  end
+
+  test "the speech-to-text tab lists transcription models with a per-minute Price column, no per-token headers" do
+    get speech_to_text_url
+    assert_response :success
+    assert_select "tbody td", text: /Test Transcribe/
+    assert_select "thead th", text: /Price/
+    assert_select "thead th", text: %r{Input /1M}, count: 0
+    assert_select "thead th", text: %r{Output /1M}, count: 0
+    assert_select "thead th", text: /Context/, count: 0
+    # The native per-minute rate renders through price_headline.
+    assert_select "tbody td", text: %r{\$0\.006 /min}
+    # Text, embedding and image rows live on their own tabs, not here.
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+    assert_select "tbody td", text: /Test Embedding Model/, count: 0
+    assert_select "tbody td", text: /Test Image Model/, count: 0
+    # The speech-to-text tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Speech to text/
+  end
+
+  test "the speech-to-text tab canonicalizes to its own path and carries transcription SEO" do
+    get speech_to_text_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", speech_to_text_url
+    assert_select "title", /speech-to-text/i
+    assert_select "meta[name=description][content*=?]", "per minute"
+  end
+
+  test "speech-to-text sort links stay on its path and default to cheapest per minute" do
+    get speech_to_text_url
+    assert_response :success
+    assert_select "thead a[href*=?]", "/speech-to-text"
+    # Cheapest per minute is the default, so no sort/dir ride in the filter form.
+    assert_select "input[type=hidden][name=sort]", count: 0
+
+    get speech_to_text_url(sort: "native_price", dir: "asc")
+    assert_response :success
+    assert_select "tbody td", text: /Test Transcribe/
+  end
+
+  test "the speech-to-text tab hides the tier facet but keeps search and provider facets" do
+    get speech_to_text_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
   end
 
   test "a stale modality param outside the current tab is ignored, not a dead empty table" do

@@ -9,7 +9,12 @@ class ModelsController < ApplicationController
     # Image-category sorts: it has no per-token axis, so it ranks by provider and
     # release date instead. A nil release sorts oldest rather than to the top.
     "provider" => ->(m) { m.provider.name.to_s.downcase },
-    "released" => ->(m) { m.released_on || Date.new(1970, 1, 1) }
+    "released" => ->(m) { m.released_on || Date.new(1970, 1, 1) },
+    # Speech-to-text ranks on its numeric native per-minute rate. A row without
+    # one sinks to the bottom (it can't be ranked on this axis); it's kept out of
+    # PRICE_SORTS because those partition on `token_priced?`, which no native row
+    # is — that would sink every speech row instead of sorting them.
+    "native_price" => ->(m) { m.native_price_usd || Float::INFINITY }
   }.freeze
 
   # Price-based sorts that a price-less row must always sink to the bottom of —

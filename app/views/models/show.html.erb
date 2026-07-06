@@ -1,7 +1,7 @@
 <% content_for :title, "#{@model.name} pricing — tokenprice.fyi" %>
 <% content_for :description,
      if @model.native_priced?
-       "#{@model.name} (#{@model.provider.name}) #{ModalityClass.label(@model.modality_class).downcase} pricing: #{@model.price_summary}."
+       "#{@model.name} (#{@model.provider.name}) #{ModalityClass.label(@model.modality_class).downcase} pricing: #{@model.price_headline}."
      elsif @model.directory_listing?
        "#{@model.name} (#{@model.provider.name}) — #{ModalityClass.label(@model.modality_class).downcase} model. #{@model.price_detail.presence || "Its price isn't tracked here yet."}"
      else
@@ -141,7 +141,7 @@
         <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"><%= @model.pricing_model_label %></span>
       <% end %>
     </div>
-    <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900"><%= @model.price_summary %></p>
+    <p class="mt-1 text-2xl font-semibold tabular-nums text-slate-900"><%= @model.price_headline %></p>
     <% if @model.price_detail.present? %>
       <p class="mt-2 max-w-xl text-sm text-slate-600"><%= @model.price_detail %></p>
     <% end %>
