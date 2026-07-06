@@ -156,11 +156,13 @@ class AiModel < ApplicationRecord
   # The single display source for a native-priced row's headline price. Prefers
   # the numeric single-unit rate (speech-to-text's `$X /min`, formatted through
   # PriceFormat — the same bare-string core the view's `usd_plain` wraps), and
-  # otherwise falls back to image's heterogeneous `price_summary` string.
+  # otherwise falls back to image's heterogeneous `price_summary` string. Formats
+  # at 6 decimals to match the column's stored scale, so a sub-cent per-minute
+  # rate (Groq's $0.000667/min) isn't rounded away to 4 dp.
   def price_headline
     return price_summary if native_price_usd.blank?
 
-    "$#{PriceFormat.usd_amount(native_price_usd)} #{native_price_unit}".strip
+    "$#{PriceFormat.usd_amount(native_price_usd, decimals: 6)} #{native_price_unit}".strip
   end
 
   def pricing_model_label = PRICING_MODEL_LABELS[pricing_model]
