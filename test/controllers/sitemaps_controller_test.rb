@@ -27,6 +27,15 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, speech_to_text_url
   end
 
+  test "the sitemap lists every category tab URL off the registry" do
+    get sitemap_url
+    assert_response :success
+    ModelCategory.all.each do |category|
+      url = send("#{category.path_name}_url")
+      assert_includes @response.body, url, "sitemap missing #{category.slug} tab (#{url})"
+    end
+  end
+
   test "the sitemap advertises the trends chart, not the removed guide or which-model" do
     get sitemap_url
     assert_response :success
