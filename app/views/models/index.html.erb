@@ -662,13 +662,14 @@
                     <% when :dimensions %>
                       <td data-label="Dimensions" class="numeric"><%= model.dimensions || "—" %></td>
                     <% when :native_price %>
-                      <%# Speech-to-text's numeric per-minute rate, shown through the
-                          same single-source price_headline the model page uses. A
-                          row still awaiting a price reads "not yet tracked". %>
                       <% if model.native_priced? %>
                         <td data-label="Price" class="numeric tp-price-native <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>">
                           <span class="tp-price-native-val"><%= model.price_headline %></span>
                         </td>
+                      <% elsif model.priced? %>
+                        <%# A token-priced audio→text model, were one ever listed here,
+                            shows its per-token rate rather than the untracked note. %>
+                        <td data-label="Price" class="numeric <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>"><%= io_price(model) %></td>
                       <% else %>
                         <td data-label="Price" class="tp-price-untracked">Not yet tracked</td>
                       <% end %>
@@ -679,7 +680,7 @@
                         <td data-label="Pricing" class="numeric"><%= io_price(model) %></td>
                       <% elsif model.native_priced? %>
                         <td data-label="Pricing" class="tp-price-native">
-                          <span class="tp-price-native-val"><%= model.price_summary %></span>
+                          <span class="tp-price-native-val"><%= model.price_headline %></span>
                           <% if model.pricing_model_label %>
                             <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
                           <% end %>

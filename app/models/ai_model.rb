@@ -56,18 +56,20 @@ class AiModel < ApplicationRecord
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
-  # "desc", then on a price sort sink rows without a per-token rate to the bottom
-  # in BOTH directions (they can't be ranked on the sorted column and would
-  # otherwise float to the top on reverse). The models/providers tables share
-  # this; their column sets — and thus which sorts count as price sorts —
-  # legitimately differ, so each passes its own `price_sort:`.
-  def self.sort_for_display(models, by:, dir:, price_sort:)
+  # "desc", then sink rows that can't be ranked on the sorted column to the
+  # bottom in BOTH directions (they'd otherwise float to the top on reverse).
+  # `sink_unranked` is the predicate marking a row as rankable on this sort — a
+  # per-token rate for the token columns (`:token_priced?`), a native per-minute
+  # rate for speech-to-text (`:native_priced?`); nil for sorts every row can rank
+  # on (name, tier, …). The models/providers tables pass their own, since their
+  # column sets differ.
+  def self.sort_for_display(models, by:, dir:, sink_unranked: nil)
     sorted = models.sort_by(&by)
     sorted.reverse! if dir == "desc"
-    return sorted unless price_sort
+    return sorted unless sink_unranked
 
-    token_priced, rest = sorted.partition(&:token_priced?)
-    token_priced + rest
+    rankable, rest = sorted.partition(&sink_unranked)
+    rankable + rest
   end
 
   # Pretty URLs: /models/claude-opus-4-8
@@ -153,12 +155,11 @@ class AiModel < ApplicationRecord
   # Audio in, a text transcript out — priced per minute of audio.
   def speech_to_text? = modality_class == :speech_to_text
 
-  # The single display source for a native-priced row's headline price. Prefers
-  # the numeric single-unit rate (speech-to-text's `$X /min`, formatted through
-  # PriceFormat — the same bare-string core the view's `usd_plain` wraps), and
-  # otherwise falls back to image's heterogeneous `price_summary` string. Formats
-  # at 6 decimals to match the column's stored scale, so a sub-cent per-minute
-  # rate (Groq's $0.000667/min) isn't rounded away to 4 dp.
+  # The single display source for a native-priced row's headline price: the
+  # numeric single-unit rate (speech-to-text's `$X /min`), else image's
+  # heterogeneous `price_summary` string. Formats at 6 decimals to match the
+  # column's stored scale, so a sub-cent per-minute rate (Groq's $0.000667/min)
+  # isn't rounded away to 4 dp.
   def price_headline
     return price_summary if native_price_usd.blank?
 

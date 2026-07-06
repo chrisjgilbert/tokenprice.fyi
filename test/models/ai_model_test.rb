@@ -188,25 +188,40 @@ class AiModelTest < ActiveSupport::TestCase
     end
   end
 
-  test "sort_for_display sinks price-less rows to the bottom on a price sort in both directions" do
+  test "sort_for_display sinks unrankable rows to the bottom on a token-price sort in both directions" do
     priced    = ai_models(:opus)       # has price points
     priceless = ai_models(:no_price)   # no price points
     by = ->(m) { m.current_input || Float::INFINITY }
 
-    asc  = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc",  price_sort: true)
-    desc = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "desc", price_sort: true)
+    asc  = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc",  sink_unranked: :token_priced?)
+    desc = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "desc", sink_unranked: :token_priced?)
 
     assert_equal priceless, asc.last,  "price-less row sinks last ascending"
     assert_equal priceless, desc.last, "price-less row sinks last descending too"
   end
 
-  test "sort_for_display leaves price-less rows in normal order on a non-price sort" do
+  test "sort_for_display sinks a native-price-less row on the native_price sort in both directions" do
+    # A speech-to-text sort keys on :native_priced?, not :token_priced?, so a
+    # directory row still awaiting its per-minute rate sinks rather than floating
+    # to the top when the Price column is reversed.
+    priced    = ai_models(:stt_model)  # native_price_usd 0.006
+    priceless = ai_models(:image_gen)  # directory class, no native price
+    by = ->(m) { m.native_price_usd || Float::INFINITY }
+
+    asc  = AiModel.sort_for_display([ priceless, priced ], by: by, dir: "asc",  sink_unranked: :native_priced?)
+    desc = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "desc", sink_unranked: :native_priced?)
+
+    assert_equal priceless, asc.last,  "native-price-less row sinks last ascending"
+    assert_equal priceless, desc.last, "native-price-less row sinks last descending too"
+  end
+
+  test "sort_for_display leaves unrankable rows in normal order when no sink is given" do
     priced    = ai_models(:opus)       # "Claude Opus 4.8"
     priceless = ai_models(:no_price)   # "Claude No Price"
     by = ->(m) { m.name.to_s.downcase }
 
     # "claude no price" < "claude opus 4.8" — pure name order, no price-based sink.
-    sorted = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "asc", price_sort: false)
+    sorted = AiModel.sort_for_display([ priced, priceless ], by: by, dir: "asc", sink_unranked: nil)
     assert_equal [ priceless, priced ], sorted, "non-price sort orders by name, no sink"
   end
 

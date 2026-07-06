@@ -10,17 +10,20 @@ class ModelsController < ApplicationController
     # release date instead. A nil release sorts oldest rather than to the top.
     "provider" => ->(m) { m.provider.name.to_s.downcase },
     "released" => ->(m) { m.released_on || Date.new(1970, 1, 1) },
-    # Speech-to-text ranks on its numeric native per-minute rate. A row without
-    # one sinks to the bottom (it can't be ranked on this axis); it's kept out of
-    # PRICE_SORTS because those partition on `token_priced?`, which no native row
-    # is — that would sink every speech row instead of sorting them.
+    # Speech-to-text ranks on its numeric native per-minute rate; a row without
+    # one maps to infinity and sinks (see SINK_SORTS).
     "native_price" => ->(m) { m.native_price_usd || Float::INFINITY }
   }.freeze
 
-  # Price-based sorts that a price-less row must always sink to the bottom of —
-  # regardless of direction, so it never floats above a priced row when the list
-  # is reversed. Name/tier/context still sort it normally: it has those.
-  PRICE_SORTS = %w[input output cached].freeze
+  # Price sorts a price-less row must always sink to the bottom of — regardless
+  # of direction, so it never floats above a priced row when the list is
+  # reversed. Each maps to the predicate that marks a row rankable on that axis:
+  # a per-token rate for the token columns, a native per-minute rate for
+  # speech-to-text. Name/tier/context sort every row normally and aren't listed.
+  SINK_SORTS = {
+    "input" => :token_priced?, "output" => :token_priced?, "cached" => :token_priced?,
+    "native_price" => :native_priced?
+  }.freeze
 
   def index
     @providers = Provider.order(:name).to_a
@@ -95,7 +98,7 @@ class ModelsController < ApplicationController
     @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
     models.select! { |m| @modalities.include?(m.modality_class.to_s) } if @modalities.any?
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
-      price_sort: PRICE_SORTS.include?(@sort))
+      sink_unranked: SINK_SORTS[@sort])
 
     # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
