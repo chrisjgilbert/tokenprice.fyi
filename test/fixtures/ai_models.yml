@@ -131,6 +131,27 @@ embedding_model:
   dimensions: 1536
   description: Input-only embedding model — priced per input token, no output rate.
 
+# A speech-to-text (transcription) row: audio in, text out, billed per minute of
+# audio. Curated with a numeric native price (native_price_usd/native_price_unit)
+# so its $/min column sorts, and NO price_points. modality_class is set explicitly
+# because fixtures bypass the derive callback; on the EXISTING anthropic provider
+# so the provider count stays stable.
+stt_model:
+  provider: anthropic
+  name: Test Transcribe
+  slug: test-transcribe
+  tier: small
+  status: active
+  source: manual
+  modality_class: speech_to_text
+  input_modalities:
+    - audio
+  output_modalities:
+    - text
+  native_price_usd: 0.006
+  native_price_unit: "/min"
+  description: Audio-in, transcript-out model priced per minute.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro

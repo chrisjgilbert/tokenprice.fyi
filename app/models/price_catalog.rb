@@ -25,7 +25,8 @@ class PriceCatalog
     attr_reader :slug, :name, :tier, :context_window, :released_on, :status,
                 :provider_name, :provider_slug, :provider_accent, :snapshots,
                 :input_modalities, :output_modalities, :modality_class,
-                :pricing_model, :price_summary, :price_detail, :price_source, :priced_as_of
+                :pricing_model, :price_summary, :price_detail, :price_source, :priced_as_of,
+                :native_price_usd, :native_price_unit, :price_headline
 
     def initialize(model)
       @slug           = model.slug
@@ -42,6 +43,9 @@ class PriceCatalog
       @price_detail   = model.price_detail
       @price_source   = model.price_source
       @priced_as_of   = model.priced_as_of
+      @native_price_usd  = model.native_price_usd&.to_f
+      @native_price_unit = model.native_price_unit
+      @price_headline    = model.price_headline
       @provider_name  = model.provider.name
       @provider_slug  = model.provider.slug
       @provider_accent = model.provider.accent
@@ -65,13 +69,14 @@ class PriceCatalog
     def provider = ProviderRef.new(name: provider_name, slug: provider_slug, accent: provider_accent)
 
     def current = snapshots.last
-    # A directory class whose price we've curated as a native-unit string (per
-    # image, credits, …) rather than a per-token snapshot.
-    def native_priced? = price_summary.present?
+    # A directory class whose price we've curated outside the per-token table:
+    # a native-unit string (per image, credits, …) or a numeric single-unit rate
+    # (speech-to-text's per-minute `native_price_usd`). Lockstep with AiModel.
+    def native_priced? = price_summary.present? || native_price_usd.present?
     # Listed but not priced at all — a directory class with neither a price
     # snapshot nor a curated native price. Consumers show "not yet tracked".
     # Kept in lockstep with AiModel#directory_listing?.
-    def directory_listing? = ModalityClass.directory_class?(modality_class) && current.nil? && price_summary.blank?
+    def directory_listing? = ModalityClass.directory_class?(modality_class) && current.nil? && !native_priced?
     def input  = current&.input
     def output = current&.output
     def cached = current&.cached

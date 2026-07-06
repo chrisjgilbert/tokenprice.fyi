@@ -145,18 +145,32 @@ class AiModel < ApplicationRecord
     "credit_based"     => "Credits"
   }.freeze
 
-  # A directory-class model whose price we've curated as a native-unit string
-  # (per image, credits, …) rather than a per-token price point.
-  def native_priced? = price_summary.present?
+  # A directory-class model whose price we've curated outside the per-token
+  # table: either a native-unit string (per image, credits, …) or a numeric
+  # single-unit rate (speech-to-text's per-minute `native_price_usd`).
+  def native_priced? = price_summary.present? || native_price_usd.present?
+
+  # Audio in, a text transcript out — priced per minute of audio.
+  def speech_to_text? = modality_class == :speech_to_text
+
+  # The single display source for a native-priced row's headline price. Prefers
+  # the numeric single-unit rate (speech-to-text's `$X /min`, formatted through
+  # PriceFormat — the same bare-string core the view's `usd_plain` wraps), and
+  # otherwise falls back to image's heterogeneous `price_summary` string.
+  def price_headline
+    return price_summary if native_price_usd.blank?
+
+    "$#{PriceFormat.usd_amount(native_price_usd)} #{native_price_unit}".strip
+  end
 
   def pricing_model_label = PRICING_MODEL_LABELS[pricing_model]
 
   # A listed directory-class row still awaiting any price: no price point AND no
   # curated native price. Surfaces read this to show "not yet tracked" rather
-  # than a per-token dash or $0. Once a native price_summary is curated the row
-  # is `native_priced?` instead and renders its price.
+  # than a per-token dash or $0. Once a native price is curated the row is
+  # `native_priced?` instead and renders its price.
   def directory_listing?
-    ModalityClass.directory_class?(modality_class) && current_price.nil? && price_summary.blank?
+    ModalityClass.directory_class?(modality_class) && current_price.nil? && !native_priced?
   end
 
   # Priced on the per-token axis the listing tables sort by — a row with an input

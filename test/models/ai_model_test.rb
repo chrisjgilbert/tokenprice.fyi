@@ -153,6 +153,28 @@ class AiModelTest < ActiveSupport::TestCase
     assert_not ai_models(:image_gen).native_priced?
   end
 
+  test "a speech-to-text row is native-priced on its numeric per-minute rate, not a directory_listing" do
+    model = ai_models(:stt_model)
+
+    assert_equal :speech_to_text, model.modality_class
+    assert model.speech_to_text?
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert model.native_priced?, "native_price_usd makes it natively priced"
+    assert_not model.directory_listing?, "a native price means it's not awaiting one"
+    assert_not model.priced?, "no price point"
+    assert_not model.token_priced?, "no per-token input rate"
+    assert_nil model.current_input
+  end
+
+  test "price_headline renders the formatted native per-minute price for a speech-to-text row" do
+    assert_equal "$0.006 /min", ai_models(:stt_model).price_headline
+  end
+
+  test "price_headline falls back to price_summary for a string-native row" do
+    assert_equal "$0.04 / image", ai_models(:image_priced).price_headline
+  end
+
   test "pricing_model_label maps each pricing model to a human label" do
     assert_equal "Per image", ai_models(:image_priced).pricing_model_label
     assert_nil ai_models(:opus).pricing_model_label, "a text model has no pricing_model"

@@ -20,7 +20,11 @@ class ModalityClassTest < ActiveSupport::TestCase
     [ %w[image text],        %w[image text], :image_generation ],
     # Non-image, non-text output still degrades to :other for now.
     [ %w[text],              %w[audio],      :other ],
-    [ %w[audio],             %w[text],       :multimodal ],
+    # Audio-only input, text output is transcription — speech_to_text, decided
+    # before multimodal. A chat model that also takes text ([text, audio]) stays
+    # multimodal.
+    [ %w[audio],             %w[text],       :speech_to_text ],
+    [ %w[audio text],        %w[text],       :multimodal ],
     [ %w[text],              %w[video],      :other ],
     # A multi-output non-text signature with no image still catches any_to_any.
     [ %w[text],              %w[text audio], :any_to_any ]
@@ -42,6 +46,17 @@ class ModalityClassTest < ActiveSupport::TestCase
     assert ModalityClass.directory_class?("image_generation")
     refute ModalityClass.directory_class?(:text)
     refute ModalityClass.directory_class?(:any_to_any)
+  end
+
+  test "speech to text is labelled and marked a directory class" do
+    assert_equal "Speech to text", ModalityClass.label(:speech_to_text)
+    assert ModalityClass.directory_class?(:speech_to_text)
+    assert ModalityClass.directory_class?("speech_to_text")
+  end
+
+  test "audio-only input to text classifies as speech_to_text before multimodal" do
+    assert_equal :speech_to_text, ModalityClass.for(input: %w[audio], output: %w[text])
+    assert_equal :multimodal, ModalityClass.for(input: %w[audio text], output: %w[text])
   end
 
   test "empty input and output degrade to text" do
