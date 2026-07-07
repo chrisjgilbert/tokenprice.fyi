@@ -36,7 +36,15 @@ providers = {
   amazon:    { name: "Amazon",      website: "https://aws.amazon.com",  accent: "#FF9900", country: "United States", country_code: "US" },
   adobe:     { name: "Adobe",       website: "https://www.adobe.com",   accent: "#EB1000", country: "United States", country_code: "US" },
   leonardo:  { name: "Leonardo AI", website: "https://leonardo.ai",     accent: "#B45309", country: "Australia", country_code: "AU" },
-  voyage:    { name: "Voyage AI",   website: "https://www.voyageai.com", accent: "#4338CA", country: "United States", country_code: "US" }
+  voyage:    { name: "Voyage AI",   website: "https://www.voyageai.com", accent: "#4338CA", country: "United States", country_code: "US" },
+  deepgram:    { name: "Deepgram",    website: "https://deepgram.com",     accent: "#13EF93", country: "United States", country_code: "US" },
+  assemblyai:  { name: "AssemblyAI",  website: "https://www.assemblyai.com", accent: "#3B49DF", country: "United States", country_code: "US" },
+  microsoft:   { name: "Microsoft Azure", website: "https://azure.microsoft.com", accent: "#0078D4", country: "United States", country_code: "US" },
+  speechmatics: { name: "Speechmatics", website: "https://www.speechmatics.com", accent: "#111827", country: "United Kingdom", country_code: "GB" },
+  gladia:      { name: "Gladia",      website: "https://www.gladia.io",    accent: "#7C3AED", country: "France", country_code: "FR" },
+  rev:         { name: "Rev AI",      website: "https://www.rev.ai",       accent: "#111827", country: "United States", country_code: "US" },
+  groq:        { name: "Groq",        website: "https://groq.com",         accent: "#F55036", country: "United States", country_code: "US" },
+  elevenlabs:  { name: "ElevenLabs",  website: "https://elevenlabs.io",    accent: "#111827", country: "United States", country_code: "US" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -968,6 +976,161 @@ catalog = [
     description: "Mistral's code-specialised embedding model (codestral-embed-2505). Native 3072 dimensions, default 1536, MRL-truncatable.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
     prices: [ { on: "2026-07-03", in: 0.15, src: "mistral.ai/news/codestral-embed", note: "Price primary-sourced (H); batch tier 50% off" } ]
+  },
+
+  # ---- Speech to text (transcription) -----------------------------------
+  # Audio in → a text transcript out, so they classify as :speech_to_text and
+  # bill against audio duration. The comparable headline is a native per-minute
+  # rate, carried as a numeric `native_price_usd` + `native_price_unit` ("/min")
+  # rather than per-token price points, so these carry `prices: []`. Figures,
+  # native billing basis (per-second/hour/token → per-minute), sources, and
+  # confidence come from docs/SPEECH_TO_TEXT_MODEL_PRICING.md; the date is that
+  # doc's as-of. Only H- and M-confidence rows are seeded. OpenAI's
+  # gpt-4o-transcribe family is token-billed — the per-minute figure is OpenAI's
+  # own estimate, flagged in price_detail. See docs/SPEECH_TO_TEXT_TAB_PLAN.md.
+  {
+    provider: :openai, name: "gpt-4o-transcribe", tier: "mid", status: "active",
+    description: "OpenAI's flagship transcription model, exposed through the audio transcriptions API.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.006, native_price_unit: "/min",
+    price_detail: "Token-billed ($2.50 /1M audio-input, $10.00 /1M text-output); $0.006/min is OpenAI's own published per-minute estimate at typical speech token density, not a flat rate.",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :openai, name: "gpt-4o-mini-transcribe", tier: "mid", status: "active",
+    description: "OpenAI's smaller, cheaper transcription model in the gpt-4o line.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.003, native_price_unit: "/min",
+    price_detail: "Token-billed ($1.25 /1M input, $5.00 /1M output); $0.003/min is OpenAI's own published per-minute estimate at typical speech token density, not a flat rate.",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :openai, name: "Whisper", tier: "mid", status: "legacy",
+    description: "OpenAI's open-weight speech recognition model, served on the API as whisper-1.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.006, native_price_unit: "/min",
+    price_detail: "Billed per minute (metered per second). Long-published $0.006/min rate; no longer on the current developer pricing page, superseded by the gpt-4o-transcribe family (M confidence).",
+    price_source: "https://openai.com/api/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :deepgram, name: "Nova-3", tier: "mid", status: "active",
+    description: "Deepgram's flagship English speech-to-text model, batch and streaming.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0077, native_price_unit: "/min",
+    price_detail: "Pay-as-you-go, billed per second. Headline is the pre-recorded (batch) rate; streaming reads $0.0048/min on the current page. Multilingual is $0.0092/min batch.",
+    price_source: "https://deepgram.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :deepgram, name: "Flux", tier: "mid", status: "active",
+    description: "Deepgram's streaming-first English ASR model.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0065, native_price_unit: "/min",
+    price_detail: "Pay-as-you-go, billed per second. Headline is the streaming rate ($0.0077/min batch); multilingual is $0.0078/min streaming.",
+    price_source: "https://deepgram.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :assemblyai, name: "Universal-3.5 Pro", tier: "mid", status: "active",
+    description: "AssemblyAI's highest-accuracy asynchronous transcription model.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0035, native_price_unit: "/min",
+    price_detail: "Async transcription billed on audio duration, quoted at $0.21/hr. Add-ons (diarization, sentiment, medical mode) stack on the base rate.",
+    price_source: "https://www.assemblyai.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :assemblyai, name: "Universal-2", tier: "mid", status: "active",
+    description: "AssemblyAI's mainstream asynchronous transcription model; also its streaming tier.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0025, native_price_unit: "/min",
+    price_detail: "Async billed on audio duration ($0.15/hr). Streaming is quoted at the same rate but billed on WebSocket session wall-clock, so its effective per-minute cost can be higher.",
+    price_source: "https://www.assemblyai.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :google, name: "Cloud Speech-to-Text (Chirp 3)", tier: "mid", status: "active",
+    description: "Google Cloud's Speech-to-Text v2 recognizer, including the Chirp foundation models.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.016, native_price_unit: "/min",
+    price_detail: "Standard v2 recognition, billed per 15-second increment ($0.004/15s). Dynamic Batch (≤24h turnaround) is about 75% cheaper. Pricing page is JS-gated; corroborated via Google's V2 docs (M confidence).",
+    price_source: "https://cloud.google.com/speech-to-text/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :microsoft, name: "Azure AI Speech", tier: "mid", status: "active",
+    description: "Microsoft Azure's speech-to-text service, real-time and batch.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0167, native_price_unit: "/min",
+    price_detail: "Standard real-time, billed per second ($1.00/hr). Fast transcription is $0.36/hr and batch $0.18/hr. Pricing renders client-side; corroborated via Microsoft Q&A (M confidence).",
+    price_source: "https://azure.microsoft.com/pricing/details/cognitive-services/speech-services", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :speechmatics, name: "Melia", tier: "mid", status: "active",
+    description: "Speechmatics' multilingual speech-to-text model.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.00215, native_price_unit: "/min",
+    price_detail: "Pro batch, quoted \"from $0.129/hr\". Real-time and legacy Standard/Enhanced tiers aren't primary-confirmed at current prices (M confidence).",
+    price_source: "https://www.speechmatics.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :gladia, name: "Solaria", tier: "mid", status: "active",
+    description: "Gladia's multilingual speech-to-text model, with diarization and features bundled into the rate.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0102, native_price_unit: "/min",
+    price_detail: "Async pay-as-you-go, quoted at $0.61/hr; real-time is $0.75/hr. Committed (Growth) pricing drops to about $0.20/$0.25 per hr.",
+    price_source: "https://www.gladia.io/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :rev, name: "Reverb", tier: "mid", status: "active",
+    description: "Rev AI's asynchronous speech-to-text model.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.0033, native_price_unit: "/min",
+    price_detail: "Async transcription, quoted at $0.20/hr. Whisper-based models are offered at $0.005/min.",
+    price_source: "https://www.rev.ai/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :rev, name: "Reverb Turbo", tier: "mid", status: "active",
+    description: "Rev AI's faster, cheaper asynchronous transcription model.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.00167, native_price_unit: "/min",
+    price_detail: "Async transcription, quoted at $0.10/hr.",
+    price_source: "https://www.rev.ai/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :groq, name: "Whisper Large v3", tier: "mid", status: "active",
+    description: "OpenAI's open-weight Whisper Large v3 served on GroqCloud.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.00185, native_price_unit: "/min",
+    price_detail: "Billed per hour of audio ($0.111/hr), with a 10-second minimum per request that dominates cost for very short clips.",
+    price_source: "https://groq.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :groq, name: "Whisper Large v3 Turbo", tier: "mid", status: "active",
+    description: "The faster Whisper Large v3 Turbo distilled model on GroqCloud.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.000667, native_price_unit: "/min",
+    price_detail: "Billed per hour of audio ($0.04/hr), with a 10-second minimum per request.",
+    price_source: "https://groq.com/pricing", priced_as_of: "2026-07-06",
+    prices: []
+  },
+  {
+    provider: :elevenlabs, name: "Scribe", tier: "mid", status: "active",
+    description: "ElevenLabs' speech-to-text model, batch and real-time.",
+    input_modalities: %w[audio], output_modalities: %w[text],
+    native_price_usd: 0.00367, native_price_unit: "/min",
+    price_detail: "Billed per audio minute, quoted at $0.22/hr batch. Scribe v2 Realtime is $0.39/hr. Add-ons: entity detection +$0.07/hr, keyterm prompting +$0.05/hr.",
+    price_source: "https://elevenlabs.io/pricing/api", priced_as_of: "2026-07-06",
+    prices: []
   }
 ]
 
@@ -1233,9 +1396,12 @@ catalog.each do |row|
   attrs[:output_modalities] = row[:output_modalities] if row[:output_modalities]
   # Embedding rows carry a native output vector size; other classes leave it nil.
   attrs[:dimensions] = row[:dimensions] if row[:dimensions]
-  # Curated native-unit pricing (image-generation rows): assigned only when the
-  # row provides it, so text models keep their nil pricing columns.
-  %i[pricing_model price_summary price_detail price_source priced_as_of].each do |key|
+  # Curated native pricing: the image-generation heterogeneous-unit string
+  # (pricing_model / price_summary) and the speech-to-text numeric single-unit
+  # rate (native_price_usd / native_price_unit). Assigned only when the row
+  # provides it, so text models keep their nil pricing columns.
+  %i[pricing_model price_summary price_detail price_source priced_as_of
+     native_price_usd native_price_unit].each do |key|
     attrs[key] = row[key] if row[key]
   end
   model.update!(**attrs)

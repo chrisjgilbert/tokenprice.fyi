@@ -49,8 +49,21 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil entry.current
   end
 
+  test "a speech-to-text entry exposes its numeric per-minute native price and is not directory_listing?" do
+    entry = PriceCatalog.model("test-transcribe")
+
+    assert entry.native_priced?
+    assert_not entry.directory_listing?
+    assert_equal :speech_to_text, entry.modality_class
+    assert_in_delta 0.006, entry.native_price_usd, 1e-9
+    assert_equal "/min", entry.native_price_unit
+    assert_equal "$0.006 /min", entry.price_headline
+    assert_nil entry.current
+    assert_nil entry.input
+  end
+
   test "the catalog seam agrees with the model on directory_listing? and native_priced?" do
-    %w[test-image-model test-priced-image-model].each do |slug|
+    %w[test-image-model test-priced-image-model test-transcribe].each do |slug|
       entry = PriceCatalog.model(slug)
       model = AiModel.find_by!(slug: slug)
       assert_equal model.directory_listing?, entry.directory_listing?, slug
@@ -149,6 +162,15 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert result, "expected a small-tier chat model"
     assert_not_equal "test-embedding-model", result.slug
     assert result.output, "cheapest must be a model with an output rate"
+  end
+
+  test "cheapest ignores a native-priced speech-to-text row — it has no per-token input or output" do
+    # The stt fixture is small-tier and priced per minute, with neither input nor
+    # output token rate; cheapest requires both, so it must never be returned.
+    result = PriceCatalog.cheapest(tier: "small")
+    assert_not_equal "test-transcribe", result.slug
+    refute_includes PriceCatalog.models.select { |e| e.tier == "small" && e.input && e.output }.map(&:slug),
+                    "test-transcribe"
   end
 
   test "cheapest reuses an injected catalog and returns nil when none qualify" do

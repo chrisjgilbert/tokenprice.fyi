@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   # pricing) each get their own indexable URL. All render models#index, resolved
   # via the `category` param.
   get "embeddings", to: "models#index", defaults: { category: "embeddings" }, as: :embeddings
+  get "speech-to-text", to: "models#index", defaults: { category: "speech-to-text" }, as: :speech_to_text
   get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation
 
   resources :models, only: [ :index, :show ]

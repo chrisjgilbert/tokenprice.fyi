@@ -72,6 +72,24 @@ class ModelCategory
     columns: %i[name provider input dimensions context released]
   )
 
+  # Speech-to-text (transcription) bills against audio duration, not tokens, so
+  # the comparable axis is a native per-minute rate (`native_price_usd`, a numeric
+  # single-unit price that sorts). The default sort is cheapest per minute first.
+  SPEECH_TO_TEXT = Category.new(
+    slug: "speech-to-text",
+    label: "Speech to text",
+    param: "speech-to-text",
+    path_name: :speech_to_text,
+    sorts: %w[native_price name provider released],
+    default_sort: "native_price",
+    default_dir: "asc",
+    title: "Speech-to-text API pricing, per model — tokenprice.fyi",
+    meta_description: "Speech-to-text (transcription) model pricing, billed per minute of audio. " \
+                      "Native per-minute rates across providers, updated as they publish them.",
+    matcher: ->(mc) { mc == :speech_to_text },
+    columns: %i[name provider native_price released]
+  )
+
   IMAGE = Category.new(
     slug: "image",
     label: "Image generation",
@@ -87,7 +105,7 @@ class ModelCategory
     columns: %i[name provider pricing released]
   )
 
-  ALL = [ LANGUAGE, EMBEDDINGS, IMAGE ].freeze
+  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, IMAGE ].freeze
 
   BY_PARAM = ALL.index_by(&:param).freeze
 

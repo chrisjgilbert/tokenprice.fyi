@@ -24,7 +24,7 @@ class ProvidersController < ApplicationController
 
     models = @provider.ai_models.includes(:price_points).to_a
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
-      price_sort: PRICE_SORTS.include?(@sort))
+      sink_unranked: (:token_priced? if PRICE_SORTS.include?(@sort)))
 
     # Newest data write across this provider's models (latest price-row write, or
     # the provider row itself). Read off the already-loaded price points so it

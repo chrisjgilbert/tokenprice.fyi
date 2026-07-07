@@ -534,12 +534,12 @@
       number/price columns. A column is sortable iff its key is in the category's
       sorts (e.g. Pricing and Dimensions have no sort axis). %>
   <%
-    numeric_cols = %i[input output cached context dimensions]
+    numeric_cols = %i[input output cached context dimensions native_price]
     col_labels = {
       name: "Model", tier: "Tier",
       input: "Input /1M", output: "Output /1M", cached: "Cached in /1M",
       context: "Context", provider: "Provider", released: "Released",
-      pricing: "Pricing", dimensions: "Dimensions"
+      pricing: "Pricing", dimensions: "Dimensions", native_price: "Price"
     }
   %>
 
@@ -661,6 +661,18 @@
                       </td>
                     <% when :dimensions %>
                       <td data-label="Dimensions" class="numeric"><%= model.dimensions || "—" %></td>
+                    <% when :native_price %>
+                      <% if model.native_priced? %>
+                        <td data-label="Price" class="numeric tp-price-native <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>">
+                          <span class="tp-price-native-val"><%= model.price_headline %></span>
+                        </td>
+                      <% elsif model.priced? %>
+                        <%# A token-priced audio→text model, were one ever listed here,
+                            shows its per-token rate rather than the untracked note. %>
+                        <td data-label="Price" class="numeric <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>"><%= io_price(model) %></td>
+                      <% else %>
+                        <td data-label="Price" class="tp-price-untracked">Not yet tracked</td>
+                      <% end %>
                     <% when :pricing %>
                       <%# Native pricing (per image / credits) through the same
                           priced / native / untracked branch the token cells use. %>
@@ -668,7 +680,7 @@
                         <td data-label="Pricing" class="numeric"><%= io_price(model) %></td>
                       <% elsif model.native_priced? %>
                         <td data-label="Pricing" class="tp-price-native">
-                          <span class="tp-price-native-val"><%= model.price_summary %></span>
+                          <span class="tp-price-native-val"><%= model.price_headline %></span>
                           <% if model.pricing_model_label %>
                             <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
                           <% end %>

@@ -56,18 +56,20 @@ class AiModel < ApplicationRecord
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
-  # "desc", then on a price sort sink rows without a per-token rate to the bottom
-  # in BOTH directions (they can't be ranked on the sorted column and would
-  # otherwise float to the top on reverse). The models/providers tables share
-  # this; their column sets — and thus which sorts count as price sorts —
-  # legitimately differ, so each passes its own `price_sort:`.
-  def self.sort_for_display(models, by:, dir:, price_sort:)
+  # "desc", then sink rows that can't be ranked on the sorted column to the
+  # bottom in BOTH directions (they'd otherwise float to the top on reverse).
+  # `sink_unranked` is the predicate marking a row as rankable on this sort — a
+  # per-token rate for the token columns (`:token_priced?`), a native per-minute
+  # rate for speech-to-text (`:native_priced?`); nil for sorts every row can rank
+  # on (name, tier, …). The models/providers tables pass their own, since their
+  # column sets differ.
+  def self.sort_for_display(models, by:, dir:, sink_unranked: nil)
     sorted = models.sort_by(&by)
     sorted.reverse! if dir == "desc"
-    return sorted unless price_sort
+    return sorted unless sink_unranked
 
-    token_priced, rest = sorted.partition(&:token_priced?)
-    token_priced + rest
+    rankable, rest = sorted.partition(&sink_unranked)
+    rankable + rest
   end
 
   # Pretty URLs: /models/claude-opus-4-8
@@ -145,18 +147,33 @@ class AiModel < ApplicationRecord
     "credit_based"     => "Credits"
   }.freeze
 
-  # A directory-class model whose price we've curated as a native-unit string
-  # (per image, credits, …) rather than a per-token price point.
-  def native_priced? = price_summary.present?
+  # A directory-class model whose price we've curated outside the per-token
+  # table: either a native-unit string (per image, credits, …) or a numeric
+  # single-unit rate (speech-to-text's per-minute `native_price_usd`).
+  def native_priced? = price_summary.present? || native_price_usd.present?
+
+  # Audio in, a text transcript out — priced per minute of audio.
+  def speech_to_text? = modality_class == :speech_to_text
+
+  # The single display source for a native-priced row's headline price: the
+  # numeric single-unit rate (speech-to-text's `$X /min`), else image's
+  # heterogeneous `price_summary` string. Formats at 6 decimals to match the
+  # column's stored scale, so a sub-cent per-minute rate (Groq's $0.000667/min)
+  # isn't rounded away to 4 dp.
+  def price_headline
+    return price_summary if native_price_usd.blank?
+
+    "$#{PriceFormat.usd_amount(native_price_usd, decimals: 6)} #{native_price_unit}".strip
+  end
 
   def pricing_model_label = PRICING_MODEL_LABELS[pricing_model]
 
   # A listed directory-class row still awaiting any price: no price point AND no
   # curated native price. Surfaces read this to show "not yet tracked" rather
-  # than a per-token dash or $0. Once a native price_summary is curated the row
-  # is `native_priced?` instead and renders its price.
+  # than a per-token dash or $0. Once a native price is curated the row is
+  # `native_priced?` instead and renders its price.
   def directory_listing?
-    ModalityClass.directory_class?(modality_class) && current_price.nil? && price_summary.blank?
+    ModalityClass.directory_class?(modality_class) && current_price.nil? && !native_priced?
   end
 
   # Priced on the per-token axis the listing tables sort by — a row with an input
