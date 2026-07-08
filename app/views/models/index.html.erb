@@ -378,6 +378,10 @@
   </div>
 <% end %>
 
+<% if @recent_price_moves&.any? %>
+  <%= render "models/recent_price_changes", moves: @recent_price_moves %>
+<% end %>
+
 <%# ── COMPARE TRAY WRAPPER ────────────────────────────────────────────
     Mounted outside turbo_frame_tag "models" deliberately: that frame
     re-renders on every filter/sort change, which would destroy and recreate

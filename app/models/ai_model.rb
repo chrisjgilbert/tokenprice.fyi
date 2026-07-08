@@ -237,6 +237,20 @@ class AiModel < ApplicationRecord
     price_points.count > 1
   end
 
+  # The most recent price step — current snapshot vs the one before it — as a
+  # PriceMove, or nil when there's a single snapshot, nothing changed, or (with
+  # `within:`) the step is older than the window. Reads the in-memory association
+  # so an eager-loaded `includes(:price_points)` isn't defeated by a fresh query.
+  def latest_move(within: nil)
+    snaps = price_points.sort_by(&:effective_on)
+    return nil if snaps.size < 2
+
+    current = snaps.last
+    return nil if within && current.effective_on < Date.current - within
+
+    PriceMove.build(self, from: snaps[-2], to: current)
+  end
+
   # Fuzzy match against name, provider and slug. Every word in the query must
   # be a substring of some search term, or — to forgive typos like
   # "antropic" — an in-order subsequence of a single word.

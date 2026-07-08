@@ -142,14 +142,21 @@ module ApplicationHelper
   }.freeze
 
   def provider_square(provider, size: :md)
+    brand_square(slug: provider.slug, name: provider.name, accent: provider.accent, size: size)
+  end
+
+  # The provider's accent square with its brand mark — same glyph as
+  # provider_square, but keyed on plain slug/name/accent so a value object that
+  # carries those strings (e.g. PriceMove) can render it without an AR record.
+  def brand_square(slug:, name:, accent:, size: :md)
     css = "tp-prov-sq tp-prov-sq-#{size}"
-    bg = "background:#{safe_hex(provider.accent)}"
-    logo = PROVIDER_LOGOS[provider.slug]
+    bg = "background:#{safe_hex(accent)}"
+    logo = PROVIDER_LOGOS[slug]
 
     if logo
       content_tag(:span, raw(logo), class: "#{css} tp-prov-logo", style: bg)
     else
-      initial = provider.name.to_s[0]&.upcase || "?"
+      initial = name.to_s[0]&.upcase || "?"
       content_tag(:span, initial, class: css, style: bg)
     end
   end
