@@ -32,6 +32,11 @@ class ModelCategory
     def table_colspan = columns.size + 2
 
     def shows_tier_facet = columns.include?(:tier)
+
+    # The default (language) tab — the one that owns the root URL and leads the
+    # strip. Lets callers ask the domain question without reaching for the route
+    # helper prefix (`path_name`).
+    def default? = self == ModelCategory.default
   end
 
   # Language is the fallback: every listed model whose class no other tab claims

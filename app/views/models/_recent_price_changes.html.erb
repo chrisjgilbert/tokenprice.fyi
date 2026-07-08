@@ -1,7 +1,7 @@
 <%# Recent price changes across the catalog — the web home for the Slack
     price-moves digest. Each row is one model's latest step between consecutive
     snapshots (PriceCatalog.recent_price_moves → PriceMove). %>
-<section class="changes" aria-label="Recent price changes">
+<section class="tp-card changes" aria-label="Recent price changes">
   <div class="changes-head">
     <span class="changes-t"><%= icon(:trend_down, size: 16) %> Recent price changes</span>
     <span class="changes-cnt"><%= moves.size %></span>
@@ -43,11 +43,8 @@
 </section>
 
 <style>
+/* Card chrome comes from .tp-card; only the strip-specific bits here. */
 .changes {
-  background: #fff;
-  border: 1px solid var(--color-slate-200);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
   overflow: hidden;
   margin-bottom: 36px;
 }

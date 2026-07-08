@@ -15,11 +15,11 @@ class NewsController < ApplicationController
     return if catalog_fresh?(etag: [ :news, @page ],
       last_modified: [ NewsItem.maximum(:updated_at), MarketEvent.maximum(:updated_at) ].compact.max)
 
-    scope        = NewsItem.feed.includes(:market_event)
-    @total       = scope.count
-    @items       = scope.limit(@page * PER_PAGE).to_a
-    @has_more    = @total > @items.size
-    @next_page   = @page + 1
+    # Fetch one past the page window so has_more needs no separate COUNT.
+    window = @page * PER_PAGE
+    rows   = NewsItem.feed.includes(:market_event).limit(window + 1).to_a
+    @has_more = rows.size > window
+    @items = rows.first(window)
     @items_by_day = @items.group_by { |item| item.published_at.to_date }
   end
 end

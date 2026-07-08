@@ -17,24 +17,18 @@ class PriceMove
 
       (((new - old) / old) * 100).round(1)
     end
-
-    def direction
-      change = pct
-      return :flat if change.nil? || change.zero?
-
-      change.positive? ? :up : :down
-    end
   end
 
-  DIMENSIONS = %i[input output cached].freeze
+  # Dimension → price-point column, in the display order the strip and headline
+  # walk (input first). Also the definitive dimension set — build iterates it.
   COLUMNS = { input: :input_per_mtok, output: :output_per_mtok, cached: :cached_input_per_mtok }.freeze
 
   # Nil when no priced dimension changed between the two snapshots, so a
   # re-confirmed price never shows as a move.
   def self.build(model, from:, to:)
-    deltas = DIMENSIONS.filter_map do |dimension|
-      was = from.public_send(COLUMNS[dimension])
-      now = to.public_send(COLUMNS[dimension])
+    deltas = COLUMNS.filter_map do |dimension, column|
+      was = from.public_send(column)
+      now = to.public_send(column)
       Delta.new(dimension: dimension, old: was, new: now) unless was == now
     end
     return nil if deltas.empty?
@@ -46,9 +40,6 @@ class PriceMove
   end
 
   def delta(dimension) = deltas.find { |d| d.dimension == dimension }
-  def input  = delta(:input)
-  def output = delta(:output)
-  def cached = delta(:cached)
 
   # The dimension shown on the percent chip: the first (input → output → cached)
   # with a real, non-zero percentage — so a sub-rounding tweak in one dimension

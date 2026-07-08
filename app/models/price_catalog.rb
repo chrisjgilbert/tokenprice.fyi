@@ -135,8 +135,8 @@ class PriceCatalog
     def recent_price_moves(limit: 6, within: 30.days)
       scope = AiModel.listed
       if within
-        recent_ids = PricePoint.where(effective_on: (Date.current - within)..).distinct.pluck(:ai_model_id)
-        scope = scope.where(id: recent_ids)
+        repriced = PricePoint.where(effective_on: (Date.current - within)..).select(:ai_model_id)
+        scope = scope.where(id: repriced)
       end
       scope.includes(:provider, :price_points)
         .filter_map { |m| m.latest_move(within: within) }

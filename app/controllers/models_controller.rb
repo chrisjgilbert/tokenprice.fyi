@@ -108,7 +108,7 @@ class ModelsController < ApplicationController
       @providers_count = Provider.count
       # Recent price changes strip — the price-moves digest, on the default
       # language homepage only (the embeddings/image tabs get their own focus).
-      @recent_price_moves = PriceCatalog.recent_price_moves if @category.path_name == :root
+      @recent_price_moves = PriceCatalog.recent_price_moves if @category.default?
     end
   end
 

@@ -13,10 +13,10 @@ class PriceMoveTest < ActiveSupport::TestCase
 
     assert_not_nil move
     assert_equal Date.new(2026, 5, 31), move.effective_on
-    assert_equal(-75.0, move.input.pct)
-    assert_equal :down, move.input.direction
-    assert_equal 1.74, move.input.old.to_f
-    assert_equal 0.435, move.input.new.to_f
+    input = move.delta(:input)
+    assert_equal(-75.0, input.pct)
+    assert_equal 1.74, input.old.to_f
+    assert_equal 0.435, input.new.to_f
   end
 
   test "latest_move is nil when the last two snapshots are identical" do
@@ -34,9 +34,8 @@ class PriceMoveTest < ActiveSupport::TestCase
     )
     move = model.latest_move
 
-    assert_nil move.input, "input didn't change, so it carries no delta"
-    assert_equal 25.0, move.output.pct
-    assert_equal :up, move.output.direction
+    assert_nil move.delta(:input), "input didn't change, so it carries no delta"
+    assert_equal 25.0, move.delta(:output).pct
   end
 
   test "latest_move within window excludes a step older than the window" do
@@ -79,7 +78,6 @@ class PriceMoveTest < ActiveSupport::TestCase
   test "delta pct is nil when the base is zero or missing" do
     d = PriceMove::Delta.new(dimension: :cached, old: nil, new: 0.15)
     assert_nil d.pct
-    assert_equal :flat, d.direction
   end
 
   private

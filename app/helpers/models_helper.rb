@@ -3,5 +3,5 @@ module ModelsHelper
   # "recent price changes" strip.
   PRICE_MOVE_LABELS = { input: "in", output: "out", cached: "cached" }.freeze
 
-  def price_move_label(dimension) = PRICE_MOVE_LABELS.fetch(dimension, dimension.to_s)
+  def price_move_label(dimension) = PRICE_MOVE_LABELS[dimension]
 end
