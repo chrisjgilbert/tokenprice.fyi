@@ -21,6 +21,7 @@
       <span class="num"><%= @market_count %></span> market events and
       <span class="num"><%= @launch_count %></span> launches<% if @earliest_year %>, going back to
       <span class="num"><%= @earliest_year %></span><% end %>.
+      Curated from the <%= link_to "daily news feed →", news_path, class: "events-newslink" %>
     </p>
   </header>
 
@@ -95,6 +96,13 @@
   font-size: 17px;
   line-height: 1.6;
 }
+.events-newslink {
+  color: var(--color-indigo-600);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.events-newslink:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── Filter toolbar ──────────────────────────────────────────────────── */
 .events-toolbar {

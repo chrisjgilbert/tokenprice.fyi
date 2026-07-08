@@ -179,10 +179,10 @@ module ApplicationHelper
   # mobile drawer so the two can't drift. Each item is [label, path].
   def primary_nav_items
     [
-      [ "Models",  root_path,    -> { current_page?(root_path) } ],
-      [ "Compare", compare_path, -> { current_page?(compare_path) } ],
-      [ "Trends",  trends_path,  -> { current_page?(trends_path) } ],
-      [ "Events",  events_path,  -> { events_active? } ]
+      [ "Models", root_path,   -> { current_page?(root_path) } ],
+      [ "Trends", trends_path, -> { current_page?(trends_path) } ],
+      [ "News",   news_path,   -> { current_page?(news_path) } ],
+      [ "Events", events_path, -> { events_active? } ]
     ]
   end
 

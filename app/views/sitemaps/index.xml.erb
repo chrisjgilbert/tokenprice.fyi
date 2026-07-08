@@ -6,6 +6,7 @@
   <% ModelCategory.all.each do |category| %>
     <url><loc><%= send("#{category.path_name}_url") %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority><%= category.path_name == :root ? "1.0" : "0.9" %></priority></url>
   <% end %>
+  <url><loc><%= news_url %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc><%= events_url %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc><%= trends_url %></loc><lastmod><%= @catalog_date %></lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc><%= compare_url %></loc><changefreq>weekly</changefreq><priority>0.7</priority></url>

@@ -18,6 +18,9 @@ Rails.application.routes.draw do
 
   get "compare", to: "comparisons#show", as: :compare
   get "events",  to: "events#index",     as: :events
+  # The raw AI-pricing news feed: relevant-only headlines, newest first. The
+  # signal that feeds the curated /events timeline.
+  get "news",    to: "news#index",        as: :news
   get "sources", to: "sources#index",    as: :sources
   # Flagship price-over-time chart — surfaces the full frontier history, retired
   # models included. Reclaims the /trends URL that used to 301 to /events.
