@@ -128,9 +128,17 @@ class PriceCatalog
 
     # Recent price steps across the listed catalog, newest first — the homepage
     # "recent price changes" strip. `within` bounds staleness so a quiet stretch
-    # shows nothing rather than a month-old move; `limit` caps the strip.
+    # shows nothing rather than a month-old move; `limit` caps the strip. Only
+    # models with a snapshot inside the window can have a move to show, so the
+    # candidate set is narrowed in SQL first — the strip never loads the whole
+    # catalog's price history just to surface a handful of moves.
     def recent_price_moves(limit: 6, within: 30.days)
-      AiModel.listed.includes(:provider, :price_points)
+      scope = AiModel.listed
+      if within
+        recent_ids = PricePoint.where(effective_on: (Date.current - within)..).distinct.pluck(:ai_model_id)
+        scope = scope.where(id: recent_ids)
+      end
+      scope.includes(:provider, :price_points)
         .filter_map { |m| m.latest_move(within: within) }
         .sort_by(&:effective_on).reverse.first(limit)
     end

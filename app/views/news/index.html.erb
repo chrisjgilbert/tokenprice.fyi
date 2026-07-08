@@ -23,13 +23,14 @@
   </header>
 
   <%# ── Funnel cross-link ──────────────────────────────────────────────── %>
-  <%# News is the raw signal; the entries that mark a real pricing milestone are
-      hand-curated into the dated Events timeline. Say so, so the two pages read
-      as one funnel rather than duplicates. %>
+  <%# /news is the unedited feed; the entries that mark a real pricing milestone
+      are hand-curated into the dated /events timeline. Naming the relationship
+      keeps the two pages reading as one funnel rather than duplicates. %>
   <div class="news-funnel">
     <span class="news-funnel-ic" aria-hidden="true"><%= icon(:calendar, size: 17) %></span>
-    <span>These headlines are the raw signal. The ones that mark a real pricing
-      milestone are hand-curated into the <%= link_to "dated Events timeline →", events_path %></span>
+    <span>Every relevant headline we scan, unedited and newest first. The ones
+      that mark a real pricing milestone are hand-curated into the
+      <%= link_to "dated Events timeline →", events_path %></span>
   </div>
 
   <%# ── Feed ───────────────────────────────────────────────────────────── %>
@@ -183,11 +184,6 @@
 .n-linked:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .n-aside { justify-self: end; align-self: start; padding-top: 2px; }
-
-/* Kind badge variants — pair with .tp-badge, alongside the launch/market
-   variants the events timeline defines globally. */
-.tp-kind-release { color: var(--color-indigo-700); background: var(--color-indigo-50); border-color: var(--color-indigo-100); }
-.tp-kind-price   { color: var(--color-amber-700);  background: var(--color-amber-50);  border-color: var(--color-amber-100); }
 
 /* ── Load more ───────────────────────────────────────────────────────── */
 .n-sentinel { display: flex; justify-content: center; padding: 22px 0 10px; }

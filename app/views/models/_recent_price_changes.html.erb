@@ -31,7 +31,7 @@
 
       <div class="c-chip">
         <% headline = move.headline %>
-        <% if headline.pct %>
+        <% if headline.pct&.nonzero? %>
           <%= price_change_badge(headline.pct) %>
           <% unless headline.dimension == :input %>
             <span class="c-chip-dim"><%= price_move_label(headline.dimension) %></span>
