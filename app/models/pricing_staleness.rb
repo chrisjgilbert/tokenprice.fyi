@@ -1,15 +1,19 @@
-# A freshness audit of the prices we curate by hand. The OpenRouter-synced
-# language rows refresh themselves daily; everything with `source: "manual"` —
-# the directory categories (image generation, speech-to-text, text-to-speech,
-# video generation) and any hand-entered per-token rows — carries a figure that
-# only a person updates, so it drifts as providers reprice. This groups those
-# rows by category with the age of each price, flags the ones past a staleness
-# threshold and the directory rows still awaiting a price, so a maintenance pass
-# knows exactly what to re-verify against the docs/*_MODEL_PRICING.md datasets.
+# A freshness audit of the prices we curate by hand for the non-language
+# categories — image generation, embeddings, speech-to-text, text-to-speech, and
+# video generation. Their figures are sourced from the docs/*_MODEL_PRICING.md
+# datasets and only a person updates them, so they drift as providers reprice.
 #
-# A read-only reporting PORO in the ModelCategory idiom, reached via
-# `PricingStaleness.report`. The `pricing:staleness` rake task formats it; keeping
-# the logic here (not in the task) makes it unit-testable.
+# The language category is deliberately excluded: its per-token prices are a
+# historical series dated at each *change* (not each verification), and the long
+# tail is refreshed by the OpenRouter sync — so "age since the last change" isn't
+# a staleness signal there the way a directory row's curated as-of date is.
+#
+# Groups the curated rows by category with the age of each price, flagging the
+# ones past a staleness threshold and the directory rows still awaiting a price,
+# so a maintenance pass knows exactly what to re-verify. A read-only reporting
+# PORO in the ModelCategory idiom, reached via `PricingStaleness.report`. The
+# `pricing:staleness` rake task formats it; keeping the logic here (not in the
+# task) makes it unit-testable.
 class PricingStaleness
   # One curated model's price freshness. `priced_on` is the date the price is
   # stated as-of — a directory row's `priced_as_of`, else its latest price
@@ -42,13 +46,13 @@ class PricingStaleness
     @today = today
   end
 
-  # Groups in ModelCategory display order, each carrying its curated rows sorted
-  # oldest-price-first (unpriced rows lead). Categories with no curated rows are
-  # omitted.
+  # Groups in ModelCategory display order (language excluded), each carrying its
+  # curated rows sorted oldest-price-first (unpriced/undated rows lead). Categories
+  # with no curated rows are omitted.
   def report
     curated_by_category = curated_models.group_by { |m| category_for(m) }
 
-    ModelCategory.all.filter_map do |category|
+    reported_categories.filter_map do |category|
       models = curated_by_category[category]
       next if models.blank?
 
@@ -57,9 +61,10 @@ class PricingStaleness
     end
   end
 
-  # Flat counts across every category, for the task's closing summary.
-  def totals
-    rows = report.flat_map(&:rows)
+  # Flat counts across every reported category, for a summary line. Pass the
+  # already-computed groups to avoid recomputing the report.
+  def self.totals(groups)
+    rows = groups.flat_map(&:rows)
     { stale: rows.count(&:stale?), undated: rows.count(&:undated?),
       unpriced: rows.count(&:unpriced?), curated: rows.size }
   end
@@ -69,6 +74,9 @@ class PricingStaleness
   def curated_models
     AiModel.curated.listed.includes(:provider, :price_points).to_a
   end
+
+  # Every category except language (the default fallback).
+  def reported_categories = ModelCategory.all - [ ModelCategory.default ]
 
   def category_for(model)
     ModelCategory.all.find { |c| c.member?(model.modality_class) }

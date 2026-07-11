@@ -3,16 +3,19 @@
 How the hand-curated pricing categories stay accurate, and how to push updates
 to production. Read this before re-verifying prices or backfilling prod.
 
-## What's curated vs. synced
+## What this covers
 
-- **Synced (self-maintaining):** the **language** models sourced from OpenRouter
-  (`source: "openrouter"`). A daily job refreshes their per-token prices — you
-  don't touch these.
-- **Curated (hand-maintained):** everything with `source: "manual"` — the five
-  directory categories (**image generation, embeddings, speech-to-text,
-  text-to-speech, video generation**) plus any hand-entered language rows. No job
-  refreshes these; their figures drift as providers reprice, so they need a
-  periodic human pass. That's what this doc is about.
+The **five sourced categories** — **image generation, embeddings, speech-to-text,
+text-to-speech, video generation**. Their prices are curated by hand from the
+`docs/*_MODEL_PRICING.md` datasets, no job refreshes them, and their figures
+drift as providers reprice — so they need a periodic human pass.
+
+**Language is out of scope here.** Its per-token prices are a historical series
+dated at each *change* (a price that last changed months ago is usually still
+current, not stale), and the long tail is refreshed daily by the OpenRouter sync.
+The staleness report below deliberately excludes it. (The flagship language rows
+are seeded with `source: "manual"`, but "age since last change" isn't a
+re-verify signal the way a directory row's curated as-of date is.)
 
 ## Source of truth: two files move together
 
@@ -43,8 +46,9 @@ bin/kamal seed          # alias for: app exec --reuse "bin/rails db:seed"
 
 - **Idempotent** — safe to run repeatedly. It upserts curated rows by slug,
   updates prices and `priced_as_of`, and prunes price snapshots no longer listed.
-- **Non-destructive to synced rows** — seeds only define `source: "manual"` rows;
-  the OpenRouter-synced language rows are untouched.
+- **Non-destructive to synced rows** — the seed only upserts the rows it defines,
+  looked up by their curated slug; OpenRouter-synced rows carry slugs derived from
+  their OpenRouter ids, so the lookups never collide and those rows are untouched.
 - **After each category-tab deploy**, run `bin/kamal seed` once to light up the
   new tab with its data. (That's the backfill step for the speech-to-text,
   text-to-speech, and video tabs shipped recently.)

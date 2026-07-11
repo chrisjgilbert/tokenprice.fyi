@@ -24,7 +24,7 @@ namespace :pricing do
       end
     end
 
-    totals = PricingStaleness.new(days:).totals
+    totals = PricingStaleness.totals(groups)
     puts "\n#{totals[:curated]} curated prices: #{totals[:stale]} stale (> #{days}d), " \
          "#{totals[:undated]} undated, #{totals[:unpriced]} unpriced."
     puts "Re-verify flagged rows against docs/*_MODEL_PRICING.md, update the figure and " \

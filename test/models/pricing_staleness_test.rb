@@ -12,19 +12,24 @@ class PricingStalenessTest < ActiveSupport::TestCase
     report(**opts).flat_map(&:rows).find { |r| r.slug == slug }
   end
 
-  test "reports only curated (manual-source) rows, never OpenRouter-synced ones" do
+  test "reports curated (manual-source) rows, never OpenRouter-synced or language ones" do
     slugs = report.flat_map(&:rows).map(&:slug)
 
     assert_includes slugs, "test-priced-image-model" # manual directory row
     assert_not_includes slugs, "test-image-model"     # openrouter-sourced, excluded
     assert_not_includes slugs, "test-embedding-model" # openrouter-sourced, excluded
+    # Language is excluded even when a manual/flagship row exists — its per-token
+    # prices are a historical series, not a curated as-of figure to re-verify.
+    assert_not_includes slugs, "claude-opus-4-8"
+    assert_not_includes report.map { |g| g.category.slug }, "language"
   end
 
-  test "groups rows under their ModelCategory, in registry order" do
+  test "groups rows under their ModelCategory, in registry order, language excluded" do
     labels = report.map { |g| g.category.label }
 
     assert_equal labels, labels.uniq
     assert_equal labels, ModelCategory.all.map(&:label) & labels # a subsequence, in order
+    assert_not_includes labels, ModelCategory.default.label       # no language group
     image = report.find { |g| g.category.slug == "image" }
     assert_includes image.rows.map(&:slug), "test-priced-image-model"
   end
@@ -88,10 +93,11 @@ class PricingStalenessTest < ActiveSupport::TestCase
   end
 
   test "totals sum the flagged rows across categories" do
-    totals = PricingStaleness.new(days: 90, today: TODAY).totals
+    groups = report
+    totals = PricingStaleness.totals(groups)
 
-    assert_equal totals[:curated], report.flat_map(&:rows).size
+    assert_equal totals[:curated], groups.flat_map(&:rows).size
     assert_operator totals[:undated], :>=, 1 # the stt/tts fixtures
-    assert_equal totals[:stale], report.flat_map(&:rows).count(&:stale?)
+    assert_equal totals[:stale], groups.flat_map(&:rows).count(&:stale?)
   end
 end
