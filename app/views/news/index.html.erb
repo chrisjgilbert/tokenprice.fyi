@@ -17,10 +17,17 @@
   <header class="news-header">
     <h1 class="news-h1">News</h1>
     <p class="news-subtitle">
-      AI-pricing headlines as they surface — model releases, price changes, and
-      market moves, scanned daily and filtered to what's relevant.
+      Recent tracked price changes across the catalog, plus the model releases
+      and market moves we scan each day.
     </p>
   </header>
+
+  <%# ── Recent price changes ───────────────────────────────────────────── %>
+  <%# The tracked old→new numbers behind the "price" headlines below — the
+      factual half of the daily digest, ahead of the narrative feed. %>
+  <% if @recent_price_moves&.any? %>
+    <%= render "news/recent_price_changes", moves: @recent_price_moves %>
+  <% end %>
 
   <%# ── Funnel cross-link ──────────────────────────────────────────────── %>
   <%# /news is the unedited feed; the entries that mark a real pricing milestone

@@ -9,6 +9,19 @@ class NewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /News/
   end
 
+  test "shows the recent price changes strip for a recent repricing" do
+    provider = Provider.create!(name: "Strip Labs", slug: "strip-labs", accent: "#123456")
+    model = provider.ai_models.create!(name: "Stripper One", slug: "stripper-one",
+                                       tier: "mid", source: AiModel::MANUAL_SOURCE)
+    model.price_points.create!(effective_on: Date.current - 5, input_per_mtok: 2, output_per_mtok: 8)
+    model.price_points.create!(effective_on: Date.current - 1, input_per_mtok: 3, output_per_mtok: 8)
+
+    get news_url
+    assert_response :success
+    assert_select "section.changes .c-name", text: /Stripper One/
+    assert_select "section.changes .c-leg", /\$2/  # old input rate on the strip
+  end
+
   test "lists relevant items with their rationale and kind badge" do
     get news_url
     assert_response :success
