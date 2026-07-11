@@ -51,7 +51,10 @@ providers = {
   minimax:     { name: "MiniMax",     website: "https://www.minimax.io",    accent: "#F23F5D", country: "China", country_code: "CN" },
   tencent:     { name: "Tencent",     website: "https://hunyuan.tencent.com", accent: "#0052D9", country: "China", country_code: "CN" },
   lightricks:  { name: "Lightricks",  website: "https://www.lightricks.com", accent: "#6366F1", country: "Israel", country_code: "IL" },
-  genmo:       { name: "Genmo",       website: "https://www.genmo.ai",      accent: "#10B981", country: "United States", country_code: "US" }
+  genmo:       { name: "Genmo",       website: "https://www.genmo.ai",      accent: "#10B981", country: "United States", country_code: "US" },
+  cartesia:    { name: "Cartesia",    website: "https://cartesia.ai",       accent: "#8B5CF6", country: "United States", country_code: "US" },
+  rime:        { name: "Rime",        website: "https://rime.ai",           accent: "#F59E0B", country: "United States", country_code: "US" },
+  hume:        { name: "Hume AI",     website: "https://hume.ai",           accent: "#14B8A6", country: "United States", country_code: "US" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -1303,6 +1306,178 @@ catalog = [
     pricing_model: "per_video", price_summary: "~$0.42 / run",
     price_detail: "Open weights (Apache 2.0), ~60GB VRAM single-GPU — self-host $0, or ≈$0.42 per run on Replicate.",
     price_source: "https://replicate.com/genmoai/mochi-1", priced_as_of: "2026-07-11",
+    prices: []
+  },
+
+  # ---- Text to speech (synthesis) ---------------------------------------
+  # Text in, generated speech out, so they classify as :text_to_speech and list
+  # under the "Text to speech" category. TTS bills predominantly per character of
+  # input text, which normalizes to a comparable, sortable USD-per-1M-characters
+  # rate — the STT-shaped numeric `native_price_usd` (unit "/1M chars"), NOT a
+  # per-token price point (`prices: []`). Figures, native basis (per 1K/1M chars
+  # or credits → per 1M chars), and confidence come from
+  # docs/TEXT_TO_SPEECH_MODEL_PRICING.md; only H/M rows are seeded. OpenAI's
+  # gpt-4o-mini-tts is token-billed with no published per-char rate, so it's left
+  # unpriced with a price_detail note rather than seeded with a fabricated number.
+  # See docs/TEXT_TO_SPEECH_TAB_PLAN.md.
+  {
+    provider: :openai, name: "tts-1", tier: "mid", status: "active",
+    description: "OpenAI's standard text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 15.0, native_price_unit: "/1M chars",
+    price_detail: "Billed per character of input text, printed as $15.00 per 1M characters.",
+    price_source: "https://developers.openai.com/api/docs/models/tts-1", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :openai, name: "tts-1-hd", tier: "mid", status: "active",
+    description: "OpenAI's higher-quality text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 30.0, native_price_unit: "/1M chars",
+    price_detail: "Billed per character of input text, printed as $30.00 per 1M characters.",
+    price_source: "https://developers.openai.com/api/docs/models/tts-1-hd", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :openai, name: "gpt-4o-mini-tts", tier: "mid", status: "active",
+    description: "OpenAI's steerable neural text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    price_detail: "Token-billed — $0.60 per 1M text-input tokens plus $12.00 per 1M audio-output tokens. OpenAI publishes no per-character rate, so a per-1M-character price isn't derivable.",
+    prices: []
+  },
+  {
+    provider: :elevenlabs, name: "Flash v2.5", tier: "mid", status: "active",
+    description: "ElevenLabs' low-latency text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 50.0, native_price_unit: "/1M chars",
+    price_detail: "Billed in credits at 0.5 credit/char ($0.05 per 1K chars on demand); streaming and batch cost the same.",
+    price_source: "https://elevenlabs.io/pricing/api", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :elevenlabs, name: "Multilingual v2", tier: "mid", status: "active",
+    description: "ElevenLabs' highest-quality text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 100.0, native_price_unit: "/1M chars",
+    price_detail: "Billed in credits at 1 credit/char ($0.10 per 1K chars on demand).",
+    price_source: "https://elevenlabs.io/pricing/api", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Cloud TTS (Standard)", tier: "mid", status: "active",
+    description: "Google Cloud's non-neural text-to-speech voices.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 4.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $4 per 1M chars for the non-neural Standard voices. Pricing page is JS-gated; corroborated against Google's long-stable rates.",
+    price_source: "https://cloud.google.com/text-to-speech/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Cloud TTS (Neural2)", tier: "mid", status: "active",
+    description: "Google Cloud's standard neural text-to-speech voices.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 16.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $16 per 1M chars for Neural2/WaveNet. Pricing page is JS-gated; corroborated against Google's published rates.",
+    price_source: "https://cloud.google.com/text-to-speech/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Cloud TTS (Chirp 3 HD)", tier: "mid", status: "active",
+    description: "Google Cloud's premium generative text-to-speech voices.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 30.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $30 per 1M chars for the Chirp 3 HD generative tier. Studio voices are $160 per 1M. Corroborated against Google's published rates.",
+    price_source: "https://cloud.google.com/text-to-speech/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :microsoft, name: "Azure TTS (Neural)", tier: "mid", status: "active",
+    description: "Microsoft Azure's standard neural text-to-speech voices.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 16.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $16 per 1M chars standard neural; commitment tiers drop to ~$7.50. Pricing renders client-side; corroborated via aggregators.",
+    price_source: "https://azure.microsoft.com/pricing/details/cognitive-services/speech-services", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :microsoft, name: "Azure TTS (Neural HD)", tier: "mid", status: "active",
+    description: "Microsoft Azure's HD neural text-to-speech voices.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 22.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $22 per 1M chars (reduced from $30 in early 2026). Corroborated via aggregators.",
+    price_source: "https://azure.microsoft.com/pricing/details/cognitive-services/speech-services", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :amazon, name: "Polly (Neural)", tier: "mid", status: "active",
+    description: "Amazon Polly's standard neural text-to-speech engine.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 16.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $16 per 1M chars for the Neural engine. Generated audio can be cached and replayed free.",
+    price_source: "https://aws.amazon.com/polly/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :amazon, name: "Polly (Generative)", tier: "mid", status: "active",
+    description: "Amazon Polly's generative text-to-speech engine.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 30.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $30 per 1M chars for the Generative engine. Standard (non-neural) is $4 and Long-form is $100 per 1M.",
+    price_source: "https://aws.amazon.com/polly/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :deepgram, name: "Aura-2", tier: "mid", status: "active",
+    description: "Deepgram's current flagship text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 30.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $0.030 per 1K chars PAYG ($30 per 1M); $27 per 1M on the Growth plan.",
+    price_source: "https://deepgram.com/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :deepgram, name: "Aura-1", tier: "mid", status: "active",
+    description: "Deepgram's first-generation text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 15.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $0.015 per 1K chars PAYG ($15 per 1M); $13.50 per 1M on the Growth plan.",
+    price_source: "https://deepgram.com/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :cartesia, name: "Sonic", tier: "mid", status: "active",
+    description: "Cartesia's low-latency text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 50.0, native_price_unit: "/1M chars",
+    price_detail: "Billed in credits (~1 credit/char); ≈$50 per 1M at the Pro plan, dropping to ~$37 at higher-volume plans. The credits-per-char basis is corroborated, not printed.",
+    price_source: "https://cartesia.ai/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :rime, name: "Mist", tier: "mid", status: "active",
+    description: "Rime's fast, efficient text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 30.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $0.03 per 1K chars ($30 per 1M).",
+    price_source: "https://rime.ai/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :rime, name: "Arcana", tier: "mid", status: "active",
+    description: "Rime's expressive flagship text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 40.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $0.04 per 1K chars ($40 per 1M).",
+    price_source: "https://rime.ai/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :hume, name: "Octave", tier: "mid", status: "active",
+    description: "Hume AI's expressive text-to-speech model.",
+    input_modalities: %w[text], output_modalities: %w[audio],
+    native_price_usd: 150.0, native_price_unit: "/1M chars",
+    price_detail: "Per-character, $0.15 per 1K chars ($150 per 1M) on entry tiers, dropping to $0.05 per 1K ($50 per 1M) on volume plans.",
+    price_source: "https://hume.ai/pricing", priced_as_of: "2026-07-11",
     prices: []
   }
 ]

@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   # registry.
   get "embeddings", to: "models#index", defaults: { category: "embeddings" }, as: :embeddings
   get "speech-to-text", to: "models#index", defaults: { category: "speech-to-text" }, as: :speech_to_text
+  get "text-to-speech", to: "models#index", defaults: { category: "text-to-speech" }, as: :text_to_speech
   get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation
   get "video-generation", to: "models#index", defaults: { category: "video" }, as: :video_generation
 
