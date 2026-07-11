@@ -96,7 +96,7 @@ class PriceCatalogTest < ActiveSupport::TestCase
 
   test "the catalog seam agrees with the model on directory_listing? and native_priced?" do
     %w[test-image-model test-priced-image-model test-transcribe test-speak
-       test-video-model test-unpriced-video-model].each do |slug|
+       test-rerank test-video-model test-unpriced-video-model].each do |slug|
       entry = PriceCatalog.model(slug)
       model = AiModel.find_by!(slug: slug)
       assert_equal model.directory_listing?, entry.directory_listing?, slug

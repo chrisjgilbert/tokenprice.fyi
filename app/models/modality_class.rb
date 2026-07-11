@@ -7,24 +7,25 @@
 # function over two modality sets exposed as `ModalityClass.for(input:, output:)`.
 #
 # Most classes here bill per token — text, multimodal (non-text input → text
-# output), embedding, and the catch-all omnimodal (any_to_any). Four "directory
+# output), embedding, and the catch-all omnimodal (any_to_any). Five "directory
 # classes" are admitted without a per-token price: image_generation (native
 # per-image price), speech_to_text (native per-minute price), text_to_speech
-# (native per-1M-character price), and video_generation (native per-second /
-# per-clip price), each curated separately and reading "not yet tracked" until
-# then (see DIRECTORY_CLASSES, docs/IMAGE_CATEGORY_PLAN.md,
-# docs/SPEECH_TO_TEXT_TAB_PLAN.md, docs/TEXT_TO_SPEECH_TAB_PLAN.md, and
-# docs/VIDEO_GENERATION_TAB_PLAN.md). Other non-text-output media signatures
-# still degrade to :other, pending the same treatment.
+# (native per-1M-character price), video_generation (native per-second / per-clip
+# price), and rerank (native per-search / per-token price), each curated
+# separately and reading "not yet tracked" until then (see DIRECTORY_CLASSES and
+# the docs/*_TAB_PLAN.md / *_CATEGORY_PLAN.md files). Other non-text-output media
+# signatures still degrade to :other, pending the same treatment.
 class ModalityClass
   # Closed modality vocabulary. Anything outside this is dropped before
   # classifying so a stray token from the source can't reshape the signature.
-  VOCABULARY = %w[text image audio video file embedding].freeze
+  # `embedding` and `rerank` are synthetic output modalities: no provider reports
+  # them, we set them on the curated seeds to key those retrieval classes.
+  VOCABULARY = %w[text image audio video file embedding rerank].freeze
 
   # Classes we list without a per-token price: their native unit (per image, …)
   # is curated, so a row can be listed and filterable before it's priced. The
   # one place that knows which classes get the "not yet tracked" treatment.
-  DIRECTORY_CLASSES = %i[image_generation speech_to_text text_to_speech video_generation].freeze
+  DIRECTORY_CLASSES = %i[image_generation speech_to_text text_to_speech video_generation rerank].freeze
 
   def self.directory_class?(symbol) = DIRECTORY_CLASSES.include?(symbol.to_sym)
 
@@ -43,6 +44,7 @@ class ModalityClass
     text_to_speech:   "Text to speech",
     video_generation: "Video generation",
     embedding:        "Embedding",
+    rerank:           "Rerank",
     any_to_any:       "Omnimodal",
     other:            "Other"
   }.freeze
@@ -59,6 +61,7 @@ class ModalityClass
     text_to_speech:   "Text in, generated speech (audio) out.",
     video_generation: "Text (and optionally an image) in, a video out.",
     embedding:        "Text or an image in, a vector embedding out.",
+    rerank:           "A query and documents in, relevance scores out.",
     any_to_any:       "Produces several output modalities, including non-text.",
     other:            "Modality signatures that don't fit the categories above."
   }.freeze
@@ -121,6 +124,7 @@ class ModalityClass
     image_generation: -> { @output.include?("image") },
     video_generation: -> { @output.include?("video") },
     embedding:        -> { (@input - %w[image text]).empty? && @input.any? && embedding_output? },
+    rerank:           -> { @input == %w[text] && @output == %w[rerank] },
     any_to_any:       -> { @output.size > 1 && @output.any? { |m| m != "text" } }
   }.freeze
 end

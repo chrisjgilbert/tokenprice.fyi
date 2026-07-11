@@ -72,6 +72,25 @@ class ModelCategory
     columns: %i[name provider input dimensions context released]
   )
 
+  # Rerank completes the retrieval pair with embeddings. It's image-shaped, not
+  # embedding-shaped: pricing is split between per-search (Cohere) and per-1M-
+  # tokens (Voyage, Jina) with no comparable unit, so it uses the heterogeneous
+  # price_summary string + pricing_model badge rather than a sortable rate.
+  RERANK = Category.new(
+    slug: "rerank",
+    label: "Rerank",
+    param: "rerank",
+    path_name: :rerank,
+    sorts: %w[name provider released],
+    default_sort: "name",
+    default_dir: "asc",
+    title: "Reranker API pricing — tokenprice.fyi",
+    meta_description: "Reranker (relevance-scoring) model pricing, in each model's native unit — per search " \
+                      "or per 1M tokens. Native rates and pricing models, updated as providers publish them.",
+    matcher: ->(mc) { mc == :rerank },
+    columns: %i[name provider pricing released]
+  )
+
   # Speech-to-text (transcription) bills against audio duration, not tokens, so
   # the comparable axis is a native per-minute rate (`native_price_usd`, a numeric
   # single-unit price that sorts). The default sort is cheapest per minute first.
@@ -143,7 +162,7 @@ class ModelCategory
     columns: %i[name provider pricing released]
   )
 
-  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, TEXT_TO_SPEECH, IMAGE, VIDEO_GENERATION ].freeze
+  ALL = [ LANGUAGE, EMBEDDINGS, RERANK, SPEECH_TO_TEXT, TEXT_TO_SPEECH, IMAGE, VIDEO_GENERATION ].freeze
 
   BY_PARAM = ALL.index_by(&:param).freeze
 
