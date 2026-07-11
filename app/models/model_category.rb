@@ -118,8 +118,8 @@ class ModelCategory
     default_sort: "name",
     default_dir: "asc",
     title: "Video generation API pricing — tokenprice.fyi",
-    meta_description: "Video generation model pricing, billed per second of video rather than per token. " \
-                      "Native rates and pricing models, updated as providers publish them.",
+    meta_description: "Video generation model pricing in each model's native units — per second, per clip, " \
+                      "in credits, or in tokens. Native rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :video_generation },
     columns: %i[name provider pricing released]
   )

@@ -1,9 +1,10 @@
 require "test_helper"
 
 class ModalityClassTest < ActiveSupport::TestCase
-  # The signature → class table. image_generation is a directory class (any
-  # image output); other non-text-output media signatures (audio, video) still
-  # degrade to :other, pending the same treatment. [input, output, expected]
+  # The signature → class table. image_generation and video_generation are
+  # directory classes (any image / video output); other non-text-output media
+  # signatures (audio) still degrade to :other, pending the same treatment.
+  # [input, output, expected]
   TAXONOMY = [
     [ %w[text],              %w[text],       :text ],
     [ %w[image text],        %w[text],       :multimodal ],
