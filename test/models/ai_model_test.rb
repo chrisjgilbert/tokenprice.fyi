@@ -171,6 +171,29 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal "$0.006 /min", ai_models(:stt_model).price_headline
   end
 
+  test "a curated-price video row is native-priced and listed, not a directory_listing" do
+    model = ai_models(:video_priced)
+
+    assert_equal :video_generation, model.modality_class
+    assert model.video_generation?
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert model.native_priced?, "a curated price_summary makes it natively priced"
+    assert_not model.directory_listing?, "a native price means it's not awaiting one"
+    assert_not model.priced?, "no price point"
+    assert_equal "$0.05 / sec", model.price_headline
+    assert_equal "Per second", model.pricing_model_label
+  end
+
+  test "a price-less video row is listed as a directory_listing awaiting its price" do
+    model = ai_models(:video_unpriced)
+
+    assert model.video_generation?
+    assert_includes AiModel.listed, model
+    assert model.directory_listing?
+    assert_not model.native_priced?
+  end
+
   test "price_headline falls back to price_summary for a string-native row" do
     assert_equal "$0.04 / image", ai_models(:image_priced).price_headline
   end

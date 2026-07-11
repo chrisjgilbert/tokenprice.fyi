@@ -275,11 +275,12 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "the index renders a category tab strip with all families and their counts, language active" do
     get root_url
     assert_response :success
-    assert_select ".tp-tabs .tp-tab", count: 4
+    assert_select ".tp-tabs .tp-tab", count: 5
     assert_select ".tp-tabs .tp-tab", text: /Language models/
     assert_select ".tp-tabs .tp-tab", text: /Embeddings/
     assert_select ".tp-tabs .tp-tab", text: /Speech to text/
     assert_select ".tp-tabs .tp-tab", text: /Image generation/
+    assert_select ".tp-tabs .tp-tab", text: /Video generation/
     # The current tab is the language one and carries aria-current.
     assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Language models/
     language = ModelCategory.for("language")
@@ -360,11 +361,13 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /Guide Sonnet Fixture/
-    # Image-generation, embedding and speech-to-text rows moved to their own tabs.
+    # Image, embedding, speech-to-text and video rows moved to their own tabs.
     assert_select "tbody td", text: /Test Image Model/, count: 0
     assert_select "tbody td", text: /Test Priced Image Model/, count: 0
     assert_select "tbody td", text: /Test Embedding Model/, count: 0
     assert_select "tbody td", text: /Test Transcribe/, count: 0
+    assert_select "tbody td", text: /Test Video Model/, count: 0
+    assert_select "tbody td", text: /Test Unpriced Video Model/, count: 0
   end
 
   test "the embeddings tab lists embedding models with an input and dimensions column, no output or pricing" do
@@ -454,6 +457,50 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
 
   test "the speech-to-text tab hides the tier facet but keeps search and provider facets" do
     get speech_to_text_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
+  end
+
+  test "the video tab lists video models with a Pricing column, no per-token headers" do
+    get video_generation_url
+    assert_response :success
+    assert_select "tbody td", text: /Test Video Model/
+    assert_select "thead th", text: /Pricing/
+    assert_select "thead th", text: %r{Input /1M}, count: 0
+    assert_select "thead th", text: /Context/, count: 0
+    # The curated per-second price shows as a real value (image-style summary).
+    assert_select "tbody td", text: %r{\$0\.05 / sec}
+    # A price-less video row reads "not yet tracked", never a dash or $0.
+    assert_select "td.tp-price-untracked", text: /not yet tracked/i
+    # Text, embedding and image rows live on their own tabs, not here.
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+    assert_select "tbody td", text: /Test Image Model/, count: 0
+    # The video tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Video generation/
+  end
+
+  test "the video tab canonicalizes to its own path and carries video SEO" do
+    get video_generation_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", video_generation_url
+    assert_select "title", /video/i
+    assert_select "meta[name=description][content*=?]", "per second"
+  end
+
+  test "video-tab sort links stay on the video path and sorting by name returns 200" do
+    get video_generation_url
+    assert_response :success
+    assert_select "thead a[href*=?]", "/video-generation"
+
+    get video_generation_url(sort: "name", dir: "asc")
+    assert_response :success
+    assert_select "tbody td", text: /Test Video Model/
+  end
+
+  test "the video tab hides the tier facet but keeps search and provider facets" do
+    get video_generation_url
     assert_response :success
     assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
