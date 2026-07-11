@@ -25,10 +25,10 @@ class SiteNavigationTest < ApplicationSystemTestCase
     find("button.tp-nav-toggle").click
 
     within ".tp-m-panel" do
-      click_on "Compare"
+      click_on "News"
     end
 
-    assert_current_path compare_path
-    assert_selector ".sel-btn-name"
+    assert_current_path news_path
+    assert_selector "h1.news-h1"
   end
 end

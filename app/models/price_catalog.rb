@@ -126,6 +126,23 @@ class PriceCatalog
       models.find { |e| e.slug == slug }
     end
 
+    # Recent price steps across the listed catalog, newest first — the homepage
+    # "recent price changes" strip. `within` bounds staleness so a quiet stretch
+    # shows nothing rather than a month-old move; `limit` caps the strip. Only
+    # models with a snapshot inside the window can have a move to show, so the
+    # candidate set is narrowed in SQL first — the strip never loads the whole
+    # catalog's price history just to surface a handful of moves.
+    def recent_price_moves(limit: 6, within: 30.days)
+      scope = AiModel.listed
+      if within
+        repriced = PricePoint.where(effective_on: (Date.current - within)..).select(:ai_model_id)
+        scope = scope.where(id: repriced)
+      end
+      scope.includes(:provider, :price_points)
+        .filter_map { |m| m.latest_move(within: within) }
+        .sort_by(&:effective_on).reverse.first(limit)
+    end
+
     # Every frontier model ever tracked — legacy, retired and suspended included —
     # as catalog Entries. The public `models` list hides superseded rows, but a
     # historical series like the flagship-price timeline needs them: a retired

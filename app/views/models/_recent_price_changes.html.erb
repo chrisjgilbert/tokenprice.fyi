@@ -1,0 +1,139 @@
+<%# Recent price changes across the catalog — the web home for the Slack
+    price-moves digest. Each row is one model's latest step between consecutive
+    snapshots (PriceCatalog.recent_price_moves → PriceMove). %>
+<section class="tp-card changes" aria-label="Recent price changes">
+  <div class="changes-head">
+    <span class="changes-t"><%= icon(:trend_down, size: 16) %> Recent price changes</span>
+    <span class="changes-cnt"><%= moves.size %></span>
+    <time class="changes-stamp" datetime="<%= moves.first.effective_on.iso8601 %>">
+      <span class="changes-dot" aria-hidden="true"></span><%= fmt_date_full(moves.first.effective_on) %>
+    </time>
+  </div>
+
+  <% moves.each do |move| %>
+    <div class="c-row">
+      <div class="c-model">
+        <%= brand_square(slug: move.provider_slug, name: move.provider_name, accent: move.provider_accent, size: :sm) %>
+        <%= link_to move.model_name, model_path(move.model_slug), class: "c-name" %>
+        <span class="c-prov"><%= move.provider_name %></span>
+      </div>
+
+      <div class="c-legs">
+        <% move.deltas.each do |delta| %>
+          <span class="c-leg">
+            <span class="c-lab"><%= price_move_label(delta.dimension) %></span>
+            <span class="c-old"><%= usd_plain(delta.old) %></span>
+            <span class="c-arw" aria-hidden="true">→</span>
+            <span class="c-new"><%= usd_plain(delta.new) %></span>
+          </span>
+        <% end %>
+      </div>
+
+      <div class="c-chip">
+        <% headline = move.headline %>
+        <% if headline.pct&.nonzero? %>
+          <%= price_change_badge(headline.pct) %>
+          <% unless headline.dimension == :input %>
+            <span class="c-chip-dim"><%= price_move_label(headline.dimension) %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</section>
+
+<style>
+/* Card chrome comes from .tp-card; only the strip-specific bits here. */
+.changes {
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+.changes-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-slate-100);
+}
+.changes-t {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-slate-900);
+}
+.changes-t span { color: var(--color-amber-600); }
+.changes-cnt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-slate-500);
+  background: var(--color-slate-100);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+.changes-stamp {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-slate-400);
+}
+.changes-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-emerald-500);
+}
+
+.c-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) 1fr auto;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-slate-100);
+}
+.c-row:first-of-type { border-top: none; }
+.c-model { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.c-model .tp-prov-sq { width: 20px; height: 20px; border-radius: 6px; font-size: 9px; flex: none; }
+.c-model .tp-prov-sq.tp-prov-logo svg { width: 12px; height: 12px; }
+.c-name {
+  font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--color-slate-900); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.c-name:hover { color: var(--color-indigo-700); text-decoration: underline; text-underline-offset: 2px; }
+.c-prov { font-size: 12px; color: var(--color-slate-400); white-space: nowrap; flex: none; }
+
+.c-legs { display: flex; flex-wrap: wrap; gap: 6px 16px; min-width: 0; }
+.c-leg {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--color-slate-600);
+  white-space: nowrap;
+}
+.c-lab {
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--color-slate-400); margin-right: 6px;
+}
+.c-old { color: var(--color-slate-400); }
+.c-arw { color: var(--color-slate-300); margin: 0 3px; }
+.c-new { color: var(--color-slate-800); font-weight: 600; }
+
+.c-chip { justify-self: end; display: inline-flex; align-items: center; gap: 6px; }
+.c-chip-dim {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--color-slate-400);
+}
+
+@media (max-width: 640px) {
+  .c-row { grid-template-columns: 1fr auto; }
+  .c-legs { grid-column: 1; }
+  .c-chip { grid-row: 1; grid-column: 2; align-self: start; }
+}
+</style>

@@ -8,6 +8,23 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", /Claude Opus 4.8/
   end
 
+  test "homepage shows the recent price changes strip for a recent repricing" do
+    seed_recent_repricing!
+
+    get root_url
+    assert_response :success
+    assert_select "section.changes .c-name", text: /Stripper One/
+    assert_select "section.changes .c-leg", /\$2/  # old input rate on the strip
+  end
+
+  test "the recent price changes strip does not render on the embeddings tab" do
+    seed_recent_repricing!
+
+    get embeddings_url
+    assert_response :success
+    assert_select "section.changes", count: 0
+  end
+
   test "hero is the price-index hero with a pricing-explainer CTA and a trends CTA" do
     get root_url
     assert_response :success
@@ -720,5 +737,15 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dd", text: "Highly autonomous agentic work"
     assert_select "dt", text: "Best for"
     assert_select "dt", text: "Limitations"
+  end
+
+  private
+
+  def seed_recent_repricing!
+    provider = Provider.create!(name: "Strip Labs", slug: "strip-labs", accent: "#123456")
+    model = provider.ai_models.create!(name: "Stripper One", slug: "stripper-one",
+                                       tier: "mid", source: AiModel::MANUAL_SOURCE)
+    model.price_points.create!(effective_on: Date.current - 5, input_per_mtok: 2, output_per_mtok: 8)
+    model.price_points.create!(effective_on: Date.current - 1, input_per_mtok: 3, output_per_mtok: 8)
   end
 end

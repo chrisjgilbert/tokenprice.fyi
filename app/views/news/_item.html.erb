@@ -1,0 +1,20 @@
+<li class="n-item">
+  <div class="n-main">
+    <%= link_to item.url, class: "n-title", target: "_blank", rel: "noopener" do %>
+      <%= item.title %><span class="n-ext" aria-hidden="true"><%= icon(:external, size: 13) %></span>
+    <% end %>
+
+    <% if item.rationale.present? %>
+      <p class="n-rat"><%= item.rationale %></p>
+    <% end %>
+
+    <div class="n-meta">
+      <span class="n-src"><%= item.source %></span>
+      <% if item.market_event&.status == "published" %>
+        <%= link_to "In Events →", events_path, class: "n-linked" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="n-aside"><%= news_kind_badge(item.kind) %></div>
+</li>

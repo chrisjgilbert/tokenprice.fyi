@@ -189,4 +189,52 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_includes dates, Date.new(2026, 2, 1)
     assert_includes dates, Date.new(2026, 5, 31)
   end
+
+  # recent_price_moves ———————————————————————————————————————————————————
+
+  test "recent_price_moves surfaces a listed model's repricing, newest first" do
+    older  = moved_model(Date.current - 20, Date.current - 8)
+    newer  = moved_model(Date.current - 5,  Date.current - 1)
+
+    moves = PriceCatalog.recent_price_moves
+    slugs = moves.map(&:model_slug)
+
+    assert_includes slugs, newer.slug
+    assert_includes slugs, older.slug
+    assert_operator slugs.index(newer.slug), :<, slugs.index(older.slug),
+                    "the more recent move should come first"
+  end
+
+  test "recent_price_moves respects the limit" do
+    3.times { |i| moved_model(Date.current - (10 + i), Date.current - (1 + i)) }
+    assert_equal 2, PriceCatalog.recent_price_moves(limit: 2).size
+  end
+
+  test "recent_price_moves drops steps older than the window" do
+    moved_model(Date.current - 200, Date.current - 90)
+    fresh = moved_model(Date.current - 10, Date.current - 2)
+
+    slugs = PriceCatalog.recent_price_moves(within: 30.days).map(&:model_slug)
+    assert_includes slugs, fresh.slug
+    assert_equal 1, slugs.count { |s| s.start_with?("mover-") }
+  end
+
+  test "recent_price_moves excludes single-snapshot and retired models" do
+    slugs = PriceCatalog.recent_price_moves(within: nil).map(&:model_slug)
+    refute_includes slugs, "claude-opus-4-8"  # single snapshot — no move
+    refute_includes slugs, "claude-instant-1" # retired — not listed
+  end
+
+  private
+
+  def moved_model(launch_date, change_date)
+    provider = Provider.create!(name: "Mover Labs #{SecureRandom.hex(3)}",
+                                slug: "mover-labs-#{SecureRandom.hex(3)}", accent: "#123456")
+    model = provider.ai_models.create!(name: "Mover #{SecureRandom.hex(3)}",
+                                       slug: "mover-#{SecureRandom.hex(4)}",
+                                       tier: "mid", source: AiModel::MANUAL_SOURCE)
+    model.price_points.create!(effective_on: launch_date, input_per_mtok: 2, output_per_mtok: 8)
+    model.price_points.create!(effective_on: change_date, input_per_mtok: 3, output_per_mtok: 9)
+    model
+  end
 end
