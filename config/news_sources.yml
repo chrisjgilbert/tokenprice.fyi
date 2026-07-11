@@ -26,3 +26,20 @@ sources:
   - name: deepseek
     type: page_diff
     url: "https://www.deepseek.com/news"
+
+  # Launch-focused aggregator newsletters (all publish RSS). These widen the net
+  # to providers we don't poll first-party — xAI, Cohere, and the media/retrieval
+  # providers — and to provider-exclusive launches that never hit our own feeds
+  # (e.g. a Meta-Model-API-only release). Higher volume than the provider blogs;
+  # the Claude relevance classifier filters the noise.
+  - name: ainews
+    type: rss
+    url: "https://news.smol.ai/rss.xml"
+
+  - name: latent_space
+    type: rss
+    url: "https://www.latent.space/feed"
+
+  - name: tldr_ai
+    type: rss
+    url: "https://tldr.tech/api/rss/ai"
