@@ -1,12 +1,12 @@
 require "json"
 
-# Daily job: takes the last couple of days' relevant, unattached news_items
-# plus recent price-move context and asks Claude Opus to draft MarketEvent
-# candidates. Writes zero or more MarketEvent rows with status: "draft"; a human
-# approves or discards each draft in the admin review queue.
+# Runs every 6 hours: takes the last couple of days' relevant, unattached
+# news_items plus recent price-move context and asks Claude Opus to draft
+# MarketEvent candidates. Writes zero or more MarketEvent rows with status:
+# "draft"; a human approves or discards each draft in the admin review queue.
 # Nothing automated publishes an event or creates a PricePoint.
 #
-# Running daily means the same news could be re-presented on consecutive days,
+# Running on a schedule means the same news could be re-presented on a later run,
 # so dedup is layered:
 #   • Hard guard: every item fed to the curator is stamped curated_at, so a
 #     given news_item is only ever evaluated once — no re-feed, no duplicate.
@@ -19,7 +19,8 @@ class EventCurationJob < ApplicationJob
   MODEL      = "claude-opus-4-8"
   TOOL_NAME  = "submit_drafts"
   MAX_TOKENS = 2048
-  # A touch wider than the daily cadence so a single missed run doesn't drop news.
+  # Comfortably wider than the run cadence so missed runs don't drop news; the
+  # curated_at stamp prevents an item being re-presented regardless.
   LOOKBACK   = 2.days
 
   SYSTEM_PROMPT = <<~PROMPT.freeze

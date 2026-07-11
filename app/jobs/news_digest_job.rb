@@ -1,8 +1,9 @@
 # Daily job: posts any relevant, unnotified NewsItems to Slack and stamps
 # notified_at so they are not included in future digests.
-# Runs after NewsScanJob (5am) and ReleaseWatchJob have had a chance to
-# classify items. If SlackNotifier raises, notified_at is never set — items
-# will be retried in the next run.
+# Runs once a day, after the 6-hourly NewsScanJob and ReleaseWatchJob runs have
+# had a chance to classify items, so it drains a full day's pending pool in one
+# post. If SlackNotifier raises, notified_at is never set — items will be
+# retried in the next run.
 class NewsDigestJob < ApplicationJob
   queue_as :default
 
