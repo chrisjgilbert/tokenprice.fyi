@@ -91,6 +91,23 @@ class NewsItemTest < ActiveSupport::TestCase
     assert_equal dates.sort.reverse, dates
   end
 
+  # source_host ——————————————————————————————————————————————————————————
+
+  test "source_host returns the article's host, not how it was found" do
+    item = NewsItem.new(url: "https://www.arstechnica.com/some-post", source: "hn")
+    assert_equal "arstechnica.com", item.source_host
+  end
+
+  test "source_host resolves an HN-native post to its discussion host" do
+    item = NewsItem.new(url: "https://news.ycombinator.com/item?id=42", source: "hn")
+    assert_equal "news.ycombinator.com", item.source_host
+  end
+
+  test "source_host falls back to source when the URL has no host" do
+    item = NewsItem.new(url: "not a url", source: "hn")
+    assert_equal "hn", item.source_host
+  end
+
   # validations ——————————————————————————————————————————————————————————
 
   test "valid with url, title, and source" do

@@ -1,3 +1,5 @@
+require "uri"
+
 class NewsItem < ApplicationRecord
   include Classifiable
 
@@ -6,6 +8,19 @@ class NewsItem < ApplicationRecord
   validates :url,    presence: true
   validates :title,  presence: true
   validates :source, presence: true
+
+  # The outlet that actually published the story — the host of the article URL.
+  # `source` records only how we found the item ("hn" is HN Algolia search), so
+  # the feed credits where the reader lands (e.g. "arstechnica.com"), not the
+  # search that surfaced it. An HN-native post whose only URL is the discussion
+  # thread resolves to "news.ycombinator.com", which is its real home; `source`
+  # is the fallback only when the URL has no host or can't be parsed.
+  def source_host
+    host = URI.parse(url).host&.downcase&.delete_prefix("www.")
+    host.presence || source
+  rescue URI::InvalidURIError
+    source
+  end
 
   scope :pending_digest, -> { where(notified_at: nil).where("relevant = ? OR relevant IS NULL", true) }
   scope :recent,         -> { order(published_at: :desc) }
