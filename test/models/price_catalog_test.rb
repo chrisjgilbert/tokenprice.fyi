@@ -82,8 +82,20 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil entry.current
   end
 
+  test "a text-to-speech entry exposes its numeric per-1M-char native price and is not directory_listing?" do
+    entry = PriceCatalog.model("test-speak")
+
+    assert entry.native_priced?
+    assert_not entry.directory_listing?
+    assert_equal :text_to_speech, entry.modality_class
+    assert_in_delta 15.0, entry.native_price_usd, 1e-9
+    assert_equal "/1M chars", entry.native_price_unit
+    assert_equal "$15.00 /1M chars", entry.price_headline
+    assert_nil entry.current
+  end
+
   test "the catalog seam agrees with the model on directory_listing? and native_priced?" do
-    %w[test-image-model test-priced-image-model test-transcribe
+    %w[test-image-model test-priced-image-model test-transcribe test-speak
        test-video-model test-unpriced-video-model].each do |slug|
       entry = PriceCatalog.model(slug)
       model = AiModel.find_by!(slug: slug)

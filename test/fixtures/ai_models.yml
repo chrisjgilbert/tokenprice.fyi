@@ -152,6 +152,25 @@ stt_model:
   native_price_unit: "/min"
   description: Audio-in, transcript-out model priced per minute.
 
+# A text-to-speech directory listing: text in, generated speech out, priced per
+# 1M characters of input text (the STT-shaped numeric native price). modality_class
+# set explicitly (fixtures bypass the derive callback).
+tts_model:
+  provider: anthropic
+  name: Test Speak
+  slug: test-speak
+  tier: mid
+  status: active
+  source: manual
+  modality_class: text_to_speech
+  input_modalities:
+    - text
+  output_modalities:
+    - audio
+  native_price_usd: 15.0
+  native_price_unit: "/1M chars"
+  description: Text-in, speech-out model priced per 1M characters.
+
 # A video-generation directory listing WITH curated native pricing: priced per
 # second (a heterogeneous price_summary string, image-style — no native_price_usd,
 # so the tab is not price-sortable). modality_class set explicitly (fixtures

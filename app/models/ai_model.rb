@@ -157,6 +157,9 @@ class AiModel < ApplicationRecord
   # Audio in, a text transcript out — priced per minute of audio.
   def speech_to_text? = modality_class == :speech_to_text
 
+  # Text in, generated speech out — priced per 1M characters of input text.
+  def text_to_speech? = modality_class == :text_to_speech
+
   # Text (and optionally an image) in, a video out — priced per second or per
   # clip, often tiered by resolution/duration/audio.
   def video_generation? = modality_class == :video_generation

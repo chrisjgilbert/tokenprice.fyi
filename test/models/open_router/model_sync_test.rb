@@ -617,17 +617,30 @@ module OpenRouter
       assert_equal 1.0, model.current_price.input_per_mtok
     end
 
+    test "a text-to-speech row is admitted as a price-less directory listing" do
+      # Text-only in, audio out is synthesis — a directory class now — so a
+      # price-less TTS row is admitted and listed as "not yet tracked", like image.
+      result = sync([ or_model(id: "someco/tts-1", name: "SomeCo: TTS 1",
+                               prompt: "0", completion: "0",
+                               input_modalities: [ "text" ], output_modalities: [ "audio" ]) ])
+
+      assert_equal 1, result.created
+      model = AiModel.find_by!(openrouter_id: "someco/tts-1")
+      assert_equal :text_to_speech, model.modality_class
+      assert model.directory_listing?
+    end
+
     test "a non-directory media row with no price is still skipped" do
-      # An audio-output (TTS) row degrades to :other — not a directory class yet —
-      # so with no usable price it's skipped rather than admitted price-less.
+      # A multi-output non-text signature (text + audio) is omnimodal, not a
+      # directory class, so with no usable price it's skipped rather than admitted.
       result = assert_no_difference("AiModel.count") do
-        sync([ or_model(id: "someco/tts-1", name: "SomeCo: TTS 1",
+        sync([ or_model(id: "someco/omni-1", name: "SomeCo: Omni 1",
                         prompt: "0", completion: "0",
-                        output_modalities: [ "audio" ]) ])
+                        input_modalities: [ "text" ], output_modalities: [ "text", "audio" ]) ])
       end
 
       assert_equal 1, result.skipped
-      assert_nil AiModel.find_by(openrouter_id: "someco/tts-1")
+      assert_nil AiModel.find_by(openrouter_id: "someco/omni-1")
     end
 
     test "a text-output row with only a partial token price is skipped, not mislabelled" do

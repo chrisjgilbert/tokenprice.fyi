@@ -5,6 +5,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.for("language").slug
     assert_equal "embeddings", ModelCategory.for("embeddings").slug
     assert_equal "speech-to-text", ModelCategory.for("speech-to-text").slug
+    assert_equal "text-to-speech", ModelCategory.for("text-to-speech").slug
     assert_equal "image", ModelCategory.for("image").slug
     assert_equal "video", ModelCategory.for("video").slug
   end
@@ -16,8 +17,8 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.default.slug
   end
 
-  test "all is the ordered tab strip: language, embeddings, speech-to-text, image, video" do
-    assert_equal %w[language embeddings speech-to-text image video], ModelCategory.all.map(&:slug)
+  test "all is the ordered tab strip: language, embeddings, then the audio and visual pairs" do
+    assert_equal %w[language embeddings speech-to-text text-to-speech image video], ModelCategory.all.map(&:slug)
   end
 
   test "each non-language category claims its class; language is what none claim" do
@@ -45,6 +46,12 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute video.member?(:text)
     refute language.member?(:video_generation)
 
+    tts = ModelCategory.for("text-to-speech")
+    assert tts.member?(:text_to_speech)
+    refute tts.member?(:speech_to_text)
+    refute tts.member?(:text)
+    refute language.member?(:text_to_speech)
+
     # Language claims only what no other category matches — not image or embedding.
     refute language.member?(:image_generation)
     refute language.member?(:embedding)
@@ -60,6 +67,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute ModelCategory.unclaimed?(:embedding)
     refute ModelCategory.unclaimed?(:image_generation)
     refute ModelCategory.unclaimed?(:speech_to_text)
+    refute ModelCategory.unclaimed?(:text_to_speech)
     refute ModelCategory.unclaimed?(:video_generation)
   end
 
@@ -67,6 +75,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal %i[name tier input output cached context], ModelCategory.for("language").columns
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
+    assert_equal %i[name provider native_price released], ModelCategory.for("text-to-speech").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("image").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("video").columns
 
@@ -74,14 +83,25 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal 8, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
     assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
+    assert_equal 6, ModelCategory.for("text-to-speech").table_colspan
     assert_equal 6, ModelCategory.for("image").table_colspan
     assert_equal 6, ModelCategory.for("video").table_colspan
 
     assert ModelCategory.for("language").shows_tier_facet
     refute ModelCategory.for("embeddings").shows_tier_facet
     refute ModelCategory.for("speech-to-text").shows_tier_facet
+    refute ModelCategory.for("text-to-speech").shows_tier_facet
     refute ModelCategory.for("image").shows_tier_facet
     refute ModelCategory.for("video").shows_tier_facet
+  end
+
+  test "the text-to-speech category ranks cheapest per-1M-char first with synthesis SEO" do
+    tts = ModelCategory.for("text-to-speech")
+    assert_equal "native_price", tts.default_sort
+    assert_equal "asc", tts.default_dir
+    assert_includes tts.sorts, "native_price"
+    assert_match(/text-to-speech/i, tts.title)
+    assert_match(/per 1M characters/i, tts.meta_description)
   end
 
   test "the video category is image-shaped: pricing column, non-price sorts, video SEO" do

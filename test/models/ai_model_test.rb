@@ -171,6 +171,19 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal "$0.006 /min", ai_models(:stt_model).price_headline
   end
 
+  test "a text-to-speech row is native-priced per 1M characters and listed, not a directory_listing" do
+    model = ai_models(:tts_model)
+
+    assert_equal :text_to_speech, model.modality_class
+    assert model.text_to_speech?
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert model.native_priced?
+    assert_not model.directory_listing?
+    assert_not model.priced?
+    assert_equal "$15.00 /1M chars", model.price_headline
+  end
+
   test "a curated-price video row is native-priced and listed, not a directory_listing" do
     model = ai_models(:video_priced)
 

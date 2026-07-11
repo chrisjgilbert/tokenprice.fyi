@@ -1,10 +1,10 @@
 require "test_helper"
 
 class ModalityClassTest < ActiveSupport::TestCase
-  # The signature → class table. image_generation and video_generation are
-  # directory classes (any image / video output); other non-text-output media
-  # signatures (audio) still degrade to :other, pending the same treatment.
-  # [input, output, expected]
+  # The signature → class table. image_generation, video_generation, and
+  # text_to_speech are directory classes; audio out from text-only input is
+  # synthesis (text_to_speech), audio in-and-out (voice conversion) still
+  # degrades to :other. [input, output, expected]
   TAXONOMY = [
     [ %w[text],              %w[text],       :text ],
     [ %w[image text],        %w[text],       :multimodal ],
@@ -25,13 +25,16 @@ class ModalityClassTest < ActiveSupport::TestCase
     [ %w[text],              %w[video],      :video_generation ],
     [ %w[image text],        %w[video],      :video_generation ],
     [ %w[text video],        %w[text],       :multimodal ],
-    # Non-image, non-video, non-text output still degrades to :other for now.
-    [ %w[text],              %w[audio],      :other ],
     # Audio-only input, text output is transcription — speech_to_text, decided
     # before multimodal. A chat model that also takes text ([text, audio]) stays
     # multimodal.
     [ %w[audio],             %w[text],       :speech_to_text ],
     [ %w[audio text],        %w[text],       :multimodal ],
+    # Text-only in, audio out is synthesis — text_to_speech, the mirror of
+    # speech_to_text. Audio in-and-out ([text, audio] input) is voice conversion,
+    # not synthesis, so it stays :other.
+    [ %w[text],              %w[audio],      :text_to_speech ],
+    [ %w[audio text],        %w[audio],      :other ],
     # A multi-output non-text signature with no image still catches any_to_any.
     [ %w[text],              %w[text audio], :any_to_any ]
   ].freeze
@@ -64,6 +67,17 @@ class ModalityClassTest < ActiveSupport::TestCase
     assert_equal "Video generation", ModalityClass.label(:video_generation)
     assert ModalityClass.directory_class?(:video_generation)
     assert ModalityClass.directory_class?("video_generation")
+  end
+
+  test "text to speech is labelled and marked a directory class" do
+    assert_equal "Text to speech", ModalityClass.label(:text_to_speech)
+    assert ModalityClass.directory_class?(:text_to_speech)
+    assert ModalityClass.directory_class?("text_to_speech")
+  end
+
+  test "text-only input to audio classifies as text_to_speech; audio in-and-out stays other" do
+    assert_equal :text_to_speech, ModalityClass.for(input: %w[text], output: %w[audio])
+    assert_equal :other, ModalityClass.for(input: %w[text audio], output: %w[audio])
   end
 
   test "video output classifies as video_generation; video input stays multimodal" do

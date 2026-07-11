@@ -90,6 +90,25 @@ class ModelCategory
     columns: %i[name provider native_price released]
   )
 
+  # Text-to-speech (synthesis) is speech-to-text-shaped: it bills predominantly
+  # per character of input text, which normalizes to a comparable, sortable
+  # native rate — USD per 1M characters — so it reuses the same numeric
+  # native_price column, sort, and sink. Cheapest per 1M chars first.
+  TEXT_TO_SPEECH = Category.new(
+    slug: "text-to-speech",
+    label: "Text to speech",
+    param: "text-to-speech",
+    path_name: :text_to_speech,
+    sorts: %w[native_price name provider released],
+    default_sort: "native_price",
+    default_dir: "asc",
+    title: "Text-to-speech API pricing, per model — tokenprice.fyi",
+    meta_description: "Text-to-speech (speech synthesis) model pricing, billed per 1M characters of input text. " \
+                      "Native per-character rates across providers, updated as they publish them.",
+    matcher: ->(mc) { mc == :text_to_speech },
+    columns: %i[name provider native_price released]
+  )
+
   IMAGE = Category.new(
     slug: "image",
     label: "Image generation",
@@ -124,7 +143,7 @@ class ModelCategory
     columns: %i[name provider pricing released]
   )
 
-  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, IMAGE, VIDEO_GENERATION ].freeze
+  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, TEXT_TO_SPEECH, IMAGE, VIDEO_GENERATION ].freeze
 
   BY_PARAM = ALL.index_by(&:param).freeze
 

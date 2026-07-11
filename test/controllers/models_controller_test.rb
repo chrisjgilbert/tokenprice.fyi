@@ -264,10 +264,11 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "the index renders a category tab strip with all families and their counts, language active" do
     get root_url
     assert_response :success
-    assert_select ".tp-tabs .tp-tab", count: 5
+    assert_select ".tp-tabs .tp-tab", count: 6
     assert_select ".tp-tabs .tp-tab", text: /Language models/
     assert_select ".tp-tabs .tp-tab", text: /Embeddings/
     assert_select ".tp-tabs .tp-tab", text: /Speech to text/
+    assert_select ".tp-tabs .tp-tab", text: /Text to speech/
     assert_select ".tp-tabs .tp-tab", text: /Image generation/
     assert_select ".tp-tabs .tp-tab", text: /Video generation/
     # The current tab is the language one and carries aria-current.
@@ -350,11 +351,13 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tbody td", text: /Claude Opus 4.8/
     assert_select "tbody td", text: /Guide Sonnet Fixture/
-    # Image, embedding, speech-to-text and video rows moved to their own tabs.
+    # Image, embedding, speech-to-text, text-to-speech and video rows moved to
+    # their own tabs.
     assert_select "tbody td", text: /Test Image Model/, count: 0
     assert_select "tbody td", text: /Test Priced Image Model/, count: 0
     assert_select "tbody td", text: /Test Embedding Model/, count: 0
     assert_select "tbody td", text: /Test Transcribe/, count: 0
+    assert_select "tbody td", text: /Test Speak/, count: 0
     assert_select "tbody td", text: /Test Video Model/, count: 0
     assert_select "tbody td", text: /Test Unpriced Video Model/, count: 0
   end
@@ -490,6 +493,49 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
 
   test "the video tab hides the tier facet but keeps search and provider facets" do
     get video_generation_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
+  end
+
+  test "the text-to-speech tab lists synthesis models with a per-1M-char Price column, no per-token headers" do
+    get text_to_speech_url
+    assert_response :success
+    assert_select "tbody td", text: /Test Speak/
+    assert_select "thead th", text: /Price/
+    assert_select "thead th", text: %r{Input /1M}, count: 0
+    assert_select "thead th", text: /Context/, count: 0
+    # The native per-1M-char rate renders through price_headline.
+    assert_select "tbody td", text: %r{\$15\.00 /1M chars}
+    # Transcription, embedding and image rows live on their own tabs, not here.
+    assert_select "tbody td", text: /Test Transcribe/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+    # The text-to-speech tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Text to speech/
+  end
+
+  test "the text-to-speech tab canonicalizes to its own path and carries synthesis SEO" do
+    get text_to_speech_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", text_to_speech_url
+    assert_select "title", /text-to-speech/i
+    assert_select "meta[name=description][content*=?]", "per 1M characters"
+  end
+
+  test "text-to-speech sort links stay on its path and default to cheapest per 1M chars" do
+    get text_to_speech_url
+    assert_response :success
+    assert_select "thead a[href*=?]", "/text-to-speech"
+    assert_select "input[type=hidden][name=sort]", count: 0
+
+    get text_to_speech_url(sort: "native_price", dir: "asc")
+    assert_response :success
+    assert_select "tbody td", text: /Test Speak/
+  end
+
+  test "the text-to-speech tab hides the tier facet but keeps search and provider facets" do
+    get text_to_speech_url
     assert_response :success
     assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
