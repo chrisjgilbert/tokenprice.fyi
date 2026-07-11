@@ -68,6 +68,12 @@ aliases:
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+  # Load db/seeds.rb into production — the curated categories (image, embeddings,
+  # speech, TTS, video) reach prod this way, since deploys migrate but don't seed.
+  # Idempotent (upserts by slug). See docs/DATA_MAINTENANCE.md.
+  seed: app exec --reuse "bin/rails db:seed"
+  # Report curated price freshness by category, flagging stale/undated/unpriced.
+  staleness: app exec --reuse "bin/rails pricing:staleness"
 
 # Use a persistent storage volume for sqlite database files and local Active Storage files.
 # Recommended to change this to a mounted volume path that is backed up off server.
