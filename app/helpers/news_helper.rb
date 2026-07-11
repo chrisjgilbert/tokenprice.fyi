@@ -9,4 +9,9 @@ module NewsHelper
 
     content_tag(:span, label, class: "tp-badge tp-kind-#{kind}")
   end
+
+  # Short column labels for a PriceMove's dimensions on the recent-changes strip.
+  PRICE_MOVE_LABELS = { input: "in", output: "out", cached: "cached" }.freeze
+
+  def price_move_label(dimension) = PRICE_MOVE_LABELS[dimension]
 end

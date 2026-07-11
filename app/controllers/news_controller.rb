@@ -7,13 +7,17 @@ class NewsController < ApplicationController
   def index
     @page = [ params[:page].to_i, 1 ].max
 
-    # Freshness rides the news table's latest write AND the market-events table:
-    # an item's "In Events" link turns on when its event is published, which is a
-    # write to market_events, not to the news_item. Keying on both means that
-    # transition busts the cache instead of serving a stale 304. The page varies
+    # Freshness rides three tables: the news table's latest write; the
+    # market-events table (an item's "In Events" link turns on when its event is
+    # published — a market_events write, not a news_item one); and the price rows
+    # behind the recent-changes strip (PriceCatalog.last_modified). Any of those
+    # transitions busts the cache instead of serving a stale 304. The page varies
     # by page number, so that rides the etag too.
     return if catalog_fresh?(etag: [ :news, @page ],
-      last_modified: [ NewsItem.maximum(:updated_at), MarketEvent.maximum(:updated_at) ].compact.max)
+      last_modified: [ NewsItem.maximum(:updated_at), MarketEvent.maximum(:updated_at),
+                       PriceCatalog.last_modified ].compact.max)
+
+    @recent_price_moves = PriceCatalog.recent_price_moves
 
     # Fetch one past the page window so has_more needs no separate COUNT.
     window = @page * PER_PAGE
