@@ -11,6 +11,9 @@ class ModalityClassTest < ActiveSupport::TestCase
     [ %w[image text video],  %w[text],       :multimodal ],
     [ %w[text],              %w[embedding],  :embedding ],
     [ %w[image],             %w[embedding],  :embedding ],
+    # A query + documents in, relevance scores out — the synthetic `rerank`
+    # output modality keys the class (like `embedding`).
+    [ %w[text],              %w[rerank],     :rerank ],
     [ %w[file],              %w[text],       :multimodal ],
     [ %w[video],             %w[file],       :other ],
     # Any image output is image generation — text-to-image, image editing, and
@@ -73,6 +76,13 @@ class ModalityClassTest < ActiveSupport::TestCase
     assert_equal "Text to speech", ModalityClass.label(:text_to_speech)
     assert ModalityClass.directory_class?(:text_to_speech)
     assert ModalityClass.directory_class?("text_to_speech")
+  end
+
+  test "rerank is labelled, marked a directory class, and keyed on the synthetic modality" do
+    assert_equal "Rerank", ModalityClass.label(:rerank)
+    assert ModalityClass.directory_class?(:rerank)
+    assert_equal :rerank, ModalityClass.for(input: %w[text], output: %w[rerank])
+    assert_includes ModalityClass::VOCABULARY, "rerank"
   end
 
   test "text-only input to audio classifies as text_to_speech; audio in-and-out stays other" do

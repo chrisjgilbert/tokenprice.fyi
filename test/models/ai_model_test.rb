@@ -171,6 +171,20 @@ class AiModelTest < ActiveSupport::TestCase
     assert_equal "$0.006 /min", ai_models(:stt_model).price_headline
   end
 
+  test "a rerank row is native-priced on its per-search string and listed, not a directory_listing" do
+    model = ai_models(:rerank_model)
+
+    assert_equal :rerank, model.modality_class
+    assert model.rerank?
+    assert_empty model.price_points
+    assert_includes AiModel.listed, model
+    assert model.native_priced?
+    assert_not model.directory_listing?
+    assert_not model.priced?
+    assert_equal "$2.00 / 1K searches", model.price_headline
+    assert_equal "Per search", model.pricing_model_label
+  end
+
   test "a text-to-speech row is native-priced per 1M characters and listed, not a directory_listing" do
     model = ai_models(:tts_model)
 

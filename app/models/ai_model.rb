@@ -145,6 +145,7 @@ class AiModel < ApplicationRecord
     "per_megapixel"    => "Per megapixel",
     "per_second"       => "Per second",
     "per_video"        => "Per video",
+    "per_search"       => "Per search",
     "token_based"      => "Token-based",
     "credit_based"     => "Credits"
   }.freeze
@@ -159,6 +160,10 @@ class AiModel < ApplicationRecord
 
   # Text in, generated speech out — priced per 1M characters of input text.
   def text_to_speech? = modality_class == :text_to_speech
+
+  # A query and documents in, relevance scores out — priced per search or per
+  # 1M tokens.
+  def rerank? = modality_class == :rerank
 
   # Text (and optionally an image) in, a video out — priced per second or per
   # clip, often tiered by resolution/duration/audio.

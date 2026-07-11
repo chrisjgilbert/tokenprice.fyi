@@ -4,6 +4,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
   test "for resolves the known params" do
     assert_equal "language", ModelCategory.for("language").slug
     assert_equal "embeddings", ModelCategory.for("embeddings").slug
+    assert_equal "rerank", ModelCategory.for("rerank").slug
     assert_equal "speech-to-text", ModelCategory.for("speech-to-text").slug
     assert_equal "text-to-speech", ModelCategory.for("text-to-speech").slug
     assert_equal "image", ModelCategory.for("image").slug
@@ -17,8 +18,8 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.default.slug
   end
 
-  test "all is the ordered tab strip: language, embeddings, then the audio and visual pairs" do
-    assert_equal %w[language embeddings speech-to-text text-to-speech image video], ModelCategory.all.map(&:slug)
+  test "all is the ordered tab strip: language, the retrieval pair, then the audio and visual pairs" do
+    assert_equal %w[language embeddings rerank speech-to-text text-to-speech image video], ModelCategory.all.map(&:slug)
   end
 
   test "each non-language category claims its class; language is what none claim" do
@@ -52,6 +53,12 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute tts.member?(:text)
     refute language.member?(:text_to_speech)
 
+    rerank = ModelCategory.for("rerank")
+    assert rerank.member?(:rerank)
+    refute rerank.member?(:embedding)
+    refute rerank.member?(:text)
+    refute language.member?(:rerank)
+
     # Language claims only what no other category matches — not image or embedding.
     refute language.member?(:image_generation)
     refute language.member?(:embedding)
@@ -69,11 +76,13 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute ModelCategory.unclaimed?(:speech_to_text)
     refute ModelCategory.unclaimed?(:text_to_speech)
     refute ModelCategory.unclaimed?(:video_generation)
+    refute ModelCategory.unclaimed?(:rerank)
   end
 
   test "columns and table_colspan describe each category's table shape" do
     assert_equal %i[name tier input output cached context], ModelCategory.for("language").columns
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
+    assert_equal %i[name provider pricing released], ModelCategory.for("rerank").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("text-to-speech").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("image").columns
@@ -82,6 +91,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     # colspan = columns + the leading select and trailing go columns.
     assert_equal 8, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
+    assert_equal 6, ModelCategory.for("rerank").table_colspan
     assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
     assert_equal 6, ModelCategory.for("text-to-speech").table_colspan
     assert_equal 6, ModelCategory.for("image").table_colspan
@@ -89,6 +99,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
 
     assert ModelCategory.for("language").shows_tier_facet
     refute ModelCategory.for("embeddings").shows_tier_facet
+    refute ModelCategory.for("rerank").shows_tier_facet
     refute ModelCategory.for("speech-to-text").shows_tier_facet
     refute ModelCategory.for("text-to-speech").shows_tier_facet
     refute ModelCategory.for("image").shows_tier_facet

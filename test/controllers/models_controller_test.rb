@@ -264,9 +264,10 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "the index renders a category tab strip with all families and their counts, language active" do
     get root_url
     assert_response :success
-    assert_select ".tp-tabs .tp-tab", count: 6
+    assert_select ".tp-tabs .tp-tab", count: 7
     assert_select ".tp-tabs .tp-tab", text: /Language models/
     assert_select ".tp-tabs .tp-tab", text: /Embeddings/
+    assert_select ".tp-tabs .tp-tab", text: /Rerank/
     assert_select ".tp-tabs .tp-tab", text: /Speech to text/
     assert_select ".tp-tabs .tp-tab", text: /Text to speech/
     assert_select ".tp-tabs .tp-tab", text: /Image generation/
@@ -391,6 +392,38 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
 
   test "the embeddings tab hides the tier facet but keeps search and provider facets" do
     get embeddings_url
+    assert_response :success
+    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
+    assert_select ".tp-search input#q", count: 1
+    assert_select ".tp-facet-chip-label", text: "Provider"
+  end
+
+  test "the rerank tab lists rerankers with a Pricing column in native units, no per-token headers" do
+    get rerank_url
+    assert_response :success
+    assert_select "tbody td", text: /Test Rerank/
+    assert_select "thead th", text: /Pricing/
+    assert_select "thead th", text: %r{Input /1M}, count: 0
+    assert_select "thead th", text: /Context/, count: 0
+    # The curated per-search price shows as a real value (image-style summary).
+    assert_select "tbody td", text: %r{\$2\.00 / 1K searches}
+    # Embedding, text and image rows live on their own tabs, not here.
+    assert_select "tbody td", text: /Test Embedding Model/, count: 0
+    assert_select "tbody td", text: /Claude Opus 4.8/, count: 0
+    # The rerank tab is the current page.
+    assert_select ".tp-tabs .tp-tab[aria-current=page]", text: /Rerank/
+  end
+
+  test "the rerank tab canonicalizes to its own path and carries reranker SEO" do
+    get rerank_url
+    assert_response :success
+    assert_select "link[rel=canonical][href=?]", rerank_url
+    assert_select "title", /rerank/i
+    assert_select "meta[name=description][content*=?]", "per search"
+  end
+
+  test "the rerank tab hides the tier facet but keeps search and provider facets" do
+    get rerank_url
     assert_response :success
     assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1

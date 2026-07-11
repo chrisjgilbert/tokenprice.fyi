@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   # render models#index, resolved via the `category` param off the ModelCategory
   # registry.
   get "embeddings", to: "models#index", defaults: { category: "embeddings" }, as: :embeddings
+  get "rerank", to: "models#index", defaults: { category: "rerank" }, as: :rerank
   get "speech-to-text", to: "models#index", defaults: { category: "speech-to-text" }, as: :speech_to_text
   get "text-to-speech", to: "models#index", defaults: { category: "text-to-speech" }, as: :text_to_speech
   get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation

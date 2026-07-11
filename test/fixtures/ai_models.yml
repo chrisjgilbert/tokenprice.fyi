@@ -171,6 +171,28 @@ tts_model:
   native_price_unit: "/1M chars"
   description: Text-in, speech-out model priced per 1M characters.
 
+# A rerank directory listing: query + documents in, relevance scores out. Priced
+# natively (per search — a heterogeneous price_summary string, image-style).
+# modality_class set explicitly (fixtures bypass the derive callback); the
+# synthetic `rerank` output modality keys the class.
+rerank_model:
+  provider: anthropic
+  name: Test Rerank
+  slug: test-rerank
+  tier: mid
+  status: active
+  source: manual
+  modality_class: rerank
+  input_modalities:
+    - text
+  output_modalities:
+    - rerank
+  pricing_model: per_search
+  price_summary: "$2.00 / 1K searches"
+  price_source: "https://example.com/rerank-pricing"
+  priced_as_of: 2026-07-11
+  description: Query-and-documents-in, relevance-scores-out reranker priced per search.
+
 # A video-generation directory listing WITH curated native pricing: priced per
 # second (a heterogeneous price_summary string, image-style — no native_price_usd,
 # so the tab is not price-sortable). modality_class set explicitly (fixtures
