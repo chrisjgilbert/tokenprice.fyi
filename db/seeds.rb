@@ -54,7 +54,12 @@ providers = {
   genmo:       { name: "Genmo",       website: "https://www.genmo.ai",      accent: "#10B981", country: "United States", country_code: "US" },
   cartesia:    { name: "Cartesia",    website: "https://cartesia.ai",       accent: "#8B5CF6", country: "United States", country_code: "US" },
   rime:        { name: "Rime",        website: "https://rime.ai",           accent: "#F59E0B", country: "United States", country_code: "US" },
-  hume:        { name: "Hume AI",     website: "https://hume.ai",           accent: "#14B8A6", country: "United States", country_code: "US" }
+  hume:        { name: "Hume AI",     website: "https://hume.ai",           accent: "#14B8A6", country: "United States", country_code: "US" },
+  jina:        { name: "Jina AI",     website: "https://jina.ai",           accent: "#EC4899", country: "Germany", country_code: "DE" },
+  mixedbread:  { name: "Mixedbread",  website: "https://mixedbread.com",    accent: "#F59E0B", country: "Germany", country_code: "DE" },
+  zeroentropy: { name: "ZeroEntropy", website: "https://zeroentropy.dev",   accent: "#111827", country: "United States", country_code: "US" },
+  pinecone:    { name: "Pinecone",    website: "https://www.pinecone.io",   accent: "#1B17F5", country: "United States", country_code: "US" },
+  baai:        { name: "BAAI",        website: "https://www.baai.ac.cn",    accent: "#2563EB", country: "China", country_code: "CN" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -1478,6 +1483,91 @@ catalog = [
     native_price_usd: 150.0, native_price_unit: "/1M chars",
     price_detail: "Per-character, $0.15 per 1K chars ($150 per 1M) on entry tiers, dropping to $0.05 per 1K ($50 per 1M) on volume plans.",
     price_source: "https://hume.ai/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+
+  # ---- Rerank (relevance scoring) ---------------------------------------
+  # A query and documents in, relevance scores out. Keyed by a synthetic `rerank`
+  # output modality (no provider reports it; set here like embeddings' output). It
+  # bills in two non-comparable native units — per search (Cohere, Pinecone,
+  # Mixedbread) and per 1M tokens (Voyage, ZeroEntropy) — so, like image
+  # generation, each row carries a native `price_summary` string + pricing_model
+  # badge rather than a sortable rate (`prices: []`). Figures, sources, and
+  # confidence come from docs/RERANK_MODEL_PRICING.md; H/M rows are priced, and
+  # models whose rate isn't primary-confirmable (Jina, dashboard-gated;
+  # bge-reranker, no single hosted rate) are listed unpriced with a price_detail
+  # note. See docs/RERANK_TAB_PLAN.md.
+  {
+    provider: :cohere, name: "Rerank 3.5", tier: "mid", status: "active",
+    description: "Cohere's reranker (rerank-v3.5), scoring documents against a query.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "per_search", price_summary: "$2.00 / 1K searches",
+    price_detail: "1 search = 1 query + up to 100 documents (docs over 500 tokens are chunked, each chunk counting as a document). Cohere's page now shows only Model Vault instance pricing; $2/1K is AWS Bedrock-corroborated (OpenRouter resells the same model at $1/1K).",
+    price_source: "https://docs.cohere.com/docs/rerank", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :voyage, name: "rerank-2.5", tier: "mid", status: "active",
+    description: "Voyage AI's general reranker, billed per token of query and documents.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "token_based", price_summary: "$0.05 / 1M tokens",
+    price_detail: "Meters (query tokens × number of documents) + the sum of document tokens, so the document count drives the bill. First 200M tokens free.",
+    price_source: "https://docs.voyageai.com/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :voyage, name: "rerank-2.5-lite", tier: "mid", status: "active",
+    description: "Voyage AI's lighter, cheaper reranker.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "token_based", price_summary: "$0.02 / 1M tokens",
+    price_detail: "Same per-token metering as rerank-2.5. First 200M tokens free.",
+    price_source: "https://docs.voyageai.com/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :zeroentropy, name: "zerank-2", tier: "mid", status: "active",
+    description: "ZeroEntropy's reranker, billed per token; weights on Hugging Face.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "token_based", price_summary: "$0.025 / 1M tokens",
+    price_detail: "Meters query + document tokens. Weights are published on Hugging Face.",
+    price_source: "https://zeroentropy.dev/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :mixedbread, name: "mxbai-rerank-large-v2", tier: "mid", status: "active",
+    description: "Mixedbread's open-weight (Apache-2.0) cross-encoder reranker.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "per_search", price_summary: "$0.10 / 1K queries",
+    price_detail: "Open weights (Apache-2.0) — self-host $0. Mixedbread's managed platform bills reranking per query at $0.10/1K; not on Together's serverless API.",
+    price_source: "https://www.mixedbread.com/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :pinecone, name: "pinecone-rerank-v0", tier: "mid", status: "active",
+    description: "Pinecone's hosted reranker, via Pinecone Inference.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    pricing_model: "per_search", price_summary: "$2.00 / 1K requests",
+    price_detail: "Billed per rerank request (1 query + up to 100 documents, 512 tokens per query-doc pair), $2.00/1K — uniform across Pinecone's hosted rerankers.",
+    price_source: "https://www.pinecone.io/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :jina, name: "Reranker v3", tier: "mid", status: "active",
+    description: "Jina AI's flagship reranker (131K context, up to 64 documents).",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    # Rate not primary-confirmable: Jina bills rerankers from a shared token pool
+    # whose per-token price is dashboard/JS-gated. Weights are CC-BY-NC-4.0
+    # (non-commercial), so the hosted API is the commercial path.
+    price_detail: "Billed from Jina's shared token pool (same as its embeddings); the per-token rate isn't published on a fetchable page, so it isn't tracked here yet. Weights are CC-BY-NC-4.0 — non-commercial — so the hosted API is the commercial path.",
+    prices: []
+  },
+  {
+    provider: :baai, name: "bge-reranker-v2-m3", tier: "mid", status: "active",
+    description: "BAAI's open-weight (Apache-2.0) cross-encoder reranker, the canonical open baseline.",
+    input_modalities: %w[text], output_modalities: %w[rerank],
+    # No single canonical price: open weights, and hosted per-token rates vary by
+    # two orders of magnitude across providers, so no rate is asserted.
+    price_detail: "Open weights (Apache-2.0) — self-host $0. Hosted per-token rates vary widely by provider (roughly $0.01/1M and up), with no single canonical rate, so none is published here.",
     prices: []
   }
 ]
