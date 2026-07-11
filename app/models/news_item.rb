@@ -1,5 +1,3 @@
-require "uri"
-
 class NewsItem < ApplicationRecord
   include Classifiable
 
