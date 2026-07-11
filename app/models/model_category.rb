@@ -74,8 +74,8 @@ class ModelCategory
 
   # Rerank completes the retrieval pair with embeddings. It's image-shaped, not
   # embedding-shaped: pricing is split between per-search (Cohere) and per-1M-
-  # tokens (Voyage, Jina) with no comparable unit, so it uses the heterogeneous
-  # price_summary string + pricing_model badge rather than a sortable rate.
+  # tokens (Voyage, ZeroEntropy) with no comparable unit, so it uses the
+  # heterogeneous price_summary string + pricing_model badge, not a sortable rate.
   RERANK = Category.new(
     slug: "rerank",
     label: "Rerank",
