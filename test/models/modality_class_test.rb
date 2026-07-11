@@ -18,14 +18,19 @@ class ModalityClassTest < ActiveSupport::TestCase
     [ %w[text],              %w[image],      :image_generation ],
     [ %w[image text],        %w[image],      :image_generation ],
     [ %w[image text],        %w[image text], :image_generation ],
-    # Non-image, non-text output still degrades to :other for now.
+    # Any video output is video generation — text-to-video and image-to-video —
+    # symmetric to image generation. Video INPUT with text output is video
+    # understanding, which stays multimodal (below).
+    [ %w[text],              %w[video],      :video_generation ],
+    [ %w[image text],        %w[video],      :video_generation ],
+    [ %w[text video],        %w[text],       :multimodal ],
+    # Non-image, non-video, non-text output still degrades to :other for now.
     [ %w[text],              %w[audio],      :other ],
     # Audio-only input, text output is transcription — speech_to_text, decided
     # before multimodal. A chat model that also takes text ([text, audio]) stays
     # multimodal.
     [ %w[audio],             %w[text],       :speech_to_text ],
     [ %w[audio text],        %w[text],       :multimodal ],
-    [ %w[text],              %w[video],      :other ],
     # A multi-output non-text signature with no image still catches any_to_any.
     [ %w[text],              %w[text audio], :any_to_any ]
   ].freeze
@@ -52,6 +57,18 @@ class ModalityClassTest < ActiveSupport::TestCase
     assert_equal "Speech to text", ModalityClass.label(:speech_to_text)
     assert ModalityClass.directory_class?(:speech_to_text)
     assert ModalityClass.directory_class?("speech_to_text")
+  end
+
+  test "video generation is labelled and marked a directory class" do
+    assert_equal "Video generation", ModalityClass.label(:video_generation)
+    assert ModalityClass.directory_class?(:video_generation)
+    assert ModalityClass.directory_class?("video_generation")
+  end
+
+  test "video output classifies as video_generation; video input stays multimodal" do
+    assert_equal :video_generation, ModalityClass.for(input: %w[text], output: %w[video])
+    assert_equal :video_generation, ModalityClass.for(input: %w[image text], output: %w[video])
+    assert_equal :multimodal, ModalityClass.for(input: %w[text video], output: %w[text])
   end
 
   test "audio-only input to text classifies as speech_to_text before multimodal" do

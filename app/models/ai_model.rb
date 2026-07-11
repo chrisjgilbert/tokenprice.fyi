@@ -143,6 +143,8 @@ class AiModel < ApplicationRecord
     "per_image"        => "Per image",
     "per_image_tiered" => "Per image",
     "per_megapixel"    => "Per megapixel",
+    "per_second"       => "Per second",
+    "per_video"        => "Per video",
     "token_based"      => "Token-based",
     "credit_based"     => "Credits"
   }.freeze
@@ -154,6 +156,10 @@ class AiModel < ApplicationRecord
 
   # Audio in, a text transcript out — priced per minute of audio.
   def speech_to_text? = modality_class == :speech_to_text
+
+  # Text (and optionally an image) in, a video out — priced per second or per
+  # clip, often tiered by resolution/duration/audio.
+  def video_generation? = modality_class == :video_generation
 
   # The single display source for a native-priced row's headline price: the
   # numeric single-unit rate (speech-to-text's `$X /min`), else image's

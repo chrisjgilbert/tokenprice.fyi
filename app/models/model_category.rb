@@ -105,7 +105,26 @@ class ModelCategory
     columns: %i[name provider pricing released]
   )
 
-  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, IMAGE ].freeze
+  # Video generation is image-generation-shaped: a directory class with
+  # heterogeneous native pricing (per second, per clip, resolution/duration/audio
+  # tiers, credits), so it reuses image's column set, the :pricing cell, and the
+  # price_summary/pricing_model machinery rather than a sortable per-unit rate.
+  VIDEO_GENERATION = Category.new(
+    slug: "video",
+    label: "Video generation",
+    param: "video",
+    path_name: :video_generation,
+    sorts: %w[name provider released],
+    default_sort: "name",
+    default_dir: "asc",
+    title: "Video generation API pricing — tokenprice.fyi",
+    meta_description: "Video generation model pricing, billed per second of video rather than per token. " \
+                      "Native rates and pricing models, updated as providers publish them.",
+    matcher: ->(mc) { mc == :video_generation },
+    columns: %i[name provider pricing released]
+  )
+
+  ALL = [ LANGUAGE, EMBEDDINGS, SPEECH_TO_TEXT, IMAGE, VIDEO_GENERATION ].freeze
 
   BY_PARAM = ALL.index_by(&:param).freeze
 

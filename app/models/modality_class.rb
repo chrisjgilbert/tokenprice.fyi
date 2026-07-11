@@ -7,13 +7,14 @@
 # function over two modality sets exposed as `ModalityClass.for(input:, output:)`.
 #
 # Most classes here bill per token — text, multimodal (non-text input → text
-# output), embedding, and the catch-all omnimodal (any_to_any). Two "directory
+# output), embedding, and the catch-all omnimodal (any_to_any). Three "directory
 # classes" are admitted without a per-token price: image_generation (native
-# per-image price) and speech_to_text (native per-minute price), each curated
-# separately and reading "not yet tracked" until then (see DIRECTORY_CLASSES,
-# docs/IMAGE_CATEGORY_PLAN.md, and docs/SPEECH_TO_TEXT_TAB_PLAN.md). Other
-# non-text-output media signatures (TTS, video, …) still degrade to :other,
-# pending the same treatment.
+# per-image price), speech_to_text (native per-minute price), and
+# video_generation (native per-second / per-clip price), each curated separately
+# and reading "not yet tracked" until then (see DIRECTORY_CLASSES,
+# docs/IMAGE_CATEGORY_PLAN.md, docs/SPEECH_TO_TEXT_TAB_PLAN.md, and
+# docs/VIDEO_GENERATION_TAB_PLAN.md). Other non-text-output media signatures
+# (TTS, …) still degrade to :other, pending the same treatment.
 class ModalityClass
   # Closed modality vocabulary. Anything outside this is dropped before
   # classifying so a stray token from the source can't reshape the signature.
@@ -22,7 +23,7 @@ class ModalityClass
   # Classes we list without a per-token price: their native unit (per image, …)
   # is curated, so a row can be listed and filterable before it's priced. The
   # one place that knows which classes get the "not yet tracked" treatment.
-  DIRECTORY_CLASSES = %i[image_generation speech_to_text].freeze
+  DIRECTORY_CLASSES = %i[image_generation speech_to_text video_generation].freeze
 
   def self.directory_class?(symbol) = DIRECTORY_CLASSES.include?(symbol.to_sym)
 
@@ -38,6 +39,7 @@ class ModalityClass
     multimodal:       "Multimodal",
     image_generation: "Image generation",
     speech_to_text:   "Speech to text",
+    video_generation: "Video generation",
     embedding:        "Embedding",
     any_to_any:       "Omnimodal",
     other:            "Other"
@@ -52,6 +54,7 @@ class ModalityClass
     multimodal:       "Accepts images, audio, or other media as input; produces text.",
     image_generation: "Text (and optionally an image) in, an image out.",
     speech_to_text:   "Audio in, a text transcript out.",
+    video_generation: "Text (and optionally an image) in, a video out.",
     embedding:        "Text or an image in, a vector embedding out.",
     any_to_any:       "Produces several output modalities, including non-text.",
     other:            "Modality signatures that don't fit the categories above."
@@ -96,17 +99,21 @@ class ModalityClass
   # truthy match wins. speech_to_text sits before multimodal deliberately: an
   # audio-ONLY input is transcription, but a chat model that also takes text
   # ([text, audio]) is multimodal, so the narrower audio-only rule must run first.
-  # image_generation sits before any_to_any deliberately: a
-  # model that emits an image is doing image generation in the visitor's mental
-  # model whether or not it also emits text, so an image+text signature (e.g.
-  # Gemini's image model) lands in image_generation, not the omni catch-all.
-  # any_to_any is last: the catch for a signature producing several modalities
-  # including a non-text one.
+  # image_generation and video_generation sit before any_to_any deliberately: a
+  # model that emits an image or a video is doing generation in the visitor's
+  # mental model whether or not it also emits text, so an image+text (e.g.
+  # Gemini's image model) or text+video signature lands in the generation class,
+  # not the omni catch-all. Video output is generation; video *input* with text
+  # output is video understanding, which stays multimodal above (the audio-out /
+  # audio-in split, mirrored). The theoretical image+video dual-output edge
+  # matches image_generation first, which runs earlier. any_to_any is last: the
+  # catch for a signature producing several modalities including a non-text one.
   SIGNATURE_RULES = {
     text:             -> { @input == %w[text] && text_output? },
     speech_to_text:   -> { @input == %w[audio] && text_output? },
     multimodal:       -> { nontext_input? && text_output? },
     image_generation: -> { @output.include?("image") },
+    video_generation: -> { @output.include?("video") },
     embedding:        -> { (@input - %w[image text]).empty? && @input.any? && embedding_output? },
     any_to_any:       -> { @output.size > 1 && @output.any? { |m| m != "text" } }
   }.freeze

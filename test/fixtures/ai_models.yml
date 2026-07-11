@@ -152,6 +152,43 @@ stt_model:
   native_price_unit: "/min"
   description: Audio-in, transcript-out model priced per minute.
 
+# A video-generation directory listing WITH curated native pricing: priced per
+# second (a heterogeneous price_summary string, image-style — no native_price_usd,
+# so the tab is not price-sortable). modality_class set explicitly (fixtures
+# bypass the derive callback).
+video_priced:
+  provider: anthropic
+  name: Test Video Model
+  slug: test-video-model
+  tier: mid
+  status: active
+  source: manual
+  modality_class: video_generation
+  input_modalities:
+    - text
+  output_modalities:
+    - video
+  pricing_model: per_second
+  price_summary: "$0.05 / sec"
+  price_source: "https://example.com/video-pricing"
+  priced_as_of: 2026-07-01
+  description: Video-generation directory listing with curated per-second pricing.
+
+# A price-less video-generation directory listing — reads "not yet tracked".
+video_unpriced:
+  provider: anthropic
+  name: Test Unpriced Video Model
+  slug: test-unpriced-video-model
+  tier: mid
+  status: active
+  source: openrouter
+  modality_class: video_generation
+  input_modalities:
+    - text
+  output_modalities:
+    - video
+  description: Price-less video-generation directory listing.
+
 deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro

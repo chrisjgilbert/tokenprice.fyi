@@ -6,6 +6,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "embeddings", ModelCategory.for("embeddings").slug
     assert_equal "speech-to-text", ModelCategory.for("speech-to-text").slug
     assert_equal "image", ModelCategory.for("image").slug
+    assert_equal "video", ModelCategory.for("video").slug
   end
 
   test "for falls back to the language default for nil, blank, or unknown params" do
@@ -15,8 +16,8 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal "language", ModelCategory.default.slug
   end
 
-  test "all is the ordered tab strip, language then embeddings then speech-to-text then image" do
-    assert_equal %w[language embeddings speech-to-text image], ModelCategory.all.map(&:slug)
+  test "all is the ordered tab strip: language, embeddings, speech-to-text, image, video" do
+    assert_equal %w[language embeddings speech-to-text image video], ModelCategory.all.map(&:slug)
   end
 
   test "each non-language category claims its class; language is what none claim" do
@@ -38,6 +39,12 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute speech.member?(:text)
     refute language.member?(:speech_to_text)
 
+    video = ModelCategory.for("video")
+    assert video.member?(:video_generation)
+    refute video.member?(:image_generation)
+    refute video.member?(:text)
+    refute language.member?(:video_generation)
+
     # Language claims only what no other category matches — not image or embedding.
     refute language.member?(:image_generation)
     refute language.member?(:embedding)
@@ -53,6 +60,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute ModelCategory.unclaimed?(:embedding)
     refute ModelCategory.unclaimed?(:image_generation)
     refute ModelCategory.unclaimed?(:speech_to_text)
+    refute ModelCategory.unclaimed?(:video_generation)
   end
 
   test "columns and table_colspan describe each category's table shape" do
@@ -60,17 +68,31 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("image").columns
+    assert_equal %i[name provider pricing released], ModelCategory.for("video").columns
 
     # colspan = columns + the leading select and trailing go columns.
     assert_equal 8, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
     assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
     assert_equal 6, ModelCategory.for("image").table_colspan
+    assert_equal 6, ModelCategory.for("video").table_colspan
 
     assert ModelCategory.for("language").shows_tier_facet
     refute ModelCategory.for("embeddings").shows_tier_facet
     refute ModelCategory.for("speech-to-text").shows_tier_facet
     refute ModelCategory.for("image").shows_tier_facet
+    refute ModelCategory.for("video").shows_tier_facet
+  end
+
+  test "the video category is image-shaped: pricing column, non-price sorts, video SEO" do
+    video = ModelCategory.for("video")
+    assert_equal "name", video.default_sort
+    assert_equal "asc", video.default_dir
+    assert_equal %w[name provider released], video.sorts
+    refute_includes video.sorts, "input"
+    refute_includes video.sorts, "native_price"
+    assert_match(/video/i, video.title)
+    assert_match(/per second/i, video.meta_description)
   end
 
   test "the speech-to-text category ranks cheapest per-minute first with transcription SEO" do

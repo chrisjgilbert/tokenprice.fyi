@@ -62,8 +62,29 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil entry.input
   end
 
+  test "a video-generation entry exposes its curated per-second price string and is not directory_listing?" do
+    entry = PriceCatalog.model("test-video-model")
+
+    assert entry.native_priced?
+    assert_not entry.directory_listing?
+    assert_equal :video_generation, entry.modality_class
+    assert_equal "per_second", entry.pricing_model
+    assert_equal "$0.05 / sec", entry.price_headline
+    assert_nil entry.current
+    assert_nil entry.input
+  end
+
+  test "a price-less video entry is a directory_listing awaiting its price" do
+    entry = PriceCatalog.model("test-unpriced-video-model")
+
+    assert entry.directory_listing?
+    assert_not entry.native_priced?
+    assert_nil entry.current
+  end
+
   test "the catalog seam agrees with the model on directory_listing? and native_priced?" do
-    %w[test-image-model test-priced-image-model test-transcribe].each do |slug|
+    %w[test-image-model test-priced-image-model test-transcribe
+       test-video-model test-unpriced-video-model].each do |slug|
       entry = PriceCatalog.model(slug)
       model = AiModel.find_by!(slug: slug)
       assert_equal model.directory_listing?, entry.directory_listing?, slug

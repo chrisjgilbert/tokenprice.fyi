@@ -6,12 +6,14 @@ Rails.application.routes.draw do
   root "models#index"
 
   # The models table tabs by pricing family. Language is the root (per-token
-  # prices); embeddings (per input token) and image generation (native per-image
-  # pricing) each get their own indexable URL. All render models#index, resolved
-  # via the `category` param.
+  # prices); embeddings (per input token), speech to text (native per-minute),
+  # image generation, and video generation (native per-image / per-second) each
+  # get their own indexable URL. All render models#index, resolved via the
+  # `category` param off the ModelCategory registry.
   get "embeddings", to: "models#index", defaults: { category: "embeddings" }, as: :embeddings
   get "speech-to-text", to: "models#index", defaults: { category: "speech-to-text" }, as: :speech_to_text
   get "image-generation", to: "models#index", defaults: { category: "image" }, as: :image_generation
+  get "video-generation", to: "models#index", defaults: { category: "video" }, as: :video_generation
 
   resources :models, only: [ :index, :show ]
   resources :providers, only: [ :show ]
