@@ -4,12 +4,8 @@
       <%= item.title %><span class="n-ext" aria-hidden="true"><%= icon(:external, size: 13) %></span>
     <% end %>
 
-    <% if item.rationale.present? %>
-      <p class="n-rat"><%= item.rationale %></p>
-    <% end %>
-
     <div class="n-meta">
-      <span class="n-src"><%= item.source %></span>
+      <span class="n-src"><%= item.source_host %></span>
       <% if item.market_event&.status == "published" %>
         <%= link_to "In Events →", events_path, class: "n-linked" %>
       <% end %>

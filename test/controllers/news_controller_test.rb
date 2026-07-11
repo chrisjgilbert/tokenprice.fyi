@@ -22,12 +22,26 @@ class NewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section.changes .c-leg", /\$2/  # old input rate on the strip
   end
 
-  test "lists relevant items with their rationale and kind badge" do
+  test "lists relevant items with their kind badge" do
     get news_url
     assert_response :success
     assert_select ".n-title", text: /Introducing Claude Haiku 4.5/
-    assert_select ".n-rat",   text: /New Claude model release/
     assert_select ".tp-badge.tp-kind-release"
+  end
+
+  test "does not surface the classifier rationale on the public feed" do
+    get news_url
+    assert_response :success
+    assert_select ".n-rat", count: 0
+  end
+
+  test "attributes an item to the article's publisher, not how it was found" do
+    news_items(:anthropic_haiku_release).update!(source: "hn")
+
+    get news_url
+    assert_response :success
+    assert_select ".n-src", text: "anthropic.com"
+    assert_select ".n-src", text: /hn/i, count: 0
   end
 
   test "excludes irrelevant and unclassified items" do
