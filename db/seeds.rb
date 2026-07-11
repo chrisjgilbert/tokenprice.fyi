@@ -1342,9 +1342,6 @@ catalog = [
     provider: :openai, name: "gpt-4o-mini-tts", tier: "mid", status: "active",
     description: "OpenAI's steerable neural text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
-    # Token-billed ($0.60/1M text-input + $12/1M audio-output tokens) with no
-    # published per-character or per-minute rate, so no native price is asserted —
-    # a computed char estimate would be a fabrication (see the pricing doc).
     price_detail: "Token-billed — $0.60 per 1M text-input tokens plus $12.00 per 1M audio-output tokens. OpenAI publishes no per-character rate, so a per-1M-character price isn't derivable.",
     prices: []
   },
