@@ -44,7 +44,14 @@ providers = {
   gladia:      { name: "Gladia",      website: "https://www.gladia.io",    accent: "#7C3AED", country: "France", country_code: "FR" },
   rev:         { name: "Rev AI",      website: "https://www.rev.ai",       accent: "#111827", country: "United States", country_code: "US" },
   groq:        { name: "Groq",        website: "https://groq.com",         accent: "#F55036", country: "United States", country_code: "US" },
-  elevenlabs:  { name: "ElevenLabs",  website: "https://elevenlabs.io",    accent: "#111827", country: "United States", country_code: "US" }
+  elevenlabs:  { name: "ElevenLabs",  website: "https://elevenlabs.io",    accent: "#111827", country: "United States", country_code: "US" },
+  runway:      { name: "Runway",      website: "https://runwayml.com",      accent: "#111827", country: "United States", country_code: "US" },
+  kuaishou:    { name: "Kuaishou",    website: "https://kling.ai",          accent: "#0EA5E9", country: "China", country_code: "CN" },
+  pika:        { name: "Pika",        website: "https://pika.art",          accent: "#EC4899", country: "United States", country_code: "US" },
+  minimax:     { name: "MiniMax",     website: "https://www.minimax.io",    accent: "#F23F5D", country: "China", country_code: "CN" },
+  tencent:     { name: "Tencent",     website: "https://hunyuan.tencent.com", accent: "#0052D9", country: "China", country_code: "CN" },
+  lightricks:  { name: "Lightricks",  website: "https://www.lightricks.com", accent: "#6366F1", country: "Israel", country_code: "IL" },
+  genmo:       { name: "Genmo",       website: "https://www.genmo.ai",      accent: "#10B981", country: "United States", country_code: "US" }
 }.transform_values do |attrs|
   Provider.find_or_create_by!(slug: attrs[:name].parameterize) do |p|
     p.assign_attributes(attrs)
@@ -1130,6 +1137,172 @@ catalog = [
     native_price_usd: 0.00367, native_price_unit: "/min",
     price_detail: "Billed per audio minute, quoted at $0.22/hr batch. Scribe v2 Realtime is $0.39/hr. Add-ons: entity detection +$0.07/hr, keyterm prompting +$0.05/hr.",
     price_source: "https://elevenlabs.io/pricing/api", priced_as_of: "2026-07-06",
+    prices: []
+  },
+
+  # ---- Video generation (directory-first) -------------------------------
+  # Text (and optionally an image) in, a video out, so they classify as
+  # :video_generation and list under the "Video generation" category. Priced
+  # natively and heterogeneously — per second, per clip, by resolution/duration,
+  # in credits, or in tokens — so like image generation the native price is a
+  # curated `price_summary` string (image-style, no sortable per-unit rate) plus
+  # a `pricing_model` badge; they carry `prices: []`. Figures, sources, and
+  # confidence come from docs/VIDEO_MODEL_PRICING.md; only H/M-confidence rows are
+  # seeded, deprecated variants (Veo 2/3, Gen-3) omitted. Where a native USD rate
+  # genuinely isn't derivable (Luma Ray3.x credits), the row is left unpriced with
+  # a price_detail note. See docs/VIDEO_GENERATION_TAB_PLAN.md.
+  {
+    provider: :openai, name: "Sora 2", tier: "mid", status: "active",
+    description: "OpenAI's video generation model, via the video API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.10 / sec (720p)",
+    price_detail: "Billed per second, 720p only. A flat 50% batch discount applies.",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :openai, name: "Sora 2 Pro", tier: "mid", status: "active",
+    description: "OpenAI's higher-resolution video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.30–$0.70 / sec",
+    price_detail: "Billed per second by resolution — $0.30 (720p), $0.50 (1024p), $0.70 (1080p); 50% batch discount each tier.",
+    price_source: "https://developers.openai.com/api/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Veo 3.1", tier: "mid", status: "active",
+    description: "Google's flagship video generation model, via the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.40–$0.60 / sec",
+    price_detail: "Billed per second — $0.40 (720p/1080p), $0.60 (4K); audio is included in the rate.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Veo 3.1 Fast", tier: "mid", status: "active",
+    description: "Google's faster, cheaper Veo variant, via the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.10–$0.30 / sec",
+    price_detail: "Billed per second — $0.10 (720p), $0.12 (1080p), $0.30 (4K); audio included.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :google, name: "Veo 3.1 Lite", tier: "mid", status: "active",
+    description: "Google's cheapest Veo variant, via the Gemini API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.05–$0.08 / sec",
+    price_detail: "Billed per second — $0.05 (720p), $0.08 (1080p); audio included; no 4K tier.",
+    price_source: "https://ai.google.dev/gemini-api/docs/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :runway, name: "Gen-4 Turbo", tier: "mid", status: "active",
+    description: "Runway's fast video generation model, via the Runway API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.05 / sec",
+    price_detail: "Billed in API credits (1 credit = $0.01) at 5 credits/sec.",
+    price_source: "https://docs.dev.runwayml.com/guides/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :runway, name: "Gen-4.5", tier: "mid", status: "active",
+    description: "Runway's higher-quality video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.12 / sec",
+    price_detail: "Billed in API credits (1 credit = $0.01) at 12 credits/sec.",
+    price_source: "https://docs.dev.runwayml.com/guides/pricing", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :kuaishou, name: "Kling 2.5 Turbo Pro", tier: "mid", status: "active",
+    description: "Kuaishou's video generation model, served through fal.ai.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.07 / sec",
+    price_detail: "Via fal.ai: $0.35 base 5s plus $0.07 per additional second (≈ a flat $0.07/sec). Kling's own console pricing isn't primary-confirmed.",
+    price_source: "https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :pika, name: "Pika 2.2", tier: "mid", status: "active",
+    description: "Pika's video generation model, served through fal.ai.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_video", price_summary: "$0.20–$0.45 / clip",
+    price_detail: "Per 5s clip by resolution via fal.ai — $0.20 (720p), ≈$0.45 (1080p). Pika's own site sells subscription credits; this is the fal rate.",
+    price_source: "https://fal.ai/models/fal-ai/pika/v2.2/text-to-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :luma, name: "Ray 2", tier: "mid", status: "active",
+    description: "Luma AI's video generation model, served through fal.ai.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.10 / sec",
+    price_detail: "Via fal.ai: $0.50 per 5s at 720p (1080p ≈ 4×). Luma's own API meters credits and doesn't publish a credit→USD rate.",
+    price_source: "https://fal.ai/models/fal-ai/luma-dream-machine/ray-2", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :luma, name: "Ray3.14", tier: "mid", status: "active",
+    description: "Luma AI's flagship native-1080p video model, via its API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    # No derivable USD rate: Luma's API meters credits per second by resolution
+    # (4/10/20/80 credits/sec for Draft/540p/720p/1080p) but doesn't publish the
+    # credit→USD price, so no per-second dollar figure is asserted.
+    price_detail: "Luma meters credits per second by resolution but doesn't publish the API credit→USD rate, so a per-second dollar price isn't derivable yet.",
+    prices: []
+  },
+  {
+    provider: :minimax, name: "Hailuo 2.3", tier: "mid", status: "active",
+    description: "MiniMax's video generation model, via the MiniMax API.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "credit_based", price_summary: "~$0.27–$0.53 / clip",
+    price_detail: "Billed in video-points per generation by resolution×duration — ≈$0.27 (768p, 6s) to $0.53 (1080p, 6s) at the ~$0.266/point Standard package rate; cheaper on larger packages.",
+    price_source: "https://platform.minimax.io/docs/guides/pricing-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :bytedance, name: "Seedance 1.0 Pro", tier: "mid", status: "active",
+    description: "ByteDance's video generation model, via BytePlus ModelArk.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "token_based", price_summary: "$2.50 / 1M tokens",
+    price_detail: "Token-billed; tokens scale with resolution × fps × duration, so ≈$0.60–$0.75 per 5s 1080p clip (derived). Same rate for text- and image-to-video.",
+    price_source: "https://docs.byteplus.com/en/docs/ModelArk/1587798", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :tencent, name: "Hunyuan Video", tier: "mid", status: "active",
+    description: "Tencent's open-weight video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_video", price_summary: "$0.40 / video",
+    price_detail: "Open weights (free for commercial use) — self-host $0 on your own GPU, or ≈$0.40/video hosted on fal.ai (Pro mode 2×).",
+    price_source: "https://fal.ai/models/fal-ai/hunyuan-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :alibaba, name: "Wan 2.5", tier: "mid", status: "active",
+    description: "Alibaba's open-weight video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.05–$0.15 / sec",
+    price_detail: "Open weights — self-host $0, or hosted on fal.ai at $0.05 (480p), $0.10 (720p), $0.15 (1080p) per second.",
+    price_source: "https://fal.ai/models/fal-ai/wan-25-preview/text-to-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :lightricks, name: "LTX-2", tier: "mid", status: "active",
+    description: "Lightricks' open-weight video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_second", price_summary: "$0.06–$0.24 / sec",
+    price_detail: "Open weights — self-host $0, or hosted on fal.ai (Pro): $0.06 (1080p), $0.12 (1440p), $0.24 (4K) per second; the Fast tier is roughly half.",
+    price_source: "https://fal.ai/models/fal-ai/ltx-2/text-to-video", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :genmo, name: "Mochi 1", tier: "mid", status: "active",
+    description: "Genmo's open-weight (Apache 2.0) video generation model.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    pricing_model: "per_video", price_summary: "~$0.42 / run",
+    price_detail: "Open weights (Apache 2.0), ~60GB VRAM single-GPU — self-host $0, or ≈$0.42 per run on Replicate.",
+    price_source: "https://replicate.com/genmoai/mochi-1", priced_as_of: "2026-07-11",
     prices: []
   }
 ]
