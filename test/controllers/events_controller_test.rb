@@ -128,6 +128,13 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#ev-sentinel[data-next-url]", count: 0
   end
 
+  test "the subtitle no longer links to the retired news feed" do
+    get events_url
+    assert_response :success
+    assert_select "a.events-newslink", count: 0
+    assert_select ".events-subtitle a[href='/news']", count: 0
+  end
+
   test "emits a self-canonical link that ignores query params" do
     get events_url(ref: "twitter")
     assert_response :success

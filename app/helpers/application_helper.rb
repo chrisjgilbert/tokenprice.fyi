@@ -188,7 +188,6 @@ module ApplicationHelper
     [
       [ "Models", root_path,   -> { current_page?(root_path) } ],
       [ "Trends", trends_path, -> { current_page?(trends_path) } ],
-      [ "News",   news_path,   -> { current_page?(news_path) } ],
       [ "Events", events_path, -> { events_active? } ]
     ]
   end
