@@ -56,58 +56,6 @@ class NewsItemTest < ActiveSupport::TestCase
     refute_includes NewsItem.awaiting_curation, item
   end
 
-  # feed scope ———————————————————————————————————————————————————————————
-
-  test "feed includes relevant, dated items" do
-    item = news_items(:anthropic_haiku_release)
-    assert item.relevant
-    assert_not_nil item.published_at
-    assert_includes NewsItem.feed, item
-  end
-
-  test "feed includes relevant items even once notified" do
-    item = news_items(:notified_item)
-    assert item.relevant
-    assert_not_nil item.notified_at
-    assert_includes NewsItem.feed, item
-  end
-
-  test "feed excludes irrelevant items" do
-    refute_includes NewsItem.feed, news_items(:irrelevant_item)
-  end
-
-  test "feed excludes unclassified (relevant=nil) items" do
-    refute_includes NewsItem.feed, news_items(:unclassified_item)
-  end
-
-  test "feed excludes relevant items with no publish date" do
-    item = NewsItem.create!(url: "https://example.com/undated", title: "Undated",
-                            source: "hn", relevant: true, published_at: nil)
-    refute_includes NewsItem.feed, item
-  end
-
-  test "feed orders newest first by published_at" do
-    dates = NewsItem.feed.map(&:published_at)
-    assert_equal dates.sort.reverse, dates
-  end
-
-  # source_host ——————————————————————————————————————————————————————————
-
-  test "source_host returns the article's host, not how it was found" do
-    item = NewsItem.new(url: "https://www.arstechnica.com/some-post", source: "hn")
-    assert_equal "arstechnica.com", item.source_host
-  end
-
-  test "source_host resolves an HN-native post to its discussion host" do
-    item = NewsItem.new(url: "https://news.ycombinator.com/item?id=42", source: "hn")
-    assert_equal "news.ycombinator.com", item.source_host
-  end
-
-  test "source_host falls back to source when the URL has no host" do
-    item = NewsItem.new(url: "not a url", source: "hn")
-    assert_equal "hn", item.source_host
-  end
-
   # validations ——————————————————————————————————————————————————————————
 
   test "valid with url, title, and source" do

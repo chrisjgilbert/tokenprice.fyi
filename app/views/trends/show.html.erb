@@ -74,14 +74,11 @@
     </ul>
   </div>
 
-  <%# The chart is frontier launch prices; this strip is recent repricing across
-      the whole catalog — the near-term companion to the long-run arc above. %>
-  <% if @recent_price_moves&.any? %>
+  <% if @recent_price_moves.any? %>
     <section class="trends-moves" aria-label="Recent price changes">
-      <h2 class="trends-h2">What moved recently</h2>
       <p class="trends-moves-lede">
-        The chart tracks flagship launch prices. Below is every tracked price
-        change across the catalog in the last 30 days.
+        The chart tracks flagship launch prices at release; below is every tracked
+        price change across the catalog in the last 30 days.
       </p>
       <%= render "trends/recent_price_changes", moves: @recent_price_moves %>
     </section>
