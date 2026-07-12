@@ -17,9 +17,9 @@ This plan makes three moves:
 1. **Relocate the "Recent price changes" strip from `/news` to `/trends`.**
    Trends becomes the single price-movement home: the long-run frontier arc
    (chart) plus what repriced recently (strip).
-2. **Fold `/news` under the Events section.** Events is the one primary
-   "what's happening" destination; the raw feed becomes a secondary *view*
-   reached through a shared sub-toggle, not a competing top-level nav item.
+2. **Retire the public `/news` feed.** It has essentially no traffic; 301 it to
+   `/events`, delete the public page, and keep `NewsItem` + the ingestion jobs as
+   the admin curation queue that already feeds Events.
 3. **Trim the primary nav 4 → 3** (Models · Trends · Events) and update the
    freshness/SEO seams that follow.
 
@@ -31,8 +31,8 @@ the model for the others. The work is all on News, Events, and the strip.
 1. One primary destination for happenings (Events), one for price movement over
    time (Trends). No two top-level pages that read as raw-vs-finished versions of
    each other.
-2. The raw headline feed stays reachable (SEO equity + reader option preserved)
-   but sits *under* Events rather than beside it.
+2. Inbound `/news` links and bookmarks land on the curated equivalent (Events),
+   not a 404.
 3. Price movement consolidated: currents on `/models`, recent deltas + long-run
    trajectory both on `/trends`.
 4. No regressions to conditional-GET freshness, the sitemap, or inbound links.
@@ -42,22 +42,24 @@ the model for the others. The work is all on News, Events, and the strip.
 - No change to the `/trends` chart itself, `FlagshipTrend`, or its backing
   tables.
 - No change to the ingestion/classification pipeline (`NewsScanJob`,
-  `EventCurationJob`, the `NewsItem` model, `PriceMove` derivation).
-- No merge of the two controllers into one. `NewsController` and
-  `EventsController` stay separate, thin, and standard — the consolidation is
-  navigation + positioning, not a data-model merge.
+  `EventCurationJob`, the `NewsItem` model, `PriceMove` derivation). Only the
+  public `/news` page is removed, not the machinery behind it.
+- No new admin reviewer UI for the curation queue (a possible follow-up now that
+  the feed has no public page).
 - No new `/changes` page. The strip stands alone on Trends as it did on News.
 
 ---
 
-## Pre-flight: the analytics gate
+## Decision: retire the public `/news` feed
 
-The recommended design **keeps** `/news` (demoted to a secondary view). If
-analytics already show `/news` pageviews and return rate are near zero, prefer
-the **aggressive variant** (below) instead: retire the public feed, 301 it to
-`/events`, and keep `NewsItem` as the admin curation queue. Decide this once,
-up front — it changes Move 2 only. Everything in Moves 1 and 3 is identical
-either way. Absent data, ship the recommended (reversible) path.
+**Resolved.** `/news` has had essentially no traffic since it shipped. There is
+no reader audience to preserve, so the plan takes the **retire** path for Move 2:
+301 `/news` → `/events`, delete the public controller/views, and keep `NewsItem`
+plus the ingestion jobs as the admin curation queue that feeds Events. The
+reversible "secondary view under Events" design is recorded below as the path
+*not* taken, in case the decision is revisited.
+
+Moves 1 and 3 are unaffected by this — they read the same either way.
 
 ---
 
@@ -116,79 +118,65 @@ across the catalog in the last 30 days." (Match the Trends subtitle register.)
 
 ### 1d. News loses the strip
 
-Remove the strip render and its `@recent_price_moves` load from
-`NewsController#index`. This sharpens `/news` to purely the headline feed, and
-lets its freshness drop `PriceCatalog.last_modified` (the strip was the only
-reason it was folded in):
-
-```ruby
-return if catalog_fresh?(etag: [ :news, @page ],
-  last_modified: [ NewsItem.maximum(:updated_at), MarketEvent.maximum(:updated_at) ].compact.max)
-```
-
-Update the News header/subtitle copy (see Move 2), which currently opens with
-"Recent tracked price changes across the catalog, plus…".
+The strip's only home is now `/trends`. Because `/news` is deleted wholesale in
+Move 2, there's nothing to edit in `NewsController` — moving the partial out and
+rendering it on Trends is the whole change. (`_recent_price_changes.html.erb`
+is the one file under `news/` that survives the deletion, relocated to `trends/`.)
 
 ---
 
-## Move 2 — Fold News under Events
+## Move 2 — Retire the public News feed
 
-**Recommended (reversible).** Keep `/news` as its own thin controller and page,
-but present it as a secondary *view* of the Events section rather than a peer in
-the primary nav. Readers land on Events (curated) by default and can switch to
-the raw feed via a shared sub-toggle.
+Per the decision above, `/news` is removed as a public surface and 301'd into
+Events. The ingestion pipeline is untouched — it still runs, it just no longer
+has a public page; its output is what Events curates from.
 
-### 2a. A shared section sub-toggle
+### 2a. Route (`config/routes.rb`)
 
-Both `/events` and `/news` render a small segmented control at the top of the
-page body:
-
-```
-[ Curated ]  [ All headlines ]
-   /events        /news
-```
-
-- On `/events` this sits **above** the existing kind filter (All / Market /
-  Launches), which stays as a sub-filter of the curated view.
-- On `/news` only the sub-toggle shows (the raw feed has its own kind badges
-  inline; no kind filter).
-
-Extract to `app/views/shared/_happenings_nav.html.erb` (a partial, per house
-style — no new helper needed) taking the active view as a local. Reuse the
-existing `.tp-seg` segmented-control styling the events kind filter already uses.
-
-### 2b. Keep the section lit in the primary nav
-
-`events_active?` should return true on `/news` too, so the (renamed) primary nav
-item stays highlighted across both views:
+Replace the `news#index` route with a 301 to `/events`, following the `/guide`
+redirect precedent already in the file. A `?page=` query is dropped by the
+redirect (fine — those were pagination of a feed that no longer exists).
 
 ```ruby
-def events_active?
-  current_page?(events_path) || request.path.start_with?("/events") || current_page?(news_path)
-end
+# The public raw news feed was retired (no traffic); its curated distillation
+# lives at /events, and the ingestion pipeline still feeds it. 301 inbound
+# links and bookmarks there.
+get "news", to: redirect("/events", status: 301)
 ```
 
-### 2c. Headers read as one section
+### 2b. Delete the public surface
 
-- `/events` header stays "Market events", subtitle keeps its "Curated from the
-  daily news feed" line (the raw feed is now the sibling tab, so this cross-link
-  can point at the sub-toggle rather than read as a link to a separate area).
-- `/news` header changes from "News" to something that reads as the raw view of
-  the same section, e.g. **"All headlines"**, subtitle: "Every relevant headline
-  we scan, unedited and newest first — the raw feed behind the curated timeline."
-  The existing funnel banner pointing to Events becomes redundant with the
-  sub-toggle; remove it.
+- Delete `app/controllers/news_controller.rb`.
+- Delete `app/views/news/` (`index.html.erb`, `_item.html.erb`; the
+  `_recent_price_changes.html.erb` partial is **moved**, not deleted — see
+  Move 1).
+- Delete `test/controllers/news_controller_test.rb`.
 
-### Aggressive variant (if the analytics gate says `/news` is dead)
+### 2c. Keep the pipeline and the model
 
-- 301 `/news` (and any `?page=`) → `/events`, following the `/guide` redirect
-  precedent in `routes.rb`.
-- Drop `NewsController`, the `news/` views, the `news_url` sitemap and `llms.txt`
-  entries.
-- Keep `NewsItem`, its `feed`/`awaiting_curation` scopes, and the ingestion jobs
-  — the feed becomes admin-only curation input, surfaced under `/admin` if a
-  reviewer UI is wanted (out of scope here).
-- Skip 2a–2c entirely; Move 3's nav trim still applies.
+- `NewsItem`, its `feed` / `awaiting_curation` / `pending_digest` scopes, and the
+  `NewsScanJob` / `EventCurationJob` / digest jobs all stay — they are the
+  curation queue behind Events. (`feed` is now used only if a future admin
+  reviewer UI wants it; leave it, it's harmless and tested.)
+- A dedicated admin reviewer UI for the queue is **out of scope** here.
+
+### 2d. Events cross-link cleanup
+
+`/events` subtitle currently ends "Curated from the daily news feed →" linking
+`news_path`. With `/news` now redirecting back to `/events`, that link would be a
+self-link — remove the link. Keep the descriptive phrase (reworded so it doesn't
+promise a clickable feed), e.g. "Curated from the headlines we scan each day."
+Any other `news_path` references (the removed feed's "In Events" chip goes with
+its view) — grep and clear.
+
+### Path not taken — News as a secondary view under Events
+
+Recorded for the record. Had `/news` shown real traffic, the reversible design
+was: keep `NewsController` thin and unchanged, add a shared
+`[ Curated ] [ All headlines ]` sub-toggle partial
+(`app/views/shared/_happenings_nav.html.erb`) rendered on both `/events` and
+`/news`, extend `events_active?` to light the nav on `/news`, and retitle the
+News page "All headlines" as the raw view of the Events section. Not pursued.
 
 ---
 
@@ -214,39 +202,37 @@ both update together.
 
 ### 3b. Sitemap / llms.txt
 
-- **Recommended path:** leave both `news_url` and `events_url` in
-  `sitemaps/index.xml.erb` (both are still live, indexable URLs). Optionally drop
-  `/news` priority from `0.8` → `0.6` to signal it's secondary.
-- **Aggressive variant:** remove the `news_url` sitemap line and the `/news`
-  `llms.txt` line; the 301 handles inbound crawl.
+Remove the `news_url` line from `sitemaps/index.xml.erb` and the `/news` line
+from `pages/llms_txt.text.erb` (if present) — the URL now 301s, so it shouldn't
+advertise itself as canonical. The 301 handles any inbound crawl.
 
 ### 3c. Freshness recap
 
 - **Trends** — no etag change; `FlagshipTrend.last_modified` already covers the
   moved strip.
-- **News** — drop `PriceCatalog.last_modified` from its `last_modified` (the
-  strip was its only price dependency). Keep `NewsItem` + `MarketEvent`.
+- **News** — gone (301).
 - **Events** — unchanged.
 
 ---
 
 ## File-by-file
 
-**Move / edit**
+**Move 1 — strip to Trends**
 - `app/views/news/_recent_price_changes.html.erb` → `app/views/trends/_recent_price_changes.html.erb` (move)
 - `app/controllers/trends_controller.rb` — load `@recent_price_moves`
 - `app/views/trends/show.html.erb` — render strip below chart + binding copy
-- `app/controllers/news_controller.rb` — drop strip load; simplify `last_modified`
-- `app/views/news/index.html.erb` — new header/subtitle, drop strip render + funnel banner, add sub-toggle
-- `app/views/events/index.html.erb` — add sub-toggle above kind filter
-- `app/views/shared/_happenings_nav.html.erb` — **new** shared sub-toggle partial
-- `app/helpers/application_helper.rb` — remove News nav row; extend `events_active?`
-- `app/views/sitemaps/index.xml.erb` — (optional) lower `/news` priority
 
-**Aggressive variant instead of the News edits above**
-- `config/routes.rb` — `get "news", to: redirect("/events", status: 301)` (+ drop the `news#index` route)
-- delete `app/controllers/news_controller.rb`, `app/views/news/*`
-- `app/views/sitemaps/index.xml.erb`, `app/views/pages/llms_txt.text.erb` — drop `/news`
+**Move 2 — retire News**
+- `config/routes.rb` — replace `news#index` with `redirect("/events", status: 301)`
+- delete `app/controllers/news_controller.rb`
+- delete `app/views/news/index.html.erb`, `app/views/news/_item.html.erb`
+- delete `test/controllers/news_controller_test.rb`
+- `app/views/events/index.html.erb` — drop the `news_path` cross-link, reword the subtitle
+- `app/views/sitemaps/index.xml.erb` — drop the `news_url` line
+- `app/views/pages/llms_txt.text.erb` — drop the `/news` line (if present)
+
+**Move 3 — nav**
+- `app/helpers/application_helper.rb` — remove the News nav row
 
 ---
 
@@ -255,16 +241,13 @@ both update together.
 - **`TrendsController#index`** — 200; renders the strip when moves exist, omits
   it when none; conditional GET still 304s on a repeat with matching validators
   after adding the strip.
-- **`NewsController#index`** — still 200 and renders the feed; the strip is
-  **absent**; the sub-toggle is present with "All headlines" active; 304 on a
-  repeat. (Aggressive variant: assert `/news` 301s to `/events`.)
-- **`EventsController#index`** — sub-toggle present with "Curated" active; kind
-  filter unchanged.
-- **Nav** — primary nav renders Models/Trends/Events and **not** News; the
-  Events item stays active on `/news` (`events_active?`).
+- **`/news` route** — asserts a 301 redirect to `/events` (add to the events or a
+  routing test; `news_controller_test.rb` is deleted).
+- **`EventsController#index`** — unchanged behaviour; assert the subtitle no
+  longer emits a `news_path` link.
+- **Nav** — primary nav renders Models/Trends/Events and **not** News.
 - **`PriceCatalog.recent_price_moves`** — unchanged; existing coverage stands.
-- Existing `news_controller_test.rb` assertions that check for the price strip
-  on `/news` must flip to asserting its absence (and its presence on `/trends`).
+- **Sitemap** — assert `/news` is absent from the generated XML.
 - Close with `/preflight` (RuboCop, Brakeman, bundler-audit, importmap audit,
   test suite, seed replant).
 
@@ -277,23 +260,18 @@ Credential-touching paths use `stub_admin_digest!` / `stub_anthropic_key!`.
 
 Two reviewable units, shippable independently:
 
-1. **Move 1** — relocate the strip to Trends and strip it from News. Fully
-   self-contained; delivers the price-movement consolidation on its own.
-2. **Moves 2 + 3** — the IA fold and nav trim. Independent of Move 1; land it
-   once the analytics gate is decided.
+1. **Move 1** — relocate the strip to Trends. Fully self-contained; delivers the
+   price-movement consolidation on its own, and must land before (or with) Move 2
+   so the `news/` partial has a new home before the directory is deleted.
+2. **Moves 2 + 3** — retire `/news` and trim the nav. Independent otherwise.
 
 ---
 
 ## Open decisions
 
-1. **Analytics gate** — recommended (keep `/news` as a secondary view) vs
-   aggressive (301 + admin-only queue). Decide from `/news` traffic before
-   Move 2. Default: recommended.
+1. ~~**Analytics gate**~~ — **resolved**: `/news` has no traffic, so it's
+   retired and 301'd to `/events` (see the Decision section).
 2. **Strip placement on Trends** — below the chart, above the backing tables
    (recommended), vs directly under the header. Confirm.
-3. **Section labels** — primary nav item "Events" heading a section whose raw
-   view is titled "All headlines". Is "Events" still the right label for the
-   section, or should it read "Timeline" / "Activity"? (Recommend leaving
-   "Events" to preserve the established URL and nav muscle memory.)
-4. **`/news` sitemap priority** — leave at `0.8` or lower to `0.6` to signal
-   secondary. Recommend lower.
+3. **Events subtitle rewording** — with the `news_path` link gone, confirm the
+   replacement phrase ("Curated from the headlines we scan each day").
