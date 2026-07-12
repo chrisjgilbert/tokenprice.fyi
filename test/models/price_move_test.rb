@@ -80,6 +80,12 @@ class PriceMoveTest < ActiveSupport::TestCase
     assert_nil d.pct
   end
 
+  test "delta label is the strip's short column name for each dimension" do
+    assert_equal "in",     PriceMove::Delta.new(dimension: :input,  old: 1, new: 2).label
+    assert_equal "out",    PriceMove::Delta.new(dimension: :output, old: 1, new: 2).label
+    assert_equal "cached", PriceMove::Delta.new(dimension: :cached, old: 1, new: 2).label
+  end
+
   private
 
   def priced_model_with(*points)

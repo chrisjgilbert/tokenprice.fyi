@@ -25,10 +25,10 @@ class SiteNavigationTest < ApplicationSystemTestCase
     find("button.tp-nav-toggle").click
 
     within ".tp-m-panel" do
-      click_on "News"
+      click_on "Events"
     end
 
-    assert_current_path news_path
-    assert_selector "h1.news-h1"
+    assert_current_path events_path
+    assert_selector "h1.events-h1"
   end
 end

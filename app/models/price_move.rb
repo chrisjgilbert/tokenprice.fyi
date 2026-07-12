@@ -2,8 +2,8 @@
 # to its current one. Distinct from AiModel::PriceChange, which measures a
 # dimension against a trailing window or launch — this is the concrete step
 # between two consecutive snapshots, mirroring a line in the Slack price-moves
-# digest. Built through AiModel#latest_move; feeds the homepage "recent price
-# changes" strip.
+# digest. Built through AiModel#latest_move; feeds the recent-changes strip on
+# the trends page.
 PriceMove = Data.define(:model_name, :model_slug, :provider_name, :provider_slug,
                         :provider_accent, :effective_on, :deltas)
 
@@ -17,11 +17,17 @@ class PriceMove
 
       (((new - old) / old) * 100).round(1)
     end
+
+    # Short column label for the strip ("in" / "out" / "cached").
+    def label = LABELS[dimension]
   end
 
   # Dimension → price-point column, in the display order the strip and headline
   # walk (input first). Also the definitive dimension set — build iterates it.
   COLUMNS = { input: :input_per_mtok, output: :output_per_mtok, cached: :cached_input_per_mtok }.freeze
+
+  # Dimension → the short label the strip prints beside each figure.
+  LABELS = { input: "in", output: "out", cached: "cached" }.freeze
 
   # Nil when no priced dimension changed between the two snapshots, so a
   # re-confirmed price never shows as a move.

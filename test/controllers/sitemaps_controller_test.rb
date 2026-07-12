@@ -43,4 +43,10 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes @response.body, "/guide"
     assert_not_includes @response.body, "/which-model"
   end
+
+  test "the sitemap no longer advertises the retired news feed" do
+    get sitemap_url
+    assert_response :success
+    assert_not_includes @response.body, "/news"
+  end
 end

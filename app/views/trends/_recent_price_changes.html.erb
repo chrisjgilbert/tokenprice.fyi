@@ -21,7 +21,7 @@
       <div class="c-legs">
         <% move.deltas.each do |delta| %>
           <span class="c-leg">
-            <span class="c-lab"><%= price_move_label(delta.dimension) %></span>
+            <span class="c-lab"><%= delta.label %></span>
             <span class="c-old"><%= usd_plain(delta.old) %></span>
             <span class="c-arw" aria-hidden="true">→</span>
             <span class="c-new"><%= usd_plain(delta.new) %></span>
@@ -34,7 +34,7 @@
         <% if headline.pct&.nonzero? %>
           <%= price_change_badge(headline.pct) %>
           <% unless headline.dimension == :input %>
-            <span class="c-chip-dim"><%= price_move_label(headline.dimension) %></span>
+            <span class="c-chip-dim"><%= headline.label %></span>
           <% end %>
         <% end %>
       </div>

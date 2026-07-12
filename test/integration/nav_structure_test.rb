@@ -7,10 +7,10 @@ class NavStructureTest < ActionDispatch::IntegrationTest
     assert_select "nav.tp-nav a[href=?]", compare_path, count: 0
   end
 
-  test "primary nav carries a News tab" do
+  test "primary nav no longer carries the retired News tab" do
     get root_path
     assert_response :success
-    assert_select "nav.tp-nav a[href=?]", news_path
+    assert_select "nav.tp-nav a[href='/news']", count: 0
   end
 
   test "primary nav still carries Models, Trends and Events" do

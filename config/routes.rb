@@ -22,9 +22,10 @@ Rails.application.routes.draw do
 
   get "compare", to: "comparisons#show", as: :compare
   get "events",  to: "events#index",     as: :events
-  # The raw AI-pricing news feed: relevant-only headlines, newest first. The
-  # signal that feeds the curated /events timeline.
-  get "news",    to: "news#index",        as: :news
+  # The public raw news feed was retired (no traffic); its curated distillation
+  # lives at /events, and the ingestion pipeline still feeds it. 301 inbound
+  # links and bookmarks there rather than 404.
+  get "news",    to: redirect("/events", status: 301)
   get "sources", to: "sources#index",    as: :sources
   # Flagship price-over-time chart — surfaces the full frontier history, retired
   # models included. Reclaims the /trends URL that used to 301 to /events.
