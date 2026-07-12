@@ -9,5 +9,6 @@ class TrendsController < ApplicationController
     return if catalog_fresh?(etag: [ :trends, Date.current, stamp ], last_modified: stamp)
 
     @trends = FlagshipTrend.all
+    @recent_price_moves = PriceCatalog.recent_price_moves
   end
 end
