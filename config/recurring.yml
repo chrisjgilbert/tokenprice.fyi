@@ -14,10 +14,19 @@ production:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
 
+  # The ingestion pipeline runs every 6 hours rather than once a day. Cost is
+  # not the driver it appears to be: classification (news_scan, release_watch)
+  # and editorial copy (openrouter_sync) are gated per new record — a duplicate
+  # URL raises RecordNotUnique, and written-up models are skipped — so a tighter
+  # cadence re-slices the same daily volume into smaller batches at ~flat LLM
+  # cost. The only per-run call is event_curation's single forced-tool draft
+  # request, and it early-returns with no call when there are no fresh
+  # candidates. The stagger below is load-bearing: news_scan classifies inline,
+  # so event_curation (which reads awaiting_curation) must fire after it lands.
   openrouter_sync:
     class: OpenRouterSyncJob
     queue: default
-    schedule: every day at 6am
+    schedule: "30 */6 * * *"
 
   release_watch:
     class: ReleaseWatchJob
@@ -27,14 +36,18 @@ production:
   news_scan:
     class: NewsScanJob
     queue: default
-    schedule: every day at 5am
+    schedule: "0 */6 * * *"
 
+  # Kept daily: this flushes the pending pool to Slack as a once-a-day roundup.
+  # Frequent scans accumulate classified items (notified_at IS NULL) that this
+  # run drains in one post; making it 6-hourly would just fragment the digest
+  # into four Slack messages a day. 8am leaves margin after the 06:00 scan.
   news_digest:
     class: NewsDigestJob
     queue: default
-    schedule: every day at 6am
+    schedule: every day at 8am
 
   event_curation:
     class: EventCurationJob
     queue: default
-    schedule: every day at 7am
+    schedule: "45 */6 * * *"
