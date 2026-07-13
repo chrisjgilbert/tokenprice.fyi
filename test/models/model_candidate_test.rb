@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ModelCandidateTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   def candidate(**overrides)
     ModelCandidate.new({
       name: "Muse Spark 1.1", provider_name: "Meta", category_slug: "language",
@@ -76,6 +78,23 @@ class ModelCandidateTest < ActiveSupport::TestCase
     first = c.accept!
 
     assert_no_difference("AiModel.count") { assert_equal first, c.accept! }
+  end
+
+  # The extraction leaves editorial copy blank, so accept fills it out of band.
+  test "accept! enqueues a description generation job for the new model" do
+    c = candidate
+    c.save!
+
+    assert_enqueued_jobs(1, only: AiModelDescriptionJob) { c.accept! }
+  end
+
+  # Re-accepting returns the already-created row and must not re-enqueue.
+  test "accept! does not re-enqueue the description job on an idempotent re-accept" do
+    c = candidate
+    c.save!
+    c.accept!
+
+    assert_no_enqueued_jobs(only: AiModelDescriptionJob) { c.accept! }
   end
 
   test "a price-less launch is valid and accepts as an unpriced directory row" do
