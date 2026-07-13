@@ -623,6 +623,7 @@
                   <% when :name %>
                       <td class="tp-card-title <%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
                         <div class="tp-model-cell" data-controller="hovercard"
+                             aria-haspopup="true" aria-expanded="false"
                              data-action="pointerenter->hovercard#show pointerleave->hovercard#hide
                                           focusin->hovercard#show focusout->hovercard#hide">
                           <%= link_to model_path(model) do %>
@@ -640,8 +641,8 @@
                             </div>
                           </div>
                           <% if model.description.present? %>
-                            <div class="tp-hovercard" popover data-hovercard-target="card"
-                                 data-action="toggle->hovercard#position">
+                            <div class="tp-hovercard" popover="manual" data-hovercard-target="card"
+                                 data-action="toggle->hovercard#position click->hovercard#swallow:stop">
                               <p class="tp-hovercard-desc"><%= model.description %></p>
                               <div class="tp-hovercard-facts">
                                 <%= tier_badge(model.tier) %>
