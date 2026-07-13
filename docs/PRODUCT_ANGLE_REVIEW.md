@@ -154,10 +154,55 @@ picker (same filter). None of it links to any category tab.
   dimensions while per-image is a sticker price; why cached input exists only
   for token models; why some categories resist comparison (rerank's
   per-search vs per-token split). It becomes the natural first entry and the
-  page every category tab can cross-link. This is the only net-new content in
-  the plan.
+  page every category tab can cross-link.
 - **Label the feature-costs picker** as language models (it already is, via
   the price-shape filter — say so rather than leaving it implicit).
+
+### Per-category explainers — a demand-gated follow-on
+
+The categories don't all earn the same treatment, because they don't carry
+equal pricing complexity:
+
+- **Image + video generation** have the most explanatory substance: per-image
+  vs per-megapixel vs credit packs, resolution and duration tiers, why a
+  "$0.04/image" sticker and a credit plan resist comparison. The seed data
+  already carries the structure (`pricing_model` / `price_summary` /
+  `price_detail`) — the explainer is the editorial version of why those tabs
+  show a "Pricing" string column instead of a sortable number. One combined
+  "how generation APIs price" piece is defensible; two if they diverge.
+- **Speech** (one piece covering STT and TTS): the genuinely non-obvious trap
+  is the same capability priced in different units across providers — per
+  minute of audio at Deepgram/AssemblyAI vs audio tokens at OpenAI — plus
+  feature tiers (streaming vs batch, diarization) and TTS's per-character vs
+  per-second split.
+- **Embeddings**: almost too simple for a standalone page (one meter, input
+  only). The interesting material is adjacent — dimensions vs cost, and that
+  the recurring bill is usually the vector store, not the embedding call. A
+  section of the umbrella piece unless traffic argues otherwise.
+- **Rerank**: two paragraphs inside the umbrella explainer, not a page.
+
+Sequencing: umbrella first — it covers the educational gap at a fifth of the
+maintenance surface and tells you from traffic whether the deeper pieces are
+wanted. Then generation (image/video), then speech, then embeddings if its
+umbrella section outgrows itself.
+
+Structural notes for when these ship:
+
+- **Group the learn index** into "Per-token pricing" (the existing four) and
+  "Other billing units". A flat seven-card list stops scanning, and the
+  grouping makes the LLM material read as deliberately scoped rather than
+  accidentally narrow.
+- **New widget plumbing needed**: the existing widgets filter on per-token
+  price presence, so they structurally exclude these categories. Category
+  pieces want a simpler strip — min/median/max off the category's
+  `price_headline` values — which `PriceCatalog` entries can already feed.
+- **Prefer live entries over hardcoded worked examples.** Directory prices
+  are manually maintained; the hardcoded RAG math in the existing pieces ages
+  more gracefully than a hardcoded image price would. Lean on live entries
+  and their `priced_as_of` dates.
+- **Honest counterweight**: every explainer is a maintenance commitment in a
+  hand-maintained tier of the catalog. That's the argument for the
+  demand-gating above.
 
 ## Workstream 4 — Say the depth tier out loud
 
@@ -172,6 +217,57 @@ Surface it:
   verified against the seed docs). This is a strength framed correctly —
   "every price dated and sourced" — and a misrepresentation framed as today's
   silent uniformity.
+
+## Appendix — category-switch mechanics (full visit vs partial update)
+
+Today's behaviour, for the record: Turbo Drive is active site-wide
+(`app/javascript/application.js` imports `@hotwired/turbo-rails`; nothing on
+the tab links opts out), so a tab click is already a Drive visit — a fetch
+plus body swap, not a browser reload. What reads as a "full page reload" is
+the whole-body swap: the hero and header re-render, and scroll resets to the
+top, above a tall hero the reader then has to scroll back past. Meanwhile
+filter and sort changes *within* a tab are already partial updates — the
+filters form targets `turbo_frame_tag "models"` with `turbo_action:
+"replace"` (`models/index.html.erb:428,506`). The seam between "new page"
+(category) and "same page, new query" (filters) is deliberate and correct.
+
+Options, ranked:
+
+1. **Keep full visits; fix the jank (recommended).** A category switch
+   changes nearly everything meaningful — title, meta, canonical, JSON-LD,
+   columns, sorts, and (after workstream 1) the hero — so "new page" is the
+   right semantic. The dominant irritation is the scroll reset past the hero,
+   which a small sprinkle fixes: on tab-strip clicks, capture scroll position
+   and restore it after `turbo:load`. Cheap, no restructuring, no SEO risk.
+2. **Cross-URL morphing, if the swap-flash itself is the complaint.** Turbo 8
+   only morphs refresh visits (same URL), but a `turbo:before-render`
+   listener can substitute a morph render for tab navigations. Full-visit
+   semantics are preserved (head tags update correctly), unchanged regions
+   (header, footer, hero until workstream 1) don't repaint, and scroll holds.
+   Caveat one: it's a hand-rolled deviation from "thin glue around the
+   platform" and needs saying why. Caveat two: anything that survives the
+   morph survives *across categories* — the compare tray's selection
+   currently resets on tab switch precisely because the visit is a full swap;
+   a morph (or frame) approach must explicitly clear the tray on category
+   change or it enables the cross-category compares workstream 2 guards
+   against.
+3. **Frame-based tabs — not recommended.** Pointing the tab links at a frame
+   leaves stale everything outside it: document title, canonical, the filters
+   form's category-scoped action URL, the active-tab highlight, and the
+   category-aware hero workstream 1 introduces. Fixing that means moving the
+   tab strip, filters, and hero inside the frame plus a title-sync hack — at
+   which point the frame spans the page and Drive has been reimplemented with
+   extra steps.
+4. **Client-side tabs (preload all categories) — rejected.** Seven tables in
+   one DOM, and it breaks the URL-per-category architecture (own canonical,
+   meta, JSON-LD per tab) that the routes and sitemap are built on. The
+   existing view comment (`models/index.html.erb:407`) already records this
+   decision; it stands.
+
+Interaction with workstream 1: the more category-aware the chrome becomes,
+the less a partial update buys — once the hero varies by category, almost
+nothing above the table is category-invariant. That is the quiet argument
+for option 1.
 
 ## Suggested order
 
