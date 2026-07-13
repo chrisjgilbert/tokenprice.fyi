@@ -1,0 +1,49 @@
+<% content_for :title, "Recent price changes — LLM API price moves, last 30 days — tokenprice.fyi" %>
+<% content_for :description, "Every tracked LLM API price change across the catalog in the last 30 days — the raw feed behind the daily price-moves digest." %>
+<% content_for :canonical, price_changes_url %>
+
+<div class="changes-page">
+  <header class="changes-header">
+    <h1 class="changes-h1">Recent price changes</h1>
+    <p class="changes-subtitle">
+      Every tracked price change across the catalog in the last 30 days, newest
+      first. This is the raw feed; the moves worth a story get written up on the
+      <%= link_to "market-events timeline", events_path %>.
+    </p>
+  </header>
+
+  <% if @moves.any? %>
+    <%= render "recent_price_changes", moves: @moves %>
+  <% else %>
+    <div class="tp-card changes-empty">
+      <p>No price changes tracked in the last 30 days.</p>
+      <p class="changes-empty-sub">When a model reprices, it shows up here. Full per-model history lives on each model's page.</p>
+    </div>
+  <% end %>
+</div>
+
+<style>
+.changes-page {
+  max-width: 840px;
+  padding-top: 36px;
+  padding-bottom: 64px;
+}
+.changes-header { margin-bottom: 24px; }
+.changes-h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.033em;
+  line-height: 1.05;
+  color: var(--color-slate-900);
+}
+.changes-subtitle {
+  margin-top: 14px;
+  max-width: 50em;
+  color: var(--color-slate-500);
+  font-size: 17px;
+  line-height: 1.6;
+}
+.changes-subtitle a { color: var(--color-indigo-600); text-decoration: underline; text-underline-offset: 2px; }
+.changes-empty { padding: 40px 28px; text-align: center; color: var(--color-slate-500); }
+.changes-empty-sub { margin-top: 8px; font-size: 14px; color: var(--color-slate-400); }
+</style>

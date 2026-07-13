@@ -89,7 +89,8 @@ module OpenRouter
           "$#{fmt(r.old_output)}→$#{fmt(r.new_output)} out#{cached_str} · " \
           "#{sign}#{pct}% input · #{edit_link}"
       end
-      mrkdwn_section("*💰 Price moves (#{lines.size})*\n#{lines.join("\n")}")
+      see_all = slack_link("#{BASE_URL}/changes", "See all recent price changes →")
+      mrkdwn_section("*💰 Price moves (#{lines.size})*\n#{lines.join("\n")}\n#{see_all}")
     end
 
     def new_models_section

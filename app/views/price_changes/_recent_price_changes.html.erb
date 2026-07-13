@@ -3,7 +3,7 @@
     snapshots (PriceCatalog.recent_price_moves → PriceMove). %>
 <section class="tp-card changes" aria-label="Recent price changes">
   <div class="changes-head">
-    <span class="changes-t"><%= icon(:trend_down, size: 16) %> Recent price changes</span>
+    <span class="changes-t"><%= icon(:trend_down, size: 16) %> Last 30 days</span>
     <span class="changes-cnt"><%= moves.size %></span>
     <time class="changes-stamp" datetime="<%= moves.first.effective_on.iso8601 %>">
       <span class="changes-dot" aria-hidden="true"></span><%= fmt_date_full(moves.first.effective_on) %>
