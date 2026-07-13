@@ -145,13 +145,14 @@ module OpenRouter
     end
 
     def call
-      catalog = @client.models
-      @logger.info("OpenRouter sync: fetched #{catalog.size} models")
+      @catalog = @client.models
+      @logger.info("OpenRouter sync: fetched #{@catalog.size} models")
 
       retire_latest_aliases
       retire_speed_variants
+      retire_alias_duplicates
 
-      catalog.each do |row|
+      @catalog.each do |row|
         outcome =
           begin
             import(row)
@@ -180,6 +181,7 @@ module OpenRouter
     def import(row)
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
+      return :skipped if alias_duplicate?(row)
 
       pricing = parse_pricing(row["pricing"])
 
@@ -602,6 +604,65 @@ module OpenRouter
 
       retired = AiModel.where(id: ids).update_all(status: "retired")
       @logger.info("OpenRouter sync: retired #{retired} speed variant(s)")
+    end
+
+    # OpenRouter also lists suffixed twins that duplicate a canonical entry at the
+    # SAME price — a "… Pro"/"… (preview)"/codename variant carrying identical
+    # rates to a shorter-named sibling. Unlike the ":latest"/":fast" markers these
+    # share no fixed token, and the name alone can't decide it: a real "GPT-5.5
+    # Pro" is a genuinely pricier model, not an alias. The tell is a name that
+    # extends a sibling's at a word boundary AND matches its headline price — a
+    # real variant charges a premium, so identical pricing means it's the same
+    # model listed twice. Retire the twin, keep the canonical shorter row.
+    def alias_duplicate?(row)
+      pricing = parse_pricing(row["pricing"])
+      return false if pricing.nil?
+
+      alias_of_sibling?(model_name(row), pricing[:input], pricing[:output],
+                        catalog_siblings[namespace_of(row)])
+    end
+
+    # Priceable catalog rows grouped by OpenRouter namespace as [name, input,
+    # output] triples — the sibling set alias_duplicate? scans, built once per run.
+    def catalog_siblings
+      @catalog_siblings ||= @catalog.each_with_object(Hash.new { |h, k| h[k] = [] }) do |row, index|
+        pricing = parse_pricing(row["pricing"])
+        next if pricing.nil?
+
+        index[namespace_of(row)] << [ model_name(row), pricing[:input], pricing[:output] ]
+      end
+    end
+
+    # Retire any already-imported twin the guard above would now skip: an
+    # OpenRouter row whose name extends a same-provider, same-price sibling.
+    # Prices come from each row's current snapshot, so a base without a tracked
+    # price yields no match and its variants are left alone.
+    def retire_alias_duplicates
+      models      = AiModel.from_openrouter.where.not(status: "retired").includes(:price_points)
+      by_provider = models.group_by(&:provider_id)
+
+      ids = models.select do |model|
+        siblings = by_provider[model.provider_id].map { |m| [ m.name, m.current_input, m.current_output ] }
+        alias_of_sibling?(model.name, model.current_input, model.current_output, siblings)
+      end.map(&:id)
+      return if ids.empty?
+
+      retired = AiModel.where(id: ids).update_all(status: "retired")
+      @logger.info("OpenRouter sync: retired #{retired} alias duplicate(s)")
+    end
+
+    # Is `name` a longer, same-priced extension of some model in `siblings` (a list
+    # of [name, input, output])? Requires both a word-boundary name extension (the
+    # trailing space rules out "o1"⊂"o1-mini") and an exact headline-price match,
+    # so a genuinely distinct premium variant is never mistaken for an alias.
+    def alias_of_sibling?(name, input, output, siblings)
+      return false if input.nil? || output.nil? || siblings.blank?
+
+      siblings.any? do |base_name, base_input, base_output|
+        base_name != name &&
+          base_input == input && base_output == output &&
+          name.start_with?("#{base_name} ")
+      end
     end
 
     def curated_duplicate?(provider, row)

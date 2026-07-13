@@ -324,6 +324,66 @@ module OpenRouter
       assert AiModel.find_by(openrouter_id: "newlab/wonder-1")
     end
 
+    test "retires previously-imported same-priced suffixed twins, keeping the canonical row" do
+      base = AiModel.create!(
+        name: "GPT-5.6 Sol", slug: "gpt-5-6-sol",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "openai/gpt-5.6-sol", status: "active", tier: "frontier"
+      )
+      base.price_points.create!(effective_on: Date.new(2026, 7, 9), input_per_mtok: 5, output_per_mtok: 30)
+
+      twin = AiModel.create!(
+        name: "GPT-5.6 Sol Pro", slug: "gpt-5-6-sol-pro",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "openai/gpt-5.6-sol-pro", status: "active", tier: "mid"
+      )
+      twin.price_points.create!(effective_on: Date.new(2026, 7, 9), input_per_mtok: 5, output_per_mtok: 30)
+
+      sync([])
+
+      assert_equal "active",  base.reload.status
+      assert_equal "retired", twin.reload.status
+    end
+
+    test "leaves a suffixed variant priced above its base alone" do
+      base = AiModel.create!(
+        name: "GPT-5.5", slug: "gpt-5-5-or",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "openai/gpt-5.5", status: "active", tier: "frontier"
+      )
+      base.price_points.create!(effective_on: Date.new(2026, 6, 1), input_per_mtok: 5, output_per_mtok: 30)
+
+      premium = AiModel.create!(
+        name: "GPT-5.5 Pro", slug: "gpt-5-5-pro-or",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "openai/gpt-5.5-pro", status: "active", tier: "frontier"
+      )
+      premium.price_points.create!(effective_on: Date.new(2026, 6, 1), input_per_mtok: 30, output_per_mtok: 180)
+
+      sync([])
+
+      assert_equal "active", premium.reload.status
+    end
+
+    test "skips a same-priced suffixed twin during import but keeps a pricier one" do
+      rows = [
+        or_model(id: "openai/gpt-5.6-sol", name: "OpenAI: GPT-5.6 Sol",
+                 prompt: "0.000005", completion: "0.00003"),
+        # Same price as Sol, name extends it -> alias twin, skipped.
+        or_model(id: "openai/gpt-5.6-sol-pro", name: "OpenAI: GPT-5.6 Sol Pro",
+                 prompt: "0.000005", completion: "0.00003"),
+        # Extends Sol's name but charges a premium -> genuine variant, kept.
+        or_model(id: "openai/gpt-5.6-sol-max", name: "OpenAI: GPT-5.6 Sol Max",
+                 prompt: "0.00003", completion: "0.00018")
+      ]
+
+      assert_difference("AiModel.count", 2) { sync(rows) }
+
+      assert AiModel.find_by(openrouter_id: "openai/gpt-5.6-sol")
+      assert_nil AiModel.find_by(openrouter_id: "openai/gpt-5.6-sol-pro")
+      assert AiModel.find_by(openrouter_id: "openai/gpt-5.6-sol-max")
+    end
+
     test "one malformed row does not abort the whole sync" do
       rows = [
         { "id" => "broken/row" }, # no pricing -> skipped, not fatal
