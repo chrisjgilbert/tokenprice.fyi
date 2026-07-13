@@ -7,8 +7,47 @@ class TrendsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", /Flagship prices over time/
     # One stepped line per provider with a frontier history (Anthropic, DeepSeek).
-    assert_select "g.flagship-line", count: 2
+    assert_select ".trends-card g.flagship-line", count: 2
     assert_select ".trends-legend-item", count: 2
+    # The cheapest-frontier floor line (fixtures span 3 release dates).
+    assert_select ".trends-card path.flagship-floor"
+  end
+
+  test "renders the input/output spread dumbbell, one row per provider" do
+    get trends_url
+
+    assert_response :success
+    assert_select "section.trends-spread"
+    assert_select "section.trends-spread g.flagship-line", count: 2
+  end
+
+  test "the backing table meta shows input and output ranges, not a since-first percent" do
+    get trends_url
+
+    assert_response :success
+    # Anthropic: opus $5/$25, fable $10/$50 → in $5–$10 · out $25–$50.
+    assert_select ".trends-summary-meta", /in\s+\$5–\$10/
+    assert_select ".trends-summary-meta", /out\s+\$25–\$50/
+    assert_select ".trends-chg", count: 0 # the old "% since first" pill is gone
+  end
+
+  test "the blurb reports the frontier floor drop without em-dashes" do
+    # A dear early flagship + a cheap later one gives a real floor drop (the
+    # fixtures' earliest flagship is also their cheapest, so no drop on their own).
+    dear = providers(:anthropic).ai_models.create!(name: "Historic Dear Flagship", tier: "frontier",
+             status: "retired", released_on: Date.new(2022, 1, 1), source: AiModel::MANUAL_SOURCE)
+    dear.price_points.create!(effective_on: Date.new(2022, 1, 1), input_per_mtok: 60, output_per_mtok: 120)
+    cheap = providers(:deepseek).ai_models.create!(name: "Historic Cheap Flagship", tier: "frontier",
+              status: "active", released_on: Date.new(2025, 1, 1), source: AiModel::MANUAL_SOURCE)
+    cheap.price_points.create!(effective_on: Date.new(2025, 1, 1), input_per_mtok: 0.3, output_per_mtok: 0.6)
+
+    get trends_url
+    assert_response :success
+    assert_select ".trends-subtitle", /200×/
+    assert_select ".trends-subtitle", /Historic Dear Flagship/
+    assert_select ".trends-subtitle" do |el|
+      assert_not_includes el.text, "—", "the blurb should carry no em-dashes"
+    end
   end
 
   test "the backing table lists flagships newest reign first, linking each model" do

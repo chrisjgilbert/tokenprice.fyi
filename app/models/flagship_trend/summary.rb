@@ -2,24 +2,33 @@
 # comment on where the frontier has actually moved rather than narrate the
 # chart the reader is already looking at. Every figure is computed from the
 # trends, so the prose stays true as the data does.
+#
+# Both figures are robust to who's in the set and to where our data starts —
+# unlike a per-provider "% since first", which reads as a price hike whenever a
+# lab debuted with an unusually cheap model. The floor is a running minimum; the
+# span is today's dispersion.
 class FlagshipTrend::Summary
   def initialize(trends)
     @trends = trends
   end
 
-  def earliest = @trends.flat_map { |t| t.steps.map(&:date) }.min
+  def earliest = steps.map(&:date).min
 
-  # Providers whose flagship launches cheaper / dearer today than the first one
-  # tracked (input_change_pct compares first reign to current, so a flat 0 is
-  # neither). Used both for the counts and to name the sharpest mover.
-  def cheaper = compared.select { |t| t.input_change_pct.negative? }
-  def pricier = compared.select { |t| t.input_change_pct.positive? }
+  # How far the cheapest frontier input price has fallen: the earliest flagship
+  # on record against the lowest-priced one ever launched. `from`/`to` are Steps
+  # (so the copy can name the model and date). Tie-breaks are explicit so the
+  # figure is stable across rebuilds. Nil unless the fall rounds to a real ≥2×
+  # (a smaller drop would round to a nonsense "1× cheaper").
+  def floor_drop
+    return if steps.size < 2
 
-  def biggest_cut  = cheaper.min_by(&:input_change_pct)
-  def biggest_rise = pricier.max_by(&:input_change_pct)
+    from = steps.min_by { |s| [ s.date, -s.input ] }
+    to   = steps.min_by { |s| [ s.input, s.date ] }
+    multiple = (from.input / to.input).round
+    return if multiple < 2
 
-  def compared? = compared.any?
-  def mixed?    = cheaper.any? && pricier.any?
+    { from:, to:, multiple: }
+  end
 
   # Spread of today's flagship input prices — the dispersion the chart shows but
   # can't put a number on. Nil unless at least two are positively priced and the
@@ -38,5 +47,5 @@ class FlagshipTrend::Summary
 
   private
 
-  def compared = @trends.select(&:input_change_pct)
+  def steps = @trends.flat_map(&:steps)
 end

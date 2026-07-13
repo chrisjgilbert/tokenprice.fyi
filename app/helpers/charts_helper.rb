@@ -194,8 +194,10 @@ module ChartsHelper
   # a range a linear axis would crush into a flat line near zero for all but the
   # priciest models. Decade gridlines ($0.10 / $1 / $10 / $100) keep it readable.
   #
-  # `trends` is an array of FlagshipTrend, each with chronological steps.
-  def provider_flagship_chart(trends, width: 900, height: 460)
+  # `trends` is an array of FlagshipTrend, each with chronological steps. `floor`
+  # is an optional FlagshipTrend::FloorPoint series (the cheapest frontier input
+  # available at each date) drawn as a single dashed reference line.
+  def provider_flagship_chart(trends, floor: nil, width: 900, height: 460)
     trends = trends.reject { |t| t.steps.empty? }
     if trends.empty?
       return content_tag(:p, "No flagship history on record yet.", class: "text-sm text-slate-500")
@@ -227,6 +229,8 @@ module ChartsHelper
            "#{usd_plain(lead.launch.input)} to #{usd_plain(lead.current.input)} " \
            "per 1M tokens between #{lead.launch.date.strftime('%b %Y')} and " \
            "#{lead.current.date.strftime('%b %Y')}; #{trends.size} providers shown."
+    floor = nil unless floor && floor.size >= 2
+    desc += " A dashed line marks the cheapest frontier input available, down to #{usd_plain(floor.last.input)}." if floor
 
     svg = []
     svg << %(<svg viewBox="0 0 #{width} #{height}" class="w-full h-auto" role="img" aria-labelledby="#{uid}-title #{uid}-desc">)
@@ -268,6 +272,17 @@ module ChartsHelper
     overflow = labels.any? ? labels.last[:y] - plot_bottom : 0
     labels.each { |l| l[:y] = [ l[:y] - overflow, pad[:t].to_f ].max } if overflow.positive?
 
+    # The cheapest-frontier floor, drawn first so the provider lines sit over it:
+    # a dashed dark reference stepping down as cheaper flagships appear. No
+    # data-provider, so the hover-dim leaves it in place.
+    if floor
+      fpts = floor.map { |p| [ sx.(p.date), sy.(p.input) ] }
+      fd = +"M#{fpts.first[0]},#{fpts.first[1]}"
+      fpts.each_cons(2) { |(_, prev_y), (x, y)| fd << " L#{x},#{prev_y} L#{x},#{y}" }
+      fd << " L#{x_right},#{fpts.last[1]}"
+      svg << %(<path class="flagship-floor" d="#{fd}" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="5 4" opacity="0.8" stroke-linejoin="round"><title>Cheapest frontier input price available at any time</title></path>)
+    end
+
     # One stepped line per provider. A step holds the old price to the next
     # release date, then jumps — a price is a step function, not a slope — and the
     # final segment extends flat to today at the current flagship price.
@@ -299,6 +314,86 @@ module ChartsHelper
     content_tag(:div, svg.join.html_safe, class: "flagship-chart")
   end
 
+  # Snapshot dumbbell chart: one horizontal mark per provider's current flagship,
+  # its input price (indigo) joined to its output price (rose) on a shared log $
+  # axis — the "where today's flagships sit, on both dimensions" companion to the
+  # over-time line chart. Input and output are two discrete prices, not a filled
+  # range, so it's a dumbbell (two dots + a connector), never a solid bar.
+  #
+  # On a log axis the connector's length is the output premium as a *multiple*
+  # (output ÷ input), which is the honest comparable quantity — dollar gaps
+  # between a $0.15 and a $30 model aren't comparable. That multiple is labelled.
+  # Cheapest input first, so the input dots read as a staircase. Server-rendered
+  # SVG; reuses the flagship_chart controller's hover-dim via data-provider.
+  def provider_flagship_spread_chart(trends, width: 900)
+    rows = trends.select { |t| t.current&.input&.positive? }.sort_by { |t| t.current.input }
+    if rows.empty?
+      return content_tag(:p, "No flagship pricing on record yet.", class: "text-sm text-slate-500")
+    end
+
+    pad = { l: 96, r: 156, t: 12, b: 30 }
+    row_h  = 30
+    plot_w = width - pad[:l] - pad[:r]
+    height = pad[:t] + rows.size * row_h + pad[:b]
+    x_right = pad[:l] + plot_w
+
+    vals = rows.flat_map { |t| [ t.current.input, t.current.output ] }.compact.select(&:positive?)
+    lo = 10.0**Math.log10(vals.min).floor
+    hi = 10.0**Math.log10(vals.max).ceil
+    hi = lo * 10 if hi <= lo
+    loglo, loghi = Math.log10(lo), Math.log10(hi)
+    sx = ->(v) { (pad[:l] + (Math.log10(v) - loglo) / (loghi - loglo) * plot_w).round(1) }
+
+    cheapest, priciest = rows.first, rows.last
+    desc = "Current flagship input vs output price for #{rows.size} providers, per 1M tokens. " \
+           "#{cheapest.provider_name} is cheapest on input at #{usd_plain(cheapest.current.input)}; " \
+           "#{priciest.provider_name} dearest at #{usd_plain(priciest.current.input)}. " \
+           "Output runs several times input on every one."
+
+    svg = []
+    svg << %(<svg viewBox="0 0 #{width} #{height}" class="w-full h-auto" role="img" aria-labelledby="spread-title spread-desc">)
+    svg << %(<title id="spread-title">Today's flagship input and output prices by provider</title>)
+    svg << %(<desc id="spread-desc">#{ERB::Util.html_escape(desc)}</desc>)
+
+    plot_bottom = pad[:t] + rows.size * row_h
+    decade = lo
+    while decade <= hi + 1e-9
+      gx = sx.(decade)
+      svg << %(<line x1="#{gx}" y1="#{pad[:t]}" x2="#{gx}" y2="#{plot_bottom}" stroke="#f1f5f9" stroke-width="1"/>)
+      svg << %(<text x="#{gx}" y="#{height - 8}" font-size="11" fill="#94a3b8" text-anchor="middle" style="font-variant-numeric:tabular-nums">#{flagship_axis_price(decade)}</text>)
+      decade *= 10
+    end
+
+    rows.each_with_index do |t, i|
+      cy   = (pad[:t] + i * row_h + row_h / 2.0).round(1)
+      inp  = t.current.input
+      out  = t.current.output
+      ix   = sx.(inp)
+      name = ERB::Util.html_escape(t.provider_name)
+
+      svg << %(<g class="flagship-line" data-provider="#{t.provider_slug}" data-action="mouseenter->flagship-chart#highlight mouseleave->flagship-chart#reset">)
+      svg << %(<text data-provider="#{t.provider_slug}" x="#{pad[:l] - 12}" y="#{cy + 4}" font-size="12" font-weight="600" fill="#334155" text-anchor="end">#{name}</text>)
+
+      if out&.positive?
+        ox  = sx.(out)
+        mult = out / inp
+        mult_label = format("%g×", mult.round(1))
+        title = "#{t.provider_name} #{t.current.model_name}: #{usd_plain(inp)} input, #{usd_plain(out)} output per 1M — output #{mult_label} input"
+        svg << %(<line x1="#{ix}" y1="#{cy}" x2="#{ox}" y2="#{cy}" stroke="#cbd5e1" stroke-width="2.5"/>)
+        svg << %(<circle cx="#{ix}" cy="#{cy}" r="4.5" fill="#4f46e5"><title>#{ERB::Util.html_escape(title)}</title></circle>)
+        svg << %(<circle cx="#{ox}" cy="#{cy}" r="4.5" fill="#e11d48"><title>#{ERB::Util.html_escape(title)}</title></circle>)
+        svg << %(<text x="#{(ox + 10).round(1)}" y="#{cy + 4}" font-size="11.5" fill="#475569" style="font-variant-numeric:tabular-nums">#{flagship_axis_price(inp)} <tspan fill="#94a3b8">&#8594;</tspan> #{flagship_axis_price(out)} <tspan fill="#94a3b8" font-weight="600">#{mult_label}</tspan></text>)
+      else
+        svg << %(<circle cx="#{ix}" cy="#{cy}" r="4.5" fill="#4f46e5"><title>#{ERB::Util.html_escape("#{t.provider_name} #{t.current.model_name}: #{usd_plain(inp)} input per 1M; output not tracked")}</title></circle>)
+        svg << %(<text x="#{(ix + 10).round(1)}" y="#{cy + 4}" font-size="11.5" fill="#475569" style="font-variant-numeric:tabular-nums">#{flagship_axis_price(inp)} in <tspan fill="#94a3b8">· output n/a</tspan></text>)
+      end
+      svg << "</g>"
+    end
+
+    svg << "</svg>"
+    content_tag(:div, svg.join.html_safe, class: "flagship-chart", data: { controller: "flagship-chart" })
+  end
+
   # Compact dollar label for the flagship chart's axis and end labels: whole
   # dollars drop the ".00" ($30, not $30.00), sub-dollar keeps significant
   # digits ($0.15). usd_plain always shows 2dp above $1, which reads noisy here.
@@ -307,6 +402,15 @@ module ChartsHelper
     return "$#{v.round}" if v >= 1 && (v - v.round).abs < 0.005
 
     usd_plain(v)
+  end
+
+  # A `[min, max]` price pair as a compact label: a single price when the ends
+  # coincide (one flagship, or a flat history), otherwise a "$low–$high" range.
+  def flagship_price_range(range)
+    low, high = range
+    return flagship_axis_price(low) if low == high
+
+    "#{flagship_axis_price(low)}–#{flagship_axis_price(high)}"
   end
 
   def chart_legend

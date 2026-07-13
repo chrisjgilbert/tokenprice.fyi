@@ -20,19 +20,40 @@ class FlagshipTrendTest < ActiveSupport::TestCase
     assert_in_delta 1.74, deepseek.steps.first.input, 0.001
   end
 
-  test "input_change_pct compares the first flagship to the current one" do
+  test "input_range and output_range span a provider's flagship launch prices" do
     anthropic = FlagshipTrend.all.find { |t| t.provider_slug == "anthropic" }
 
-    # Ascending by date: opus ($5 input, May 2026) then fable ($10, Jun 2026).
-    assert_equal "claude-opus-4-8", anthropic.launch.model_slug
-    assert_equal "claude-fable-5",  anthropic.current.model_slug
-    assert_equal 100, anthropic.input_change_pct
+    # opus $5 in / $25 out (May 2026), fable $10 in / $50 out (Jun 2026).
+    assert_equal [ 5.0, 10.0 ],  anthropic.input_range
+    assert_equal [ 25.0, 50.0 ], anthropic.output_range
   end
 
-  test "input_change_pct is nil for a single-flagship provider" do
-    deepseek = FlagshipTrend.all.find { |t| t.provider_slug == "deepseek" }
+  test "output_range is nil when no flagship has an output rate" do
+    trend = FlagshipTrend.new(provider_name: "X", provider_slug: "x", accent: "#000",
+      steps: [ FlagshipTrend::Step.new(date: Date.new(2025, 1, 1), model_name: "m",
+                                       model_slug: "m", input: 5.0, output: nil) ])
 
-    assert_nil deepseek.input_change_pct
+    assert_equal [ 5.0, 5.0 ], trend.input_range
+    assert_nil trend.output_range
+  end
+
+  test "input_as_of returns the flagship in effect on a date, nil before launch" do
+    anthropic = FlagshipTrend.all.find { |t| t.provider_slug == "anthropic" }
+
+    assert_nil anthropic.input_as_of(Date.new(2026, 1, 1))          # before opus
+    assert_in_delta 5.0,  anthropic.input_as_of(Date.new(2026, 5, 29)), 0.001 # opus reigns
+    assert_in_delta 10.0, anthropic.input_as_of(Date.current), 0.001         # fable now
+  end
+
+  test "floor_series steps down to the cheapest available frontier input over time" do
+    series = FlagshipTrend.floor_series(FlagshipTrend.all)
+
+    # Fixtures: deepseek $1.74 (Feb 2026) then anthropic opus $5 (May) + fable $10.
+    # The floor is the cheapest in effect at each date, so it opens at 1.74 and
+    # never rises above it.
+    assert_equal series.map(&:date), series.map(&:date).sort
+    assert_in_delta 1.74, series.first.input, 0.001
+    assert_operator series.map(&:input).max, :<=, 1.74 + 0.001
   end
 
   test "excludes a frontier model whose launch input price is zero" do

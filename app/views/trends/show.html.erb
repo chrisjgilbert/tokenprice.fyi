@@ -18,47 +18,27 @@
   <header class="trends-header">
     <h1 class="trends-h1">Flagship prices over time</h1>
     <p class="trends-subtitle">
-      <% if summary.compared? %>
-        <% if summary.mixed? %>
-          The frontier hasn't moved in one direction: since
-          <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          the launch price of the flagship — a provider's most-powerful model —
-          has fallen for <span class="num"><%= summary.cheaper.size %></span>
-          <%= "provider".pluralize(summary.cheaper.size) %> and risen for
-          <span class="num"><%= summary.pricier.size %></span>.
-        <% elsif summary.cheaper.any? %>
-          Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          the launch price of the flagship — a provider's most-powerful model —
-          has fallen for <span class="num"><%= summary.cheaper.size %></span>
-          <%= "provider".pluralize(summary.cheaper.size) %> and risen for none.
-        <% else %>
-          Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
-          the launch price of the flagship — a provider's most-powerful model —
-          has risen for <span class="num"><%= summary.pricier.size %></span>
-          <%= "provider".pluralize(summary.pricier.size) %> and fallen for none.
-        <% end %>
-        <% if summary.biggest_cut %>
-          <%= summary.biggest_cut.provider_name %>'s has fallen furthest, down
-          <span class="num"><%= summary.biggest_cut.input_change_pct.abs %>%</span><% if summary.biggest_rise %>;
-          <%= summary.biggest_rise.provider_name %>'s has climbed
-          <span class="num"><%= summary.biggest_rise.input_change_pct %>%</span><% end %>.
-        <% elsif summary.biggest_rise %>
-          <%= summary.biggest_rise.provider_name %>'s has climbed furthest, up
-          <span class="num"><%= summary.biggest_rise.input_change_pct %>%</span>.
-        <% end %>
+      Each provider's line tracks its most-powerful model, priced at launch.
+      <% if (drop = summary.floor_drop) %>
+        Since <span class="num"><%= summary.earliest.strftime("%B %Y") %></span>,
+        the cheapest frontier input price has fallen from
+        <span class="num"><%= flagship_axis_price(drop[:from].input) %></span>
+        (<%= drop[:from].model_name %>) to
+        <span class="num"><%= flagship_axis_price(drop[:to].input) %></span>
+        (<%= drop[:to].model_name %>), a <span class="num"><%= drop[:multiple] %>×</span> drop.
       <% end %>
       <% if (span = summary.price_span) %>
-        Today's flagships range about
+        Today's flagship input prices range about
         <span class="num"><%= span[:multiple] %>×</span> apart, from
         <span class="num"><%= flagship_axis_price(span[:low]) %></span> to
         <span class="num"><%= flagship_axis_price(span[:high]) %></span>
-        per 1M input tokens.
+        per 1M tokens.
       <% end %>
     </p>
   </header>
 
   <div class="tp-card trends-card" data-controller="flagship-chart">
-    <%= provider_flagship_chart(@trends) %>
+    <%= provider_flagship_chart(@trends, floor: FlagshipTrend.floor_series(@trends)) %>
 
     <ul class="trends-legend" aria-label="Providers">
       <% @trends.each do |t| %>
@@ -71,8 +51,32 @@
           <% end %>
         </li>
       <% end %>
+      <li class="trends-legend-floor" aria-hidden="true">
+        <span class="trends-floor-swatch"></span>
+        <span class="trends-legend-name">Cheapest available</span>
+      </li>
     </ul>
+    <p class="trends-card-note">
+      The dashed line is the cheapest frontier input price you could buy at any
+      time; the set of providers grows over the span.
+    </p>
   </div>
+
+  <%# Snapshot companion to the over-time chart: today's flagships on both
+      dimensions, input joined to output. %>
+  <section class="tp-card trends-spread" aria-label="Today's flagship input and output prices">
+    <h2 class="trends-h2">Input to output, today's flagships</h2>
+    <p class="trends-spread-lede">
+      Each provider's current flagship, its input price joined to its output. On
+      the log scale a bar's length is the output premium: how many times output
+      costs more than input.
+    </p>
+    <%= provider_flagship_spread_chart(@trends) %>
+    <p class="trends-spread-legend" aria-hidden="true">
+      <span class="trends-dot in"></span> input
+      <span class="trends-dot out"></span> output
+    </p>
+  </section>
 
   <% if @recent_price_moves.any? %>
     <section class="trends-moves" aria-label="Recent price changes">
@@ -96,11 +100,9 @@
             <span class="trends-summary-meta">
               <span class="num"><%= t.steps.size %></span>
               <%= "flagship".pluralize(t.steps.size) %>
-              <% if (chg = t.input_change_pct) %>
-                <% down = chg <= 0 %>
-                · <span class="trends-chg <%= down ? "down" : "up" %>">
-                  <%= down ? "−" : "+" %><%= chg.abs %>%
-                </span> input since first
+              · in <span class="num"><%= flagship_price_range(t.input_range) %></span>
+              <% if (outputs = t.output_range) %>
+                · out <span class="num"><%= flagship_price_range(outputs) %></span>
               <% end %>
             </span>
           </summary>
@@ -190,6 +192,55 @@
   border-radius: 3px;
   flex: none;
 }
+/* Floor line legend chip: a dashed dark rule to match the chart line. */
+.trends-legend-floor {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-500);
+}
+.trends-floor-swatch {
+  width: 16px;
+  height: 0;
+  flex: none;
+  border-top: 2px dashed #334155;
+}
+.trends-card-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-slate-400);
+}
+
+/* ── Input/output spread (dumbbell) ──────────────────────────────────── */
+.trends-spread { margin-top: 22px; padding: 22px 24px 16px; }
+@media (max-width: 560px) { .trends-spread { padding: 16px 12px 12px; } }
+.trends-spread-lede {
+  margin: 4px 0 14px;
+  max-width: 60em;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-slate-500);
+}
+.trends-spread-legend {
+  margin-top: 12px;
+  display: flex;
+  gap: 18px;
+  font-size: 12.5px;
+  color: var(--color-slate-500);
+}
+.trends-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.trends-dot.in { background: #4f46e5; }
+.trends-dot.out { background: #e11d48; }
 
 /* ── Recent price changes ────────────────────────────────────────────── */
 .trends-moves { margin-top: 40px; }

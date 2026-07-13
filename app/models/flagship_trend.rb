@@ -16,6 +16,10 @@ class FlagshipTrend
   # launch price in USD per 1M tokens.
   Step = Data.define(:date, :model_name, :model_slug, :input, :output)
 
+  # One point on the cheapest-frontier floor line: the lowest flagship input
+  # price available anywhere on `date`.
+  FloorPoint = Data.define(:date, :input)
+
   attr_reader :provider_name, :provider_slug, :accent, :steps
 
   def initialize(provider_name:, provider_slug:, accent:, steps:)
@@ -30,15 +34,21 @@ class FlagshipTrend
   def current = steps.last
   def launch  = steps.first
 
-  # Percent change in flagship input price from the first tracked flagship to the
-  # current one (negative = cheaper). Nil when there's a single flagship or the
-  # base is zero — nothing to compare.
-  def input_change_pct
-    from = launch.input
-    to   = current.input
-    return nil if steps.size < 2 || from.nil? || to.nil? || from.zero?
+  # The [min, max] launch price this provider's flagships have spanned, per
+  # dimension. Input is always present; output can be nil on a flagship we don't
+  # have an output rate for, so it's compacted and nil when none is known.
+  def input_range = steps.map(&:input).minmax
 
-    (((to - from) / from) * 100).round
+  def output_range
+    outputs = steps.filter_map(&:output)
+    outputs.minmax if outputs.any?
+  end
+
+  # This provider's flagship input price in effect on `date` — the latest release
+  # on or before it — or nil if it hadn't shipped a frontier model yet. Feeds the
+  # cross-provider floor line.
+  def input_as_of(date)
+    steps.select { |s| s.date <= date }.last&.input
   end
 
   class << self
@@ -66,6 +76,19 @@ class FlagshipTrend
         .values
         .map { |entries| build(entries) }
         .sort_by { |t| [ -t.steps.size, t.provider_name ] }
+    end
+
+    # The cheapest frontier input price available at each point in time — the min
+    # across providers of their in-effect flagship. A step series (one point per
+    # release date across all providers) for the chart's floor line. The pool of
+    # providers grows over time; a cheaper new entrant genuinely lowers the floor,
+    # which is the point (unlike a mean, this isn't distorted by who's in the set).
+    def floor_series(trends = all)
+      dates = trends.flat_map { |t| t.steps.map(&:date) }.uniq.sort
+      dates.filter_map do |date|
+        prices = trends.filter_map { |t| t.input_as_of(date) }
+        FloorPoint.new(date: date, input: prices.min) if prices.any?
+      end
     end
 
     private

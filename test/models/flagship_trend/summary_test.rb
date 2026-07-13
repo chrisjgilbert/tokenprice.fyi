@@ -1,39 +1,41 @@
 require "test_helper"
 
 class FlagshipTrend::SummaryTest < ActiveSupport::TestCase
-  test "splits providers into cheaper and dearer by first-to-current change" do
+  test "floor_drop tracks the cheapest frontier input from the first flagship to the lowest" do
     summary = FlagshipTrend::Summary.new([
-      trend("Falls", steps: [ step("2024-01-01", 40), step("2025-01-01", 10) ]),
-      trend("Rises", steps: [ step("2024-01-01", 2),  step("2025-01-01", 6) ]),
-      trend("Only",  steps: [ step("2024-01-01", 5) ])
+      trend("First", steps: [ step("2023-03-01", 30) ]),
+      trend("Cheap", steps: [ step("2025-04-01", 0.15) ]),
+      trend("Mid",   steps: [ step("2024-03-01", 15) ])
     ])
 
-    assert summary.compared?
-    assert summary.mixed?
-    assert_equal %w[Falls], summary.cheaper.map(&:provider_name)
-    assert_equal %w[Rises], summary.pricier.map(&:provider_name)
+    drop = summary.floor_drop
+    assert_equal "2023-03-01", drop[:from].date.to_s
+    assert_in_delta 30,   drop[:from].input, 0.001
+    assert_in_delta 0.15, drop[:to].input, 0.001
+    assert_equal 200, drop[:multiple]
   end
 
-  test "names the sharpest mover in each direction" do
-    summary = FlagshipTrend::Summary.new([
-      trend("SmallCut", steps: [ step("2024-01-01", 10), step("2025-01-01", 9) ]),
-      trend("BigCut",   steps: [ step("2024-01-01", 10), step("2025-01-01", 1) ]),
-      trend("BigRise",  steps: [ step("2024-01-01", 1),  step("2025-01-01", 5) ])
-    ])
+  test "floor_drop is nil for a single flagship or a sub-2x fall" do
+    assert_nil FlagshipTrend::Summary.new([
+      trend("Solo", steps: [ step("2023-01-01", 30) ])
+    ]).floor_drop
 
-    assert_equal "BigCut",  summary.biggest_cut.provider_name
-    assert_equal "BigRise", summary.biggest_rise.provider_name
+    # $1.30 → $1.00 rounds to 1× — not worth a "cheaper" claim.
+    assert_nil FlagshipTrend::Summary.new([
+      trend("Dear",  steps: [ step("2023-01-01", 1.30) ]),
+      trend("Close", steps: [ step("2024-01-01", 1.00) ])
+    ]).floor_drop
   end
 
-  test "not mixed when every multi-flagship provider moved the same way" do
+  test "floor_drop's `from` is deterministic on an earliest-date tie — the dearest wins" do
     summary = FlagshipTrend::Summary.new([
-      trend("A", steps: [ step("2024-01-01", 10), step("2025-01-01", 4) ]),
-      trend("B", steps: [ step("2024-01-01", 20), step("2025-01-01", 5) ])
+      trend("Cheap", steps: [ step("2023-03-14", 30) ]),
+      trend("Dear",  steps: [ step("2023-03-14", 60) ]),
+      trend("Later", steps: [ step("2025-01-01", 0.6) ])
     ])
 
-    refute summary.mixed?
-    assert summary.cheaper.any?
-    assert_nil summary.biggest_rise
+    assert_in_delta 60, summary.floor_drop[:from].input, 0.001
+    assert_equal 100, summary.floor_drop[:multiple]
   end
 
   test "price_span reports the spread of current flagship prices" do
