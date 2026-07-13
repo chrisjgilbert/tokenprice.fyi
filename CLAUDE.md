@@ -55,9 +55,9 @@ Don't deviate silently.
 
 1. **MVC, for real.** Logic lives on rich models — both Active Record models
    *and* plain Ruby objects in `app/models/`. "Model" means *any* domain object,
-   not just `ActiveRecord::Base`. `PriceCatalog`, `ModelCategory`, and
-   `FlagshipTrend` are the model of the right shape: plain-Ruby domain POROs
-   (often `Data.define` + a frozen registry) living in `app/models/`.
+   not just `ActiveRecord::Base`. `PriceCatalog` and `ModelCategory` are the
+   model of the right shape: plain-Ruby domain POROs (often `Data.define` + a
+   frozen registry) living in `app/models/`.
 
 2. **Controllers stay thin.** They authenticate, load a record, call one method
    on it, and render. The read controllers (`models`, `providers`, `trends`,
@@ -182,7 +182,6 @@ app/
       classification.rb       # operation object (noun)
     price_catalog.rb          # domain read-model facade
     model_category.rb         # domain PORO (Data.define + frozen registry)
-    flagship_trend.rb         # domain PORO (per-provider flagship price series)
     open_router/
       model_sync.rb           # top-level coordinator (noun)
       sync_digest.rb

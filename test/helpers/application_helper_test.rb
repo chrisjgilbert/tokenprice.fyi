@@ -60,8 +60,8 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes pill, "$25"
   end
 
-  test "the primary nav is Models, Trends, Events — the retired News feed is gone" do
+  test "the primary nav is Models and Events — the retired News feed and Trends page are gone" do
     labels = primary_nav_items.map(&:first)
-    assert_equal %w[Models Trends Events], labels
+    assert_equal %w[Models Events], labels
   end
 end

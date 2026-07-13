@@ -31,6 +31,10 @@ class EventsController < ApplicationController
       @launch_count = all.count { |e| e.kind == "launch" }
       # `all` is sorted ascending, so the first entry is the earliest on record.
       @earliest_year = all.first&.date&.year
+      # The recent-price-changes strip rides the same page (moved here when the
+      # trends page was retired); its freshness is already covered by the etag's
+      # timeline_last_modified, which folds in PriceCatalog.last_modified.
+      @recent_price_moves = PriceCatalog.recent_price_moves
     end
 
     # Newest first for display, filtered to the active kind.

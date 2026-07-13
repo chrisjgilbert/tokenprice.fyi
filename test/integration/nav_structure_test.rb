@@ -13,12 +13,12 @@ class NavStructureTest < ActionDispatch::IntegrationTest
     assert_select "nav.tp-nav a[href='/news']", count: 0
   end
 
-  test "primary nav still carries Models, Trends and Events" do
+  test "primary nav carries Models and Events, not the retired Trends" do
     get root_path
     assert_response :success
     assert_select "nav.tp-nav a[href=?]", root_path
-    assert_select "nav.tp-nav a[href=?]", trends_path
     assert_select "nav.tp-nav a[href=?]", events_path
+    assert_select "nav.tp-nav a[href='/trends']", count: 0
   end
 
   test "the footer preserves a crawlable Compare link" do
