@@ -19,8 +19,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     # Primary CTA into the pricing explainer.
     assert_select ".hero-cta a[href=?]", how_pricing_works_path, text: /How pricing works/
-    # Secondary CTA into the flagship price-trends chart.
-    assert_select ".hero-cta a[href=?]", trends_path, text: /Flagship prices over time/
   end
 
   test "hero subtitle renders the dynamic model and provider counts, never a static 40+" do

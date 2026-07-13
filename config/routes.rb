@@ -27,9 +27,9 @@ Rails.application.routes.draw do
   # links and bookmarks there rather than 404.
   get "news",    to: redirect("/events", status: 301)
   get "sources", to: "sources#index",    as: :sources
-  # Flagship price-over-time chart — surfaces the full frontier history, retired
-  # models included. Reclaims the /trends URL that used to 301 to /events.
-  get "trends",  to: "trends#show",       as: :trends
+  # The flagship price-over-time page was retired; the recent-price-changes strip
+  # it carried now lives on /events. 301 inbound links there rather than 404.
+  get "trends",  to: redirect("/events", status: 301)
   # The task-based Guide was removed. 301 its URLs — and the legacy /which-model
   # alias that used to point at it — to the homepage so inbound links and
   # bookmarks keep landing on the models table. The /guide/:task catch covers

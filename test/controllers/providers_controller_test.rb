@@ -34,10 +34,9 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /updated daily/
   end
 
-  test "links to the trends chart and to the events timeline with descriptive anchors" do
+  test "links to the events timeline with a descriptive anchor" do
     get provider_url(providers(:anthropic))
     assert_response :success
-    assert_select "a[href=?]", trends_path
     assert_select "a[href=?]", events_path
   end
 

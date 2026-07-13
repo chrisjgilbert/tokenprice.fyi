@@ -115,8 +115,4 @@ class ConditionalGetTest < ActionDispatch::IntegrationTest
   test "events supports conditional GET" do
     assert_not_modified_on_replay(events_url)
   end
-
-  test "trends supports conditional GET" do
-    assert_not_modified_on_replay(trends_url)
-  end
 end

@@ -187,7 +187,6 @@ module ApplicationHelper
   def primary_nav_items
     [
       [ "Models", root_path,   -> { current_page?(root_path) } ],
-      [ "Trends", trends_path, -> { current_page?(trends_path) } ],
       [ "Events", events_path, -> { events_active? } ]
     ]
   end

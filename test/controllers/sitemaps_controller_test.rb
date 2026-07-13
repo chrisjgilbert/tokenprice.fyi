@@ -36,10 +36,10 @@ class SitemapsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the sitemap advertises the trends chart, not the removed guide or which-model" do
+  test "the sitemap omits the retired trends, guide, and which-model URLs" do
     get sitemap_url
     assert_response :success
-    assert_includes @response.body, trends_url
+    assert_not_includes @response.body, "/trends"
     assert_not_includes @response.body, "/guide"
     assert_not_includes @response.body, "/which-model"
   end

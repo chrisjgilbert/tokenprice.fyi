@@ -25,6 +25,13 @@
     </p>
   </header>
 
+  <%# ── Recent price changes ────────────────────────────────────────────── %>
+  <%# The catalog's price moves in the last 30 days — the web home for the Slack
+      price-moves digest, moved here when the flagship-trends page was retired. %>
+  <% if @recent_price_moves&.any? %>
+    <%= render "recent_price_changes", moves: @recent_price_moves %>
+  <% end %>
+
   <%# ── Filter ─────────────────────────────────────────────────────────── %>
   <%# Each tab is a link to that kind's first page — filtering happens on the
       server, so the count reflects the whole timeline, not just what's loaded. %>
