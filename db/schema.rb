@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_12_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -69,9 +69,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_120000) do
     t.index ["status"], name: "index_market_events_on_status"
   end
 
+  create_table "model_candidates", force: :cascade do |t|
+    t.string "category_slug"
+    t.string "confidence"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "news_item_id"
+    t.json "pricing"
+    t.string "provider_name", null: false
+    t.string "rationale"
+    t.date "released_on"
+    t.string "slug", null: false
+    t.string "source_url"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["news_item_id"], name: "index_model_candidates_on_news_item_id"
+    t.index ["slug"], name: "index_model_candidates_on_slug"
+    t.index ["status"], name: "index_model_candidates_on_status"
+  end
+
   create_table "news_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "curated_at"
+    t.datetime "curated_for_model_at"
     t.string "kind"
     t.integer "market_event_id"
     t.datetime "notified_at"
@@ -83,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_120000) do
     t.datetime "updated_at", null: false
     t.string "url", null: false
     t.index ["curated_at"], name: "index_news_items_on_curated_at"
+    t.index ["curated_for_model_at"], name: "index_news_items_on_curated_for_model_at"
     t.index ["notified_at"], name: "index_news_items_on_notified_at"
     t.index ["published_at"], name: "index_news_items_on_published_at"
     t.index ["url"], name: "index_news_items_on_url", unique: true
@@ -121,5 +142,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_120000) do
   end
 
   add_foreign_key "ai_models", "providers"
+  add_foreign_key "model_candidates", "news_items"
   add_foreign_key "price_points", "ai_models"
 end
