@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { clampToViewport } from "clamp_to_viewport"
 
 // Positions a native popover under the button that opened it, clamped to the
 // viewport and flipped above when there's no room below. The Popover API itself
@@ -18,15 +19,7 @@ export default class extends Controller {
     invoker.setAttribute("aria-expanded", event.newState === "open" ? "true" : "false")
     if (event.newState !== "open") return
 
-    const margin = 8
-    const gap = 6
-    const anchor = invoker.getBoundingClientRect()
-    const self = this.element.getBoundingClientRect()
-
-    const left = Math.max(margin, Math.min(anchor.left, window.innerWidth - self.width - margin))
-    const fitsBelow = anchor.bottom + gap + self.height <= window.innerHeight - margin
-    const top = fitsBelow ? anchor.bottom + gap : Math.max(margin, anchor.top - gap - self.height)
-
+    const { left, top } = clampToViewport(invoker.getBoundingClientRect(), this.element.getBoundingClientRect())
     this.element.style.left = `${left}px`
     this.element.style.top = `${top}px`
   }

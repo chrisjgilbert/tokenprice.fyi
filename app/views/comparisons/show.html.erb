@@ -67,6 +67,12 @@
   font-family: var(--font-sans);
   font-weight: 500;
 }
+.cmp-desc {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-slate-600);
+}
 .cmp-cell.win { background: var(--color-emerald-50); }
 .cmp-cell.win .val { color: var(--color-emerald-700); }
 /* Accent row for I/O price */
@@ -424,6 +430,22 @@
     %>
 
     <div class="cmp-table">
+
+      <%# Shown first — more useful context than the numbers below. Hand-rolled,
+          not folded into numeric_rows/text_rows: it hides entirely when both
+          sides lack a description, unlike that loop's always-dash-fill rows. %>
+      <% if @left.description.present? || @right.description.present? %>
+        <div class="cmp-row">
+          <div class="lbl">Description</div>
+          <% [@left, @right].each do |m| %>
+            <div class="cmp-cell txt">
+              <span class="val cmp-desc">
+                <%= m.description.presence || content_tag(:span, "—", class: "tp-muted-dash") %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
 
       <%# Row 1 — I/O price (accent, no winner) %>
       <div class="cmp-row accent">

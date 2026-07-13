@@ -197,6 +197,12 @@
     color: rgba(148,163,184,.8);
     margin-bottom: 8px;
   }
+  .hero-card-desc {
+    font-size: 13.5px;
+    color: rgba(226,232,240,.9);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
   .hero-card-note {
     font-size: 13.5px;
     color: rgba(203,213,225,.85);
@@ -320,6 +326,7 @@
           Latest events
         </div>
 
+        <% launch_model = primary_event.model if primary_event&.kind == "launch" %>
         <% if primary_event %>
           <div class="hero-card-headline">
             <div>
@@ -335,12 +342,15 @@
               <% end %>
             </div>
             <div class="hero-card-date"><%= fmt_date_full(primary_event.date) %></div>
+            <% if launch_model&.description.present? %>
+              <div class="hero-card-desc"><%= launch_model.description %></div>
+            <% end %>
             <% if primary_event.so_what.present? %>
               <div class="hero-card-sowhat"><%= primary_event.so_what %></div>
             <% elsif primary_event.note.present? %>
               <div class="hero-card-note"><%= primary_event.note %></div>
             <% end %>
-            <% if primary_event.kind == "launch" && (m = primary_event.model) %>
+            <% if (m = launch_model) %>
               <div class="hero-card-chips">
                 <%= tier_badge(m.tier) %>
                 <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>
@@ -613,7 +623,10 @@
                   <% case key %>
                   <% when :name %>
                       <td class="tp-card-title <%= sort_col == 'name' ? 'tp-col-highlight' : '' %>">
-                        <div class="tp-model-cell">
+                        <div class="tp-model-cell" data-controller="hovercard"
+                             aria-haspopup="true" aria-expanded="false"
+                             data-action="pointerenter->hovercard#show pointerleave->hovercard#hide
+                                          focusin->hovercard#show focusout->hovercard#hide">
                           <%= link_to model_path(model) do %>
                             <%= provider_square(model.provider, size: :md) %>
                           <% end %>
@@ -628,6 +641,22 @@
                               <%= modality_badge(model) %>
                             </div>
                           </div>
+                          <% if model.description.present? %>
+                            <div class="tp-hovercard" popover="manual" data-hovercard-target="card"
+                                 data-action="toggle->hovercard#position click->hovercard#swallow:stop">
+                              <p class="tp-hovercard-desc"><%= model.description %></p>
+                              <div class="tp-hovercard-facts">
+                                <%= tier_badge(model.tier) %>
+                                <span class="tp-hovercard-fact"><%= io_price(model, tag: true) %></span>
+                                <% if model.context_window %>
+                                  <span class="tp-hovercard-fact num"><%= tokens_short(model.context_window) %> ctx</span>
+                                <% end %>
+                                <% if model.released_on %>
+                                  <span class="tp-hovercard-fact"><%= fmt_date(model.released_on) %></span>
+                                <% end %>
+                              </div>
+                            </div>
+                          <% end %>
                         </div>
                       </td>
                     <% when :tier %>

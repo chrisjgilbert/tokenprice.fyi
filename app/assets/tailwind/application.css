@@ -613,6 +613,30 @@ td .tp-muted-dash { color: var(--color-slate-300); }
 .tp-model-sub { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-slate-400); }
 .tp-model-sub .tp-prov-name { color: var(--color-slate-600); font-weight: 500; }
 
+/* Shared native-popover chrome — the click-triggered facet panel
+   (.tp-facet-panel, below) and the hover/focus-triggered price-table
+   hovercard (.tp-hovercard) differ only in width/padding. */
+.tp-hovercard, .tp-facet-panel {
+  position: fixed; margin: 0; inset: auto; z-index: 60;
+  background: #fff; border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+}
+
+/* Model-name hovercard — a native popover, hover/focus-triggered and placed
+   by hovercard_controller. */
+.tp-hovercard {
+  width: min(280px, calc(100vw - 28px));
+  padding: 13px 15px;
+}
+.tp-hovercard-desc { font-size: 13px; line-height: 1.5; color: var(--color-slate-600); }
+.tp-hovercard-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.tp-hovercard-fact {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  background: var(--color-slate-100);
+  font-size: 11.5px; font-weight: 600; color: var(--color-slate-600);
+}
+
 /* ── Compare toolbar (outside the table) ─────────────────────────────────── */
 /* The mode toggle that gates compare selection. Left of a one-line hint that
    only shows once compare mode is on. */
@@ -881,13 +905,11 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
 .tp-facet-chip.is-active .tp-facet-caret { color: var(--color-indigo-500); }
 .tp-facet:has(.tp-facet-panel:popover-open) .tp-facet-caret { transform: rotate(180deg); }
 
-/* Dropdown panel chrome — a native popover, placed by popover_controller. */
+/* Dropdown panel chrome — a native popover, placed by popover_controller.
+   Shared chrome (.tp-hovercard, .tp-facet-panel) lives up with the model cell. */
 .tp-facet-panel {
-  position: fixed; margin: 0; inset: auto; z-index: 60;
   width: min(320px, calc(100vw - 28px));
-  padding: 14px; background: #fff;
-  border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  padding: 14px;
 }
 .tp-facet-panel-title {
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
