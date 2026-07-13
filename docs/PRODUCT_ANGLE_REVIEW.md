@@ -74,7 +74,106 @@ table, and API already support it. Specifically, do not:
   complexity live. The umbrella framing applies to the brand/default layer
   only.
 
-## Workstream 1 — Re-scope the global chrome (highest leverage)
+## Pressure test (July 2026) — the hierarchy inverts
+
+The positioning above was pressure-tested from three adversarial angles:
+competitive (web research on the mid-2026 landscape), demand (who the user of
+a cross-category directory actually is), and deliverability (what the
+codebase can operationally sustain). The three attacks converged, and the
+result amends this document's recommendation: **the scope survives, the
+hierarchy doesn't.** "A pricing directory across AI models, with learning
+resources" leads with the weakest asset. The defensible position is the
+*record*: every price dated, sourced, and watched for changes.
+
+### What the test found
+
+**Competitive.** The LLM price-comparison space filled in over the last year.
+pricepertoken.com owns the head SEO query with daily updates, ~300+ models,
+its own pricing-history and trends pages, and an MCP server; BenchLM charts
+LLM prices back to March 2023; LLMRates markets "the complete timeline" with
+a changes-stream API. Cross-category current prices are open commons —
+LiteLLM's community-maintained pricing JSON already covers embeddings, image,
+STT, TTS, and rerank machine-readably; models.dev is an open cross-modality
+database; Artificial Analysis publishes native-unit pricing for image, video,
+and speech with a benchmark moat (but no price history, and its data API is
+paid). Consequence: breadth is trivially replicable, "we track price
+history" is no longer unique for LLMs, and generic pricing education is
+commoditized. What remains unoccupied: **dated, sourced, from-launch history
+combined with non-token categories and a curated events timeline explaining
+why prices moved** — the price record of the AI API market.
+
+**Demand.** Of the three jobs a pricing site serves — "what does X cost now,"
+"did prices change," "which should I pick" — a directory serves only the
+first, which is a one-visit commodity job (provider pricing pages answer
+it). Field evidence (the pricepertoken Show HN thread) shows the community
+explicitly asking for the second: history, detected price changes, more
+categories, an API — nearly this product's asset list, which validates the
+scope. But in the non-token categories, price spreads of 10–30× (video
+$/sec, TTS $/1M chars) make "which should I pick" a quality question the
+site deliberately doesn't answer, and Artificial Analysis already owns that
+browse job. The cross-category "one user" is really seven thin audiences
+whose SERPs are separately contested by vendor content teams. Education
+demand is real but shallow, LLM-specific, and functions as calculator-funnel
+spokes elsewhere — a supporting surface, not a positioning clause. Trust
+compounds the risk: pricing sites get judged by their worst cell, and one
+stale directory price teaches a visitor to distrust the "synced daily" claim
+beside it.
+
+**Deliverability.** The directory tier's post-seed lifecycle currently runs
+on maintainer memory: price updates require editing the pricing doc and
+seeds, then a deploy plus `bin/kamal seed` (no admin edit path — native price
+fields are unpermitted in `admin/models_controller.rb`); `PricingStaleness`
+is well-built and covers every directory category but is a manual rake task,
+absent from `config/recurring.yml`, with no Slack alert; `priced_as_of` is
+user-visible only on the model show page and in one API field. The API
+serves directory categories a prose `summary` string (numeric
+`native_price_usd`/`native_price_unit` are omitted) under an envelope
+claiming `unit: "USD per 1,000,000 tokens"`. Structurally worst: native
+price updates **overwrite** the columns on `ai_models`, so the manual tier
+can never accumulate history — it consumes owner attention while depositing
+nothing into the asset the vision monetizes. And because the whole tier was
+seeded in the same week (2026-07-01/06), all ~80 directory prices cross the
+90-day staleness threshold together in early October.
+
+### The amended positioning
+
+> **The price record of AI model APIs: every price dated, sourced, and
+> watched for changes — with full from-launch history for language models,
+> and history for the other categories beginning when tracking begins.**
+
+"Tracked" becomes the admission criterion for headline claims. The directory
+tier is framed as the watchlist frontier ("current list prices, dated and
+sourced; history begins when tracking does") rather than a co-equal
+directory. Learn stays a supporting surface and leaves the positioning
+statement. The two assets no competitor combines — provenance-grade history
+across categories, and the curated events narrative — move to the front.
+
+### What this changes in the plan
+
+Three operational items are promoted from footnotes to the top of the
+priority order, because the amended positioning depends on them:
+
+1. **Append, don't overwrite, native prices.** When `native_price_usd` /
+   `price_summary` changes, record a dated snapshot instead of destroying
+   the prior value. This is the cheapest structural move in the plan and
+   the only one whose value compounds: it converts the October
+   re-verification cliff into the directory tier's first history data, and
+   history-across-categories is the one combination no competitor holds.
+2. **Close the staleness loop.** Schedule `PricingStaleness` weekly in
+   `config/recurring.yml` and post flagged counts to Slack via the existing
+   `SlackNotifier` — a thin job around an already-tested PORO. Surface
+   `priced_as_of` on the directory tab tables, not just the show page.
+3. **Make the API machine-readable for every category.** Emit numeric
+   `native_price_usd` + `native_price_unit`, move unit semantics into the
+   per-model blocks, and retire the token-only envelope claim. The
+   free-API-to-licensed-dataset flywheel cannot run on prose strings.
+
+The demand evidence also names the natural next feature: "tell me when
+prices change" was the most-requested capability in the field research. The
+raw machinery exists (/changes, the Slack digest); a public-facing change
+feed (email or RSS) is the shortest path from the record to a
+return-visit habit, and is noted here as a candidate rather than a
+commitment.
 
 - **Hero** (`app/views/models/index.html.erb:300-313`): make it read from the
   current category. `ModelCategory` already carries per-tab copy; add hero
@@ -269,12 +368,16 @@ the less a partial update buys — once the hero varies by category, almost
 nothing above the table is category-invariant. That is the quiet argument
 for option 1.
 
-## Suggested order
+## Suggested order (amended after the pressure test)
 
-1. Workstream 1 (global chrome + category-aware hero). One PR, fixes the
-   headline misdescription everywhere at once.
-2. The small leak fixes in workstream 2 (breadcrumb, untracked fallback,
+1. Append-only native price snapshots + scheduled staleness alerts (the
+   pressure test's promotions — small, structural, compounding).
+2. Workstream 1 (global chrome + category-aware hero), written to the
+   amended positioning: record/tracker first, "tracked" as the admission
+   criterion for headline claims.
+3. API machine-readability (numeric native prices, per-block units) +
+   llms.txt category listing.
+4. The small leak fixes in workstream 2 (breadcrumb, untracked fallback,
    JSON-LD category, events price line) — each is a few lines.
-3. Provider page and compare re-shaping — the two real view changes.
-4. Learn re-lede + the umbrella explainer.
-5. API envelope + llms.txt category listing.
+5. Provider page and compare re-shaping — the two real view changes.
+6. Learn re-lede + the umbrella explainer.
