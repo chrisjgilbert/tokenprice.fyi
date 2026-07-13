@@ -16,6 +16,10 @@
       <% end %>
     </h3>
 
+    <% if event.kind == "launch" && event.model&.description.present? %>
+      <p class="ev-desc"><%= event.model.description %></p>
+    <% end %>
+
     <% if event.note.present? %>
       <p class="ev-note"><%= event.note %></p>
     <% end %>
