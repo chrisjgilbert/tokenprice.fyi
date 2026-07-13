@@ -11,7 +11,6 @@ module Api
             name: m.name,
             provider: m.provider_name,
             provider_slug: m.provider_slug,
-            tier: m.tier,
             status: m.status,
             context_window: m.context_window,
             released_on: m.released_on,

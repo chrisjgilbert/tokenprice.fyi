@@ -5,7 +5,6 @@ class ModelsController < ApplicationController
     "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
     "context" => ->(m) { m.context_window || 0 },
     "name" => ->(m) { m.name.to_s.downcase },
-    "tier" => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) },
     # Image-category sorts: it has no per-token axis, so it ranks by provider and
     # release date instead. A nil release sorts oldest rather than to the top.
     "provider" => ->(m) { m.provider.name.to_s.downcase },
@@ -19,7 +18,7 @@ class ModelsController < ApplicationController
   # of direction, so it never floats above a priced row when the list is
   # reversed. Each maps to the predicate that marks a row rankable on that axis:
   # a per-token rate for the token columns, a native per-minute rate for
-  # speech-to-text. Name/tier/context sort every row normally and aren't listed.
+  # speech-to-text. Name/context sort every row normally and aren't listed.
   SINK_SORTS = {
     "input" => :token_priced?, "output" => :token_priced?, "cached" => :token_priced?,
     "native_price" => :native_priced?
@@ -33,9 +32,6 @@ class ModelsController < ApplicationController
     @category = ModelCategory.for(params[:category])
 
     scope = AiModel.listed.includes(:provider, :price_points)
-
-    @tiers = Array(params[:tier]).map(&:to_s) & AiModel.tiers.keys
-    scope = scope.where(tier: @tiers) if @tiers.any?
 
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
     scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
@@ -68,7 +64,7 @@ class ModelsController < ApplicationController
     # last_modified spans the catalog AND the market events + model rows the hero
     # renders (helpers.build_all_events), so editing a market event or a model
     # busts the cache instead of serving a stale hero. Renders 304 on a match.
-    return if catalog_fresh?(etag: [ :index, @category.slug, @tiers.sort, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
+    return if catalog_fresh?(etag: [ :index, @category.slug, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
       last_modified: helpers.timeline_last_modified)
 
     # Tab labels: how many listed models fall in each category. Classified via the

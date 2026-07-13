@@ -57,14 +57,14 @@
 
   <h2>What the dial costs</h2>
 
-  <% if @frontier_example&.output %>
-    <p>Take the cheapest frontier model on the index today, <strong><%= @frontier_example.name %></strong>, at <span class="num"><%= usd_plain(@frontier_example.output) %></span> output per 1M tokens. Hold the visible answer at 300 tokens and move only the thinking:</p>
+  <% if @premium_example&.output %>
+    <p>Take a model priced near the top of the market today, <strong><%= @premium_example.name %></strong>, at <span class="num"><%= usd_plain(@premium_example.output) %></span> output per 1M tokens. Hold the visible answer at 300 tokens and move only the thinking:</p>
 
-    <% rate = @frontier_example.output %>
+    <% rate = @premium_example.output %>
     <% low_out = 800 %>
     <% high_out = 7_300 %>
     <div class="hp-calc">
-      <div class="hp-calc-title">Same answer — low vs high effort · <%= @frontier_example.name %></div>
+      <div class="hp-calc-title">Same answer — low vs high effort · <%= @premium_example.name %></div>
       <div class="hp-calc-line"><span class="hp-calc-label">Visible answer (both)</span><span class="hp-calc-value">300 tokens</span></div>
       <div class="hp-calc-line"><span class="hp-calc-label">Low effort: + thinking</span><span class="hp-calc-value">500 tokens</span></div>
       <div class="hp-calc-line"><span class="hp-calc-label">High effort: + thinking</span><span class="hp-calc-value">7,000 tokens</span></div>

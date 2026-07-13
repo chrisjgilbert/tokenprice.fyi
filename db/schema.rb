@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_12_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_13_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
@@ -39,7 +39,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_120000) do
     t.string "source", default: "manual", null: false
     t.string "status", default: "active", null: false
     t.text "strengths"
-    t.string "tier", default: "frontier", null: false
     t.datetime "updated_at", null: false
     t.index ["modality_class"], name: "index_ai_models_on_modality_class"
     t.index ["openrouter_id"], name: "index_ai_models_on_openrouter_id", unique: true
@@ -47,7 +46,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_120000) do
     t.index ["slug"], name: "index_ai_models_on_slug", unique: true
     t.index ["source"], name: "index_ai_models_on_source"
     t.index ["status"], name: "index_ai_models_on_status"
-    t.index ["tier"], name: "index_ai_models_on_tier"
   end
 
   create_table "market_events", force: :cascade do |t|

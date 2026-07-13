@@ -19,7 +19,7 @@
         <tr>
           <th scope="row" class="px-4 py-3 text-left font-normal">
             <%= link_to model.name, edit_admin_model_path(model), class: "font-medium text-slate-900 hover:text-indigo-600" %>
-            <div class="text-xs text-slate-500"><%= model.provider.name %> · <%= model.tier %> · <%= model.status %></div>
+            <div class="text-xs text-slate-500"><%= model.provider.name %> · <%= model.status %></div>
           </th>
           <td class="px-4 py-3 text-right tabular-nums">
             <%= usd(model.current_input) %> / <%= usd(model.current_output) %>

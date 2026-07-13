@@ -80,7 +80,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
   end
 
   test "columns and table_colspan describe each category's table shape" do
-    assert_equal %i[name tier input output cached context], ModelCategory.for("language").columns
+    assert_equal %i[name input output cached context], ModelCategory.for("language").columns
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("rerank").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
@@ -89,21 +89,13 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal %i[name provider pricing released], ModelCategory.for("video").columns
 
     # colspan = columns + the leading select and trailing go columns.
-    assert_equal 8, ModelCategory.for("language").table_colspan
+    assert_equal 7, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
     assert_equal 6, ModelCategory.for("rerank").table_colspan
     assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
     assert_equal 6, ModelCategory.for("text-to-speech").table_colspan
     assert_equal 6, ModelCategory.for("image").table_colspan
     assert_equal 6, ModelCategory.for("video").table_colspan
-
-    assert ModelCategory.for("language").shows_tier_facet
-    refute ModelCategory.for("embeddings").shows_tier_facet
-    refute ModelCategory.for("rerank").shows_tier_facet
-    refute ModelCategory.for("speech-to-text").shows_tier_facet
-    refute ModelCategory.for("text-to-speech").shows_tier_facet
-    refute ModelCategory.for("image").shows_tier_facet
-    refute ModelCategory.for("video").shows_tier_facet
   end
 
   test "the text-to-speech category ranks cheapest per-1M-char first with synthesis SEO" do

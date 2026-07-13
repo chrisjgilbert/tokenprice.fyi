@@ -9,10 +9,9 @@ module OpenRouter
   class SyncDigest
     BASE_URL = "https://tokenprice.fyi"
 
-    # Every OpenRouter-synced model is created at tier "mid" (ModelSync's
-    # DEFAULT_TIER), with a human re-curating tier later — so at sync time tier
-    # can't tell a notable launch from the long tail. The curated provider set is
-    # the gate instead. Display names match the seeded major providers.
+    # An OpenRouter import carries no signal for whether a launch is notable or
+    # long tail, so the curated provider set is the gate for the social posts.
+    # Display names match the seeded major providers.
     ANNOUNCEABLE_PROVIDERS = Set[
       "Anthropic", "OpenAI", "Google", "xAI", "DeepSeek",
       "Meta", "Mistral", "Cohere", "Alibaba", "Moonshot AI"
@@ -100,8 +99,7 @@ module OpenRouter
         price_str    = "$#{fmt(r.input_per_mtok)}/$#{fmt(r.output_per_mtok)} per MTok"
         "• #{r.model_name} (#{provider_str}) — #{price_str} · #{edit_link}"
       end
-      mrkdwn_section("*🆕 New models (#{lines.size})* · tier defaulted to `mid` — " \
-                     "review and promote any frontier launches\n#{lines.join("\n")}")
+      mrkdwn_section("*🆕 New models (#{lines.size})*\n#{lines.join("\n")}")
     end
 
     def mrkdwn_section(text)

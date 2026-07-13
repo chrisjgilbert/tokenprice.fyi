@@ -49,7 +49,7 @@ module OpenRouter
     def make_model(slug:, description:)
       AiModel.create!(
         name: slug, slug: slug, provider: providers(:anthropic),
-        source: AiModel::OPENROUTER_SOURCE, status: "active", tier: "mid",
+        source: AiModel::OPENROUTER_SOURCE, status: "active",
         description: description
       )
     end
@@ -129,12 +129,6 @@ module OpenRouter
       assert_includes section_text, "NewLab"
       assert_includes section_text, "edit"
       assert_includes section_text, "/admin/models/newlab-wonder-1/edit"
-    end
-
-    test "new models section nudges tier review, since imports default to mid" do
-      payload = digest(make_result(created_records: [ make_created ])).to_slack_payload
-      section_text = payload[:blocks].find { |b| b[:type] == "section" }&.dig(:text, :text)
-      assert_includes section_text, "tier defaulted to `mid`"
     end
 
     test "shows 'new provider' marker when new_provider is true" do

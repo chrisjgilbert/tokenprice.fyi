@@ -88,7 +88,6 @@ class ModelCandidate < ApplicationRecord
     fields = {
       provider: provider_name.parameterize.to_sym.inspect,
       name: name.inspect,
-      tier: (pricing_hash[:tier].presence || "mid").inspect,
       status: "active".inspect,
       input_modalities: input.inspect,
       output_modalities: output.inspect

@@ -89,11 +89,10 @@ class PriceCatalogTest < ActiveSupport::TestCase
     end
   end
 
-  test "an entry exposes current prices, context, tier, and provider" do
+  test "an entry exposes current prices, context, and provider" do
     e = PriceCatalog.model("claude-opus-4-8")
 
     assert_equal "Claude Opus 4.8", e.name
-    assert_equal "frontier", e.tier
     assert_equal 1_000_000, e.context_window
     assert_equal 1_000_000, e.ctx
     assert_in_delta 5.0, e.input, 0.0001
@@ -162,42 +161,17 @@ class PriceCatalogTest < ActiveSupport::TestCase
     assert_nil PriceCatalog.as_of("deepseek-v4-pro", Date.new(2026, 1, 1)) # pre-launch
   end
 
-  test "cheapest returns the lowest current-input listed entry of a tier" do
-    result = PriceCatalog.cheapest(tier: "frontier")
-    frontier_inputs = PriceCatalog.models.select { |e| e.tier == "frontier" }.map(&:input)
-
-    assert_equal "frontier", result.tier
-    assert_equal "deepseek-v4-pro", result.slug # cheapest frontier by input (0.435)
-    assert_in_delta frontier_inputs.min, result.input, 1e-9
+  test "baseline returns a recognizable premium model from the preferred list" do
+    # claude-opus-4-8 is the first PREFERRED_BASELINES slug present in fixtures.
+    assert_equal "claude-opus-4-8", PriceCatalog.baseline.slug
   end
 
-  test "cheapest ignores embeddings — it means the cheapest per-token chat model" do
-    # The small-tier embedding fixture has the lowest input of any small model
-    # ($0.02 vs Haiku's $1), but no output rate. cheapest must skip it and return
-    # the cheapest small model that actually bills per token, not misrepresent the
-    # tier with an embedding rate.
-    result = PriceCatalog.cheapest(tier: "small")
-    assert result, "expected a small-tier chat model"
-    assert_not_equal "test-embedding-model", result.slug
-    assert result.output, "cheapest must be a model with an output rate"
-  end
-
-  test "cheapest ignores a native-priced speech-to-text row — it has no per-token input or output" do
-    # The stt fixture is small-tier and priced per minute, with neither input nor
-    # output token rate; cheapest requires both, so it must never be returned.
-    result = PriceCatalog.cheapest(tier: "small")
-    assert_not_equal "test-transcribe", result.slug
-    refute_includes PriceCatalog.models.select { |e| e.tier == "small" && e.input && e.output }.map(&:slug),
-                    "test-transcribe"
-  end
-
-  test "cheapest reuses an injected catalog and returns nil when none qualify" do
+  test "baseline reuses an injected catalog and is nil on an empty one" do
     # Entry is identity-compared, so match on slug: the injected catalog yields
     # the same model as the default load.
-    assert_equal PriceCatalog.cheapest(tier: "frontier").slug,
-                 PriceCatalog.cheapest(tier: "frontier", among: PriceCatalog.models).slug
-    assert_nil PriceCatalog.cheapest(tier: "frontier", among: [])
-    assert_nil PriceCatalog.cheapest(tier: "nonexistent")
+    assert_equal PriceCatalog.baseline.slug,
+                 PriceCatalog.baseline(among: PriceCatalog.models).slug
+    assert_nil PriceCatalog.baseline(among: [])
   end
 
   test "change_dates are the distinct price dates ascending" do
@@ -250,7 +224,7 @@ class PriceCatalogTest < ActiveSupport::TestCase
                                 slug: "mover-labs-#{SecureRandom.hex(3)}", accent: "#123456")
     model = provider.ai_models.create!(name: "Mover #{SecureRandom.hex(3)}",
                                        slug: "mover-#{SecureRandom.hex(4)}",
-                                       tier: "mid", source: AiModel::MANUAL_SOURCE)
+                                       source: AiModel::MANUAL_SOURCE)
     model.price_points.create!(effective_on: launch_date, input_per_mtok: 2, output_per_mtok: 8)
     model.price_points.create!(effective_on: change_date, input_per_mtok: 3, output_per_mtok: 9)
     model

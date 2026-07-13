@@ -65,7 +65,7 @@ class PricingStalenessTest < ActiveSupport::TestCase
 
   test "a curated directory row awaiting any price is flagged unpriced" do
     provider = Provider.create!(name: "Synth Labs", slug: "synth-labs", accent: "#123456")
-    provider.ai_models.create!(name: "Unpriced Synth", tier: "mid", status: "active",
+    provider.ai_models.create!(name: "Unpriced Synth", status: "active",
                                source: AiModel::MANUAL_SOURCE,
                                input_modalities: %w[text], output_modalities: %w[audio])
 
@@ -79,7 +79,7 @@ class PricingStalenessTest < ActiveSupport::TestCase
     provider = Provider.create!(name: "Aud Labs", slug: "aud-labs", accent: "#222222")
     # A dated TTS row so the text-to-speech group has both an undated (fixture)
     # and a dated member to order.
-    dated = provider.ai_models.create!(name: "Dated Voice", tier: "mid", status: "active",
+    dated = provider.ai_models.create!(name: "Dated Voice", status: "active",
                                        source: AiModel::MANUAL_SOURCE,
                                        input_modalities: %w[text], output_modalities: %w[audio],
                                        native_price_usd: 20, native_price_unit: "/1M chars",

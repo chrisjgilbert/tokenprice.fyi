@@ -1,8 +1,8 @@
 require "application_system_test_case"
 
 # The homepage price table is the site's centre of gravity: a Turbo-framed table
-# that re-renders in place as the filters Stimulus controller submits search,
-# tier, and provider changes. These journeys exercise that loop end to end —
+# that re-renders in place as the filters Stimulus controller submits search
+# and provider changes. These journeys exercise that loop end to end —
 # typed search, provider toggles, sort, clear — plus the row click-through to a
 # model page.
 class PriceTableTest < ApplicationSystemTestCase
@@ -40,27 +40,6 @@ class PriceTableTest < ApplicationSystemTestCase
     within "#models" do
       assert_text "Claude Opus 4.8"
       assert_no_text "DeepSeek V4 Pro"
-    end
-  end
-
-  test "filtering by tier via the dropdown at desktop width narrows the table" do
-    visit root_path
-
-    assert_no_selector "#tier-panel label.tp-check"
-    find(".tp-facet-chip", text: "Tier").click
-    within "#tier-panel" do
-      check "tier_frontier", allow_label_click: true
-    end
-
-    within "#models" do
-      assert_text "Claude Opus 4.8"
-      assert_selector "[data-models-count]", text: /model/
-    end
-    # One of three tiers checked narrows the table, so the chip lights up and
-    # carries a count badge rather than echoing a single value.
-    assert_selector ".tp-facet-chip.is-active", text: "Tier"
-    within ".tp-facet-chip", text: "Tier" do
-      assert_selector ".tp-facet-chip-count", text: "1"
     end
   end
 
@@ -114,29 +93,6 @@ class PriceTableTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Claude Opus 4.8"
   end
 
-  test "mobile tier dropdown chip filters the table" do
-    resize_to_mobile
-    visit root_path
-
-    # The tier checkboxes always sit behind a dropdown chip now; they only become
-    # reachable once its popover is open. This pattern is no longer mobile-only,
-    # but the test still exercises it at mobile width as a real-device check.
-    assert_no_selector "#tier-panel label.tp-check"
-    find(".tp-facet-chip", text: "Tier").click
-    within "#tier-panel" do
-      check "tier_frontier", allow_label_click: true
-    end
-
-    within "#models" do
-      assert_text "Claude Opus 4.8"
-      assert_selector "[data-models-count]", text: /model/
-    end
-    # The chip lights up and shows a count badge for the narrowed selection.
-    assert_selector ".tp-facet-chip.is-active", text: "Tier"
-    within ".tp-facet-chip", text: "Tier" do
-      assert_selector ".tp-facet-chip-count", text: "1"
-    end
-  end
 
   test "mobile provider dropdown chip filters the table" do
     resize_to_mobile
@@ -224,7 +180,7 @@ class PriceTableTest < ApplicationSystemTestCase
   private
 
   # The provider checkboxes live inside the same dropdown-popover pattern as
-  # tier/modality now — open it before toggling.
+  # the modality facet — open it before toggling.
   def open_provider_filter
     find(".tp-facet-chip", text: "Provider").click
   end

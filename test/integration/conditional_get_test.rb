@@ -24,17 +24,17 @@ class ConditionalGetTest < ActionDispatch::IntegrationTest
   end
 
   test "models#index ETag varies by filter and sort params" do
-    get root_url(tier: "frontier", sort: "input", dir: "desc")
+    get root_url(sort: "input", dir: "desc")
     assert_response :success
     filtered_etag = response.headers["ETag"]
 
     # The first view's etag must NOT satisfy a request for a different view.
-    get root_url(tier: "mid", sort: "output", dir: "asc"),
+    get root_url(sort: "output", dir: "asc"),
         headers: { "If-None-Match" => filtered_etag }
     assert_response :success, "a different filter/sort must not 304 off another view's etag"
 
     # ...but replaying its own etag does 304.
-    get root_url(tier: "frontier", sort: "input", dir: "desc"),
+    get root_url(sort: "input", dir: "desc"),
         headers: { "If-None-Match" => filtered_etag }
     assert_response :not_modified
   end

@@ -18,7 +18,7 @@ class AiModel::InsightTest < ActiveSupport::TestCase
     assert_equal "Frontier reasoning gets meaningfully cheaper.", result[:so_what]
   end
 
-  test "includes name, provider, tier and price in the prompt" do
+  test "includes name, provider and price in the prompt" do
     model = ai_models(:opus)
     sent = {}
     client = fake_anthropic_tool_client(input: { so_what: "x" }, into: sent)
@@ -28,7 +28,6 @@ class AiModel::InsightTest < ActiveSupport::TestCase
     received = sent[:messages].first[:content]
     assert_includes received, model.name
     assert_includes received, model.provider.name
-    assert_includes received, "frontier"
   end
 
   test "raises Error when the Anthropic API raises" do

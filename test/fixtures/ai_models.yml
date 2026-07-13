@@ -2,7 +2,6 @@ opus:
   provider: anthropic
   name: Claude Opus 4.8
   slug: claude-opus-4-8
-  tier: frontier
   context_window: 1000000
   max_output_tokens: 128000
   released_on: 2026-05-28
@@ -13,7 +12,6 @@ retired_instant:
   provider: anthropic
   name: Claude Instant 1
   slug: claude-instant-1
-  tier: small
   context_window: 100000
   max_output_tokens: 4096
   released_on: 2023-03-14
@@ -24,7 +22,6 @@ no_price:
   provider: anthropic
   name: Claude No Price
   slug: claude-no-price
-  tier: mid
   status: active
   source: openrouter
   description: Active model with no price points — should be excluded from listings.
@@ -33,7 +30,6 @@ suspended_fable:
   provider: anthropic
   name: Claude Fable 5
   slug: claude-fable-5
-  tier: frontier
   context_window: 1000000
   max_output_tokens: 128000
   released_on: 2026-06-09
@@ -47,7 +43,6 @@ haiku:
   provider: anthropic
   name: Guide Haiku Fixture
   slug: claude-haiku-4-5
-  tier: small
   context_window: 200000
   max_output_tokens: 64000
   released_on: 2026-04-01
@@ -58,7 +53,6 @@ sonnet:
   provider: anthropic
   name: Guide Sonnet Fixture
   slug: claude-sonnet-4-6
-  tier: mid
   context_window: 1000000
   max_output_tokens: 128000
   released_on: 2026-04-01
@@ -80,7 +74,6 @@ image_gen:
   provider: anthropic
   name: Test Image Model
   slug: test-image-model
-  tier: mid
   status: active
   source: openrouter
   modality_class: image_generation
@@ -98,7 +91,6 @@ image_priced:
   provider: anthropic
   name: Test Priced Image Model
   slug: test-priced-image-model
-  tier: mid
   status: active
   source: manual
   modality_class: image_generation
@@ -120,7 +112,6 @@ embedding_model:
   provider: anthropic
   name: Test Embedding Model
   slug: test-embedding-model
-  tier: small
   status: active
   source: openrouter
   modality_class: embedding
@@ -140,7 +131,6 @@ stt_model:
   provider: anthropic
   name: Test Transcribe
   slug: test-transcribe
-  tier: small
   status: active
   source: manual
   modality_class: speech_to_text
@@ -159,7 +149,6 @@ tts_model:
   provider: anthropic
   name: Test Speak
   slug: test-speak
-  tier: mid
   status: active
   source: manual
   modality_class: text_to_speech
@@ -179,7 +168,6 @@ rerank_model:
   provider: anthropic
   name: Test Rerank
   slug: test-rerank
-  tier: mid
   status: active
   source: manual
   modality_class: rerank
@@ -201,7 +189,6 @@ video_priced:
   provider: anthropic
   name: Test Video Model
   slug: test-video-model
-  tier: mid
   status: active
   source: manual
   modality_class: video_generation
@@ -220,7 +207,6 @@ video_unpriced:
   provider: anthropic
   name: Test Unpriced Video Model
   slug: test-unpriced-video-model
-  tier: mid
   status: active
   source: openrouter
   modality_class: video_generation
@@ -234,7 +220,6 @@ deepseek_v4:
   provider: deepseek
   name: DeepSeek V4 Pro
   slug: deepseek-v4-pro
-  tier: frontier
   context_window: 1000000
   max_output_tokens: 384000
   released_on: 2026-02-01
@@ -245,7 +230,6 @@ uncached_mid:
   provider: deepseek
   name: Uncached Mid
   slug: uncached-mid
-  tier: mid
   context_window: 1000000
   max_output_tokens: 128000
   released_on: 2026-03-01
@@ -259,7 +243,6 @@ lopri_mid:
   provider: deepseek
   name: Lopri Mid
   slug: lopri-mid
-  tier: mid
   context_window: 1000000
   max_output_tokens: 128000
   released_on: 2026-03-15

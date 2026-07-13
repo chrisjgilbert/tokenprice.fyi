@@ -77,8 +77,8 @@
 
   <p>Output almost always costs more — typically <span class="num">2–5×</span> input price. Why? The model reads input tokens in parallel (fast, efficient), but <strong>generates output tokens one at a time</strong>, each requiring a full forward pass through the model. Generation is computationally harder than comprehension.</p>
 
-  <% if @frontier_example %>
-    <p>For example, <%= @frontier_example.name %> charges <span class="num"><%= usd_plain(@frontier_example.input) %></span> input / <span class="num"><%= usd_plain(@frontier_example.output) %></span> output per 1M tokens — output is <span class="num"><%= @frontier_example.output && @frontier_example.input && @frontier_example.input > 0 ? "#{(@frontier_example.output / @frontier_example.input).round(1)}×" : "—" %></span> the input price.</p>
+  <% if @premium_example %>
+    <p>For example, <%= @premium_example.name %> charges <span class="num"><%= usd_plain(@premium_example.input) %></span> input / <span class="num"><%= usd_plain(@premium_example.output) %></span> output per 1M tokens — output is <span class="num"><%= @premium_example.output && @premium_example.input && @premium_example.input > 0 ? "#{(@premium_example.output / @premium_example.input).round(1)}×" : "—" %></span> the input price.</p>
   <% end %>
 
   <h3>Where your money actually goes</h3>

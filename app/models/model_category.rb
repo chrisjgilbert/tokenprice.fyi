@@ -30,8 +30,6 @@ class ModelCategory
     # The empty-state row spans every column plus the leading select and trailing
     # go columns the layout always renders.
     def table_colspan = columns.size + 2
-
-    def shows_tier_facet = columns.include?(:tier)
   end
 
   # Language is the fallback: every listed model whose class no other tab claims
@@ -44,14 +42,14 @@ class ModelCategory
     label: "Language models",
     param: "language",
     path_name: :root,
-    sorts: %w[input output cached context name tier],
+    sorts: %w[input output cached context name],
     default_sort: "output",
     default_dir: "desc",
     title: "LLM API token prices, per model — tokenprice.fyi",
     meta_description: "LLM API token prices for Claude, GPT-5, Gemini, Grok, and DeepSeek. " \
                       "Input, output, and cached rates per 1M tokens, updated daily.",
     matcher: nil,
-    columns: %i[name tier input output cached context]
+    columns: %i[name input output cached context]
   )
 
   # Embeddings bill per input token only — the output is a vector, so there is no

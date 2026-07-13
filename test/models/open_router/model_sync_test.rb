@@ -108,7 +108,6 @@ module OpenRouter
       assert_equal 200_000, model.context_window
       assert_equal 64_000, model.max_output_tokens
       assert_equal Date.new(2025, 10, 15), model.released_on
-      assert_equal "mid", model.tier
 
       price = model.current_price
       assert_equal 1.0, price.input_per_mtok
@@ -125,8 +124,6 @@ module OpenRouter
 
       provider = Provider.find_by!(slug: "newlab")
       assert_equal "NewLab", provider.name
-      # Imported models land in a neutral tier for a human to re-curate.
-      assert_equal "mid", provider.ai_models.first.tier
     end
 
     test "names a new provider from the namespace when the row has no colon prefix" do
@@ -194,10 +191,9 @@ module OpenRouter
            today: Date.current)
 
       deepseek.reload
-      # Stays curated, keeps its hand-written description and tier.
+      # Stays curated, keeps its hand-written description.
       assert_equal AiModel::MANUAL_SOURCE, deepseek.source
       assert_equal "Curated copy.", deepseek.description
-      assert_equal "frontier", deepseek.tier
       # But its price history is enriched from OpenRouter.
       assert_equal before + 1, deepseek.price_points.count
       assert_equal "openrouter.ai", deepseek.current_price.source
@@ -208,20 +204,20 @@ module OpenRouter
         name: "Claude Opus Latest", slug: "claude-opus-latest",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-opus:latest",
-        status: "active", tier: "mid"
+        status: "active"
       )
       parenthesized = AiModel.create!(
         name: "GPT-4o (Latest)", slug: "gpt-4o-latest",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "openai/gpt-4o:latest",
-        status: "active", tier: "mid"
+        status: "active"
       )
 
       id_only = AiModel.create!(
         name: "Claude Opus 4.8", slug: "claude-opus-48-latest",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-opus-4.8:latest",
-        status: "active", tier: "mid"
+        status: "active"
       )
 
       sync([])
@@ -265,20 +261,20 @@ module OpenRouter
         name: "Claude Opus 4.6 (Fast)", slug: "claude-opus-4-6-fast",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-opus-4.6:fast",
-        status: "active", tier: "mid"
+        status: "active"
       )
       fast_sonnet = AiModel.create!(
         name: "Claude Sonnet 4.6 (Fast)", slug: "claude-sonnet-4-6-fast",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-sonnet-4.6:fast",
-        status: "active", tier: "mid"
+        status: "active"
       )
       # Marker only in the name; id stays plain (no ":fast" suffix).
       named_fast = AiModel.create!(
         name: "Claude Opus 4.7 (Fast)", slug: "claude-opus-4-7-fast",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "anthropic/claude-opus-4.7-fast",
-        status: "active", tier: "mid"
+        status: "active"
       )
 
       sync([])
@@ -293,7 +289,7 @@ module OpenRouter
         name: "Grok 4.1 Fast", slug: "grok-4-1-fast",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
         openrouter_id: "x-ai/grok-4.1-fast",
-        status: "active", tier: "small"
+        status: "active"
       )
 
       sync([])
@@ -328,14 +324,14 @@ module OpenRouter
       base = AiModel.create!(
         name: "GPT-5.6 Sol", slug: "gpt-5-6-sol",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "openai/gpt-5.6-sol", status: "active", tier: "frontier"
+        openrouter_id: "openai/gpt-5.6-sol", status: "active"
       )
       base.price_points.create!(effective_on: Date.new(2026, 7, 9), input_per_mtok: 5, output_per_mtok: 30)
 
       twin = AiModel.create!(
         name: "GPT-5.6 Sol Pro", slug: "gpt-5-6-sol-pro",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "openai/gpt-5.6-sol-pro", status: "active", tier: "mid"
+        openrouter_id: "openai/gpt-5.6-sol-pro", status: "active"
       )
       twin.price_points.create!(effective_on: Date.new(2026, 7, 9), input_per_mtok: 5, output_per_mtok: 30)
 
@@ -349,14 +345,14 @@ module OpenRouter
       base = AiModel.create!(
         name: "GPT-5.5", slug: "gpt-5-5-or",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "openai/gpt-5.5", status: "active", tier: "frontier"
+        openrouter_id: "openai/gpt-5.5", status: "active"
       )
       base.price_points.create!(effective_on: Date.new(2026, 6, 1), input_per_mtok: 5, output_per_mtok: 30)
 
       premium = AiModel.create!(
         name: "GPT-5.5 Pro", slug: "gpt-5-5-pro-or",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "openai/gpt-5.5-pro", status: "active", tier: "frontier"
+        openrouter_id: "openai/gpt-5.5-pro", status: "active"
       )
       premium.price_points.create!(effective_on: Date.new(2026, 6, 1), input_per_mtok: 30, output_per_mtok: 180)
 
@@ -388,14 +384,14 @@ module OpenRouter
       base = AiModel.create!(
         name: "Nova 2", slug: "nova-2",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "acme/nova-2", status: "active", tier: "frontier"
+        openrouter_id: "acme/nova-2", status: "active"
       )
       base.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 8)
 
       snapshot = AiModel.create!(
         name: "Nova 2 20260715", slug: "nova-2-20260715",
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "acme/nova-2-20260715", status: "active", tier: "frontier"
+        openrouter_id: "acme/nova-2-20260715", status: "active"
       )
       snapshot.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 8)
 
@@ -885,7 +881,7 @@ module OpenRouter
       # A model we've already written up: a clean generated description + facets.
       model = AiModel.create!(
         provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        name: "Wonder Pre", slug: "anthropic-wonder-pre", status: "active", tier: "mid",
+        name: "Wonder Pre", slug: "anthropic-wonder-pre", status: "active",
         openrouter_id: "anthropic/wonder-pre",
         description: "A clean generated sentence.",
         strengths: "S.", best_for: "B.", limitations: "L."

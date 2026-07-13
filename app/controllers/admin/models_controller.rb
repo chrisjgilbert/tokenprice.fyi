@@ -8,7 +8,7 @@ module Admin
     end
 
     def new
-      @model = AiModel.new(status: "active", tier: "frontier")
+      @model = AiModel.new(status: "active")
     end
 
     def create
@@ -43,7 +43,7 @@ module Admin
 
     def model_params
       permitted = params.require(:ai_model).permit(
-        :provider_id, :name, :slug, :source, :openrouter_id, :tier, :status,
+        :provider_id, :name, :slug, :source, :openrouter_id, :status,
         :context_window, :max_output_tokens, :released_on, :description,
         :strengths, :limitations, :best_for, :so_what
       )

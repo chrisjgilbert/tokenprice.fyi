@@ -77,8 +77,6 @@
       <p class="mt-1 flex items-center gap-2 text-slate-500">
         <%= link_to @model.provider.name, provider_path(@model.provider), class: "hover:underline" %>
         <% if @model.provider.flag_emoji %><span aria-hidden="true"><%= @model.provider.flag_emoji %></span><% end %>
-        <span>·</span>
-        <%= tier_badge(@model.tier) %>
         <% if (badge = modality_badge(@model)) %>
           <span>·</span>
           <%= badge %>
@@ -245,7 +243,6 @@
         <%= link_to model_path(rel), class: "flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-200" do %>
           <div>
             <p class="font-medium"><%= rel.name %></p>
-            <p class="mt-1 text-xs text-slate-500"><%= tier_badge(rel.tier) %></p>
           </div>
           <p class="text-sm tabular-nums text-slate-600">in <%= usd(rel.current_input) %> · out <%= usd(rel.current_output) %></p>
         <% end %>

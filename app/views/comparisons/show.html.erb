@@ -316,7 +316,7 @@
           <span class="sel-btn-name"><%= @left&.name || "Select a model" %></span>
           <span class="sel-btn-sub">
             <% if @left %>
-              <%= @left.provider.name %> · <%= @left.tier&.titleize %>
+              <%= @left.provider.name %>
             <% else %>
               Choose model A
             <% end %>
@@ -370,7 +370,7 @@
           <span class="sel-btn-name"><%= @right&.name || "Select a model" %></span>
           <span class="sel-btn-sub">
             <% if @right %>
-              <%= @right.provider.name %> · <%= @right.tier&.titleize %>
+              <%= @right.provider.name %>
             <% else %>
               Choose model B
             <% end %>
@@ -468,7 +468,6 @@
         text_rows = [
           { label: "Δ input since launch",  a_val: @left.input_change_since_launch,  b_val: @right.input_change_since_launch,  fmt: :change },
           { label: "Δ output since launch", a_val: @left.output_change_since_launch, b_val: @right.output_change_since_launch, fmt: :change },
-          { label: "Tier",     a_val: tier_badge(@left.tier),   b_val: tier_badge(@right.tier),   fmt: :raw  },
           { label: "Released", a_val: fmt_date(@left.released_on), b_val: fmt_date(@right.released_on), fmt: :text },
           { label: "Status",   a_val: status_badge(@left.status),  b_val: status_badge(@right.status),  fmt: :raw  },
           { label: "Provider", a_val: nil, b_val: nil, fmt: :provider },

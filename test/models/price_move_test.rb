@@ -91,7 +91,7 @@ class PriceMoveTest < ActiveSupport::TestCase
   def priced_model_with(*points)
     provider = Provider.create!(name: "Move Labs #{SecureRandom.hex(3)}",
                                 slug: "move-labs-#{SecureRandom.hex(3)}", accent: "#123456")
-    model = provider.ai_models.create!(name: "Mover #{SecureRandom.hex(3)}", tier: "mid",
+    model = provider.ai_models.create!(name: "Mover #{SecureRandom.hex(3)}",
                                        source: AiModel::MANUAL_SOURCE)
     points.each { |date, attrs| model.price_points.create!(effective_on: date, **attrs) }
     model

@@ -1,7 +1,6 @@
 class ProvidersController < ApplicationController
   SORTS = {
     "name"     => ->(m) { m.name.to_s.downcase },
-    "tier"     => ->(m) { { "frontier" => 0, "mid" => 1, "small" => 2 }.fetch(m.tier, 3) },
     "input"    => ->(m) { m.current_input  || Float::INFINITY },
     "output"   => ->(m) { m.current_output || Float::INFINITY },
     "context"  => ->(m) { m.context_window || 0 },

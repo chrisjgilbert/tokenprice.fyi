@@ -57,7 +57,7 @@ class AiModelTest < ActiveSupport::TestCase
 
   test "price_change_over resolves each window to its own reference and signs both ways" do
     travel_to Date.new(2026, 6, 11) do
-      model = providers(:anthropic).ai_models.create!(name: "Window Probe", tier: "mid")
+      model = providers(:anthropic).ai_models.create!(name: "Window Probe")
       # Launched long ago at 10, hiked to 20 (Apr), trimmed to 15 (Jun) — current.
       model.price_points.create!(effective_on: Date.new(2025, 1, 1),  input_per_mtok: 10, output_per_mtok: 10)
       model.price_points.create!(effective_on: Date.new(2026, 4, 12), input_per_mtok: 20, output_per_mtok: 20)
@@ -83,12 +83,12 @@ class AiModelTest < ActiveSupport::TestCase
   end
 
   test "slug is auto-generated from name on create" do
-    model = ai_models(:opus).provider.ai_models.create!(name: "Claude Test 9", tier: "mid")
+    model = ai_models(:opus).provider.ai_models.create!(name: "Claude Test 9")
     assert_equal "claude-test-9", model.slug
   end
 
-  test "tier and status reject invalid values" do
-    model = AiModel.new(provider: providers(:anthropic), name: "X", tier: "nope")
+  test "status rejects invalid values" do
+    model = AiModel.new(provider: providers(:anthropic), name: "X", status: "nope")
     assert_not model.valid?
   end
 
@@ -294,7 +294,7 @@ class AiModelTest < ActiveSupport::TestCase
 
   test "modality_class is stored on save and matches the derived value" do
     model = providers(:anthropic).ai_models.create!(
-      name: "Stored Class Probe", tier: "mid",
+      name: "Stored Class Probe",
       input_modalities: %w[text image], output_modalities: %w[text]
     )
     assert_equal "multimodal", model.read_attribute(:modality_class)
@@ -308,7 +308,7 @@ class AiModelTest < ActiveSupport::TestCase
 
   test "changing input_modalities updates the stored class on save" do
     model = providers(:anthropic).ai_models.create!(
-      name: "Reclass Probe", tier: "mid",
+      name: "Reclass Probe",
       input_modalities: %w[text], output_modalities: %w[text]
     )
     assert_equal "text", model.read_attribute(:modality_class)
