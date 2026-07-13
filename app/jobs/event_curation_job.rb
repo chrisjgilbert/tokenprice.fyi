@@ -187,14 +187,12 @@ class EventCurationJob < ApplicationJob
   end
 
   def slack_payload(count)
-    base_url = "https://tokenprice.fyi"
-    review_link = "<#{base_url}/admin/market_events|Review queue>"
-    { text: "EventCurationJob drafted #{count} market event candidate#{"s" if count != 1}",
-      blocks: [
-        { type: "section",
-          text: { type: "mrkdwn",
-                  text: "*📋 #{count} draft market event#{"s" if count != 1} awaiting review*\n" \
-                        "#{review_link} — approve or discard each draft in the admin." } }
-      ] }
+    link   = "<https://tokenprice.fyi/admin/market_events|Review queue>"
+    plural = "s" if count != 1
+    review_nudge(
+      text:   "EventCurationJob drafted #{count} market event candidate#{plural}",
+      detail: "*📋 #{count} draft market event#{plural} awaiting review*\n" \
+              "#{link} — approve or discard each draft in the admin."
+    )
   end
 end

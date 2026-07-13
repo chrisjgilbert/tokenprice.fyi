@@ -60,14 +60,12 @@ class ModelCurationJob < ApplicationJob
   end
 
   def slack_payload(count)
-    review_link = "<https://tokenprice.fyi/admin/model_candidates|Review queue>"
+    link   = "<https://tokenprice.fyi/admin/model_candidates|Review queue>"
     plural = "s" if count != 1
-    { text: "ModelCurationJob found #{count} model candidate#{plural}",
-      blocks: [
-        { type: "section",
-          text: { type: "mrkdwn",
-                  text: "*🆕 #{count} model candidate#{plural} awaiting review*\n" \
-                        "#{review_link} — approve (creates the row) or dismiss each in the admin." } }
-      ] }
+    review_nudge(
+      text:   "ModelCurationJob found #{count} model candidate#{plural}",
+      detail: "*🆕 #{count} model candidate#{plural} awaiting review*\n" \
+              "#{link} — approve (creates the row) or dismiss each in the admin."
+    )
   end
 end
