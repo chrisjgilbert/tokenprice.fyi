@@ -526,10 +526,7 @@ module OpenRouter
       )
       return if copy.blank?
 
-      model.description = copy[:description] if copy[:description].present?
-      model.strengths   = copy[:strengths]
-      model.best_for    = copy[:best_for]
-      model.limitations = copy[:limitations]
+      model.apply_editorial(copy)
     rescue => e
       @logger.warn("OpenRouter sync: description generation failed for " \
                    "#{model.openrouter_id.inspect} — #{e.class}: #{e.message}")

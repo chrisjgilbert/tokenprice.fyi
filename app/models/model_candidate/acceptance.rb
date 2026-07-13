@@ -13,13 +13,21 @@ class ModelCandidate::Acceptance
   def run
     return candidate.existing_model if candidate.status == "accepted" && candidate.existing_model
 
-    ModelCandidate.transaction do
-      model = build_model(find_or_create_provider)
-      model.save!
-      apply_token_price(model)
+    model = ModelCandidate.transaction do
+      m = build_model(find_or_create_provider)
+      m.save!
+      apply_token_price(m)
       candidate.update!(status: "accepted")
-      model
+      m
     end
+
+    # The extraction captures only identity, category, and price, so an approved
+    # model starts with no description / strengths / best-for / limitations. Fill
+    # the editorial copy out of band — mirrors EventCurationJob enqueuing
+    # MarketEventInsightJob after drafting an event. Enqueued post-commit so the
+    # job never runs against an uncommitted row.
+    AiModelDescriptionJob.perform_later(model)
+    model
   end
 
   private

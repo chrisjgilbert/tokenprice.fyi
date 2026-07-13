@@ -65,6 +65,10 @@ class AiModel::Description
 
   def self.generate(...) = new.generate(...)
 
+  def initialize(client: nil)
+    @client = client
+  end
+
   def generate(name:, provider:, context_window: nil, source_text: nil)
     content = +"Model: #{name}\nProvider: #{provider}"
     content << "\nContext window: #{context_window} tokens" if context_window
