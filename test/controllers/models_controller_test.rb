@@ -1,7 +1,7 @@
 require "test_helper"
 
 class ModelsControllerTest < ActionDispatch::IntegrationTest
-  test "index lists models with the cheapest-frontier callout" do
+  test "index lists models" do
     get root_url
     assert_response :success
     assert_select "h1", /LLM API pricing, tracked from launch/
@@ -116,11 +116,6 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/data is still being sense-checked/, response.body)
   end
 
-  test "index can be filtered by tier" do
-    get root_url(tier: "frontier")
-    assert_response :success
-  end
-
   test "index can be sorted" do
     get root_url(sort: "output", dir: "desc")
     assert_response :success
@@ -199,7 +194,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 6
+    assert_select "thead a[data-turbo-frame=models]", count: 5
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
@@ -308,10 +303,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", text: /Test Image Model/
   end
 
-  test "the image tab hides the tier facet but keeps search and provider facets" do
+  test "the image tab keeps search and provider facets" do
     get image_generation_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -388,10 +382,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "input token"
   end
 
-  test "the embeddings tab hides the tier facet but keeps search and provider facets" do
+  test "the embeddings tab keeps search and provider facets" do
     get embeddings_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -420,10 +413,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=description][content*=?]", "per search"
   end
 
-  test "the rerank tab hides the tier facet but keeps search and provider facets" do
+  test "the rerank tab keeps search and provider facets" do
     get rerank_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -478,10 +470,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", text: /Test Transcribe/
   end
 
-  test "the speech-to-text tab hides the tier facet but keeps search and provider facets" do
+  test "the speech-to-text tab keeps search and provider facets" do
     get speech_to_text_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -522,10 +513,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", text: /Test Video Model/
   end
 
-  test "the video tab hides the tier facet but keeps search and provider facets" do
+  test "the video tab keeps search and provider facets" do
     get video_generation_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -565,10 +555,9 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody td", text: /Test Speak/
   end
 
-  test "the text-to-speech tab hides the tier facet but keeps search and provider facets" do
+  test "the text-to-speech tab keeps search and provider facets" do
     get text_to_speech_url
     assert_response :success
-    assert_select ".tp-facet-chip-label", text: "Tier", count: 0
     assert_select ".tp-search input#q", count: 1
     assert_select ".tp-facet-chip-label", text: "Provider"
   end
@@ -776,7 +765,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index canonicalizes every filtered/sorted state to the bare root URL" do
-    get root_url(tier: "frontier", sort: "input", dir: "desc")
+    get root_url(sort: "input", dir: "desc")
     assert_response :success
     assert_select "link[rel=canonical][href=?]", root_url
   end

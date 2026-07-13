@@ -44,7 +44,6 @@ class ModelCandidate::Acceptance
     provider.ai_models.new(
       name:              candidate.name,
       slug:              candidate.slug,
-      tier:              hash[:tier].presence || "mid",
       status:            "active",
       source:            AiModel::MANUAL_SOURCE,
       released_on:       candidate.released_on,

@@ -12,7 +12,7 @@ class Admin::ModelsControllerTest < ActionDispatch::IntegrationTest
   test "creates a model with an auto-generated slug" do
     assert_difference "AiModel.count", 1 do
       post admin_models_path, params: { ai_model: {
-        provider_id: providers(:anthropic).id, name: "Claude Test 9", tier: "mid", status: "active"
+        provider_id: providers(:anthropic).id, name: "Claude Test 9", status: "active"
       } }
     end
     assert_redirected_to admin_models_path

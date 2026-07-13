@@ -55,13 +55,11 @@
       <select class="fc-picker-select"
               data-feature-costs-target="select"
               data-action="change->feature-costs#refresh">
-        <% %w[frontier mid small].each do |tier| %>
-          <% tier_models = @picker_models.select { |m| m.tier == tier } %>
-          <% next if tier_models.empty? %>
-          <optgroup label="<%= tier.capitalize %>">
-            <% tier_models.each do |m| %>
+        <% @picker_models.group_by(&:provider_name).each do |provider_name, provider_models| %>
+          <optgroup label="<%= provider_name %>">
+            <% provider_models.each do |m| %>
               <option value="<%= m.slug %>" <%= "selected" if m.slug == @default_picker&.slug %>>
-                <%= m.provider_name %> <%= m.name %>
+                <%= m.name %>
               </option>
             <% end %>
           </optgroup>

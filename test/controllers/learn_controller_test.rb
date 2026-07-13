@@ -91,12 +91,12 @@ class LearnControllerTest < ActionDispatch::IntegrationTest
     get learn_reasoning_url
     assert_response :success
     assert_select "h1", /Reasoning/
-    # Live data (AUDIT #3): the io_ratio widget plus a live frontier worked example.
+    # Live data (AUDIT #3): the io_ratio widget plus a live premium worked example.
     assert_select ".lw"
     assert_match(/prices today/, response.body)
-    fm = AiModel.listed.where(tier: "frontier").select(&:current_input).min_by(&:current_input)
-    assert fm, "expected a priced frontier model in fixtures"
-    assert_match(/#{Regexp.escape(fm.name)}/, response.body)
+    example = PriceCatalog.baseline
+    assert example, "expected a baseline model in fixtures"
+    assert_match(/#{Regexp.escape(example.name)}/, response.body)
     # The core stance: effort is a volume dial, and there's no fixed per-model multiplier.
     assert_match(/volume dial, not a price dial/i, response.body)
     assert_match(/no fixed multiplier/i, response.body)

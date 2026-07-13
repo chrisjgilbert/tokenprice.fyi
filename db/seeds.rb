@@ -75,85 +75,85 @@ end
 catalog = [
   # ---- Anthropic --------------------------------------------------------
   {
-    provider: :anthropic, name: "Claude Fable 5", tier: "frontier", status: "suspended",
+    provider: :anthropic, name: "Claude Fable 5", status: "suspended",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-06-09",
     description: "Anthropic's most powerful model — a new Mythos-class tier above Opus, aimed at the hardest reasoning and agentic work. Access is currently suspended.",
     prices: [ { on: "2026-06-09", in: 10, out: 50, cached: 1.0, src: "anthropic.com/pricing", note: "List price" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4.8", tier: "frontier", status: "active",
+    provider: :anthropic, name: "Claude Opus 4.8", status: "active",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-05-28",
     description: "Most capable Opus-tier model: highly autonomous, strong on long-horizon agentic work and knowledge tasks. 1M context at standard pricing.",
     prices: [ { on: "2026-05-28", in: 5, out: 25, cached: 0.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4.7", tier: "frontier", status: "legacy",
+    provider: :anthropic, name: "Claude Opus 4.7", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-04-16",
     description: "Previous-generation Opus. Highly autonomous; strong on agentic, vision and memory tasks.",
     prices: [ { on: "2026-04-16", in: 5, out: 25, cached: 0.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4.6", tier: "frontier", status: "legacy",
+    provider: :anthropic, name: "Claude Opus 4.6", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-02-05",
     description: "First Opus with a 1M context window at standard pricing. Same $5/$25 as Opus 4.5.",
     prices: [ { on: "2026-02-05", in: 5, out: 25, cached: 0.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4.5", tier: "frontier", status: "legacy",
+    provider: :anthropic, name: "Claude Opus 4.5", status: "legacy",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-11-24",
     description: "Introduced the 67% Opus price cut — from $15/$75 (Opus 4/4.1) to $5/$25 — which held through all subsequent Opus releases.",
     prices: [ { on: "2025-11-24", in: 5, out: 25, cached: 0.50, src: "anthropic.com/pricing", note: "67% price cut from Opus 4/4.1" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4.1", tier: "frontier", status: "retired",
+    provider: :anthropic, name: "Claude Opus 4.1", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-08-05",
     description: "Drop-in replacement for Opus 4 at the same $15/$75 pricing. Superseded by Opus 4.5 at 67% lower price.",
     prices: [ { on: "2025-08-05", in: 15, out: 75, cached: 1.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Opus 4", tier: "frontier", status: "retired",
+    provider: :anthropic, name: "Claude Opus 4", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-05-22",
     description: "Original Claude 4 flagship at $15/$75. Superseded by Opus 4.5 which cut pricing by 67%.",
     prices: [ { on: "2025-05-22", in: 15, out: 75, cached: 1.50, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Sonnet 4.6", tier: "mid", status: "active",
+    provider: :anthropic, name: "Claude Sonnet 4.6", status: "active",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-02-17",
     description: "Anthropic's best balance of speed and intelligence. 1M context window. Sonnet pricing has held flat at $3/$15 across all 4.x releases.",
     prices: [ { on: "2026-02-17", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Sonnet 4.5", tier: "mid", status: "legacy",
+    provider: :anthropic, name: "Claude Sonnet 4.5", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-09-29",
     description: "Previous Sonnet generation. Same $3 / $15 pricing as 4.6 — Sonnet pricing has held flat.",
     prices: [ { on: "2025-09-29", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Sonnet 4", tier: "mid", status: "retired",
+    provider: :anthropic, name: "Claude Sonnet 4", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-05-22",
     description: "Original Claude 4 Sonnet. Same $3/$15 pricing carried through all subsequent Sonnet 4.x releases.",
     prices: [ { on: "2025-05-22", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Haiku 4.5", tier: "small", status: "active",
+    provider: :anthropic, name: "Claude Haiku 4.5", status: "active",
     context_window: 200_000, max_output_tokens: 64_000, released_on: "2025-10-15",
     description: "Fastest and most cost-effective Claude model. Pricing held flat since launch — no newer Haiku has been released.",
     prices: [ { on: "2025-10-15", in: 1, out: 5, cached: 0.10, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 3.7 Sonnet", tier: "mid", status: "retired",
+    provider: :anthropic, name: "Claude 3.7 Sonnet", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-02-24",
     description: "First hybrid reasoning Claude — extended thinking at the same $3/$15 Sonnet price point, with thinking tokens billed as output. Superseded by Sonnet 4.",
     prices: [ { on: "2025-02-24", in: 3, out: 15, cached: 0.30, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 3.5 Sonnet", tier: "mid", status: "retired",
+    provider: :anthropic, name: "Claude 3.5 Sonnet", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-06-20",
     description: "Major quality leap — beat Claude 3 Opus at one-fifth the price. Updated Oct 2024 with computer use support.",
     prices: [ { on: "2024-06-20", in: 3, out: 15, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 3.5 Haiku", tier: "small", status: "retired",
+    provider: :anthropic, name: "Claude 3.5 Haiku", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-10-22",
     description: "Upgraded Haiku — significantly more capable than Claude 3 Haiku but priced higher. Launched at $1/$5, cut 20% to $0.80/$4 six weeks later.",
     prices: [
@@ -162,31 +162,31 @@ catalog = [
     ]
   },
   {
-    provider: :anthropic, name: "Claude 3 Opus", tier: "frontier", status: "retired",
+    provider: :anthropic, name: "Claude 3 Opus", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
     description: "Original Claude 3 flagship. $15/$75 price point held through Opus 4/4.1 until the 67% cut with Opus 4.5.",
     prices: [ { on: "2024-03-04", in: 15, out: 75, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 3 Sonnet", tier: "mid", status: "retired",
+    provider: :anthropic, name: "Claude 3 Sonnet", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
     description: "Claude 3 mid-tier — established the $3/$15 price point that Sonnet has maintained across every subsequent generation.",
     prices: [ { on: "2024-03-04", in: 3, out: 15, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 3 Haiku", tier: "small", status: "retired",
+    provider: :anthropic, name: "Claude 3 Haiku", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-03-04",
     description: "Ultra-cheap Claude at $0.25/$1.25 — staked out the fast-and-cheap tier against GPT-3.5 Turbo.",
     prices: [ { on: "2024-03-04", in: 0.25, out: 1.25, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude 2.1", tier: "frontier", status: "retired",
+    provider: :anthropic, name: "Claude 2.1", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2023-11-21",
     description: "Doubled context to 200K and cut flagship pricing from Claude 2's $11.02/$32.68 to $8/$24 — the price point Mistral Large would later match.",
     prices: [ { on: "2023-11-21", in: 8, out: 24, src: "anthropic.com/pricing" } ]
   },
   {
-    provider: :anthropic, name: "Claude Instant", tier: "small", status: "retired",
+    provider: :anthropic, name: "Claude Instant", status: "retired",
     context_window: 100_000, max_output_tokens: nil, released_on: "2023-03-14",
     description: "Anthropic's original fast-and-cheap tier, predating Haiku. Repriced from $1.63/$5.51 to $0.80/$2.40 in late 2023.",
     prices: [
@@ -195,7 +195,7 @@ catalog = [
     ]
   },
   {
-    provider: :anthropic, name: "Claude 2", tier: "frontier", status: "retired",
+    provider: :anthropic, name: "Claude 2", status: "retired",
     context_window: 100_000, max_output_tokens: nil, released_on: "2023-07-11",
     description: "Anthropic's pre-Claude-3 flagship at $11.02/$32.68 — odd figures from converting the original per-character rates to per-token. Pricing fell to $8/$24 with Claude 2.1.",
     prices: [ { on: "2023-07-11", in: 11.02, out: 32.68, src: "anthropic.com/pricing", note: "Launch list price" } ]
@@ -203,31 +203,31 @@ catalog = [
 
   # ---- OpenAI -----------------------------------------------------------
   {
-    provider: :openai, name: "GPT-5.5 Pro", tier: "frontier", status: "active",
+    provider: :openai, name: "GPT-5.5 Pro", status: "active",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-04-24",
     description: "Highest-accuracy reasoning variant of GPT-5.5.",
     prices: [ { on: "2026-04-24", in: 30, out: 180, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-5.5", tier: "frontier", status: "active",
+    provider: :openai, name: "GPT-5.5", status: "active",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-04-23",
     description: "OpenAI's frontier model for complex professional workloads. 1M token context, text + image input, native computer use.",
     prices: [ { on: "2026-04-23", in: 5, out: 30, cached: 0.50, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-5", tier: "frontier", status: "legacy",
+    provider: :openai, name: "GPT-5", status: "legacy",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-08-07",
     description: "Launched at commodity pricing ($1.25/$10) so low TechCrunch said it may spark a price war. Superseded by GPT-5.5.",
     prices: [ { on: "2025-08-07", in: 1.25, out: 10, cached: 0.125, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o3-pro", tier: "frontier", status: "active",
+    provider: :openai, name: "o3-pro", status: "active",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-06-10",
     description: "Premium high-compute reasoning variant launched alongside the 80% o3 price cut — 87% cheaper than the o1-pro it replaced.",
     prices: [ { on: "2025-06-10", in: 20, out: 80, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o3", tier: "frontier", status: "active",
+    provider: :openai, name: "o3", status: "active",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-04-16",
     description: "OpenAI's frontier reasoning model. Received an 80% price cut in June 2025 alongside the o3-pro launch.",
     prices: [
@@ -236,49 +236,49 @@ catalog = [
     ]
   },
   {
-    provider: :openai, name: "GPT-4.1", tier: "mid", status: "active",
+    provider: :openai, name: "GPT-4.1", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-14",
     description: "Workhorse text model with 1M context. Positioned between the budget GPT-5 and premium GPT-5.5.",
     prices: [ { on: "2025-04-14", in: 2, out: 8, cached: 0.50, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o4-mini", tier: "small", status: "active",
+    provider: :openai, name: "o4-mini", status: "active",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-04-16",
     description: "Cost-effective reasoning model with multimodal support. Replaced o3-mini at the same price point.",
     prices: [ { on: "2025-04-16", in: 1.10, out: 4.40, cached: 0.275, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4.1 Mini", tier: "small", status: "active",
+    provider: :openai, name: "GPT-4.1 Mini", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-14",
     description: "Fast, cost-effective model with 1M context for high-volume workloads.",
     prices: [ { on: "2025-04-14", in: 0.40, out: 1.60, cached: 0.10, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4.1 Nano", tier: "small", status: "active",
+    provider: :openai, name: "GPT-4.1 Nano", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-14",
     description: "Cheapest OpenAI model — designed for classification, routing, and high-throughput extraction.",
     prices: [ { on: "2025-04-14", in: 0.10, out: 0.40, cached: 0.025, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o3-mini", tier: "small", status: "retired",
+    provider: :openai, name: "o3-mini", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2025-01-31",
     description: "Efficient reasoning model. Replaced by o4-mini at the same price point.",
     prices: [ { on: "2025-01-31", in: 1.10, out: 4.40, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4.5", tier: "frontier", status: "retired",
+    provider: :openai, name: "GPT-4.5", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-02-27",
     description: "Brief ultra-premium experiment at $75/$150 — the most expensive API model ever offered. Quickly superseded.",
     prices: [ { on: "2025-02-27", in: 75, out: 150, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o1", tier: "frontier", status: "retired",
+    provider: :openai, name: "o1", status: "retired",
     context_window: 200_000, max_output_tokens: nil, released_on: "2024-12-17",
     description: "Full o1 release. Chain-of-thought tokens billed as output make effective costs 2–5× the list price.",
     prices: [ { on: "2024-12-17", in: 15, out: 60, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "o1-mini", tier: "small", status: "retired",
+    provider: :openai, name: "o1-mini", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-09-12",
     description: "Budget reasoning model at one-fifth of o1's price. Cut to o3-mini's $1.10/$4.40 when that model launched.",
     prices: [
@@ -287,19 +287,19 @@ catalog = [
     ]
   },
   {
-    provider: :openai, name: "o1-preview", tier: "frontier", status: "retired",
+    provider: :openai, name: "o1-preview", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-09-12",
     description: "First reasoning model — introduced chain-of-thought billing where thinking tokens are charged as output.",
     prices: [ { on: "2024-09-12", in: 15, out: 60, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4o mini", tier: "small", status: "retired",
+    provider: :openai, name: "GPT-4o mini", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-18",
     description: "Replaced GPT-3.5 Turbo at 60% lower cost with far better quality — ended the 3.5 era.",
     prices: [ { on: "2024-07-18", in: 0.15, out: 0.60, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4o", tier: "frontier", status: "retired",
+    provider: :openai, name: "GPT-4o", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-05-13",
     description: "Halved GPT-4 Turbo pricing with multimodal support. Received a 50% input price cut in August 2024.",
     prices: [
@@ -308,19 +308,19 @@ catalog = [
     ]
   },
   {
-    provider: :openai, name: "GPT-4 Turbo", tier: "frontier", status: "retired",
+    provider: :openai, name: "GPT-4 Turbo", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2023-11-06",
     description: "3× cheaper than GPT-4 with 128K context. Preview Nov 2023, GA April 2024.",
     prices: [ { on: "2023-11-06", in: 10, out: 30, src: "openai.com/api/pricing" } ]
   },
   {
-    provider: :openai, name: "GPT-4", tier: "frontier", status: "retired",
+    provider: :openai, name: "GPT-4", status: "retired",
     context_window: 8_192, max_output_tokens: nil, released_on: "2023-03-14",
     description: "Set the frontier pricing baseline at $30/$60 — 10× more than GPT-3.5 Turbo. 32K variant was $60/$120.",
     prices: [ { on: "2023-03-14", in: 30, out: 60, src: "openai.com/api/pricing", note: "8K context; 32K variant was $60/$120" } ]
   },
   {
-    provider: :openai, name: "GPT-3.5 Turbo", tier: "small", status: "retired",
+    provider: :openai, name: "GPT-3.5 Turbo", status: "retired",
     context_window: 16_385, max_output_tokens: nil, released_on: "2023-03-01",
     description: "The ChatGPT API model — *the* price-decline story, with three cuts in under a year taking it from $2/$2 to $0.50/$1.50. Replaced by GPT-4o mini in July 2024.",
     prices: [
@@ -333,19 +333,19 @@ catalog = [
 
   # ---- Google -----------------------------------------------------------
   {
-    provider: :google, name: "Gemini 3.1 Pro", tier: "frontier", status: "active",
+    provider: :google, name: "Gemini 3.1 Pro", status: "active",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-02-19",
     description: "Google's frontier model. Context-tiered pricing: $2/$12 up to 200K tokens, $4/$18 beyond. Figures shown are the ≤200K tier.",
     prices: [ { on: "2026-02-19", in: 2, out: 12, cached: 0.20, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier" } ]
   },
   {
-    provider: :google, name: "Gemini 3 Pro", tier: "frontier", status: "legacy",
+    provider: :google, name: "Gemini 3 Pro", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-11-18",
     description: "Previous Gemini Pro generation with the same context-tiered pricing model. Superseded by Gemini 3.1 Pro.",
     prices: [ { on: "2025-11-18", in: 2, out: 12, cached: 0.20, src: "ai.google.dev/gemini-api/docs/pricing", note: "≤200K context tier" } ]
   },
   {
-    provider: :google, name: "Gemini 2.5 Pro", tier: "frontier", status: "legacy",
+    provider: :google, name: "Gemini 2.5 Pro", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-06-17",
     description: "First Gemini with native thinking/reasoning. Context-tiered: $1.25/$10 ≤200K, $2.50/$15 beyond.",
     prices: [
@@ -354,19 +354,19 @@ catalog = [
     ]
   },
   {
-    provider: :google, name: "Gemini 3.5 Flash", tier: "mid", status: "active",
+    provider: :google, name: "Gemini 3.5 Flash", status: "active",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-05-19",
     description: "Latest Flash model — 3× pricier than Gemini 3 Flash ($0.50/$3), signaling the end of ultra-cheap Flash pricing.",
     prices: [ { on: "2026-05-19", in: 1.5, out: 9, cached: 0.15, src: "ai.google.dev/gemini-api/docs/pricing" } ]
   },
   {
-    provider: :google, name: "Gemini 3 Flash", tier: "mid", status: "legacy",
+    provider: :google, name: "Gemini 3 Flash", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-12-17",
     description: "Cost-effective Flash model. Superseded by Gemini 3.5 Flash which tripled the price.",
     prices: [ { on: "2025-12-17", in: 0.50, out: 3, cached: 0.05, src: "ai.google.dev/gemini-api/docs/pricing" } ]
   },
   {
-    provider: :google, name: "Gemini 2.5 Flash", tier: "mid", status: "legacy",
+    provider: :google, name: "Gemini 2.5 Flash", status: "legacy",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2025-06-17",
     description: "First Flash model with thinking. Flat pricing (no context tiers). Superseded by Gemini 3 Flash.",
     prices: [
@@ -375,13 +375,13 @@ catalog = [
     ]
   },
   {
-    provider: :google, name: "Gemini 2.0 Flash", tier: "mid", status: "retired",
+    provider: :google, name: "Gemini 2.0 Flash", status: "retired",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-12-11",
     description: "Experimental then GA — very competitive at $0.10/$0.40, cheaper than GPT-4o mini.",
     prices: [ { on: "2024-12-11", in: 0.10, out: 0.40, src: "ai.google.dev/gemini-api/docs/pricing" } ]
   },
   {
-    provider: :google, name: "Gemini 1.5 Pro", tier: "frontier", status: "retired",
+    provider: :google, name: "Gemini 1.5 Pro", status: "retired",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-02-15",
     description: "Introduced the 1M-token context window. Launched at $7/$21; repriced twice to reach $1.25/$5 by late 2024.",
     prices: [
@@ -390,7 +390,7 @@ catalog = [
     ]
   },
   {
-    provider: :google, name: "Gemini 1.5 Flash", tier: "mid", status: "retired",
+    provider: :google, name: "Gemini 1.5 Flash", status: "retired",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2024-05-14",
     description: "Budget model with 1M context. Launched at $0.35/$1.05 at Google I/O; slashed 78% in August 2024 to undercut GPT-4o mini.",
     prices: [
@@ -399,7 +399,7 @@ catalog = [
     ]
   },
   {
-    provider: :google, name: "Gemini 1.0 Pro", tier: "frontier", status: "retired",
+    provider: :google, name: "Gemini 1.0 Pro", status: "retired",
     context_window: 32_000, max_output_tokens: nil, released_on: "2023-12-06",
     description: "Initial Gemini launch — competitive with GPT-3.5 Turbo at $0.50/$1.50.",
     prices: [ { on: "2023-12-06", in: 0.50, out: 1.50, src: "ai.google.dev/gemini-api/docs/pricing" } ]
@@ -407,13 +407,13 @@ catalog = [
 
   # ---- xAI --------------------------------------------------------------
   {
-    provider: :xai, name: "Grok 4.3", tier: "frontier", status: "active",
+    provider: :xai, name: "Grok 4.3", status: "active",
     context_window: 1_000_000, max_output_tokens: 64_000, released_on: "2026-04-30",
     description: "xAI's current flagship — aggressively priced for a frontier model, with a 1M token context window.",
     prices: [ { on: "2026-04-30", in: 1.25, out: 2.50, cached: 0.20, src: "docs.x.ai" } ]
   },
   {
-    provider: :xai, name: "Grok 4.20", tier: "frontier", status: "legacy",
+    provider: :xai, name: "Grok 4.20", status: "legacy",
     context_window: 2_000_000, max_output_tokens: 64_000, released_on: "2026-03-10",
     description: "Predecessor to Grok 4.3 with 2M context. Later aligned to Grok 4.3 pricing.",
     prices: [
@@ -422,37 +422,37 @@ catalog = [
     ]
   },
   {
-    provider: :xai, name: "Grok 4", tier: "frontier", status: "retired",
+    provider: :xai, name: "Grok 4", status: "retired",
     context_window: 256_000, max_output_tokens: 64_000, released_on: "2025-07-09",
     description: "Previous xAI flagship. Retired May 15, 2026; traffic redirected to Grok 4.3.",
     prices: [ { on: "2025-07-09", in: 3, out: 15, cached: 0.75, src: "docs.x.ai" } ]
   },
   {
-    provider: :xai, name: "Grok Build 0.1", tier: "mid", status: "active",
+    provider: :xai, name: "Grok Build 0.1", status: "active",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-05-20",
     description: "xAI's coding-specialist model — cheaper than Grok 4.3 for code generation tasks.",
     prices: [ { on: "2026-05-20", in: 1, out: 2, cached: 0.20, src: "x.ai/news/grok-build-0-1" } ]
   },
   {
-    provider: :xai, name: "Grok 4.1 Fast", tier: "small", status: "retired",
+    provider: :xai, name: "Grok 4.1 Fast", status: "retired",
     context_window: 2_000_000, max_output_tokens: 64_000, released_on: "2025-11-19",
     description: "Low-cost, fast Grok variant with 2M context. Retired May 15, 2026; traffic redirected to Grok 4.3.",
     prices: [ { on: "2025-11-19", in: 0.20, out: 0.50, cached: 0.05, src: "docs.x.ai" } ]
   },
   {
-    provider: :xai, name: "Grok 3 Mini", tier: "small", status: "retired",
+    provider: :xai, name: "Grok 3 Mini", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-06-10",
     description: "Budget Grok at $0.30/$0.50 — undercut o1-mini by 10× on input. Superseded by Grok 4.1 Fast.",
     prices: [ { on: "2025-06-10", in: 0.30, out: 0.50, src: "docs.x.ai", note: "API availability date; model previewed Feb 2025" } ]
   },
   {
-    provider: :xai, name: "Grok 3", tier: "frontier", status: "retired",
+    provider: :xai, name: "Grok 3", status: "retired",
     context_window: 131_072, max_output_tokens: nil, released_on: "2025-04-09",
     description: "xAI's pre-Grok-4 flagship — established the $3/$15 price point that Grok 4 launched at. Fills the gap between Grok 2 and Grok 4.",
     prices: [ { on: "2025-04-09", in: 3, out: 15, src: "docs.x.ai", note: "API availability date (grok-3-beta); model previewed Feb 2025" } ]
   },
   {
-    provider: :xai, name: "Grok 2", tier: "frontier", status: "retired",
+    provider: :xai, name: "Grok 2", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-08-13",
     description: "xAI's first API model. The public API beta (grok-beta) charged $5/$15; the $2/$10 Grok pricing baseline arrived that December.",
     prices: [
@@ -463,7 +463,7 @@ catalog = [
 
   # ---- DeepSeek ---------------------------------------------------------
   {
-    provider: :deepseek, name: "DeepSeek V4 Pro", tier: "frontier", status: "active",
+    provider: :deepseek, name: "DeepSeek V4 Pro", status: "active",
     context_window: 1_000_000, max_output_tokens: 384_000, released_on: "2026-04-24",
     description: "Open-weight frontier model. DeepSeek made a 75% promotional discount permanent in May 2026, making it one of the cheapest frontier models.",
     prices: [
@@ -472,13 +472,13 @@ catalog = [
     ]
   },
   {
-    provider: :deepseek, name: "DeepSeek V4 Flash", tier: "mid", status: "active",
+    provider: :deepseek, name: "DeepSeek V4 Flash", status: "active",
     context_window: 1_000_000, max_output_tokens: 384_000, released_on: "2026-04-24",
     description: "Ultra-cheap frontier-class model (284B total, 13B active MoE). Launched alongside V4 Pro.",
     prices: [ { on: "2026-04-24", in: 0.14, out: 0.28, cached: 0.0028, src: "api-docs.deepseek.com" } ]
   },
   {
-    provider: :deepseek, name: "DeepSeek R1", tier: "frontier", status: "legacy",
+    provider: :deepseek, name: "DeepSeek R1", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-01-20",
     description: "Open-weight reasoning model that stunned the industry at launch. Repriced with V3.2-Exp in September 2025; now routes to V4 Flash thinking mode and is scheduled for deprecation July 2026.",
     prices: [
@@ -487,7 +487,7 @@ catalog = [
     ]
   },
   {
-    provider: :deepseek, name: "DeepSeek V3", tier: "mid", status: "legacy",
+    provider: :deepseek, name: "DeepSeek V3", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-12-26",
     description: "General-purpose chat model. Launched on a promotional $0.14/$0.28 (Dec 2024–Feb 2025), then settled at $0.27/$1.10; received a 50%+ output price cut with the V3.2-Exp update in September 2025.",
     prices: [
@@ -497,7 +497,7 @@ catalog = [
     ]
   },
   {
-    provider: :deepseek, name: "DeepSeek V2", tier: "mid", status: "retired",
+    provider: :deepseek, name: "DeepSeek V2", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-05-06",
     description: "Open-weight MoE whose ~$0.14/MTok input price triggered China's May 2024 LLM price war — Alibaba and Baidu slashed rates within weeks.",
     prices: [ { on: "2024-05-06", in: 0.14, out: 0.28, src: "api-docs.deepseek.com", note: "¥1/¥2 per MTok converted; confirmed first-party via Wayback platform.deepseek.com capture 2024-05-25 (deepseek-chat $0.14/$0.28)" } ]
@@ -505,7 +505,7 @@ catalog = [
 
   # ---- Cohere -----------------------------------------------------------
   {
-    provider: :cohere, name: "Command R Plus", tier: "frontier", status: "legacy",
+    provider: :cohere, name: "Command R Plus", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-04-04",
     description: "Cohere's enterprise RAG flagship, marketed as Command R+. The August 2024 refresh cut pricing from $3/$15 to $2.50/$10.",
     prices: [
@@ -514,7 +514,7 @@ catalog = [
     ]
   },
   {
-    provider: :cohere, name: "Command R", tier: "mid", status: "legacy",
+    provider: :cohere, name: "Command R", status: "legacy",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-03-11",
     description: "Cohere's scalable RAG and tool-use workhorse. The August 2024 refresh cut input pricing 70% to $0.15/$0.60.",
     prices: [
@@ -525,50 +525,50 @@ catalog = [
 
   # ---- Open-weight models (hosted prices vary by provider) --------------
   {
-    provider: :meta, name: "Llama 4 Maverick", tier: "frontier", status: "active",
+    provider: :meta, name: "Llama 4 Maverick", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-05",
     description: "Meta's open-weight MoE flagship (17B active / 400B+ total). Hosted pricing varies widely; figures are a representative hosted rate.",
     prices: [ { on: "2025-04-05", in: 0.15, out: 0.60, src: "pricepertoken.com", note: "Representative hosted rate; varies by provider" } ]
   },
   {
-    provider: :meta, name: "Llama 4 Scout", tier: "mid", status: "active",
+    provider: :meta, name: "Llama 4 Scout", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2025-04-05",
     description: "Meta's smaller open-weight MoE model (17B active / 109B total). Supports up to 10M context on some providers.",
     prices: [ { on: "2025-04-05", in: 0.08, out: 0.30, src: "pricepertoken.com", note: "Representative hosted rate (DeepInfra); varies by provider" } ]
   },
   {
-    provider: :meta, name: "Llama 3.3 70B", tier: "mid", status: "retired",
+    provider: :meta, name: "Llama 3.3 70B", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-12-06",
     description: "Late-2024 70B refresh delivering near-405B quality at 70B serving cost — the open-weight reference rate going into 2025.",
     prices: [ { on: "2024-12-06", in: 0.59, out: 0.79, src: "pricepertoken.com", note: "Representative hosted rate (Groq); varies by provider" } ]
   },
   {
-    provider: :meta, name: "Llama 3.1 405B", tier: "frontier", status: "retired",
+    provider: :meta, name: "Llama 3.1 405B", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-23",
     description: "Largest open-weight model at launch — GPT-4-class quality that anchored hosted pricing expectations lower.",
     prices: [ { on: "2024-07-23", in: 3, out: 3, src: "pricepertoken.com", note: "Representative hosted rate (Together AI); varies by provider" } ]
   },
   {
-    provider: :meta, name: "Llama 3 70B", tier: "mid", status: "retired",
+    provider: :meta, name: "Llama 3 70B", status: "retired",
     context_window: 8_192, max_output_tokens: nil, released_on: "2024-04-18",
     description: "Meta's first widely hosted open-weight model — pushed hosted LLM pricing below $1/MTok.",
     prices: [ { on: "2024-04-18", in: 0.59, out: 0.79, src: "pricepertoken.com", note: "Representative hosted rate (Together/Fireworks); varies by provider" } ]
   },
 
   {
-    provider: :mistral, name: "Mistral Medium 3.5", tier: "mid", status: "active",
+    provider: :mistral, name: "Mistral Medium 3.5", status: "active",
     context_window: 128_000, max_output_tokens: nil, released_on: "2026-04-29",
     description: "Consolidated model folding Medium 3.1, Magistral reasoning, and Devstral 2 into one set of weights with a per-request reasoning toggle.",
     prices: [ { on: "2026-04-29", in: 1.50, out: 7.50, src: "mistral.ai/pricing" } ]
   },
   {
-    provider: :mistral, name: "Mistral Large 3", tier: "frontier", status: "active",
+    provider: :mistral, name: "Mistral Large 3", status: "active",
     context_window: 262_000, max_output_tokens: nil, released_on: "2025-12-02",
     description: "Mistral's Apache-2.0 open-weight frontier model (675B total / 41B active MoE). 75% cheaper than Large 2 at $0.50/$1.50.",
     prices: [ { on: "2025-12-02", in: 0.50, out: 1.50, src: "mistral.ai/pricing" } ]
   },
   {
-    provider: :mistral, name: "Mistral Small 4", tier: "small", status: "active",
+    provider: :mistral, name: "Mistral Small 4", status: "active",
     context_window: 262_000, max_output_tokens: nil, released_on: "2026-03-16",
     description: "Fast, cost-effective model for high-volume and latency-sensitive workloads. Launched at $0.15/$0.60, later cut to $0.10/$0.30.",
     prices: [
@@ -577,7 +577,7 @@ catalog = [
     ]
   },
   {
-    provider: :mistral, name: "Mistral Large 2", tier: "frontier", status: "retired",
+    provider: :mistral, name: "Mistral Large 2", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2024-07-24",
     description: "Launched at $3/$9 — a deep cut from Large v1's $8/$24 — then cut again to $2/$6 that September. Superseded by Large 3 at 75% lower cost.",
     prices: [
@@ -586,7 +586,7 @@ catalog = [
     ]
   },
   {
-    provider: :mistral, name: "Mistral Large", tier: "frontier", status: "retired",
+    provider: :mistral, name: "Mistral Large", status: "retired",
     context_window: 32_000, max_output_tokens: nil, released_on: "2024-02-26",
     description: "Mistral's initial flagship at $8/$24, cut to $4/$12 in early May 2024. Superseded by Large 2 that July.",
     prices: [
@@ -595,25 +595,25 @@ catalog = [
     ]
   },
   {
-    provider: :mistral, name: "Mixtral 8x7B", tier: "mid", status: "retired",
+    provider: :mistral, name: "Mixtral 8x7B", status: "retired",
     context_window: 32_768, max_output_tokens: nil, released_on: "2023-12-11",
     description: "Apache-2.0 MoE that put GPT-3.5-class quality in open weights, setting a price floor under proprietary small models. Figures are Mistral's own API rate.",
     prices: [ { on: "2024-02-26", in: 0.70, out: 0.70, src: "mistral.ai/pricing", note: "USD list rate from the Au Large release, which renamed mistral-small to open-mixtral-8x7b and introduced USD pricing; the Dec 2023 endpoint was EUR-priced" } ]
   },
   {
-    provider: :mistral, name: "Mistral 7B", tier: "small", status: "retired",
+    provider: :mistral, name: "Mistral 7B", status: "retired",
     context_window: 32_768, max_output_tokens: nil, released_on: "2023-09-27",
     description: "Mistral's first open-weight model, served as the cheapest endpoint on La Plateforme from December 2023. Figures are Mistral's own API rate.",
     prices: [ { on: "2024-02-26", in: 0.25, out: 0.25, src: "mistral.ai/pricing", note: "USD list rate from the Au Large release (mistral-tiny became open-mistral-7b); the Dec 2023 endpoint was EUR-priced and not flat" } ]
   },
   {
-    provider: :alibaba, name: "Qwen 3.7 Max", tier: "frontier", status: "active",
+    provider: :alibaba, name: "Qwen 3.7 Max", status: "active",
     context_window: 1_000_000, max_output_tokens: nil, released_on: "2026-05-20",
     description: "Alibaba's latest flagship Qwen model with 1M context, announced at Alibaba Cloud Summit.",
     prices: [ { on: "2026-05-20", in: 2.50, out: 7.50, src: "codersera.com/blog/qwen-3-7-max-launch-guide-2026", note: "List price; 50% promotional discount available; date approximate" } ]
   },
   {
-    provider: :alibaba, name: "Qwen3 Max", tier: "frontier", status: "legacy",
+    provider: :alibaba, name: "Qwen3 Max", status: "legacy",
     context_window: 256_000, max_output_tokens: nil, released_on: "2025-09-23",
     description: "Alibaba's previous flagship. Received a 50% price cut in November 2025 as China's AI price war intensified.",
     prices: [
@@ -623,19 +623,19 @@ catalog = [
     ]
   },
   {
-    provider: :moonshot, name: "Kimi K2.6", tier: "frontier", status: "active",
+    provider: :moonshot, name: "Kimi K2.6", status: "active",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-04-20",
     description: "Moonshot AI's latest open-weight frontier model with 300-agent swarm support.",
     prices: [ { on: "2026-04-20", in: 0.95, out: 4.00, cached: 0.16, src: "platform.moonshot.ai", note: "Direct API rate confirmed via Wayback capture of platform.moonshot.ai 2026-04-27 (Cache Hit $0.16 / Input $0.95 / Output $4.00 per MTok)" } ]
   },
   {
-    provider: :moonshot, name: "Kimi K2.5", tier: "frontier", status: "legacy",
+    provider: :moonshot, name: "Kimi K2.5", status: "legacy",
     context_window: 256_000, max_output_tokens: nil, released_on: "2026-01-27",
     description: "Multimodal model with Agent Swarm technology. Superseded by K2.6.",
     prices: [ { on: "2026-01-27", in: 0.60, out: 3.00, cached: 0.10, src: "platform.moonshot.ai", note: "Direct API rate confirmed via Wayback capture of platform.moonshot.ai 2026-04-02 (Cache Hit $0.10 / Input $0.60 / Output $3.00 per MTok)" } ]
   },
   {
-    provider: :moonshot, name: "Kimi K2", tier: "frontier", status: "retired",
+    provider: :moonshot, name: "Kimi K2", status: "retired",
     context_window: 128_000, max_output_tokens: nil, released_on: "2025-07-11",
     description: "Moonshot's first open-weight frontier model (1T total / 32B active MoE). End-of-life May 25, 2026.",
     prices: [ { on: "2025-07-11", in: 0.55, out: 2.20, cached: 0.15, src: "pricepertoken.com" } ]
@@ -651,7 +651,7 @@ catalog = [
   # as image_generation via their output modality and list under the "Image
   # generation" category. See docs/IMAGE_CATEGORY_PLAN.md.
   {
-    provider: :openai, name: "GPT Image 2", tier: "mid", status: "active",
+    provider: :openai, name: "GPT Image 2", status: "active",
     description: "OpenAI's current flagship image model, exposed through the Images and Responses APIs.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.006–$0.211 / image",
@@ -660,7 +660,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "GPT Image 1.5", tier: "mid", status: "legacy",
+    provider: :openai, name: "GPT Image 1.5", status: "legacy",
     description: "Previous-generation OpenAI image model, still callable while it winds down.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.009–$0.133 / image",
@@ -669,7 +669,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "GPT Image 1 Mini", tier: "mid", status: "legacy",
+    provider: :openai, name: "GPT Image 1 Mini", status: "legacy",
     description: "Smaller, cheaper OpenAI image model from the GPT Image 1 line.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.005–$0.036 / image",
@@ -678,7 +678,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "GPT Image 1", tier: "mid", status: "legacy",
+    provider: :openai, name: "GPT Image 1", status: "legacy",
     description: "OpenAI's first natively multimodal image model, now deprecated.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.011–$0.167 / image",
@@ -687,7 +687,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Nano Banana Pro", tier: "mid", status: "active",
+    provider: :google, name: "Nano Banana Pro", status: "active",
     description: "Google's current flagship image model (Gemini 3 Pro Image), via the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.134–$0.24 / image",
@@ -696,7 +696,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Nano Banana 2", tier: "mid", status: "active",
+    provider: :google, name: "Nano Banana 2", status: "active",
     description: "Google's Gemini 3.1 Flash Image model, via the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "$0.045–$0.151 / image",
@@ -705,7 +705,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Gemini 2.5 Flash Image", tier: "mid", status: "active",
+    provider: :google, name: "Gemini 2.5 Flash Image", status: "active",
     description: "Google's \"Nano Banana\" image model, available in preview through the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "token_based", price_summary: "≈ $0.039 / image",
@@ -714,7 +714,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Imagen 4", tier: "mid", status: "legacy",
+    provider: :google, name: "Imagen 4", status: "legacy",
     description: "Google's text-to-image model, via the Gemini API and Vertex AI.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image_tiered", price_summary: "$0.02–$0.06 / image",
@@ -723,7 +723,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :black_forest_labs, name: "FLUX1.1 [pro]", tier: "mid", status: "active",
+    provider: :black_forest_labs, name: "FLUX1.1 [pro]", status: "active",
     description: "Black Forest Labs' text-to-image model, served through their API and inference partners.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.04 / image",
@@ -732,7 +732,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :black_forest_labs, name: "FLUX.2 [pro]", tier: "mid", status: "active",
+    provider: :black_forest_labs, name: "FLUX.2 [pro]", status: "active",
     description: "Black Forest Labs' current flagship text-to-image model.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_megapixel", price_summary: "from $0.03 / MP",
@@ -741,7 +741,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :ideogram, name: "Ideogram 3.0", tier: "mid", status: "active",
+    provider: :ideogram, name: "Ideogram 3.0", status: "active",
     description: "Ideogram's text-to-image model, built to render legible text and typography within the image, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image_tiered", price_summary: "$0.03–$0.09 / image",
@@ -750,7 +750,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :recraft, name: "Recraft V3", tier: "mid", status: "active",
+    provider: :recraft, name: "Recraft V3", status: "active",
     description: "Recraft's text-to-image model with raster and vector output, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.04 raster · $0.08 vector",
@@ -759,7 +759,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :amazon, name: "Nova Canvas", tier: "mid", status: "active",
+    provider: :amazon, name: "Nova Canvas", status: "active",
     description: "Amazon's text-to-image model, available through Amazon Bedrock.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image_tiered", price_summary: "$0.04–$0.08 / image",
@@ -768,7 +768,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :luma, name: "Photon", tier: "mid", status: "active",
+    provider: :luma, name: "Photon", status: "active",
     description: "Luma AI's text-to-image model, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.015 / image",
@@ -777,7 +777,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :xai, name: "Grok Imagine Image", tier: "mid", status: "active",
+    provider: :xai, name: "Grok Imagine Image", status: "active",
     description: "xAI's text-to-image model, via the xAI API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.02–$0.05 / image",
@@ -786,7 +786,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :bytedance, name: "Seedream 4.5", tier: "mid", status: "active",
+    provider: :bytedance, name: "Seedream 4.5", status: "active",
     description: "ByteDance's text-to-image model, served through BytePlus ModelArk.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.04 / image",
@@ -795,7 +795,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :stability, name: "Stable Diffusion 3.5 Large", tier: "mid", status: "active",
+    provider: :stability, name: "Stable Diffusion 3.5 Large", status: "active",
     description: "Stability AI's 8B-parameter text-to-image model, on the hosted API and as open weights.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "credit_based", price_summary: "6.5 credits ≈ $0.065",
@@ -804,7 +804,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :reve, name: "Reve", tier: "mid", status: "active",
+    provider: :reve, name: "Reve", status: "active",
     description: "Reve's text-to-image model, in beta, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "credit_based", price_summary: "5 credits ≈ $0.0067",
@@ -813,7 +813,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :bria, name: "Bria", tier: "mid", status: "active",
+    provider: :bria, name: "Bria", status: "active",
     description: "Bria AI's commercially-licensed text-to-image models, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "per_image", price_summary: "$0.02–$0.03 / image",
@@ -822,7 +822,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :adobe, name: "Firefly", tier: "mid", status: "active",
+    provider: :adobe, name: "Firefly", status: "active",
     description: "Adobe's text-to-image model, offered through Firefly Services for enterprises.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "credit_based", price_summary: "~10 credits / image",
@@ -831,7 +831,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :leonardo, name: "Leonardo AI", tier: "mid", status: "active",
+    provider: :leonardo, name: "Leonardo AI", status: "active",
     description: "Leonardo AI's text-to-image platform, via its API.",
     input_modalities: %w[text], output_modalities: %w[image],
     pricing_model: "credit_based", price_summary: "Varies by model & resolution",
@@ -840,7 +840,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :alibaba, name: "Qwen-Image", tier: "mid", status: "active",
+    provider: :alibaba, name: "Qwen-Image", status: "active",
     description: "Alibaba's open-weight text-to-image model, on Model Studio and as open weights.",
     input_modalities: %w[text], output_modalities: %w[image],
     # No published per-image API rate: Alibaba's "$0.10" is an illustrative
@@ -864,112 +864,112 @@ catalog = [
   # doc lists as auto-synced (Qwen3, bge-m3, Perplexity, Nemotron) are left to
   # the OpenRouter sync rather than curated here.
   {
-    provider: :openai, name: "text-embedding-3-small", tier: "small", status: "active",
+    provider: :openai, name: "text-embedding-3-small", status: "active",
     context_window: 8_191, released_on: "2024-01-25",
     description: "OpenAI's smaller embedding model. Native 1536 dimensions, truncatable via the dimensions parameter down to 512.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
     prices: [ { on: "2026-07-03", in: 0.02, src: "developers.openai.com/api/docs/models/text-embedding-3-small", note: "Standard tier; batch tier $0.01" } ]
   },
   {
-    provider: :openai, name: "text-embedding-3-large", tier: "mid", status: "active",
+    provider: :openai, name: "text-embedding-3-large", status: "active",
     context_window: 8_191, released_on: "2024-01-25",
     description: "OpenAI's larger embedding model. Native 3072 dimensions, truncatable down to 256.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
     prices: [ { on: "2026-07-03", in: 0.13, src: "developers.openai.com/api/docs/models/text-embedding-3-large", note: "Standard tier; batch tier $0.065" } ]
   },
   {
-    provider: :openai, name: "text-embedding-ada-002", tier: "small", status: "legacy",
+    provider: :openai, name: "text-embedding-ada-002", status: "legacy",
     context_window: 8_191, released_on: "2022-12-15",
     description: "OpenAI's original second-generation embedding model, superseded by the text-embedding-3 family.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
     prices: [ { on: "2026-07-03", in: 0.10, src: "openai.com/pricing", note: "Legacy; price widely published, primary page de-emphasised (M confidence)" } ]
   },
   {
-    provider: :cohere, name: "Embed 4", tier: "mid", status: "active",
+    provider: :cohere, name: "Embed 4", status: "active",
     context_window: 128_000,
     description: "Cohere's multimodal embedding model (embed-v4.0). Matryoshka dimensions of 256/512/1024/1536; the figure is the text-token rate.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1536,
     prices: [ { on: "2026-07-03", in: 0.12, src: "docs.cohere.com/docs/cohere-embed", note: "Text-token rate corroborated across docs + Bedrock/reseller calculators (M confidence)" } ]
   },
   {
-    provider: :cohere, name: "Embed English v3", tier: "mid", status: "active",
+    provider: :cohere, name: "Embed English v3", status: "active",
     context_window: 512,
     description: "Cohere's English embedding model (embed-english-v3.0), 1024 dimensions.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.10, src: "docs.cohere.com/docs/models", note: "Corroborated across docs + AWS Marketplace (M confidence)" } ]
   },
   {
-    provider: :cohere, name: "Embed Multilingual v3", tier: "mid", status: "active",
+    provider: :cohere, name: "Embed Multilingual v3", status: "active",
     context_window: 512,
     description: "Cohere's multilingual embedding model (embed-multilingual-v3.0), 1024 dimensions across 100+ languages.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.10, src: "docs.cohere.com/docs/models", note: "Corroborated across docs + AWS Marketplace (M confidence)" } ]
   },
   {
-    provider: :voyage, name: "voyage-4-large", tier: "mid", status: "active",
+    provider: :voyage, name: "voyage-4-large", status: "active",
     context_window: 32_000,
     description: "Voyage AI's largest general embedding model in the voyage-4 family. Matryoshka dimensions of 256/512/1024/2048, default 1024.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.12, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-4", tier: "mid", status: "active",
+    provider: :voyage, name: "voyage-4", status: "active",
     context_window: 32_000,
     description: "Voyage AI's balanced general embedding model. Matryoshka dimensions, default 1024.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.06, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-4-lite", tier: "small", status: "active",
+    provider: :voyage, name: "voyage-4-lite", status: "active",
     context_window: 32_000,
     description: "Voyage AI's entry tier in the voyage-4 family. Matryoshka dimensions, default 1024.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.02, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-3-large", tier: "mid", status: "legacy",
+    provider: :voyage, name: "voyage-3-large", status: "legacy",
     context_window: 32_000,
     description: "Previous-generation Voyage general embedding model, still listed alongside the voyage-4 family.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-3.5", tier: "mid", status: "legacy",
+    provider: :voyage, name: "voyage-3.5", status: "legacy",
     context_window: 32_000,
     description: "Previous-generation Voyage embedding model, superseded by voyage-4.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.06, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-3.5-lite", tier: "small", status: "legacy",
+    provider: :voyage, name: "voyage-3.5-lite", status: "legacy",
     context_window: 32_000,
     description: "Previous-generation cheap Voyage embedding model, superseded by voyage-4-lite.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.02, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-code-3", tier: "mid", status: "active",
+    provider: :voyage, name: "voyage-code-3", status: "active",
     context_window: 32_000,
     description: "Voyage AI's code-specialised embedding model. Matryoshka dimensions, default 1024.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :voyage, name: "voyage-context-3", tier: "mid", status: "active",
+    provider: :voyage, name: "voyage-context-3", status: "active",
     context_window: 32_000,
     description: "Voyage AI's contextualised-chunk embedding model. Matryoshka dimensions, default 1024.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.18, src: "docs.voyageai.com/docs/pricing" } ]
   },
   {
-    provider: :google, name: "gemini-embedding-001", tier: "mid", status: "active",
+    provider: :google, name: "gemini-embedding-001", status: "active",
     context_window: 2_048,
     description: "Google's Gemini embedding model. Native 3072 dimensions with Matryoshka truncation (e.g. 1536/768/256).",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
     prices: [ { on: "2026-07-03", in: 0.15, src: "ai.google.dev/gemini-api/docs/pricing", note: "Standard tier; batch tier $0.075" } ]
   },
   {
-    provider: :google, name: "gemini-embedding-2", tier: "mid", status: "active",
+    provider: :google, name: "gemini-embedding-2", status: "active",
     context_window: 2_048,
     # Price is primary-sourced (H); the doc flags the 3072-dim/2,048-token specs
     # as inferred from the -001 lineage and "do not publish as fact", so no
@@ -979,14 +979,14 @@ catalog = [
     prices: [ { on: "2026-07-03", in: 0.20, src: "ai.google.dev/gemini-api/docs/pricing", note: "Standard tier; batch tier $0.10. Dimensions/context not primary-confirmed (M)" } ]
   },
   {
-    provider: :mistral, name: "Mistral Embed", tier: "mid", status: "active",
+    provider: :mistral, name: "Mistral Embed", status: "active",
     context_window: 8_192,
     description: "Mistral's general embedding model (mistral-embed-2312), 1024 dimensions.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 1024,
     prices: [ { on: "2026-07-03", in: 0.10, src: "mistral.ai/pricing", note: "Widely cited; API pricing table JS-rendered (M confidence)" } ]
   },
   {
-    provider: :mistral, name: "Codestral Embed", tier: "mid", status: "active",
+    provider: :mistral, name: "Codestral Embed", status: "active",
     context_window: 8_192,
     description: "Mistral's code-specialised embedding model (codestral-embed-2505). Native 3072 dimensions, default 1536, MRL-truncatable.",
     input_modalities: %w[text], output_modalities: %w[embedding], dimensions: 3072,
@@ -1004,7 +1004,7 @@ catalog = [
   # gpt-4o-transcribe family is token-billed — the per-minute figure is OpenAI's
   # own estimate, flagged in price_detail. See docs/SPEECH_TO_TEXT_TAB_PLAN.md.
   {
-    provider: :openai, name: "gpt-4o-transcribe", tier: "mid", status: "active",
+    provider: :openai, name: "gpt-4o-transcribe", status: "active",
     description: "OpenAI's flagship transcription model, exposed through the audio transcriptions API.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.006, native_price_unit: "/min",
@@ -1013,7 +1013,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "gpt-4o-mini-transcribe", tier: "mid", status: "active",
+    provider: :openai, name: "gpt-4o-mini-transcribe", status: "active",
     description: "OpenAI's smaller, cheaper transcription model in the gpt-4o line.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.003, native_price_unit: "/min",
@@ -1022,7 +1022,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "Whisper", tier: "mid", status: "legacy",
+    provider: :openai, name: "Whisper", status: "legacy",
     description: "OpenAI's open-weight speech recognition model, served on the API as whisper-1.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.006, native_price_unit: "/min",
@@ -1031,7 +1031,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :deepgram, name: "Nova-3", tier: "mid", status: "active",
+    provider: :deepgram, name: "Nova-3", status: "active",
     description: "Deepgram's flagship English speech-to-text model, batch and streaming.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0077, native_price_unit: "/min",
@@ -1040,7 +1040,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :deepgram, name: "Flux", tier: "mid", status: "active",
+    provider: :deepgram, name: "Flux", status: "active",
     description: "Deepgram's streaming-first English ASR model.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0065, native_price_unit: "/min",
@@ -1049,7 +1049,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :assemblyai, name: "Universal-3.5 Pro", tier: "mid", status: "active",
+    provider: :assemblyai, name: "Universal-3.5 Pro", status: "active",
     description: "AssemblyAI's highest-accuracy asynchronous transcription model.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0035, native_price_unit: "/min",
@@ -1058,7 +1058,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :assemblyai, name: "Universal-2", tier: "mid", status: "active",
+    provider: :assemblyai, name: "Universal-2", status: "active",
     description: "AssemblyAI's mainstream asynchronous transcription model; also its streaming tier.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0025, native_price_unit: "/min",
@@ -1067,7 +1067,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Cloud Speech-to-Text (Chirp 3)", tier: "mid", status: "active",
+    provider: :google, name: "Cloud Speech-to-Text (Chirp 3)", status: "active",
     description: "Google Cloud's Speech-to-Text v2 recognizer, including the Chirp foundation models.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.016, native_price_unit: "/min",
@@ -1076,7 +1076,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :microsoft, name: "Azure AI Speech", tier: "mid", status: "active",
+    provider: :microsoft, name: "Azure AI Speech", status: "active",
     description: "Microsoft Azure's speech-to-text service, real-time and batch.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0167, native_price_unit: "/min",
@@ -1085,7 +1085,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :speechmatics, name: "Melia", tier: "mid", status: "active",
+    provider: :speechmatics, name: "Melia", status: "active",
     description: "Speechmatics' multilingual speech-to-text model.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.00215, native_price_unit: "/min",
@@ -1094,7 +1094,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :gladia, name: "Solaria", tier: "mid", status: "active",
+    provider: :gladia, name: "Solaria", status: "active",
     description: "Gladia's multilingual speech-to-text model, with diarization and features bundled into the rate.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0102, native_price_unit: "/min",
@@ -1103,7 +1103,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :rev, name: "Reverb", tier: "mid", status: "active",
+    provider: :rev, name: "Reverb", status: "active",
     description: "Rev AI's asynchronous speech-to-text model.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.0033, native_price_unit: "/min",
@@ -1112,7 +1112,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :rev, name: "Reverb Turbo", tier: "mid", status: "active",
+    provider: :rev, name: "Reverb Turbo", status: "active",
     description: "Rev AI's faster, cheaper asynchronous transcription model.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.00167, native_price_unit: "/min",
@@ -1121,7 +1121,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :groq, name: "Whisper Large v3", tier: "mid", status: "active",
+    provider: :groq, name: "Whisper Large v3", status: "active",
     description: "OpenAI's open-weight Whisper Large v3 served on GroqCloud.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.00185, native_price_unit: "/min",
@@ -1130,7 +1130,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :groq, name: "Whisper Large v3 Turbo", tier: "mid", status: "active",
+    provider: :groq, name: "Whisper Large v3 Turbo", status: "active",
     description: "The faster Whisper Large v3 Turbo distilled model on GroqCloud.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.000667, native_price_unit: "/min",
@@ -1139,7 +1139,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :elevenlabs, name: "Scribe", tier: "mid", status: "active",
+    provider: :elevenlabs, name: "Scribe", status: "active",
     description: "ElevenLabs' speech-to-text model, batch and real-time.",
     input_modalities: %w[audio], output_modalities: %w[text],
     native_price_usd: 0.00367, native_price_unit: "/min",
@@ -1160,7 +1160,7 @@ catalog = [
   # genuinely isn't derivable (Luma Ray3.x credits), the row is left unpriced with
   # a price_detail note. See docs/VIDEO_GENERATION_TAB_PLAN.md.
   {
-    provider: :openai, name: "Sora 2", tier: "mid", status: "active",
+    provider: :openai, name: "Sora 2", status: "active",
     description: "OpenAI's video generation model, via the video API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.10 / sec (720p)",
@@ -1169,7 +1169,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "Sora 2 Pro", tier: "mid", status: "active",
+    provider: :openai, name: "Sora 2 Pro", status: "active",
     description: "OpenAI's higher-resolution video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.30–$0.70 / sec",
@@ -1178,7 +1178,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Veo 3.1", tier: "mid", status: "active",
+    provider: :google, name: "Veo 3.1", status: "active",
     description: "Google's flagship video generation model, via the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.40–$0.60 / sec",
@@ -1187,7 +1187,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Veo 3.1 Fast", tier: "mid", status: "active",
+    provider: :google, name: "Veo 3.1 Fast", status: "active",
     description: "Google's faster, cheaper Veo variant, via the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.10–$0.30 / sec",
@@ -1196,7 +1196,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Veo 3.1 Lite", tier: "mid", status: "active",
+    provider: :google, name: "Veo 3.1 Lite", status: "active",
     description: "Google's cheapest Veo variant, via the Gemini API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.05–$0.08 / sec",
@@ -1205,7 +1205,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :runway, name: "Gen-4 Turbo", tier: "mid", status: "active",
+    provider: :runway, name: "Gen-4 Turbo", status: "active",
     description: "Runway's fast video generation model, via the Runway API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.05 / sec",
@@ -1214,7 +1214,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :runway, name: "Gen-4.5", tier: "mid", status: "active",
+    provider: :runway, name: "Gen-4.5", status: "active",
     description: "Runway's higher-quality video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.12 / sec",
@@ -1223,7 +1223,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :kuaishou, name: "Kling 2.5 Turbo Pro", tier: "mid", status: "active",
+    provider: :kuaishou, name: "Kling 2.5 Turbo Pro", status: "active",
     description: "Kuaishou's video generation model, served through fal.ai.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.07 / sec",
@@ -1232,7 +1232,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :pika, name: "Pika 2.2", tier: "mid", status: "active",
+    provider: :pika, name: "Pika 2.2", status: "active",
     description: "Pika's video generation model, served through fal.ai.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_video", price_summary: "$0.20–$0.45 / clip",
@@ -1241,7 +1241,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :luma, name: "Ray 2", tier: "mid", status: "active",
+    provider: :luma, name: "Ray 2", status: "active",
     description: "Luma AI's video generation model, served through fal.ai.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.10 / sec",
@@ -1250,7 +1250,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :luma, name: "Ray3.14", tier: "mid", status: "active",
+    provider: :luma, name: "Ray3.14", status: "active",
     description: "Luma AI's flagship native-1080p video model, via its API.",
     input_modalities: %w[text], output_modalities: %w[video],
     # No derivable USD rate: Luma's API meters credits per second by resolution
@@ -1260,7 +1260,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :minimax, name: "Hailuo 2.3", tier: "mid", status: "active",
+    provider: :minimax, name: "Hailuo 2.3", status: "active",
     description: "MiniMax's video generation model, via the MiniMax API.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "credit_based", price_summary: "~$0.27–$0.53 / clip",
@@ -1269,7 +1269,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :bytedance, name: "Seedance 1.0 Pro", tier: "mid", status: "active",
+    provider: :bytedance, name: "Seedance 1.0 Pro", status: "active",
     description: "ByteDance's video generation model, via BytePlus ModelArk.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "token_based", price_summary: "$2.50 / 1M tokens",
@@ -1278,7 +1278,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :tencent, name: "Hunyuan Video", tier: "mid", status: "active",
+    provider: :tencent, name: "Hunyuan Video", status: "active",
     description: "Tencent's open-weight video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_video", price_summary: "$0.40 / video",
@@ -1287,7 +1287,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :alibaba, name: "Wan 2.5", tier: "mid", status: "active",
+    provider: :alibaba, name: "Wan 2.5", status: "active",
     description: "Alibaba's open-weight video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.05–$0.15 / sec",
@@ -1296,7 +1296,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :lightricks, name: "LTX-2", tier: "mid", status: "active",
+    provider: :lightricks, name: "LTX-2", status: "active",
     description: "Lightricks' open-weight video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_second", price_summary: "$0.06–$0.24 / sec",
@@ -1305,7 +1305,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :genmo, name: "Mochi 1", tier: "mid", status: "active",
+    provider: :genmo, name: "Mochi 1", status: "active",
     description: "Genmo's open-weight (Apache 2.0) video generation model.",
     input_modalities: %w[text], output_modalities: %w[video],
     pricing_model: "per_video", price_summary: "~$0.42 / run",
@@ -1326,7 +1326,7 @@ catalog = [
   # unpriced with a price_detail note rather than seeded with a fabricated number.
   # See docs/TEXT_TO_SPEECH_TAB_PLAN.md.
   {
-    provider: :openai, name: "tts-1", tier: "mid", status: "active",
+    provider: :openai, name: "tts-1", status: "active",
     description: "OpenAI's standard text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 15.0, native_price_unit: "/1M chars",
@@ -1335,7 +1335,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "tts-1-hd", tier: "mid", status: "active",
+    provider: :openai, name: "tts-1-hd", status: "active",
     description: "OpenAI's higher-quality text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 30.0, native_price_unit: "/1M chars",
@@ -1344,14 +1344,14 @@ catalog = [
     prices: []
   },
   {
-    provider: :openai, name: "gpt-4o-mini-tts", tier: "mid", status: "active",
+    provider: :openai, name: "gpt-4o-mini-tts", status: "active",
     description: "OpenAI's steerable neural text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     price_detail: "Token-billed — $0.60 per 1M text-input tokens plus $12.00 per 1M audio-output tokens. OpenAI publishes no per-character rate, so a per-1M-character price isn't derivable.",
     prices: []
   },
   {
-    provider: :elevenlabs, name: "Flash v2.5", tier: "mid", status: "active",
+    provider: :elevenlabs, name: "Flash v2.5", status: "active",
     description: "ElevenLabs' low-latency text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 50.0, native_price_unit: "/1M chars",
@@ -1360,7 +1360,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :elevenlabs, name: "Multilingual v2", tier: "mid", status: "active",
+    provider: :elevenlabs, name: "Multilingual v2", status: "active",
     description: "ElevenLabs' highest-quality text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 100.0, native_price_unit: "/1M chars",
@@ -1369,7 +1369,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Cloud TTS (Standard)", tier: "mid", status: "active",
+    provider: :google, name: "Cloud TTS (Standard)", status: "active",
     description: "Google Cloud's non-neural text-to-speech voices.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 4.0, native_price_unit: "/1M chars",
@@ -1378,7 +1378,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Cloud TTS (Neural2)", tier: "mid", status: "active",
+    provider: :google, name: "Cloud TTS (Neural2)", status: "active",
     description: "Google Cloud's standard neural text-to-speech voices.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 16.0, native_price_unit: "/1M chars",
@@ -1387,7 +1387,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :google, name: "Cloud TTS (Chirp 3 HD)", tier: "mid", status: "active",
+    provider: :google, name: "Cloud TTS (Chirp 3 HD)", status: "active",
     description: "Google Cloud's premium generative text-to-speech voices.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 30.0, native_price_unit: "/1M chars",
@@ -1396,7 +1396,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :microsoft, name: "Azure TTS (Neural)", tier: "mid", status: "active",
+    provider: :microsoft, name: "Azure TTS (Neural)", status: "active",
     description: "Microsoft Azure's standard neural text-to-speech voices.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 16.0, native_price_unit: "/1M chars",
@@ -1405,7 +1405,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :microsoft, name: "Azure TTS (Neural HD)", tier: "mid", status: "active",
+    provider: :microsoft, name: "Azure TTS (Neural HD)", status: "active",
     description: "Microsoft Azure's HD neural text-to-speech voices.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 22.0, native_price_unit: "/1M chars",
@@ -1414,7 +1414,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :amazon, name: "Polly (Neural)", tier: "mid", status: "active",
+    provider: :amazon, name: "Polly (Neural)", status: "active",
     description: "Amazon Polly's standard neural text-to-speech engine.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 16.0, native_price_unit: "/1M chars",
@@ -1423,7 +1423,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :amazon, name: "Polly (Generative)", tier: "mid", status: "active",
+    provider: :amazon, name: "Polly (Generative)", status: "active",
     description: "Amazon Polly's generative text-to-speech engine.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 30.0, native_price_unit: "/1M chars",
@@ -1432,7 +1432,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :deepgram, name: "Aura-2", tier: "mid", status: "active",
+    provider: :deepgram, name: "Aura-2", status: "active",
     description: "Deepgram's current flagship text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 30.0, native_price_unit: "/1M chars",
@@ -1441,7 +1441,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :deepgram, name: "Aura-1", tier: "mid", status: "active",
+    provider: :deepgram, name: "Aura-1", status: "active",
     description: "Deepgram's first-generation text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 15.0, native_price_unit: "/1M chars",
@@ -1450,7 +1450,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :cartesia, name: "Sonic", tier: "mid", status: "active",
+    provider: :cartesia, name: "Sonic", status: "active",
     description: "Cartesia's low-latency text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 50.0, native_price_unit: "/1M chars",
@@ -1459,7 +1459,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :rime, name: "Mist", tier: "mid", status: "active",
+    provider: :rime, name: "Mist", status: "active",
     description: "Rime's fast, efficient text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 30.0, native_price_unit: "/1M chars",
@@ -1468,7 +1468,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :rime, name: "Arcana", tier: "mid", status: "active",
+    provider: :rime, name: "Arcana", status: "active",
     description: "Rime's expressive flagship text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 40.0, native_price_unit: "/1M chars",
@@ -1477,7 +1477,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :hume, name: "Octave", tier: "mid", status: "active",
+    provider: :hume, name: "Octave", status: "active",
     description: "Hume AI's expressive text-to-speech model.",
     input_modalities: %w[text], output_modalities: %w[audio],
     native_price_usd: 150.0, native_price_unit: "/1M chars",
@@ -1498,7 +1498,7 @@ catalog = [
   # bge-reranker, no single hosted rate) are listed unpriced with a price_detail
   # note. See docs/RERANK_TAB_PLAN.md.
   {
-    provider: :cohere, name: "Rerank 3.5", tier: "mid", status: "active",
+    provider: :cohere, name: "Rerank 3.5", status: "active",
     description: "Cohere's reranker (rerank-v3.5), scoring documents against a query.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "per_search", price_summary: "$2.00 / 1K searches",
@@ -1507,7 +1507,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :voyage, name: "rerank-2.5", tier: "mid", status: "active",
+    provider: :voyage, name: "rerank-2.5", status: "active",
     description: "Voyage AI's general reranker, billed per token of query and documents.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "token_based", price_summary: "$0.05 / 1M tokens",
@@ -1516,7 +1516,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :voyage, name: "rerank-2.5-lite", tier: "mid", status: "active",
+    provider: :voyage, name: "rerank-2.5-lite", status: "active",
     description: "Voyage AI's lighter, cheaper reranker.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "token_based", price_summary: "$0.02 / 1M tokens",
@@ -1525,7 +1525,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :zeroentropy, name: "zerank-2", tier: "mid", status: "active",
+    provider: :zeroentropy, name: "zerank-2", status: "active",
     description: "ZeroEntropy's reranker, billed per token; weights on Hugging Face.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "token_based", price_summary: "$0.025 / 1M tokens",
@@ -1534,7 +1534,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :mixedbread, name: "mxbai-rerank-large-v2", tier: "mid", status: "active",
+    provider: :mixedbread, name: "mxbai-rerank-large-v2", status: "active",
     description: "Mixedbread's open-weight (Apache-2.0) cross-encoder reranker.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "per_search", price_summary: "$0.10 / 1K queries",
@@ -1543,7 +1543,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :pinecone, name: "pinecone-rerank-v0", tier: "mid", status: "active",
+    provider: :pinecone, name: "pinecone-rerank-v0", status: "active",
     description: "Pinecone's hosted reranker, via Pinecone Inference.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     pricing_model: "per_search", price_summary: "$2.00 / 1K requests",
@@ -1552,7 +1552,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :jina, name: "Reranker v3", tier: "mid", status: "active",
+    provider: :jina, name: "Reranker v3", status: "active",
     description: "Jina AI's flagship reranker (131K context, up to 64 documents).",
     input_modalities: %w[text], output_modalities: %w[rerank],
     # Rate not primary-confirmable: Jina bills rerankers from a shared token pool
@@ -1562,7 +1562,7 @@ catalog = [
     prices: []
   },
   {
-    provider: :baai, name: "bge-reranker-v2-m3", tier: "mid", status: "active",
+    provider: :baai, name: "bge-reranker-v2-m3", status: "active",
     description: "BAAI's open-weight (Apache-2.0) cross-encoder reranker, the canonical open baseline.",
     input_modalities: %w[text], output_modalities: %w[rerank],
     # No single canonical price: open weights, and hosted per-token rates vary by
@@ -1818,7 +1818,6 @@ catalog.each do |row|
   attrs = {
     provider:          providers.fetch(row[:provider]),
     name:              row[:name],
-    tier:              row[:tier],
     status:            row[:status],
     context_window:    row[:context_window],
     max_output_tokens: row[:max_output_tokens],

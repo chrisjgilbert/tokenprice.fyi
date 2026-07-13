@@ -1,6 +1,6 @@
 <%# Title, description, and canonical are per pricing-category (set on the
     controller from ModelCategory) — each tab is its own indexable URL, and the
-    canonical still folds away the tier/sort/dir permutations within a tab. %>
+    canonical still folds away the sort/dir permutations within a tab. %>
 <% content_for :title, @page_title %>
 <% content_for :description, @page_description %>
 <% content_for :canonical, @canonical_url %>
@@ -246,7 +246,7 @@
     flex-wrap: wrap;
   }
 
-  /* Filters card: one row at every width — search box, then the tier /
+  /* Filters card: one row at every width — search box, then the
      provider / modality dropdown buttons. The card's overflow is open (not
      hidden) so a facet's popover panel isn't clipped by the card bounds. */
   .filters-card {
@@ -351,7 +351,6 @@
             <% end %>
             <% if (m = launch_model) %>
               <div class="hero-card-chips">
-                <%= tier_badge(m.tier) %>
                 <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>
                 <% if m.context_window %>
                   <span class="hero-card-chip num"><%= tokens_short(m.context_window) %> ctx</span>
@@ -438,28 +437,6 @@
             data: { action: "input->filters#search" } %>
     </div>
 
-    <%# Tier checkboxes. Every facet is a multi-select checkbox list behind the
-        same dropdown chip; an empty selection means "all tiers". Active state is
-        CSS-driven off :checked, not a render-time class — the rows sit outside
-        the Turbo frame the form replaces, so a class wouldn't refresh. Hidden on
-        the image tab: every image model is one tier there, so it's noise. %>
-    <% if @category.shows_tier_facet %>
-      <%= render layout: "facet", locals: {
-            name: "tier", label: "Tier", panel_id: "tier-panel", icon: :bolt,
-            legend_button: "What the tiers mean", legend_entries: tier_legend_entries } do %>
-        <fieldset>
-          <legend class="sr-only">Filter by tier</legend>
-          <div class="tp-check-row">
-            <% tier_options.each do |value, _label| %>
-              <%= filter_check "tier", value, checked: @tiers.empty? || @tiers.include?(value) do %>
-                <%= tier_badge(value) %>
-              <% end %>
-            <% end %>
-          </div>
-        </fieldset>
-      <% end %>
-    <% end %>
-
     <%# Provider checkboxes. Field name is "providers[]" while the facet is named
         "provider", so it passes field: explicitly for the count/select-all wiring. %>
     <%= render layout: "facet", locals: {
@@ -522,7 +499,7 @@
 </div>
 
 <%# ── TABLE (Turbo Frame — refreshed on filter changes) ───────────── %>
-<% filter_params = { tier: @tiers.presence, modality: @modalities.presence, q: @query.presence, providers: @provider_slugs.presence }.compact %>
+<% filter_params = { modality: @modalities.presence, q: @query.presence, providers: @provider_slugs.presence }.compact %>
 
 <%# target="_top": links in here (model/provider rows, clear-filters) are real
     page navigations — only the sort links opt back into the frame. %>
@@ -545,7 +522,7 @@
   <%
     numeric_cols = %i[input output cached context dimensions native_price]
     col_labels = {
-      name: "Model", tier: "Tier",
+      name: "Model",
       input: "Input /1M", output: "Output /1M", cached: "Cached in /1M",
       context: "Context", provider: "Provider", released: "Released",
       pricing: "Pricing", dimensions: "Dimensions", native_price: "Price"
@@ -645,7 +622,6 @@
                                  data-action="toggle->hovercard#position click->hovercard#swallow:stop">
                               <p class="tp-hovercard-desc"><%= model.description %></p>
                               <div class="tp-hovercard-facts">
-                                <%= tier_badge(model.tier) %>
                                 <span class="tp-hovercard-fact"><%= io_price(model, tag: true) %></span>
                                 <% if model.context_window %>
                                   <span class="tp-hovercard-fact num"><%= tokens_short(model.context_window) %> ctx</span>
@@ -657,10 +633,6 @@
                             </div>
                           <% end %>
                         </div>
-                      </td>
-                    <% when :tier %>
-                      <td data-label="Tier" class="<%= sort_col == 'tier' ? 'tp-col-highlight' : '' %>">
-                        <%= tier_badge(model.tier) %>
                       </td>
                     <% when :input %>
                       <td data-label="Input /1M" class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">

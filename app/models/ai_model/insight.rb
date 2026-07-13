@@ -2,8 +2,8 @@
 # matters for someone pricing or choosing an LLM API — using Claude Sonnet 5.
 # Reached through AiModel#generate_insight; returns { so_what: } or raises Error.
 #
-# Unlike MarketEvent::Insight this doesn't web-search: a launch's price, tier,
-# and context window already live on the record, so a plain forced tool-call
+# Unlike MarketEvent::Insight this doesn't web-search: a launch's price and
+# context window already live on the record, so a plain forced tool-call
 # (mirroring AiModel::Description) is enough grounding, and it keeps launch
 # cards free of external citation links.
 class AiModel::Insight
@@ -26,7 +26,7 @@ class AiModel::Insight
 
   SYSTEM_PROMPT = <<~PROMPT.strip
     You write the "so what" for launch entries on tokenprice.fyi, a site that tracks LLM API token
-    prices. Given a newly released model with its price, tier, and context window, write one or two
+    prices. Given a newly released model with its price and context window, write one or two
     sentences on why it matters for someone pricing or choosing an LLM API — the implication a reader
     would otherwise have to work out for themselves.
 
@@ -62,7 +62,7 @@ class AiModel::Insight
   attr_reader :model
 
   def prompt
-    lines = [ "Model: #{model.name}", "Provider: #{model.provider.name}", "Tier: #{model.tier}" ]
+    lines = [ "Model: #{model.name}", "Provider: #{model.provider.name}" ]
     lines << "Price: $#{model.current_input} in / $#{model.current_output} out per 1M tokens" if model.current_price
     lines << "Context window: #{model.context_window} tokens" if model.context_window
     lines << "Description: #{model.description}" if model.description.present?

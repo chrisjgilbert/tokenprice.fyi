@@ -24,7 +24,6 @@ class AiModel < ApplicationRecord
   MANUAL_SOURCE     = "manual"
   OPENROUTER_SOURCE = "openrouter"
 
-  enum :tier, { frontier: "frontier", mid: "mid", small: "small" }, validate: true
   # active   — current, generally available
   # legacy   — superseded but still callable
   # suspended— access pulled (temporarily or pending review); shown but flagged
@@ -62,7 +61,7 @@ class AiModel < ApplicationRecord
   # `sink_unranked` is the predicate marking a row as rankable on this sort — a
   # per-token rate for the token columns (`:token_priced?`), a native per-minute
   # rate for speech-to-text (`:native_priced?`); nil for sorts every row can rank
-  # on (name, tier, …). The models/providers tables pass their own, since their
+  # on (name, context, …). The models/providers tables pass their own, since their
   # column sets differ.
   def self.sort_for_display(models, by:, dir:, sink_unranked: nil)
     sorted = models.sort_by(&by)

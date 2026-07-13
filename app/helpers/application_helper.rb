@@ -58,30 +58,6 @@ module ApplicationHelper
     end
   end
 
-  TIER_CLASSES = {
-    "frontier" => "tp-tier-frontier",
-    "mid"      => "tp-tier-mid",
-    "small"    => "tp-tier-small"
-  }.freeze
-
-  TIER_LABELS = { "frontier" => "Frontier", "mid" => "Mid", "small" => "Small" }.freeze
-
-  TIER_DESCRIPTIONS = {
-    "frontier" => "A provider's most capable, highest-priced models.",
-    "mid"      => "Mid-range models — cheaper than frontier, capable for most work.",
-    "small"    => "The smallest, cheapest models — for high-volume, well-defined tasks."
-  }.freeze
-
-  def tier_description(tier) = TIER_DESCRIPTIONS[tier.to_s]
-
-  # [value, label] for the tier checkboxes, sourced from TIER_LABELS so the tier
-  # set and its order live in one place. No "All" entry — an empty selection
-  # already means "all tiers", the same convention the provider facet uses.
-  def tier_options = TIER_LABELS.map { |value, label| [ value, label ] }
-
-  # [term, description] rows for the tier legend, off the same single source.
-  def tier_legend_entries = TIER_LABELS.map { |value, label| [ label, tier_description(value) ] }
-
   # A multi-select filter checkbox styled as a .tp-check row — the shared shape
   # for every facet (tier / provider / modality). `leading` renders before the
   # check box (e.g. a provider's brand square); the block is the row's label.
@@ -97,12 +73,6 @@ module ApplicationHelper
         tag.span(icon(:check, size: 12), class: "tp-check-box"),
         capture(&label)
       ].compact)
-    end
-  end
-
-  def tier_badge(tier)
-    content_tag(:span, class: "tp-badge #{TIER_CLASSES.fetch(tier, '')}") do
-      content_tag(:span, "", class: "tp-badge-dot") + TIER_LABELS.fetch(tier, tier.to_s.titleize)
     end
   end
 

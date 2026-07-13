@@ -21,14 +21,6 @@ module OpenRouter
     PER_MTOK           = 1_000_000
     PRICE_SOURCE_LABEL = "openrouter.ai".freeze
 
-    # Imported models land in a neutral tier and a human re-curates from there.
-    # Tier here means capability, which OpenRouter doesn't expose and price can't
-    # reliably stand in for (plenty of cheap frontier models, pricey small ones),
-    # so guessing would just produce confidently-wrong labels. "mid" also keeps a
-    # bulk import out of the cheapest-frontier headline, which only ranks
-    # frontier-tier models.
-    DEFAULT_TIER = "mid".freeze
-
     # Defensive cap on the free-text description we copy from an untrusted API.
     DESCRIPTION_LIMIT = 10_000
 
@@ -437,8 +429,7 @@ module OpenRouter
         source:        AiModel::OPENROUTER_SOURCE,
         name:          model_name(row),
         slug:          unique_slug(row["id"]),
-        status:        "active",
-        tier:          DEFAULT_TIER
+        status:        "active"
       )
     end
 

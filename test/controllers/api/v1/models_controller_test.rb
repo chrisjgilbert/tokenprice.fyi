@@ -14,7 +14,6 @@ module Api
 
         opus = body["models"].find { |m| m["slug"] == "claude-opus-4-8" }
         assert_equal "Anthropic", opus["provider"]
-        assert_equal "frontier", opus["tier"]
         assert_in_delta 5.0, opus["price_per_mtok"]["input"], 0.0001
         assert_in_delta 25.0, opus["price_per_mtok"]["output"], 0.0001
       end
