@@ -384,6 +384,27 @@ module OpenRouter
       assert AiModel.find_by(openrouter_id: "openai/gpt-5.6-sol-max")
     end
 
+    test "keeps a same-priced dated snapshot rather than retiring it as a twin" do
+      base = AiModel.create!(
+        name: "Nova 2", slug: "nova-2",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/nova-2", status: "active", tier: "frontier"
+      )
+      base.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 8)
+
+      snapshot = AiModel.create!(
+        name: "Nova 2 20260715", slug: "nova-2-20260715",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/nova-2-20260715", status: "active", tier: "frontier"
+      )
+      snapshot.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 8)
+
+      sync([])
+
+      assert_equal "active", base.reload.status
+      assert_equal "active", snapshot.reload.status
+    end
+
     test "one malformed row does not abort the whole sync" do
       rows = [
         { "id" => "broken/row" }, # no pricing -> skipped, not fatal

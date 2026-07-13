@@ -181,9 +181,9 @@ module OpenRouter
     def import(row)
       return :skipped if latest_alias?(row)
       return :skipped if speed_variant?(row)
-      return :skipped if alias_duplicate?(row)
 
       pricing = parse_pricing(row["pricing"])
+      return :skipped if alias_duplicate?(row, pricing)
 
       # Cheap pre-check off the raw row so a genuinely un-priceable, non-directory
       # row (free text, an unhandled media class) is dropped before we create a
@@ -614,8 +614,7 @@ module OpenRouter
     # extends a sibling's at a word boundary AND matches its headline price — a
     # real variant charges a premium, so identical pricing means it's the same
     # model listed twice. Retire the twin, keep the canonical shorter row.
-    def alias_duplicate?(row)
-      pricing = parse_pricing(row["pricing"])
+    def alias_duplicate?(row, pricing)
       return false if pricing.nil?
 
       alias_of_sibling?(model_name(row), pricing[:input], pricing[:output],
@@ -638,17 +637,20 @@ module OpenRouter
     # Prices come from each row's current snapshot, so a base without a tracked
     # price yields no match and its variants are left alone.
     def retire_alias_duplicates
-      models      = AiModel.from_openrouter.where.not(status: "retired").includes(:price_points)
-      by_provider = models.group_by(&:provider_id)
+      models   = AiModel.from_openrouter.where.not(status: "retired").includes(:price_points)
+      siblings = models.group_by(&:provider_id).transform_values do |group|
+        group.map { |m| [ m.name, m.current_input, m.current_output ] }
+      end
 
-      ids = models.select do |model|
-        siblings = by_provider[model.provider_id].map { |m| [ m.name, m.current_input, m.current_output ] }
-        alias_of_sibling?(model.name, model.current_input, model.current_output, siblings)
-      end.map(&:id)
-      return if ids.empty?
+      duplicates = models.select do |model|
+        alias_of_sibling?(model.name, model.current_input, model.current_output,
+                          siblings[model.provider_id])
+      end
+      return if duplicates.empty?
 
-      retired = AiModel.where(id: ids).update_all(status: "retired")
-      @logger.info("OpenRouter sync: retired #{retired} alias duplicate(s)")
+      AiModel.where(id: duplicates.map(&:id)).update_all(status: "retired")
+      @logger.info("OpenRouter sync: retired #{duplicates.size} alias duplicate(s): " \
+                   "#{duplicates.map(&:name).join(', ')}")
     end
 
     # Is `name` a longer, same-priced extension of some model in `siblings` (a list
@@ -659,11 +661,18 @@ module OpenRouter
       return false if input.nil? || output.nil? || siblings.blank?
 
       siblings.any? do |base_name, base_input, base_output|
-        base_name != name &&
-          base_input == input && base_output == output &&
-          name.start_with?("#{base_name} ")
+        next false if base_name == name || base_input != input || base_output != output
+
+        suffix = name.delete_prefix("#{base_name} ")
+        suffix != name && !version_suffix?(suffix)
       end
     end
+
+    # A bare version or date suffix ("V4 0715", "2025-04-01") pins a snapshot of
+    # the same model rather than naming a paid variant, so a same-priced "… 0715"
+    # row is kept alongside its base. A word suffix ("Pro", "preview") marks a
+    # variant and is treated as a duplicate.
+    def version_suffix?(suffix) = suffix.to_s.match?(/\A\d[\d.\-\s]*\z/)
 
     def curated_duplicate?(provider, row)
       names = curated_names[provider.id]
