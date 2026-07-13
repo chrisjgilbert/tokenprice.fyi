@@ -84,6 +84,8 @@ module OpenRouter
       assert_includes section_text, "-20.0%"
       assert_includes section_text, "edit"
       assert_includes section_text, "/admin/models/anthropic-claude-opus-4-8/edit"
+      # Deep-links to the public recent-price-changes page.
+      assert_includes section_text, "https://tokenprice.fyi/changes"
     end
 
     test "shows positive sign for price increase" do

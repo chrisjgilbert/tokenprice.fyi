@@ -22,6 +22,10 @@ Rails.application.routes.draw do
 
   get "compare", to: "comparisons#show", as: :compare
   get "events",  to: "events#index",     as: :events
+  # Recent catalog price changes (last 30 days) — the raw, automated feed that
+  # backs the Slack price-moves digest. Deliberately off the nav and separate
+  # from the curated /events timeline; the digest links here.
+  get "changes", to: "price_changes#index", as: :price_changes
   # The public raw news feed was retired (no traffic); its curated distillation
   # lives at /events, and the ingestion pipeline still feeds it. 301 inbound
   # links and bookmarks there rather than 404.
