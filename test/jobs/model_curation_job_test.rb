@@ -9,7 +9,11 @@ class ModelCurationJobTest < ActiveJob::TestCase
     NewsItem.define_method(:extract_model_candidate) do
       raise NewsItem::ModelExtraction::Error, "boom" if title.include?("ERROR")
 
-      if (m = title.match(/MODEL:(.+)/))
+      # "BADURL:<name>" yields a candidate that fails validation (non-http source).
+      if (m = title.match(/BADURL:(.+)/))
+        ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
+                           category_slug: "image", source_url: "not-a-url", status: "pending")
+      elsif (m = title.match(/MODEL:(.+)/))
         ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
                            category_slug: "image", source_url: url,
                            pricing: { "pricing_model" => "per_image", "price_summary" => "$0.04 / image" },
@@ -87,6 +91,17 @@ class ModelCurationJobTest < ActiveJob::TestCase
     assert_not_nil good.reload.curated_for_model_at, "clean items are stamped"
     assert_nil bad.reload.curated_for_model_at, "errored item stays unstamped for retry"
     assert_equal 1, ModelCandidate.count
+  end
+
+  test "an invalid candidate doesn't crash the batch and is stamped, not retried" do
+    good = release("MODEL:Good One")
+    bad  = release("BADURL:Broken")
+
+    assert_nothing_raised { ModelCurationJob.perform_now }
+
+    assert_equal 1, ModelCandidate.count, "the good candidate still persists"
+    assert_not_nil good.reload.curated_for_model_at
+    assert_not_nil bad.reload.curated_for_model_at, "invalid data is stamped, not retried"
   end
 
   test "posts a Slack nudge only when candidates were created" do

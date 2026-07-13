@@ -95,6 +95,19 @@ class ModelCandidateTest < ActiveSupport::TestCase
     assert_equal "dismissed", c.reload.status
   end
 
+  test "CATEGORY_SIGNATURE covers every model category, so accept! never mis-signs a row" do
+    assert_equal ModelCategory.all.map(&:slug).sort, ModelCandidate::CATEGORY_SIGNATURE.keys.sort
+  end
+
+  test "a native-priced candidate never grows a stray per-token price point" do
+    c = candidate(name: "Weird Image", category_slug: "image",
+                  pricing: { "price_summary" => "$0.03 / image", "input" => 5 }) # stray input
+    c.save!
+    model = c.accept!
+    assert_empty model.price_points, "native price stays in columns, no token point"
+    assert model.native_priced?
+  end
+
   test "seed_snippet renders a paste-ready db/seeds.rb hash" do
     c = candidate(name: "Muse Image", category_slug: "image",
                   pricing: { "pricing_model" => "per_image", "price_summary" => "$0.03 / image" })

@@ -130,8 +130,12 @@ class ModelCandidate < ApplicationRecord
   end
 
   # Per-token categories (language, embeddings) carry the price as a PricePoint,
-  # not native columns; create it when the extraction found a token rate.
+  # not native columns; create it when the extraction found a token rate. A
+  # native-priced candidate keeps its price in columns even if a stray input rate
+  # slipped into the extraction, so it never grows a misleading per-token point.
   def apply_token_price(model)
+    return if native_priced?
+
     hash = pricing_hash
     return unless hash[:input].present? || hash[:output].present?
 

@@ -33,6 +33,11 @@ class ModelCurationJob < ApplicationJob
     rescue NewsItem::ModelExtraction::Error => e
       errored << item.id
       Rails.logger.warn("ModelCurationJob: extraction error for #{item.url} — #{e.message}")
+    rescue ActiveRecord::RecordInvalid => e
+      # Malformed extracted data won't self-heal on retry, so log and let the item
+      # be stamped (not added to errored) — one bad candidate can't crash the batch
+      # or retry-storm.
+      Rails.logger.warn("ModelCurationJob: invalid candidate from #{item.url} — #{e.message}")
     end
 
     # Stamp everything we processed cleanly (including items that yielded no
