@@ -42,14 +42,14 @@ class ModelCategory
     label: "Language models",
     param: "language",
     path_name: :root,
-    sorts: %w[input output cached context name],
+    sorts: %w[input output cached context name released],
     default_sort: "output",
     default_dir: "desc",
     title: "LLM API token prices, per model — tokenprice.fyi",
     meta_description: "LLM API token prices for Claude, GPT-5, Gemini, Grok, and DeepSeek. " \
                       "Input, output, and cached rates per 1M tokens, updated daily.",
     matcher: nil,
-    columns: %i[name input output cached context]
+    columns: %i[name input output cached context released]
   )
 
   # Embeddings bill per input token only — the output is a vector, so there is no

@@ -194,7 +194,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
   test "frame navigation is scoped so row links break out of the frame" do
     get root_url
     assert_select "turbo-frame#models[target=_top]", count: 1
-    assert_select "thead a[data-turbo-frame=models]", count: 5
+    assert_select "thead a[data-turbo-frame=models]", count: 6
     assert_select "form#filters[data-turbo-frame=models]", count: 1
   end
 
@@ -289,6 +289,26 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "thead th", text: %r{Input /1M}
     assert_select "thead th", text: /Pricing/, count: 0
+  end
+
+  test "the language tab renders a sortable Released column with each model's release date" do
+    get root_url
+    assert_response :success
+    assert_select "thead a[href*='sort=released']", text: /Released/
+    # Opus fixture is released_on 2026-05-28, formatted "%b %Y".
+    assert_select "tbody td[data-label=Released]", text: /May 2026/
+  end
+
+  test "the language tab sorts by released" do
+    # Ascending: DeepSeek V4 Pro (2026-02-01) is the earliest listed release.
+    get root_url(sort: "released", dir: "asc")
+    assert_response :success
+    assert_select "tbody tr:first-child .tp-model-name", text: /DeepSeek V4 Pro/
+
+    # Descending: Claude Fable 5 (2026-06-09) is the latest.
+    get root_url(sort: "released", dir: "desc")
+    assert_response :success
+    assert_select "tbody tr:first-child .tp-model-name", text: /Claude Fable 5/
   end
 
   test "image-tab sort links stay on the image path and sorting by name returns 200" do
@@ -825,6 +845,23 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /Input \/ 1M/
     assert_select "p", text: /Output \/ 1M/
     assert_select "p", text: /Cached input \/ 1M/
+  end
+
+  test "show renders the release date visibly, not just in JSON-LD" do
+    model = ai_models(:opus) # released_on 2026-05-28
+    get model_url(model)
+    assert_response :success
+    assert_select "header", text: /Released May 2026/
+    # The JSON-LD releaseDate is still emitted alongside the visible text.
+    assert_includes @response.body, "\"releaseDate\":\"2026-05-28\""
+  end
+
+  test "show omits the release-date line for a model with no released_on" do
+    model = ai_models(:no_price)
+    assert_nil model.released_on
+    get model_url(model)
+    assert_response :success
+    assert_select "header", text: /Released/, count: 0
   end
 
   test "show renders editorial facets when present" do
