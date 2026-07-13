@@ -51,3 +51,11 @@ production:
     class: EventCurationJob
     queue: default
     schedule: "45 */6 * * *"
+
+  # After the classifiers land (news_scan/release_watch classify inline at :00),
+  # mine the fresh "release"-kind items for new-model candidates. Staggered last
+  # so it reads a settled awaiting_model_curation set.
+  model_curation:
+    class: ModelCurationJob
+    queue: default
+    schedule: "50 */6 * * *"

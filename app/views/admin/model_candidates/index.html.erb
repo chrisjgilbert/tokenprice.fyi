@@ -1,0 +1,94 @@
+<div class="mb-6">
+  <h1 class="text-2xl font-bold tracking-tight">Model candidates</h1>
+  <p class="mt-1 text-sm text-slate-500">
+    New models mined from launch news. Approve to create the catalog row (source: manual),
+    then backfill <code class="text-xs">db/seeds.rb</code> + the pricing doc to keep it durable.
+  </p>
+</div>
+
+<% if @pending.any? %>
+  <h2 class="mb-3 text-lg font-semibold text-amber-700">Review queue (<%= @pending.size %>)</h2>
+  <div class="mb-8 overflow-x-auto rounded-xl border border-amber-200 bg-amber-50">
+    <table class="min-w-full divide-y divide-amber-200 text-sm">
+      <thead class="bg-amber-100 text-left text-xs uppercase tracking-wide text-amber-700">
+        <tr>
+          <th scope="col" class="px-4 py-3 font-medium">Model</th>
+          <th scope="col" class="px-4 py-3 font-medium">Category</th>
+          <th scope="col" class="px-4 py-3 font-medium">Price (as found)</th>
+          <th scope="col" class="px-4 py-3 font-medium">Conf.</th>
+          <th scope="col" class="px-4 py-3 font-medium">Source</th>
+          <th scope="col" class="px-4 py-3 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-amber-100">
+        <% @pending.each do |candidate| %>
+          <tr>
+            <th scope="row" class="px-4 py-3 text-left font-normal align-top">
+              <div class="font-medium text-slate-900"><%= candidate.name %></div>
+              <div class="text-xs text-slate-500"><%= candidate.provider_name %></div>
+              <% if candidate.existing_model %>
+                <div class="mt-1 text-xs font-medium text-rose-600">⚠ slug matches an existing model</div>
+              <% end %>
+              <% if candidate.rationale.present? %>
+                <div class="mt-1 max-w-md text-xs text-slate-500"><%= candidate.rationale %></div>
+              <% end %>
+            </th>
+            <td class="px-4 py-3 align-top text-slate-600 whitespace-nowrap">
+              <%= candidate.category&.label || "—" %>
+            </td>
+            <td class="px-4 py-3 align-top text-slate-600 whitespace-nowrap tabular-nums"><%= candidate.price_preview %></td>
+            <td class="px-4 py-3 align-top text-slate-500"><%= candidate.confidence %></td>
+            <td class="px-4 py-3 align-top text-slate-500 whitespace-nowrap">
+              <% if candidate.source_url.present? %>
+                <%= link_to "article", candidate.source_url, target: "_blank", rel: "noopener",
+                      class: "text-indigo-600 hover:underline" %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="px-4 py-3 align-top text-right whitespace-nowrap">
+              <%= button_to "Approve", accept_admin_model_candidate_path(candidate), method: :patch,
+                    form: { data: { turbo_confirm: "Create the “#{candidate.name}” catalog row?" }, class: "inline" },
+                    class: "rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500" %>
+              <span class="text-slate-300 mx-1">·</span>
+              <%= button_to "Dismiss", dismiss_admin_model_candidate_path(candidate), method: :patch,
+                    class: "text-rose-600 hover:underline bg-transparent text-xs" %>
+            </td>
+          </tr>
+          <tr class="bg-amber-50/60">
+            <td colspan="6" class="px-4 pb-3">
+              <details>
+                <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-700">Seed snippet (paste into db/seeds.rb)</summary>
+                <pre class="mt-2 overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-100"><%= candidate.seed_snippet %></pre>
+              </details>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="mb-8 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+    No candidates awaiting review.
+  </p>
+<% end %>
+
+<% if @history.any? %>
+  <h2 class="mb-3 text-lg font-semibold text-slate-700">Recently reviewed</h2>
+  <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <tbody class="divide-y divide-slate-100">
+        <% @history.each do |candidate| %>
+          <tr>
+            <td class="px-4 py-2 text-slate-700"><%= candidate.name %> <span class="text-slate-400">· <%= candidate.provider_name %></span></td>
+            <td class="px-4 py-2 text-right">
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium <%= candidate.status == "accepted" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500" %>">
+                <%= candidate.status %>
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

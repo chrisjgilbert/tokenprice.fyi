@@ -80,6 +80,15 @@ Rails.application.routes.draw do
       resource :insight, only: :create, controller: "market_event_insights"
     end
 
+    # Review queue for model candidates mined from launch news by ModelCurationJob.
+    # accept/dismiss are the two review verbs; accept creates the AiModel row.
+    resources :model_candidates, only: :index do
+      member do
+        patch :accept
+        patch :dismiss
+      end
+    end
+
     # Active Job / Solid Queue dashboard, behind the admin session auth above.
     mount MissionControl::Jobs::Engine, at: "jobs"
   end
