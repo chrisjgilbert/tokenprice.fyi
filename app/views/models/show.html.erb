@@ -81,6 +81,10 @@
           <span>·</span>
           <%= badge %>
         <% end %>
+        <% if @model.released_on %>
+          <span>·</span>
+          <span>Released <%= fmt_date(@model.released_on) %></span>
+        <% end %>
       </p>
     </div>
   </div>

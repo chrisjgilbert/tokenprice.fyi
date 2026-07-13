@@ -80,7 +80,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
   end
 
   test "columns and table_colspan describe each category's table shape" do
-    assert_equal %i[name input output cached context], ModelCategory.for("language").columns
+    assert_equal %i[name input output cached context released], ModelCategory.for("language").columns
     assert_equal %i[name provider input dimensions context released], ModelCategory.for("embeddings").columns
     assert_equal %i[name provider pricing released], ModelCategory.for("rerank").columns
     assert_equal %i[name provider native_price released], ModelCategory.for("speech-to-text").columns
@@ -89,7 +89,7 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_equal %i[name provider pricing released], ModelCategory.for("video").columns
 
     # colspan = columns + the leading select and trailing go columns.
-    assert_equal 7, ModelCategory.for("language").table_colspan
+    assert_equal 8, ModelCategory.for("language").table_colspan
     assert_equal 8, ModelCategory.for("embeddings").table_colspan
     assert_equal 6, ModelCategory.for("rerank").table_colspan
     assert_equal 6, ModelCategory.for("speech-to-text").table_colspan
@@ -169,5 +169,12 @@ class ModelCategoryTest < ActiveSupport::TestCase
     assert_includes image.sorts, "released"
     assert_equal "name", image.default_sort
     assert_equal "asc", image.default_dir
+  end
+
+  test "language also sorts by released, alongside every other category" do
+    ModelCategory.all.each do |category|
+      assert_includes category.sorts, "released", "#{category.slug} should offer a released sort"
+      assert_includes category.columns, :released, "#{category.slug} should render a Released column"
+    end
   end
 end
