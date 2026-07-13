@@ -431,12 +431,9 @@
 
     <div class="cmp-table">
 
-      <%# Description row — shown first, ahead of pricing, since it's more
-          useful context for a side-by-side comparison than the numbers below.
-          Hand-rolled rather than folded into numeric_rows/text_rows below:
-          this row hides entirely when both sides lack a description, whereas
-          that shared loop always renders a row (dash-filling blanks) since
-          every field it lists is expected to exist. %>
+      <%# Shown first — more useful context than the numbers below. Hand-rolled,
+          not folded into numeric_rows/text_rows: it hides entirely when both
+          sides lack a description, unlike that loop's always-dash-fill rows. %>
       <% if @left.description.present? || @right.description.present? %>
         <div class="cmp-row">
           <div class="lbl">Description</div>

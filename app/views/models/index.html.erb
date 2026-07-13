@@ -326,6 +326,7 @@
           Latest events
         </div>
 
+        <% launch_model = primary_event.model if primary_event&.kind == "launch" %>
         <% if primary_event %>
           <div class="hero-card-headline">
             <div>
@@ -341,15 +342,15 @@
               <% end %>
             </div>
             <div class="hero-card-date"><%= fmt_date_full(primary_event.date) %></div>
-            <% if primary_event.kind == "launch" && primary_event.model&.description.present? %>
-              <div class="hero-card-desc"><%= primary_event.model.description %></div>
+            <% if launch_model&.description.present? %>
+              <div class="hero-card-desc"><%= launch_model.description %></div>
             <% end %>
             <% if primary_event.so_what.present? %>
               <div class="hero-card-sowhat"><%= primary_event.so_what %></div>
             <% elsif primary_event.note.present? %>
               <div class="hero-card-note"><%= primary_event.note %></div>
             <% end %>
-            <% if primary_event.kind == "launch" && (m = primary_event.model) %>
+            <% if (m = launch_model) %>
               <div class="hero-card-chips">
                 <%= tier_badge(m.tier) %>
                 <span class="hero-card-chip tp-io-light"><%= io_price(m, light: true) %></span>

@@ -1,3 +1,4 @@
+<% launch_model = event.model if event.kind == "launch" %>
 <li class="ev-item" data-kind="<%= event.kind %>">
   <span class="ev-node ev-<%= event.kind %>" aria-hidden="true">
     <%= icon(event_kind_icon(event.kind), size: 14) %>
@@ -16,8 +17,8 @@
       <% end %>
     </h3>
 
-    <% if event.kind == "launch" && event.model&.description.present? %>
-      <p class="ev-desc"><%= event.model.description %></p>
+    <% if launch_model&.description.present? %>
+      <p class="ev-desc"><%= launch_model.description %></p>
     <% end %>
 
     <% if event.note.present? %>
@@ -28,7 +29,7 @@
       <p class="ev-sowhat"><%= event.so_what %></p>
     <% end %>
 
-    <% if event.kind == "launch" && (m = event.model) %>
+    <% if (m = launch_model) %>
       <div class="ev-tags">
         <%= link_to provider_path(event.provider), class: "ev-provider" do %>
           <%= provider_square(event.provider, size: :sm) %>
