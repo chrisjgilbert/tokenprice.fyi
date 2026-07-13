@@ -175,6 +175,48 @@ feed (email or RSS) is the shortest path from the record to a
 return-visit habit, and is noted here as a candidate rather than a
 commitment.
 
+### Calibration — this is a passion project
+
+The stakes above should be read against the actual goals: a product the
+owner is proud of, some traffic, and low maintenance — not winning a
+category. That calibration changes the weighting, not the conclusions:
+
+- **The competitive urgency evaporates; the positioning inversion doesn't.**
+  There is no race against pricepertoken or Artificial Analysis to lose. But
+  the record framing survives on the pride axis alone: a dated, sourced
+  record is a crafted thing that is *right*; a me-too directory competing on
+  breadth is neither. It also happens to be the lowest-maintenance
+  positioning — a record's tracked tier accumulates automatically, and its
+  manual tier stays honest by being dated rather than by being constantly
+  fresh. An "as of March" price is a true statement in July; an undated
+  price is a wrong one.
+- **The operational trio survives because it *reduces* maintenance, not
+  because it wins anything.** The staleness alert turns "remember to check"
+  into a bounded, scheduled chore; append-only snapshots mean the manual
+  work compounds instead of evaporating; the API fix is one-time.
+- **Stagger the re-verification instead of eating the October cliff.**
+  Rotate one directory category per month (~8–22 rows, an evening): each
+  category gets re-verified roughly twice a year, which matches how often
+  these prices actually move, and no month is heavy.
+- **The pride items are the journey fixes**, independent of any traffic
+  argument: the compare table of dashes, the provider page's blank cells,
+  the video model described as "priced per image", the hero claiming token
+  rates over an image table. Those are the difference between a product
+  that holds together and one that shows its seams.
+- **Traffic, realistically**, comes from surfaces with zero marginal
+  maintenance: the per-model and per-category pages (built), the free API
+  and llms.txt as citation targets (built, needs the machine-readability
+  fix), an RSS change feed off /changes (cheap, no subscriber support
+  burden — prefer it over email), and occasional launch/show-and-tell posts.
+  Not from fighting seven vendor-owned SERPs.
+- **Guard the maintenance budget explicitly.** Recurring human work should
+  stay at: reviewing model candidates (minutes), curating market events
+  (discretionary, the editorial habit), one category re-verification pass a
+  month, and glancing at a weekly staleness ping. Anything that adds a
+  standing obligation — per-category explainers beyond the umbrella piece,
+  an email product, breadth-chasing — should be treated as out of budget
+  until something proves it's worth the trade.
+
 - **Hero** (`app/views/models/index.html.erb:300-313`): make it read from the
   current category. `ModelCategory` already carries per-tab copy; add hero
   strings there (eyebrow / H1 / subhead per category). The language tab keeps
