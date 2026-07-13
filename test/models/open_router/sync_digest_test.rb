@@ -131,6 +131,12 @@ module OpenRouter
       assert_includes section_text, "/admin/models/newlab-wonder-1/edit"
     end
 
+    test "new models section nudges tier review, since imports default to mid" do
+      payload = digest(make_result(created_records: [ make_created ])).to_slack_payload
+      section_text = payload[:blocks].find { |b| b[:type] == "section" }&.dig(:text, :text)
+      assert_includes section_text, "tier defaulted to `mid`"
+    end
+
     test "shows 'new provider' marker when new_provider is true" do
       c = make_created(provider_name: "BrandNewCo", new_provider: true)
       payload = digest(make_result(created_records: [ c ])).to_slack_payload

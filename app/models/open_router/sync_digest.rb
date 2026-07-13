@@ -100,7 +100,8 @@ module OpenRouter
         price_str    = "$#{fmt(r.input_per_mtok)}/$#{fmt(r.output_per_mtok)} per MTok"
         "• #{r.model_name} (#{provider_str}) — #{price_str} · #{edit_link}"
       end
-      mrkdwn_section("*🆕 New models (#{lines.size})*\n#{lines.join("\n")}")
+      mrkdwn_section("*🆕 New models (#{lines.size})* · tier defaulted to `mid` — " \
+                     "review and promote any frontier launches\n#{lines.join("\n")}")
     end
 
     def mrkdwn_section(text)
