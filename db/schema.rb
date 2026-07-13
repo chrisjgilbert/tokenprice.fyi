@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_13_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_13_130000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
     t.datetime "created_at", null: false
     t.text "description"
+    t.datetime "description_generated_at"
     t.integer "dimensions"
     t.json "input_modalities", default: [], null: false
     t.text "limitations"
@@ -40,6 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_120000) do
     t.string "status", default: "active", null: false
     t.text "strengths"
     t.datetime "updated_at", null: false
+    t.index ["description_generated_at"], name: "index_ai_models_on_description_generated_at"
     t.index ["modality_class"], name: "index_ai_models_on_modality_class"
     t.index ["openrouter_id"], name: "index_ai_models_on_openrouter_id", unique: true
     t.index ["provider_id"], name: "index_ai_models_on_provider_id"
