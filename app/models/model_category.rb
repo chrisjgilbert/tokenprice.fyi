@@ -21,7 +21,7 @@ class ModelCategory
     :slug, :label, :param, :path_name,
     :sorts, :default_sort, :default_dir,
     :title, :meta_description, :matcher, :columns,
-    :hero_eyebrow, :hero_heading, :hero_subhead
+    :hero_eyebrow, :hero_heading, :hero_subhead, :billing_noun
   ) do
     def member?(modality_class)
       mc = modality_class.to_sym
@@ -59,7 +59,8 @@ class ModelCategory
     hero_eyebrow: "Live LLM API price index",
     hero_heading: "LLM API pricing, tracked from launch.",
     hero_subhead: "%{models} language models across %{providers} providers — input, output, and " \
-                  "cached rates per 1M tokens, updated daily, with full price history."
+                  "cached rates per 1M tokens, updated daily, with full price history.",
+    billing_noun: "per 1M tokens"
   )
 
   # Embeddings bill per input token only — the output is a vector, so there is no
@@ -81,7 +82,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Embedding API pricing, per 1M input tokens.",
     hero_subhead: "%{models} embedding models — input rates and vector dimensions, " \
-                  "dated and sourced from provider price pages."
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per 1M input tokens"
   )
 
   # Rerank completes the retrieval pair with embeddings. It's image-shaped, not
@@ -104,7 +106,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Reranker API pricing, in native units.",
     hero_subhead: "%{models} rerankers — priced per search or per 1M tokens; " \
-                  "every price dated and sourced."
+                  "every price dated and sourced.",
+    billing_noun: "per search or per 1M tokens"
   )
 
   # Speech-to-text (transcription) bills against audio duration, not tokens, so
@@ -126,7 +129,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Speech-to-text API pricing, per minute of audio.",
     hero_subhead: "%{models} transcription models — native per-minute rates, " \
-                  "dated and sourced from provider price pages."
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per minute of audio"
   )
 
   # Text-to-speech (synthesis) is speech-to-text-shaped: it bills predominantly
@@ -149,7 +153,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Text-to-speech API pricing, per 1M characters.",
     hero_subhead: "%{models} speech models — native per-character rates, " \
-                  "dated and sourced from provider price pages."
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per 1M characters"
   )
 
   IMAGE = Category.new(
@@ -168,7 +173,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Image generation API pricing, in native units.",
     hero_subhead: "%{models} image models — per image, per megapixel, or in credits; " \
-                  "every price dated and sourced."
+                  "every price dated and sourced.",
+    billing_noun: "per image"
   )
 
   # Video generation is image-generation-shaped: a directory class with
@@ -191,7 +197,8 @@ class ModelCategory
     hero_eyebrow: "Price directory — dated list prices",
     hero_heading: "Video generation API pricing, in native units.",
     hero_subhead: "%{models} video models — per second, per clip, or in credits; " \
-                  "every price dated and sourced."
+                  "every price dated and sourced.",
+    billing_noun: "per second or per clip"
   )
 
   ALL = [ LANGUAGE, EMBEDDINGS, RERANK, SPEECH_TO_TEXT, TEXT_TO_SPEECH, IMAGE, VIDEO_GENERATION ].freeze
@@ -211,4 +218,9 @@ class ModelCategory
   # A modality_class is language's iff no other category's matcher claims it —
   # the seam that keeps language as the fallback without listing every class.
   def self.unclaimed?(mc) = ALL.none? { |c| c.matcher && c.matcher.call(mc) }
+
+  # The category that owns a model's modality_class — the reverse of `member?`,
+  # for pages that start from a model and need its tab (breadcrumb, provider
+  # grouping, the untracked-price billing unit). Language is the fallback.
+  def self.claiming(modality_class) = ALL.find { |c| c.member?(modality_class) }
 end

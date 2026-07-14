@@ -605,6 +605,15 @@ td .tp-muted-dash { color: var(--color-slate-300); }
   font-weight: 500;
   vertical-align: middle;
 }
+/* The dated provenance of a directory list price — the honesty mechanism, shown
+   where the price is, not only on the model page. */
+.tp-price-asof {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-slate-400);
+  font-size: 11px;
+  font-weight: 400;
+}
 
 /* Model cell */
 .tp-model-cell { display: flex; align-items: center; gap: 13px; }

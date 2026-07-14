@@ -413,7 +413,8 @@
 
 <%# The category tab strip — full-page navigation between pricing families, each
     its own indexable URL, so these are links rather than a client-side toggle. %>
-<nav class="tp-tabs" aria-label="Pricing category">
+<nav class="tp-tabs" aria-label="Pricing category"
+     data-controller="tab-scroll" data-action="click->tab-scroll#save">
   <% ModelCategory.all.each do |category| %>
     <% current = category.slug == @category.slug %>
     <%= link_to send("#{category.path_name}_path"),
@@ -673,6 +674,9 @@
                       <% if model.native_priced? %>
                         <td data-label="Price" class="numeric tp-price-native <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>">
                           <span class="tp-price-native-val"><%= model.price_headline %></span>
+                          <% if model.priced_as_of %>
+                            <span class="tp-price-asof">as of <%= fmt_date(model.priced_as_of) %></span>
+                          <% end %>
                         </td>
                       <% elsif model.priced? %>
                         <%# A token-priced audio→text model, were one ever listed here,
@@ -691,6 +695,9 @@
                           <span class="tp-price-native-val"><%= model.price_headline %></span>
                           <% if model.pricing_model_label %>
                             <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
+                          <% end %>
+                          <% if model.priced_as_of %>
+                            <span class="tp-price-asof">as of <%= fmt_date(model.priced_as_of) %></span>
                           <% end %>
                         </td>
                       <% else %>

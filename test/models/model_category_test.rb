@@ -197,6 +197,26 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute ModelCategory.for("embeddings").language?
   end
 
+  test "claiming returns the category that owns a modality class" do
+    assert_equal "image", ModelCategory.claiming(:image_generation).slug
+    assert_equal "speech-to-text", ModelCategory.claiming(:speech_to_text).slug
+    assert_equal "video", ModelCategory.claiming(:video_generation).slug
+    assert_equal "embeddings", ModelCategory.claiming(:embedding).slug
+    assert_equal "rerank", ModelCategory.claiming(:rerank).slug
+    # Anything no directory category claims is language.
+    assert_equal "language", ModelCategory.claiming(:text).slug
+    assert_equal "language", ModelCategory.claiming(:multimodal).slug
+    assert_equal "language", ModelCategory.claiming(:any_to_any).slug
+  end
+
+  test "every category names its native billing unit" do
+    assert_equal "per image", ModelCategory.for("image").billing_noun
+    assert_match(/per minute/, ModelCategory.for("speech-to-text").billing_noun)
+    assert_match(/character/, ModelCategory.for("text-to-speech").billing_noun)
+    assert_match(/second|clip/, ModelCategory.for("video").billing_noun)
+    ModelCategory.all.each { |c| assert c.billing_noun.present?, "#{c.slug} should name a billing unit" }
+  end
+
   test "language sorts allow the token-price keys; image sorts do not" do
     language = ModelCategory.for("language")
     image = ModelCategory.for("image")

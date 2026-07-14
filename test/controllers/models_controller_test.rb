@@ -54,6 +54,41 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-cta a[href=?]", how_pricing_works_path
   end
 
+  test "directory tables surface each price's as-of date" do
+    get image_generation_url
+    assert_response :success
+    assert_select ".tp-price-asof", text: /2026/
+  end
+
+  # --- Model show: journey fixes (PR2) ---
+
+  test "an image model's breadcrumb returns to the image tab, not the language table" do
+    get model_url("test-priced-image-model")
+    assert_response :success
+    assert_select "nav[aria-label=Breadcrumb] a[href=?]", image_generation_path, text: /Image generation/
+    assert_select "nav[aria-label=Breadcrumb] a", text: /All models/, count: 0
+  end
+
+  test "a language model's breadcrumb returns to the root models table" do
+    get model_url("claude-opus-4-8")
+    assert_response :success
+    assert_select "nav[aria-label=Breadcrumb] a[href=?]", root_path
+  end
+
+  test "an untracked video model's pricing fallback names its native unit, not per image" do
+    get model_url("test-unpriced-video-model")
+    assert_response :success
+    assert_match(/per second/i, @response.body)
+    assert_no_match(/priced per image/i, @response.body)
+  end
+
+  test "model-show JSON-LD category uses the modality label, not a hardcoded LLM label" do
+    get model_url("test-priced-image-model")
+    assert_response :success
+    assert_no_match(/"category":"LLM API model"/, @response.body)
+    assert_match(/"category":"Image generation model"/, @response.body)
+  end
+
   test "index emits an owned meta description targeting the head term and providers" do
     get root_url
     assert_response :success
