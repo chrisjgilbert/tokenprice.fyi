@@ -35,43 +35,42 @@ class ModelListing
 
   attr_reader :models, :modality_classes, :category_counts
 
-  def initialize(category:, sort:, dir:, provider_slugs: [], query: "", modalities: [])
-    scope = AiModel.listed.includes(:provider, :price_points)
-    scope = scope.joins(:provider).where(providers: { slug: provider_slugs }) if provider_slugs.any?
+  # Tab labels: how many listed models fall in each category. Classified via the
+  # SAME derived modality_class the row filter uses (not the denormalised
+  # column), so a badge count always equals its tab's row count. Independent of
+  # any one listing's own provider/search/modality filters — the badge always
+  # reads the tab's full total, not the current view's filtered count — which is
+  # why it's a class method rather than an instance computation.
+  def self.category_counts
+    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
+    ModelCategory.all.to_h { |category| [ category.slug, listed_classes.count { |mc| category.member?(mc) } ] }
+  end
 
-    models = filter_by_query(scope.to_a, query)
-    models.select! { |m| category.member?(m.modality_class) }
+  def initialize(category:, sort:, dir:, provider_slugs: [], query: "", modalities: [])
+    models = matching_models(category: category, provider_slugs: provider_slugs, query: query)
 
     # Facet options: the classes present among the rows the other filters left,
-    # derived before the modality filter is applied so switching between
-    # classes stays possible.
+    # so no pill leads to an empty table. Derived before the modality filter is
+    # applied so switching between classes stays possible.
     @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
-    models.select! { |m| modalities.include?(m.modality_class.to_s) } if modalities.any?
+    models = models.select { |m| modalities.include?(m.modality_class.to_s) } if modalities.any?
 
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(sort), dir: dir, sink_unranked: SINK_SORTS[sort])
-    @category_counts = compute_category_counts
+    @category_counts = self.class.category_counts
   end
 
   private
 
-  def filter_by_query(models, query)
-    return models unless query.match?(/[a-z0-9]/i)
-
-    if query.include?(",")
-      segments = query.split(",").map(&:strip).select { |s| s.match?(/[a-z0-9]/i) }
-      return models unless segments.any?
-
-      models.select { |m| segments.any? { |seg| m.matches?(seg) } }
-    else
-      models.select { |m| m.matches?(query) }
-    end
+  def matching_models(category:, provider_slugs:, query:)
+    scope = AiModel.listed.includes(:provider, :price_points)
+    scope = scope.joins(:provider).where(providers: { slug: provider_slugs }) if provider_slugs.any?
+    filter_by_query(scope.to_a, query).select { |m| category.member?(m.modality_class) }
   end
 
-  # Tab labels: how many listed models fall in each category, regardless of
-  # this listing's own provider/search/modality filters — the badge always
-  # reads the tab's full total, not the current view's filtered count.
-  def compute_category_counts
-    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
-    ModelCategory.all.to_h { |category| [ category.slug, listed_classes.count { |mc| category.member?(mc) } ] }
+  def filter_by_query(models, query)
+    segments = query.split(",").map(&:strip).select { |s| s.match?(/[a-z0-9]/i) }
+    return models if segments.empty?
+
+    models.select { |m| segments.any? { |seg| m.matches?(seg) } }
   end
 end

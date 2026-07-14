@@ -8,7 +8,7 @@ class ProvidersController < ApplicationController
   }.freeze
 
   # Price sorts a price-less row must always sink below, in either direction
-  # (see ModelsController::PRICE_SORTS for the rationale).
+  # (see ModelListing::SINK_SORTS for the rationale).
   PRICE_SORTS = %w[input output].freeze
 
   def show
