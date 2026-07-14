@@ -49,7 +49,7 @@
     the price cells with the main table (models/_data_cell). The category heading
     only earns its place when a provider spans more than one family — for the
     single-category provider (most of them) it would just label the only table. %>
-<% grouped = @model_groups.size > 1 %>
+<% grouped = @model_groups.many? %>
 <% @model_groups.each do |category, models| %>
   <%# The provider column is redundant here — every row is this provider. %>
   <% cols = category.columns - [ :provider ] %>
