@@ -79,6 +79,9 @@ gem "honeybadger", "~> 5.0"
 # In-app dashboard for Active Job / Solid Queue (mounted under /admin/jobs)
 gem "mission_control-jobs"
 
+# Job monitoring
+gem "stablemate", github: "chrisjgilbert/stablemate", glob: "gem/*.gemspec"
+
 group :production do
   gem "rails_semantic_logger", "~> 4.0"
 end
