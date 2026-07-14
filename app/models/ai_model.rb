@@ -55,6 +55,51 @@ class AiModel < ApplicationRecord
   scope :curated, -> { where(source: MANUAL_SOURCE) }
   scope :from_openrouter, -> { where(source: OPENROUTER_SOURCE) }
 
+  # How long a generated description is trusted before it's due a refresh.
+  # Descriptions are point-in-time — accurate at generation, drifting after — so
+  # the refresh job (DescriptionRefreshJob) rewrites them on roughly this cadence.
+  STALE_AFTER = 90.days
+
+  # Rows with *generated* editorial copy that is due a refresh. Two ways to go
+  # stale, unified into one predicate so no event plumbing is needed:
+  #
+  #   1. Age — the description is older than STALE_AFTER.
+  #   2. A newer sibling — a same-provider model launched *after* this row was
+  #      described. A new release shifts how its siblings should be positioned
+  #      ("best for X" / "superseded by Y"), so their write-ups are re-evaluated.
+  #      Self-limiting: once refreshed, the row's stamp moves past the launch, so
+  #      the same launch can't flag it twice.
+  #
+  # The discriminator is the stamp, not `source`. A set description_generated_at
+  # means *we* generated the copy (an OpenRouter import or an approved candidate),
+  # so it's ours to refresh; a nil stamp means hand-written seed editorial (or an
+  # empty row), which automation must never overwrite — both stale clauses compare
+  # against the stamp, so a nil row is inert here. `strengths` present marks the
+  # write-up as done, so a half-filled row isn't picked up mid-generation.
+  scope :description_stale, -> {
+    where.not(strengths: [ nil, "" ]).where(
+      "ai_models.description_generated_at < :cutoff" \
+      " OR EXISTS (" \
+      "   SELECT 1 FROM ai_models sib" \
+      "   WHERE sib.provider_id = ai_models.provider_id" \
+      "     AND sib.id <> ai_models.id" \
+      "     AND sib.status <> 'retired'" \
+      "     AND sib.released_on IS NOT NULL" \
+      "     AND sib.released_on > ai_models.description_generated_at)",
+      cutoff: STALE_AFTER.ago
+    )
+  }
+
+  # Oldest descriptions first — the order the refresh job drains them, so the most
+  # stale copy is rewritten first. (description_stale excludes nil-stamp rows, so
+  # there are no nulls to position here.)
+  scope :stalest_description_first, -> { order(:description_generated_at) }
+
+  # The refresh work-list: listed rows with generated copy that's due a refresh,
+  # stalest first. One source of truth for both DescriptionRefreshJob (capped) and
+  # the on-demand `openrouter:refresh_descriptions` rake task (uncapped).
+  scope :due_for_description_refresh, -> { listed.description_stale.stalest_description_first }
+
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
   # "desc", then sink rows that can't be ranked on the sorted column to the
   # bottom in BOTH directions (they'd otherwise float to the top on reverse).

@@ -87,6 +87,40 @@ class AiModel::DescriptionTest < ActiveSupport::TestCase
     assert_equal "Lighter reasoning than frontier models.",   result[:limitations]
   end
 
+  test "renders the provider lineup into the user message for positioning" do
+    captured = {}
+    messages = Object.new
+    response = stub_tool_response(valid_input)
+    messages.define_singleton_method(:create) { |**kwargs| captured.replace(kwargs); response }
+    client = Object.new
+    client.define_singleton_method(:messages) { messages }
+
+    make_generator(client).generate(
+      name: "Wonder 2", provider: "NewLab",
+      lineup: [
+        AiModel::Sibling.new(name: "Wonder 1", released_on: Date.new(2026, 1, 1),
+                             summary: "The first-generation model.")
+      ]
+    )
+
+    content = captured[:messages].first[:content]
+    assert_includes content, "Provider lineup"
+    assert_includes content, "Wonder 1 (released 2026-01): The first-generation model."
+  end
+
+  test "omits the lineup section when there are no siblings" do
+    captured = {}
+    messages = Object.new
+    response = stub_tool_response(valid_input)
+    messages.define_singleton_method(:create) { |**kwargs| captured.replace(kwargs); response }
+    client = Object.new
+    client.define_singleton_method(:messages) { messages }
+
+    make_generator(client).generate(name: "Wonder 2", provider: "NewLab", lineup: [])
+
+    refute_includes captured[:messages].first[:content], "Provider lineup"
+  end
+
   test "raises GenerateError when the Anthropic API raises an error" do
     api_error = Anthropic::Errors::Error.new("rate limited")
     generator = make_generator(error_client(api_error))
