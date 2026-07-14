@@ -23,9 +23,33 @@
     gap: 40px;
     align-items: start;
     margin-bottom: 64px;
+    position: relative;
+  }
+
+  /* Ambient depth: a slow-drifting glow behind the headline, placed for the
+     two-column layout so it's hidden alongside the grid's own collapse. */
+  .hero-grid::before {
+    content: "";
+    position: absolute;
+    top: -80px;
+    right: 6%;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,.14) 0%, rgba(99,102,241,0) 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-grid::before { animation: hero-glow-drift 16s ease-in-out infinite alternate; }
+  }
+  @keyframes hero-glow-drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-20px, 16px) scale(1.06); }
   }
   @media (max-width: 900px) {
     .hero-grid { grid-template-columns: 1fr; }
+    .hero-grid::before { display: none; }
   }
 
   /* Eyebrow pill */
@@ -100,15 +124,42 @@
   /* Hero CTA: how pricing works */
   .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
+  /* Scoped to .hero-cta so this doesn't restyle .tp-btn-primary sitewide. */
+  .hero-cta .tp-btn-primary { position: relative; overflow: hidden; }
+  .hero-cta .tp-btn-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.35) 42%, transparent 64%);
+    transform: translateX(-120%);
+    transition: transform .6s var(--ease-out);
+  }
+  .hero-cta .tp-btn-primary:hover::before { transform: translateX(120%); }
+
   /* Latest update card */
   .hero-card {
     border-radius: var(--radius-xl);
     background: linear-gradient(160deg, #14163a, #1e2150 55%, #2a2f6e);
+    background-size: 220% 220%;
+    background-position: 0% 50%;
     border: 1px solid rgba(99,102,241,.22);
     box-shadow: 0 24px 64px -16px rgba(79,70,229,.38), 0 4px 16px rgba(0,0,0,.28);
     position: relative;
     overflow: hidden;
     padding: 28px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-card { animation: hero-card-breathe 16s ease infinite; will-change: background-position; }
+  }
+  @keyframes hero-card-breathe {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @media (max-width: 900px) {
+    /* Same tradeoff as the glow above, but more pointed: background-position
+       is paint-triggering (unlike transform), so it's worth not running it
+       on mobile even though the OS-level reduced-motion query is separate. */
+    .hero-card { animation: none; will-change: auto; }
   }
   /* Radial indigo glow */
   .hero-card::before {
@@ -148,6 +199,22 @@
     text-transform: uppercase;
   }
   .hero-card-tag svg { width: 13px; height: 13px; }
+  /* Reuses tp-eyebrow-pulse (app/assets/tailwind/application.css), the same
+     ring-pulse the nav's .nav-dot already does for "live" — just in
+     emerald via its color custom properties, instead of a second keyframe. */
+  .hero-card-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-emerald-500);
+    flex: none;
+    box-shadow: 0 0 0 3px var(--color-emerald-100);
+    --tp-pulse-ring-start: var(--color-emerald-100);
+    --tp-pulse-ring-end: rgba(16,185,129,.12);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-card-live-dot { animation: tp-eyebrow-pulse 1.8s ease-out infinite; }
+  }
 
   .hero-card-headline { margin-bottom: 18px; }
   .hero-card-title {
@@ -333,6 +400,7 @@
     <div class="hero-card">
       <div class="hero-card-inner">
         <div class="hero-card-tag">
+          <span class="hero-card-live-dot"></span>
           <%= icon(:spark, size: 13) %>
           Latest events
         </div>

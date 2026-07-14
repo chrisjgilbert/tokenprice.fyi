@@ -1111,7 +1111,10 @@ footer.tp-foot {
 /* eyebrow pulsing dot (prototype `.nav-dot`) */
 .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--indigo-500); box-shadow: 0 0 0 3px var(--indigo-200); flex: none; }
 @media (prefers-reduced-motion: no-preference) { .nav-dot { animation: tp-eyebrow-pulse 2.4s var(--ease) infinite; } }
-@keyframes tp-eyebrow-pulse { 0%,100% { box-shadow: 0 0 0 3px var(--indigo-200); } 50% { box-shadow: 0 0 0 5px rgba(99,102,241,.12); } }
+@keyframes tp-eyebrow-pulse {
+  0%,100% { box-shadow: 0 0 0 3px var(--tp-pulse-ring-start, var(--indigo-200)); }
+  50%      { box-shadow: 0 0 0 5px var(--tp-pulse-ring-end, rgba(99,102,241,.12)); }
+}
 
 /* staggered entrance reveal (prototype `.reveal`) */
 @media (prefers-reduced-motion: no-preference) {
