@@ -13,9 +13,7 @@ export default class extends Controller {
     const saved = sessionStorage.getItem(this.constructor.key)
     if (saved !== null) {
       sessionStorage.removeItem(this.constructor.key)
-      // behavior: "instant" overrides the page's scroll-behavior: smooth
-      // (used by in-page anchor links) so this restore stays an unseen jump.
-      window.scrollTo({ top: parseInt(saved, 10), behavior: "instant" })
+      window.scrollTo(0, parseInt(saved, 10))
     }
   }
 

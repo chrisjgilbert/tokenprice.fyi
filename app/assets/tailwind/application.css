@@ -1057,10 +1057,6 @@ footer.tp-foot {
 @media (prefers-reduced-motion: no-preference) {
   .tp-reveal { opacity: 0; transform: translateY(14px); animation: tp-revealUp .6s var(--ease-out) forwards; }
   @keyframes tp-revealUp { to { opacity: 1; transform: none; } }
-  /* Applies to in-page anchor jumps (e.g. the hero's "View models" CTA).
-     tab_scroll_controller's scroll-position restore passes an explicit
-     behavior: "instant" so it isn't swept up by this. */
-  html { scroll-behavior: smooth; }
 }
 
 /* ════════════════════════════════════════════════════════════════════════

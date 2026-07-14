@@ -325,7 +325,7 @@
         <% else %>
           <%= link_to sources_path, class: "tp-btn tp-btn-primary" do %>How prices are sourced<% end %>
         <% end %>
-        <%= link_to "#price-table", class: "tp-btn tp-btn-ghost" do %>View models<% end %>
+        <%= link_to "#price-table", class: "tp-btn tp-btn-ghost", data: { controller: "smooth-scroll", action: "click->smooth-scroll#jump" } do %>View models<% end %>
       </div>
     </div>
 
