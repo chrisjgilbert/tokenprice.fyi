@@ -21,6 +21,13 @@ class ComparisonsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".cmp-table"
   end
 
+  test "renders the empty state without error when nothing is listed" do
+    AiModel.update_all(status: "retired")
+    get compare_url
+    assert_response :success
+    assert_select "p", text: /Pick two models/
+  end
+
   test "scopes both pickers to the left model's category" do
     get compare_url(a: "test-priced-image-model")
     assert_response :success

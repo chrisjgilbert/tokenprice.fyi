@@ -9,7 +9,10 @@ class ComparisonsController < ApplicationController
     all = AiModel.listed.includes(:provider, :price_points).by_release.to_a
 
     @left = find_model(all, params[:a]) || default_left(all)
-    @category = ModelCategory.claiming(@left.modality_class)
+    # @left is nil only when nothing is listed (a fresh, unseeded catalog); fall
+    # back to the default category so the view's `both = @left && @right` guard
+    # renders the empty state instead of the controller dereferencing nil.
+    @category = @left ? ModelCategory.claiming(@left.modality_class) : ModelCategory.default
 
     # Picker options and the right model come from the left's category only.
     @all_models = all.select { |m| @category.member?(m.modality_class) }
