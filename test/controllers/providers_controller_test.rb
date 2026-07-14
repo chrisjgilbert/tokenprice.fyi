@@ -30,6 +30,15 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: /Speech to text/
   end
 
+  test "a single-category provider drops the redundant category heading" do
+    # deepseek fixtures are all language models — one group, so the lone
+    # "Language models" heading would just label the only table on the page.
+    get provider_url(providers(:deepseek))
+    assert_response :success
+    assert_select "td a", /Uncached Mid/
+    assert_select "h2", false
+  end
+
   test "a provider's image models show their native price, not blank token cells" do
     get provider_url(providers(:anthropic))
     assert_response :success

@@ -46,12 +46,17 @@
 <%# Grouped by pricing family (in the controller) so a provider's image/speech/
     embedding models get their own columns and native prices, never blank
     per-token cells. Each group uses the category's own column shape and shares
-    the price cells with the main table (models/_data_cell). %>
+    the price cells with the main table (models/_data_cell). The category heading
+    only earns its place when a provider spans more than one family — for the
+    single-category provider (most of them) it would just label the only table. %>
+<% grouped = @model_groups.size > 1 %>
 <% @model_groups.each do |category, models| %>
   <%# The provider column is redundant here — every row is this provider. %>
   <% cols = category.columns - [ :provider ] %>
   <section class="mb-10">
-    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500"><%= category.label %></h2>
+    <% if grouped %>
+      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500"><%= category.label %></h2>
+    <% end %>
     <div class="tp-cardify-wrap overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table class="tp-cardify min-w-full divide-y divide-slate-200 text-sm">
         <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
