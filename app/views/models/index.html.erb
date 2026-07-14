@@ -325,6 +325,7 @@
         <% else %>
           <%= link_to sources_path, class: "tp-btn tp-btn-primary" do %>How prices are sourced<% end %>
         <% end %>
+        <%= link_to "#price-table", class: "tp-btn tp-btn-ghost", data: { controller: "smooth-scroll", action: "click->smooth-scroll#jump" } do %>View models<% end %>
       </div>
     </div>
 
@@ -407,7 +408,7 @@
      data-action="turbo:frame-load@document->compare-tray#frameLoaded">
 
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
-<p class="tp-section-label mb-4">Price table</p>
+<p id="price-table" class="tp-section-label mb-4">Price table</p>
 
 <%# Every filter/sort URL on this page must stay on the CURRENT category's path,
     so a sort inside the image tab reloads /image-generation, not /. The path
@@ -639,6 +640,11 @@
                                 <% end %>
                                 <% if model.released_on %>
                                   <span class="tp-hovercard-fact"><%= fmt_date(model.released_on) %></span>
+                                <% end %>
+                              </div>
+                              <div class="tp-hovercard-footer">
+                                <%= link_to model_path(model), class: "tp-hovercard-view" do %>
+                                  View model <%= icon(:chevron_right, size: 12) %>
                                 <% end %>
                               </div>
                             </div>
