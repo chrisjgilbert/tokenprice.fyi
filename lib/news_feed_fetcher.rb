@@ -123,7 +123,10 @@ class NewsFeedFetcher
                     use_ssl: uri.scheme == "https",
                     open_timeout: TIMEOUT, read_timeout: TIMEOUT) do |http|
       response = http.get(uri.request_uri, "User-Agent" => "tokenprice-release-watch/1.0")
-      return nil unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        Rails.logger.warn("NewsFeedFetcher(#{@name}): HTTP #{response.code} for #{url}")
+        return nil
+      end
 
       body = response.body
       charset = response.type_params["charset"] || "UTF-8"

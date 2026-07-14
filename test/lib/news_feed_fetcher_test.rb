@@ -85,6 +85,30 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  test "a non-2xx response is logged instead of failing silently" do
+    config = { "name" => "meta_ai", "type" => "rss", "url" => "https://ai.meta.com/blog/rss" }
+
+    with_stubbed_response(404, "") do
+      with_captured_warnings do |warnings|
+        NewsFeedFetcher.fetch(config)
+        assert(warnings.any? { |w| w.include?("meta_ai") && w.include?("404") },
+               "expected a warning naming the source and status; got: #{warnings.inspect}")
+      end
+    end
+  end
+
+  test "a page_diff non-2xx response is also logged" do
+    config = { "name" => "anthropic", "type" => "page_diff", "url" => "https://www.anthropic.com/news" }
+
+    with_stubbed_response(404, "") do
+      with_captured_warnings do |warnings|
+        NewsFeedFetcher.fetch(config)
+        assert(warnings.any? { |w| w.include?("anthropic") && w.include?("404") },
+               "expected a warning naming the source and status; got: #{warnings.inspect}")
+      end
+    end
+  end
+
   # --- excerpt capture -------------------------------------------------------
 
   RSS_WITH_CONTENT_ENCODED = <<~XML
@@ -251,6 +275,17 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
   end
 
   private
+
+  # Captures every Rails.logger.warn message raised during the block into an
+  # array, so a test can assert a failure was logged rather than swallowed.
+  def with_captured_warnings
+    warnings = []
+    original = Rails.logger.method(:warn)
+    Rails.logger.define_singleton_method(:warn) { |msg = nil, &blk| warnings << (msg || blk.call) }
+    yield warnings
+  ensure
+    Rails.logger.define_singleton_method(:warn, original)
+  end
 
   # Build a fake Net::HTTP that returns a canned HTTP response without making
   # real network calls. Uses the Net::HTTP.stub_new pattern.
