@@ -359,6 +359,51 @@ Surface it:
   "every price dated and sourced" — and a misrepresentation framed as today's
   silent uniformity.
 
+## Benchmarks — a future quality layer (researched July 2026)
+
+The owner intends to eventually fold in benchmark scores as a quality
+indication. This is coherent with the product's identity on one condition:
+**quality numbers enter the same way prices do — as sourced, dated,
+attributed third-party measurements, never the site's own verdict.** That is
+also the clean narrative for why benchmarks can come in after the tier
+taxonomy went out: tier was the site's own unsourced opinion; a cited score
+is someone else's measurement with provenance. And it answers the demand
+test's sharpest finding — in the directory categories, 10–30× price spreads
+make price-only tables misleading, which is precisely where a quality signal
+earns its column.
+
+Web research on ingestible sources (machine-readable, licensed for
+attributed republication, low-maintenance):
+
+| Category | Best source | Format / license | Notes |
+|---|---|---|---|
+| Language | Arena leaderboard dataset (`lmarena-ai/leaderboard-dataset` on HF) | Parquet, `latest` + historical splits, **CC-BY-4.0** | One dataset also covers image and video arenas — one ingestion job, four categories |
+| Language (static evals) | Epoch AI Benchmarking Hub | CSV/ZIP + Python client, **CC-BY** | Per-score provenance model matches this site's exactly |
+| Image gen | Arena dataset `text-to-image` subset | as above | |
+| Video gen | Arena dataset `text-to-video` / `image-to-video` subsets | as above | VBench is Apache-2.0 but research-checkpoint-skewed |
+| Embeddings | MTEB results (GitHub JSON / HF parquet) | machine-readable; **license unconfirmed** — one clarifying issue before republishing | Covers commercial API embedders |
+| STT | Open ASR Leaderboard | CSVs in an **Apache-2.0** repo | Snapshot-based cadence; commercial-API coverage partial |
+| TTS | TTS Arena V2 | HTML only, no dataset/API — ask maintainers | Honest gap |
+| Rerank | — | — | No neutral machine-readable source; mostly vendor self-reported. Show "no independent score" |
+
+Artificial Analysis has the best commercial coverage (including TTS/STT) and
+catalog-friendly slugs, but its free API tier is licensed "internal use only
+with attribution" and redistribution is a commercial-tier conversation —
+blocked pending their permission, not a default ingredient.
+
+Presentation rules when this ships: every score carries benchmark name,
+snapshot date, and a link; arena Elo (preference-based, gameable — see the
+Llama-4-Maverick episode and "The Leaderboard Illusion" paper), static-eval
+accuracy (contamination-prone), and usage rankings (OpenRouter throughput —
+adoption, not quality) are labeled as different kinds of signal, not blended
+into one number. Model-name-to-slug mapping needs a small alias table
+(date-suffixed arena names); that is the main one-time cost. Ingestion is a
+scheduled job in the `ModelSync` mould — no self-run benchmarks, ever.
+
+Bottom line: feasible, low-maintenance, and provenance-compatible. Start
+with the Arena dataset when the time comes; it is CC-BY-4.0 and covers four
+categories in one job. Pinned behind the coherence and growth work.
+
 ## Appendix — category-switch mechanics (full visit vs partial update)
 
 Today's behaviour, for the record: Turbo Drive is active site-wide
