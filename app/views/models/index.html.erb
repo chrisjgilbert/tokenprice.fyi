@@ -310,10 +310,13 @@
       </h1>
 
       <p class="hero-sub">
-        <%= raw(@category.hero_subhead % {
+        <%# Subhead is a trusted registry constant; the only interpolations are
+            integer counts wrapped in a .num span. sanitize with a span allowlist
+            makes that safety explicit rather than blanket-trusting with raw. %>
+        <%= sanitize(@category.hero_subhead % {
               models: tag.span(@category_counts[@category.slug], class: "num"),
               providers: tag.span(@providers_count, class: "num")
-            }) %>
+            }, tags: %w[span], attributes: %w[class]) %>
       </p>
 
       <div class="hero-cta">

@@ -19,5 +19,4 @@ class ChromeFramingTest < ActionDispatch::IntegrationTest
     assert_no_match(/Independent LLM API pricing tracker/, body)
     assert_match(/price record of AI model APIs/i, body)
   end
-
 end
