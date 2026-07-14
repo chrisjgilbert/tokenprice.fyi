@@ -59,3 +59,11 @@ production:
     class: ModelCurationJob
     queue: default
     schedule: "50 */6 * * *"
+
+  # Weekly freshness audit of the hand-curated directory prices. Posts flagged
+  # counts (stale / undated / unpriced) to Slack so the re-verification pass is
+  # un-forgettable; silent when everything is fresh and dated. Monday 9am.
+  pricing_staleness_digest:
+    class: PricingStalenessDigestJob
+    queue: default
+    schedule: "0 9 * * 1"
