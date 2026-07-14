@@ -21,12 +21,17 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
   end
 
   # A plain stand-in for a persisted NewsItem responding to the attributes the
-  # classification reads.
+  # classification reads. #excerpt_section mirrors NewsItem's real
+  # implementation so these tests don't have to hit the database.
   def stub_news_item(title:, source:, excerpt: nil)
     item = Object.new
     item.define_singleton_method(:title)   { title }
     item.define_singleton_method(:source)  { source }
     item.define_singleton_method(:excerpt) { excerpt }
+    item.define_singleton_method(:excerpt_section) do
+      text = excerpt.to_s.first(NewsItem::EXCERPT_CHARS_FOR_PROMPT)
+      text.present? ? "\n\nExcerpt:\n#{text}" : ""
+    end
     item
   end
 
@@ -173,7 +178,7 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
     make_classification(client, item).run
 
     excerpt_sent = captured[0].split("Excerpt:\n").last
-    assert_equal NewsItem::Classification::EXCERPT_CHARS, excerpt_sent.length
+    assert_equal NewsItem::EXCERPT_CHARS_FOR_PROMPT, excerpt_sent.length
   end
 
   test "truncates rationale to 200 characters" do

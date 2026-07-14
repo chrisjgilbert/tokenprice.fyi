@@ -35,18 +35,13 @@ class NewsItem::Classification
     Be concise in rationale (one sentence).
   PROMPT
 
-  # Generous relative to the classifier's coarse yes/no task — cheap on Haiku,
-  # and a real digest's mention of a second story can sit deep in the body
-  # (see NewsFeedFetcher::EXCERPT_MAX_CHARS).
-  EXCERPT_CHARS = 20_000
-
   def initialize(news_item, client: nil)
     @news_item = news_item
     @client    = client
   end
 
   def run
-    content = "Headline: #{news_item.title}\nSource: #{news_item.source}#{excerpt_section}"
+    content = "Headline: #{news_item.title}\nSource: #{news_item.source}#{news_item.excerpt_section}"
 
     input = AnthropicClient.tool_call(
       model:      MODEL,
@@ -69,9 +64,4 @@ class NewsItem::Classification
   private
 
   attr_reader :news_item
-
-  def excerpt_section
-    excerpt = news_item.excerpt.to_s.first(EXCERPT_CHARS)
-    excerpt.present? ? "\n\nExcerpt:\n#{excerpt}" : ""
-  end
 end

@@ -205,6 +205,86 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  ATOM_NO_BODY = <<~XML
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Google DeepMind Blog</title>
+      <link href="https://blog.google/technology/ai/"/>
+      <id>https://blog.google/technology/ai/</id>
+      <updated>2026-07-09T00:00:00Z</updated>
+      <entry>
+        <title>Some Atom post</title>
+        <link href="https://blog.google/technology/ai/some-post"/>
+        <id>https://blog.google/technology/ai/some-post</id>
+        <updated>2026-07-09T00:00:00Z</updated>
+      </entry>
+    </feed>
+  XML
+
+  test "RSS fetch does not crash on an Atom entry, which has no #description method" do
+    config = { "name" => "google_deepmind", "type" => "rss", "url" => "https://blog.google/technology/ai/rss" }
+
+    with_stubbed_response(200, ATOM_NO_BODY) do
+      assert_nothing_raised { NewsFeedFetcher.fetch(config) }
+    end
+  end
+
+  RSS_OPAQUE_GUID = <<~XML
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Some Aggregator</title>
+        <link>https://example.com</link>
+        <item>
+          <title>A story with no real link</title>
+          <guid isPermaLink="false">urn:uuid:not-a-fetchable-url</guid>
+          <pubDate>Fri, 10 Jul 2026 00:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+  XML
+
+  test "RSS fetch does not crash when an item's link/guid is not a fetchable URL" do
+    config = { "name" => "some_aggregator", "type" => "rss", "url" => "https://example.com/rss" }
+
+    with_stubbed_response(200, RSS_OPAQUE_GUID) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_equal 1, items.size
+      assert_nil items[0][:excerpt]
+    end
+  end
+
+  test "known_urls skips the fallback link fetch for an already-seen item" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+    fetched_urls = []
+    responses = { "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY }
+
+    with_stubbed_responses_by_url(responses, fetched_urls:) do
+      items = NewsFeedFetcher.fetch(config, known_urls: Set["https://tldr.tech/ai/2026-07-10"])
+
+      assert_equal [ "https://tldr.tech/api/rss/ai" ], fetched_urls, "should not have fetched the item's own link"
+      assert_nil items[0][:excerpt]
+    end
+  end
+
+  test "excerpt fetched from a linked page strips script and style content" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+    page = <<~HTML
+      <html><head><style>body{color:red}</style><script>var x=1;</script></head>
+      <body><p>Real article text mentioning Muse Spark 1.1.</p></body></html>
+    HTML
+    responses = { "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY, "https://tldr.tech/ai/2026-07-10" => page }
+
+    with_stubbed_responses_by_url(responses) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_includes items[0][:excerpt], "Real article text mentioning Muse Spark 1.1."
+      assert_not_includes items[0][:excerpt], "color:red"
+      assert_not_includes items[0][:excerpt], "var x=1;"
+    end
+  end
+
   test "a failed link fallback fetch leaves excerpt nil instead of dropping the item" do
     config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
 

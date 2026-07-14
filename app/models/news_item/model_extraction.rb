@@ -73,12 +73,12 @@ class NewsItem::ModelExtraction
     worth extracting (identity only). Return an empty list if nothing qualifies.
   PROMPT
 
-  # Generous relative to the extraction task — cheap on Haiku, and a real digest's
-  # second or third model mention can sit deep in the body (see
-  # NewsFeedFetcher::EXCERPT_MAX_CHARS).
-  EXCERPT_CHARS = 20_000
-
-  MAX_TOKENS = 1536
+  # Sized for several models per call, not one — a digest bundling 3-4 launches
+  # each needs a full MODEL_SCHEMA object (name, provider, category, a nested
+  # pricing object, notes); 1536 was sized for the old single-object response
+  # and would risk truncating mid-JSON on exactly the multi-model case this
+  # array schema exists to handle.
+  MAX_TOKENS = 4096
 
   def initialize(news_item, client: nil)
     @news_item = news_item
@@ -87,7 +87,7 @@ class NewsItem::ModelExtraction
 
   def run
     content = "Headline: #{news_item.title}\nSource: #{news_item.source}\n" \
-              "URL: #{news_item.url}#{excerpt_section}"
+              "URL: #{news_item.url}#{news_item.excerpt_section}"
 
     input = AnthropicClient.tool_call(
       model:      MODEL,
@@ -106,11 +106,6 @@ class NewsItem::ModelExtraction
   private
 
   attr_reader :news_item
-
-  def excerpt_section
-    excerpt = news_item.excerpt.to_s.first(EXCERPT_CHARS)
-    excerpt.present? ? "\n\nExcerpt:\n#{excerpt}" : ""
-  end
 
   def build_candidate(model)
     name = model[:name].to_s.strip

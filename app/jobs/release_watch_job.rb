@@ -9,7 +9,8 @@ class ReleaseWatchJob < ApplicationJob
     new_count = 0
 
     sources.each do |source_config|
-      items = NewsFeedFetcher.fetch(source_config)
+      known_urls = NewsItem.where(source: source_config["name"]).pluck(:url).to_set
+      items = NewsFeedFetcher.fetch(source_config, known_urls:)
       items.each do |item|
         news_item = create_news_item(item)
         next unless news_item

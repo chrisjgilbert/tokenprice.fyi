@@ -122,10 +122,13 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
     @yaml_original = original
   end
 
+  # ||= so a test that calls this a second time (to change the stubbed items
+  # mid-test, on top of setup's initial stub) doesn't capture its own stub as
+  # "the original" — that would make teardown restore NewsFeedFetcher.fetch to
+  # a permanent stub instead of the real method, corrupting every later test.
   def stub_fetcher(items)
-    original = NewsFeedFetcher.singleton_class.instance_method(:fetch)
-    NewsFeedFetcher.define_singleton_method(:fetch) { |_config| items }
-    @fetcher_original = original
+    @fetcher_original ||= NewsFeedFetcher.singleton_class.instance_method(:fetch)
+    NewsFeedFetcher.define_singleton_method(:fetch) { |_config, **_kwargs| items }
   end
 
   def stub_classifier(result)
