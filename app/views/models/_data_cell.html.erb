@@ -1,0 +1,68 @@
+<%# One price/data <td> for a model, keyed by column. Shared by the category
+    table (models#index) and the per-category groups on a provider page, so the
+    two never drift on how a native vs. token vs. untracked price renders. The
+    :name column is NOT here — each page renders its own (the index has a
+    hovercard model-cell; the provider page a plain link). sort_col is the
+    active sort key for column highlighting, or nil where there is none. %>
+<% sort_col = local_assigns.fetch(:sort_col, nil) %>
+<% case key %>
+<% when :input %>
+  <td data-label="Input /1M" class="numeric <%= sort_col == 'input' ? 'tp-col-highlight' : '' %>">
+    <%= usd(model.current_input) %>
+  </td>
+<% when :output %>
+  <td data-label="Output /1M" class="numeric <%= sort_col == 'output' ? 'tp-col-highlight' : '' %>">
+    <%= usd(model.current_output) %>
+  </td>
+<% when :cached %>
+  <td data-label="Cached in /1M" class="numeric <%= sort_col == 'cached' ? 'tp-col-highlight' : '' %>">
+    <%= usd(model.current_cached_input) %>
+  </td>
+<% when :context %>
+  <td data-label="Context" class="numeric <%= sort_col == 'context' ? 'tp-col-highlight' : '' %>">
+    <%= tokens_short(model.context_window) %>
+  </td>
+<% when :provider %>
+  <td data-label="Provider" class="<%= sort_col == 'provider' ? 'tp-col-highlight' : '' %>">
+    <%= link_to model.provider.name, provider_path(model.provider), class: "tp-prov-name hover:underline" %>
+  </td>
+<% when :released %>
+  <td data-label="Released" class="<%= sort_col == 'released' ? 'tp-col-highlight' : '' %>">
+    <%= fmt_date(model.released_on) %>
+  </td>
+<% when :dimensions %>
+  <td data-label="Dimensions" class="numeric"><%= model.dimensions || "—" %></td>
+<% when :native_price %>
+  <% if model.native_priced? %>
+    <td data-label="Price" class="numeric tp-price-native <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>">
+      <span class="tp-price-native-val"><%= model.price_headline %></span>
+      <% if model.priced_as_of %>
+        <span class="tp-price-asof">as of <%= fmt_date(model.priced_as_of) %></span>
+      <% end %>
+    </td>
+  <% elsif model.priced? %>
+    <%# A token-priced audio→text model, were one ever listed here, shows its
+        per-token rate rather than the untracked note. %>
+    <td data-label="Price" class="numeric <%= sort_col == 'native_price' ? 'tp-col-highlight' : '' %>"><%= io_price(model) %></td>
+  <% else %>
+    <td data-label="Price" class="tp-price-untracked">Not yet tracked</td>
+  <% end %>
+<% when :pricing %>
+  <%# Native pricing (per image / credits) through the same priced / native /
+      untracked branch the token cells use. %>
+  <% if model.priced? %>
+    <td data-label="Pricing" class="numeric"><%= io_price(model) %></td>
+  <% elsif model.native_priced? %>
+    <td data-label="Pricing" class="tp-price-native">
+      <span class="tp-price-native-val"><%= model.price_headline %></span>
+      <% if model.pricing_model_label %>
+        <span class="tp-price-native-label"><%= model.pricing_model_label %></span>
+      <% end %>
+      <% if model.priced_as_of %>
+        <span class="tp-price-asof">as of <%= fmt_date(model.priced_as_of) %></span>
+      <% end %>
+    </td>
+  <% else %>
+    <td data-label="Pricing" class="tp-price-untracked"><%= model.price_detail.present? ? "Pricing not published" : "Not yet tracked" %></td>
+  <% end %>
+<% end %>
