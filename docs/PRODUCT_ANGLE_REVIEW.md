@@ -163,10 +163,13 @@ priority order, because the amended positioning depends on them:
    `config/recurring.yml` and post flagged counts to Slack via the existing
    `SlackNotifier` — a thin job around an already-tested PORO. Surface
    `priced_as_of` on the directory tab tables, not just the show page.
-3. **Make the API machine-readable for every category.** Emit numeric
-   `native_price_usd` + `native_price_unit`, move unit semantics into the
-   per-model blocks, and retire the token-only envelope claim. The
-   free-API-to-licensed-dataset flywheel cannot run on prose strings.
+3. ~~Make the API machine-readable for every category.~~ **Superseded (July
+   2026): the public JSON API was removed instead.** The pressure test
+   surfaced the API's incoherence (a token-unit envelope over native prices);
+   the resolution was to delete the endpoint rather than fix it, since
+   current-price APIs are a commodity (LiteLLM, models.dev) that seeded no
+   flywheel worth its maintenance. The `PriceCatalog` seam stays internal.
+   See the `PRODUCT_VISION.md` July update.
 
 The demand evidence also names the natural next feature: "tell me when
 prices change" was the most-requested capability in the field research. The
@@ -193,7 +196,8 @@ category. That calibration changes the weighting, not the conclusions:
 - **The operational trio survives because it *reduces* maintenance, not
   because it wins anything.** The staleness alert turns "remember to check"
   into a bounded, scheduled chore; append-only snapshots mean the manual
-  work compounds instead of evaporating; the API fix is one-time.
+  work compounds instead of evaporating. (The third former item — the API
+  fix — was removed instead of fixed; see the July note above.)
 - **Stagger the re-verification instead of eating the October cliff.**
   Rotate one directory category per month (~8–22 rows, an evening): each
   category gets re-verified roughly twice a year, which matches how often
@@ -204,11 +208,10 @@ category. That calibration changes the weighting, not the conclusions:
   rates over an image table. Those are the difference between a product
   that holds together and one that shows its seams.
 - **Traffic, realistically**, comes from surfaces with zero marginal
-  maintenance: the per-model and per-category pages (built), the free API
-  and llms.txt as citation targets (built, needs the machine-readability
-  fix), an RSS change feed off /changes (cheap, no subscriber support
-  burden — prefer it over email), and occasional launch/show-and-tell posts.
-  Not from fighting seven vendor-owned SERPs.
+  maintenance: the per-model and per-category pages (built), llms.txt as a
+  citation target (built), an RSS change feed off /changes (cheap, no
+  subscriber support burden — prefer it over email), and occasional
+  launch/show-and-tell posts. Not from fighting seven vendor-owned SERPs.
 - **Guard the maintenance budget explicitly.** Recurring human work should
   stay at: reviewing model candidates (minutes), curating market events
   (discretionary, the editorial habit), one category re-verification pass a
@@ -268,10 +271,10 @@ Category context is currently lost the moment a user leaves the homepage:
 - **Model-show JSON-LD** (`show.html.erb:47`): `category: "LLM API model"`
   hardcoded for every model, including image/video Product schema. Use the
   modality label.
-- **API envelope** (`api/v1/models_controller.rb`): the top-level
-  `unit: "USD per 1,000,000 tokens"` header contradicts the `native_price`
-  blocks in the same response. Move unit semantics into the per-model blocks
-  (or document per-block units) and consider a `category` filter param.
+- ~~**API envelope**~~: the top-level `unit: "USD per 1,000,000 tokens"`
+  header contradicting the `native_price` blocks was one of the clearest
+  incoherences here — resolved (July 2026) by removing the public API
+  entirely rather than reshaping it. See the July note above.
 - **/changes inbound link**: off-nav and off-sitemap is deliberate, but its
   only entry point is the Slack digest. One inline link from /events ("the
   raw feed behind this timeline") makes it durable.
@@ -462,8 +465,8 @@ for option 1.
 2. Workstream 1 (global chrome + category-aware hero), written to the
    amended positioning: record/tracker first, "tracked" as the admission
    criterion for headline claims.
-3. API machine-readability (numeric native prices, per-block units) +
-   llms.txt category listing.
+3. llms.txt category listing (the API removal that formerly shared this
+   step is done — see the July note above).
 4. The small leak fixes in workstream 2 (breadcrumb, untracked fallback,
    JSON-LD category, events price line) — each is a few lines.
 5. Provider page and compare re-shaping — the two real view changes.

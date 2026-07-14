@@ -55,9 +55,10 @@ additive waits behind that.
 
 ### The data layer doesn't contradict itself
 
-- API: emit numeric `native_price_usd` + `native_price_unit`, move unit
-  semantics into per-model blocks, retire the token-only top-level `unit`
-  claim.
+- The public JSON API was removed (July 2026): a commodity surface (LiteLLM,
+  models.dev) that seeded no flywheel worth its upkeep and contradicted
+  itself (token-unit envelope over native prices). The `PriceCatalog` seam
+  stays internal; see the `PRODUCT_VISION.md` July update.
 - Append a dated snapshot when a native price changes instead of
   overwriting (manual re-verification starts depositing history — the claim
   "history begins when tracking begins" becomes true).

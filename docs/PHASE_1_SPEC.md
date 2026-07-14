@@ -199,20 +199,15 @@ back cleanly; language compare is pixel-identical to today.
 
 ## PR 5 — Data layer stops contradicting itself
 
-### 5.1 API native prices become numeric
+### 5.1 The public JSON API is removed (done)
 
-`api/v1/models_controller.rb`: add `usd: m.native_price_usd, unit:
-m.native_price_unit` to the `native_price` block. Replace the envelope's
-`unit: "USD per 1,000,000 tokens"` with
-
-```json
-"units": { "price_per_mtok": "USD per 1,000,000 tokens",
-           "native_price":  "USD per native_price.unit" }
-```
-
-**[decision]** — this drops the old `unit` key (breaking). Recommended now,
-while consumers are few and the field is actively wrong for half the
-catalog; alternative is emitting both for a deprecation cycle.
+The `/api/v1/models` endpoint, its controller, test, route, and the llms.txt
+link were removed (July 2026). Rationale: current-price APIs are a commodity
+(LiteLLM, models.dev), the endpoint seeded no flywheel worth its maintenance,
+and it contradicted itself — a `unit: "USD per 1,000,000 tokens"` envelope
+over native (per-image / per-minute) prices, exactly the kind of incoherence
+this phase removes. The `PriceCatalog` seam stays as an internal boundary;
+see the `PRODUCT_VISION.md` July update. No further API work in phase 1.
 
 ### 5.2 Native prices append instead of overwrite
 
@@ -235,10 +230,9 @@ jobs): runs `PricingStaleness`, and when anything is flagged posts counts
 per category to Slack via `SlackNotifier` with a link to /sources. Add to
 `config/recurring.yml`, weekly. Silent when nothing is stale.
 
-**Acceptance:** API response validates for an image model (numeric price,
-unit, no token claim); editing a native price in the console appends a
-snapshot; the job posts to a stubbed webhook in tests and is present in
-recurring.yml.
+**Acceptance:** editing a native price in the console appends a snapshot;
+the job posts to a stubbed webhook in tests and is present in recurring.yml;
+the API route/controller/test are gone and the suite is green without them.
 
 ---
 
@@ -250,7 +244,7 @@ recurring.yml.
 | 2 — journey fixes | seven small independent edits | low |
 | 3 — provider pages | one partial extraction + view rewrite | medium (the refactor) |
 | 4 — compare scoping | controller + view row shapes | medium |
-| 5 — data layer | one migration, one concern, one job, API shape | low, but 5.1 is the one breaking change |
+| 5 — data layer | one migration, one concern, one job (API already removed) | low |
 
 Each PR: `bin/rails test` green, preflight before push. PRs 1–2 land the
 visible coherence; 3–4 are the real view work; 5 can ship any time,

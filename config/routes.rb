@@ -50,13 +50,6 @@ Rails.application.routes.draw do
   get "learn/feature-costs", to: "learn#feature_costs", as: :learn_feature_costs
   get "learn/cost-cutting",  to: "learn#cost_cutting",  as: :learn_cost_cutting
 
-  # Public read-only JSON API off PriceCatalog — the citation/backlink flywheel.
-  namespace :api do
-    namespace :v1 do
-      resources :models, only: :index, defaults: { format: :json }
-    end
-  end
-
   get "sitemap.xml", to: "sitemaps#index", defaults: { format: "xml" }, as: :sitemap
   get "llms.txt",    to: "pages#llms_txt",  defaults: { format: "txt" }, as: :llms_txt
 
