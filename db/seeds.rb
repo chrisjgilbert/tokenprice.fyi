@@ -555,6 +555,17 @@ catalog = [
     prices: [ { on: "2024-04-18", in: 0.59, out: 0.79, src: "pricepertoken.com", note: "Representative hosted rate (Together/Fireworks); varies by provider" } ]
   },
 
+  # Muse Spark 1.1 is not open-weight like the Llamas above — it's Meta's first
+  # proprietary, directly-hosted model, via the new Meta Model API (public
+  # preview, US-only), so it carries one canonical price rather than a
+  # varies-by-provider hosted rate.
+  {
+    provider: :meta, name: "Muse Spark 1.1", status: "active",
+    context_window: 1_000_000, max_output_tokens: nil, released_on: "2026-07-09",
+    description: "Meta's first paid model API — a multimodal reasoning model built for agentic tasks, tool/computer use, coding, and multimodal understanding. Meta AI/Superintelligence Labs' answer to Anthropic/OpenAI's agentic-coding models.",
+    prices: [ { on: "2026-07-09", in: 1.25, out: 4.25, src: "ai.meta.com/blog/introducing-muse-spark-meta-model-api", note: "Meta's own blog post announces the Meta Model API but doesn't state the figure directly; $1.25/$4.25 per 1M tokens is corroborated by multiple independent outlets (M confidence) reporting on the launch" } ]
+  },
+
   {
     provider: :mistral, name: "Mistral Medium 3.5", status: "active",
     context_window: 128_000, max_output_tokens: nil, released_on: "2026-04-29",
@@ -846,6 +857,16 @@ catalog = [
     # No published per-image API rate: Alibaba's "$0.10" is an illustrative
     # example, not a rate, so no price is asserted (see IMAGE_MODEL_PRICING.md).
     price_detail: "Alibaba doesn't publish a per-image API rate for Qwen-Image; it's released as open weights under the Apache 2.0 license.",
+    prices: []
+  },
+  {
+    provider: :meta, name: "Muse Image", status: "active",
+    description: "Meta Superintelligence Labs' first image generation model — follows instructions, edits with precision, and composes from multiple references. Available in the Meta AI app, Instagram Stories (US), and WhatsApp (limited countries).",
+    input_modalities: %w[text], output_modalities: %w[image],
+    # No public developer API: Muse Image is a consumer feature inside Meta's own
+    # apps, not a metered API product, so there's no rate to publish
+    # (see IMAGE_MODEL_PRICING.md).
+    price_detail: "No public developer API — Muse Image ships as a consumer feature in the Meta AI app, Instagram, and WhatsApp, not as a metered API product.",
     prices: []
   },
 
@@ -1311,6 +1332,14 @@ catalog = [
     pricing_model: "per_video", price_summary: "~$0.42 / run",
     price_detail: "Open weights (Apache 2.0), ~60GB VRAM single-GPU — self-host $0, or ≈$0.42 per run on Replicate.",
     price_source: "https://replicate.com/genmoai/mochi-1", priced_as_of: "2026-07-11",
+    prices: []
+  },
+  {
+    provider: :meta, name: "Muse Video", status: "active",
+    description: "Meta Superintelligence Labs' first video generation model, built on the same pretraining base as Muse Image — native audio support. Coming soon to creators and in the Meta AI app.",
+    input_modalities: %w[text], output_modalities: %w[video],
+    # No public developer API, same as Muse Image (see VIDEO_MODEL_PRICING.md).
+    price_detail: "No public developer API — Muse Video is coming soon to creators and Meta AI as a consumer feature, not a metered API product.",
     prices: []
   },
 

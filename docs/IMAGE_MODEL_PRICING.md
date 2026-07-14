@@ -73,6 +73,7 @@ gated/JS-rendered, **L**/✗ not confirmable (see bottom).
 | Model | Provider | Why | Honest display |
 |---|---|---|---|
 | **Qwen-Image** | Alibaba | Model Studio per-image rate not extractable; Alibaba's "$0.10" is an illustrative example, not the rate. fal.ai fallback $0.02/MP (L) | List (open-weights + API), pricing "not published / not verified"; note open weights (Apache 2.0) |
+| **Muse Image** | Meta | No public developer API — a consumer feature in the Meta AI app, Instagram, and WhatsApp, not a metered API product (H that no API exists, as of 2026-07-14) | List (identity only), pricing "not published / not verified"; note no public API |
 
 ## Do not publish as fact (still unconfirmed)
 
