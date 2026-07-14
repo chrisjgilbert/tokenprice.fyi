@@ -67,3 +67,13 @@ production:
     class: PricingStalenessDigestJob
     queue: default
     schedule: "0 9 * * 1"
+
+  # Rewrite stale editorial copy — the oldest AiModel.description_stale rows,
+  # capped per run. Daily rather than monthly so the per-run cap drains the
+  # backlog steadily (and a launch that flags a provider's lineup is smoothed
+  # across days) instead of one large monthly batch. 4am keeps it off the
+  # 6-hourly ingestion path and its Anthropic quota contention.
+  description_refresh:
+    class: DescriptionRefreshJob
+    queue: default
+    schedule: every day at 4am
