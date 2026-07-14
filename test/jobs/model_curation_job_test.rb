@@ -1,23 +1,28 @@
 require "test_helper"
 
 class ModelCurationJobTest < ActiveJob::TestCase
-  # Stub NewsItem#extract_model_candidate so the job's orchestration is tested
+  # Stub NewsItem#extract_model_candidates so the job's orchestration is tested
   # without the LLM. Driven entirely off the item's title (the job reloads items
-  # from the DB, so per-instance stubs wouldn't reach them):
-  #   "MODEL:<name>" → a candidate named <name>;  "ERROR…" → raises;  else → nil.
+  # from the DB, so per-instance stubs wouldn't reach them). The title can name
+  # any number of candidates, separated by "|":
+  #   "MODEL:<name>"  → one candidate named <name>
+  #   "BADURL:<name>" → one candidate that fails validation (non-http source)
+  #   "ERROR…"        → the whole item's extraction raises
+  #   anything else   → no candidate for that segment
   setup do
-    NewsItem.define_method(:extract_model_candidate) do
+    NewsItem.define_method(:extract_model_candidates) do
       raise NewsItem::ModelExtraction::Error, "boom" if title.include?("ERROR")
 
-      # "BADURL:<name>" yields a candidate that fails validation (non-http source).
-      if (m = title.match(/BADURL:(.+)/))
-        ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
-                           category_slug: "image", source_url: "not-a-url", status: "pending")
-      elsif (m = title.match(/MODEL:(.+)/))
-        ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
-                           category_slug: "image", source_url: url,
-                           pricing: { "pricing_model" => "per_image", "price_summary" => "$0.04 / image" },
-                           confidence: "M", status: "pending")
+      title.split("|").filter_map do |segment|
+        if (m = segment.match(/BADURL:(.+)/))
+          ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
+                             category_slug: "image", source_url: "not-a-url", status: "pending")
+        elsif (m = segment.match(/MODEL:(.+)/))
+          ModelCandidate.new(news_item: self, name: m[1].strip, provider_name: "Acme",
+                             category_slug: "image", source_url: url,
+                             pricing: { "pricing_model" => "per_image", "price_summary" => "$0.04 / image" },
+                             confidence: "M", status: "pending")
+        end
       end
     end
 
@@ -28,7 +33,7 @@ class ModelCurationJobTest < ActiveJob::TestCase
   end
 
   teardown do
-    NewsItem.remove_method(:extract_model_candidate) if NewsItem.instance_methods(false).include?(:extract_model_candidate)
+    NewsItem.remove_method(:extract_model_candidates) if NewsItem.instance_methods(false).include?(:extract_model_candidates)
     SlackNotifier.define_singleton_method(:post, @slack_original) if @slack_original
   end
 
@@ -102,6 +107,24 @@ class ModelCurationJobTest < ActiveJob::TestCase
     assert_equal 1, ModelCandidate.count, "the good candidate still persists"
     assert_not_nil good.reload.curated_for_model_at
     assert_not_nil bad.reload.curated_for_model_at, "invalid data is stamped, not retried"
+  end
+
+  test "a digest item can yield more than one candidate" do
+    release("MODEL:GPT-5.6 Sol|MODEL:Muse Spark 1.1")
+
+    assert_difference "ModelCandidate.count", 2 do
+      ModelCurationJob.perform_now
+    end
+    assert_equal %w[GPT-5.6\ Sol Muse\ Spark\ 1.1].sort, ModelCandidate.pluck(:name).sort
+  end
+
+  test "an invalid candidate does not block a sibling from the same item" do
+    item = release("BADURL:Broken|MODEL:Good Sibling")
+
+    ModelCurationJob.perform_now
+
+    assert_equal %w[Good\ Sibling], ModelCandidate.pluck(:name)
+    assert_not_nil item.reload.curated_for_model_at
   end
 
   test "posts a Slack nudge only when candidates were created" do

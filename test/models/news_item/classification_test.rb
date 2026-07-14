@@ -22,10 +22,11 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
 
   # A plain stand-in for a persisted NewsItem responding to the attributes the
   # classification reads.
-  def stub_news_item(title:, source:)
+  def stub_news_item(title:, source:, excerpt: nil)
     item = Object.new
-    item.define_singleton_method(:title)  { title }
-    item.define_singleton_method(:source) { source }
+    item.define_singleton_method(:title)   { title }
+    item.define_singleton_method(:source)  { source }
+    item.define_singleton_method(:excerpt) { excerpt }
     item
   end
 
@@ -120,6 +121,59 @@ class NewsItem::ClassificationTest < ActiveSupport::TestCase
     end
 
     assert_equal "No tool_use block in response", error.message
+  end
+
+  # A fake client whose messages.create captures the prompt content sent to it
+  # (into `captured`, an array so the block can mutate it by reference) and
+  # returns a canned tool response.
+  def capturing_client(captured, response_input)
+    tool_block = Object.new
+    tool_block.define_singleton_method(:type)  { :tool_use }
+    tool_block.define_singleton_method(:input) { response_input }
+    response = Object.new
+    response.define_singleton_method(:content) { [ tool_block ] }
+
+    messages = Object.new
+    messages.define_singleton_method(:create) do |**kwargs|
+      captured[0] = kwargs[:messages].first[:content]
+      response
+    end
+    client = Object.new
+    client.define_singleton_method(:messages) { messages }
+    client
+  end
+
+  test "includes the excerpt in the prompt content when present" do
+    captured = [ nil ]
+    client = capturing_client(captured, relevant: true, kind: "release", rationale: "ok")
+
+    item = stub_news_item(title: "GPT-5.6, Muse Spark 1.1, ChatGPT Work", source: "tldr_ai",
+                           excerpt: "Full digest text mentioning Muse Spark 1.1 buried in here.")
+    make_classification(client, item).run
+
+    assert_includes captured[0], "Excerpt:"
+    assert_includes captured[0], "Muse Spark 1.1 buried in here"
+  end
+
+  test "omits the excerpt section entirely when the item has none" do
+    captured = [ nil ]
+    client = capturing_client(captured, relevant: true, kind: "release", rationale: "ok")
+
+    item = stub_news_item(title: "Some headline", source: "hn", excerpt: nil)
+    make_classification(client, item).run
+
+    assert_not_includes captured[0], "Excerpt:"
+  end
+
+  test "truncates the excerpt sent to the classifier" do
+    captured = [ nil ]
+    client = capturing_client(captured, relevant: true, kind: "other", rationale: "ok")
+
+    item = stub_news_item(title: "Some headline", source: "ainews", excerpt: "A" * 30_000)
+    make_classification(client, item).run
+
+    excerpt_sent = captured[0].split("Excerpt:\n").last
+    assert_equal NewsItem::Classification::EXCERPT_CHARS, excerpt_sent.length
   end
 
   test "truncates rationale to 200 characters" do

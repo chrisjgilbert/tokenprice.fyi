@@ -31,7 +31,8 @@ class ReleaseWatchJob < ApplicationJob
       url:          attrs[:url],
       title:        attrs[:title],
       source:       attrs[:source],
-      published_at: attrs[:published_at]
+      published_at: attrs[:published_at],
+      excerpt:      attrs[:excerpt]
     )
   rescue ActiveRecord::RecordNotUnique
     # URL already seen — skip silently

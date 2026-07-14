@@ -25,10 +25,20 @@ class NewsItem::Classification
 
   SYSTEM_PROMPT = <<~PROMPT.strip
     You are a relevance classifier for an LLM token pricing tracker (tokenprice.fyi).
-    Given a news headline and its source, determine if the story is relevant to LLM API pricing:
-    model releases, price changes, or significant market events affecting LLM API costs.
+    Given a news headline, its source, and (when available) an excerpt of the linked
+    article, determine if the story is relevant to LLM API pricing: model releases,
+    price changes, or significant market events affecting LLM API costs.
+    Some sources are daily roundups covering several unrelated stories in one item —
+    judge relevance on the excerpt as a whole, not just the headline: a roundup whose
+    title covers one story can still contain a release, price change, or market event
+    buried further in the excerpt.
     Be concise in rationale (one sentence).
   PROMPT
+
+  # Generous relative to the classifier's coarse yes/no task — cheap on Haiku,
+  # and a real digest's mention of a second story can sit deep in the body
+  # (see NewsFeedFetcher::EXCERPT_MAX_CHARS).
+  EXCERPT_CHARS = 20_000
 
   def initialize(news_item, client: nil)
     @news_item = news_item
@@ -36,7 +46,7 @@ class NewsItem::Classification
   end
 
   def run
-    content = "Headline: #{news_item.title}\nSource: #{news_item.source}"
+    content = "Headline: #{news_item.title}\nSource: #{news_item.source}#{excerpt_section}"
 
     input = AnthropicClient.tool_call(
       model:      MODEL,
@@ -59,4 +69,9 @@ class NewsItem::Classification
   private
 
   attr_reader :news_item
+
+  def excerpt_section
+    excerpt = news_item.excerpt.to_s.first(EXCERPT_CHARS)
+    excerpt.present? ? "\n\nExcerpt:\n#{excerpt}" : ""
+  end
 end

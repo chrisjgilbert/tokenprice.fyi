@@ -36,6 +36,14 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
     assert_equal "openai", item.source
   end
 
+  test "persists the excerpt the fetcher returns" do
+    stub_fetcher([ FAKE_ITEMS.first.merge(excerpt: "Full article body text.") ])
+
+    ReleaseWatchJob.perform_now
+    item = NewsItem.find_by!(url: "https://openai.com/blog/gpt-5")
+    assert_equal "Full article body text.", item.excerpt
+  end
+
   # --- duplicate URLs are silently skipped -----------------------------------
 
   test "duplicate URL (RecordNotUnique) is silently skipped" do

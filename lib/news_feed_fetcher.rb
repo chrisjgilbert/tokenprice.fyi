@@ -2,9 +2,16 @@ require "rss"
 require "net/http"
 require "uri"
 require "set"
+require "nokogiri"
 
 class NewsFeedFetcher
   TIMEOUT = 10
+
+  # Defensive cap on stored excerpt size — generous enough to reach a story
+  # buried deep in a daily digest (observed: a real aggregator's Meta mention
+  # sat ~15K characters into a ~50K-character plain-text body) without storing
+  # unbounded HTML from a pathological feed.
+  EXCERPT_MAX_CHARS = 50_000
 
   def self.fetch(source_config)
     new(source_config).fetch
@@ -45,12 +52,41 @@ class NewsFeedFetcher
       next if url.blank? || title.blank?
       { url: url.strip, title: title.strip,
         published_at: pub.present? ? pub.to_time.utc : nil,
-        source: @name }
+        source: @name,
+        excerpt: excerpt_for(item, url.strip) }
     end
     items.compact
   rescue RSS::Error => e
     Rails.logger.warn("NewsFeedFetcher(#{@name}): RSS parse error — #{e.message}")
     []
+  end
+
+  # The feed item's own body, when the feed embeds one (many aggregator
+  # newsletters carry the full issue in <content:encoded>, richer than the
+  # single-story <description> some feeds also include). Falls back to
+  # fetching the item's own link when the feed carries no body at all —
+  # some feeds (e.g. TLDR) are title-only, with every story only readable via
+  # the linked page. A failed fallback fetch yields nil rather than aborting
+  # the batch — one broken article link shouldn't drop the whole feed.
+  def excerpt_for(item, item_url)
+    html = item.respond_to?(:content_encoded) ? item.content_encoded.to_s.presence : nil
+    html ||= item.description.to_s.presence
+    text = html ? strip_html(html) : fetch_linked_excerpt(item_url)
+    text.presence&.slice(0, EXCERPT_MAX_CHARS)
+  end
+
+  def fetch_linked_excerpt(url)
+    body = http_get(url)
+    return nil if body.blank?
+
+    strip_html(body)
+  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError => e
+    Rails.logger.warn("NewsFeedFetcher(#{@name}): excerpt fetch failed for #{url} — #{e.message}")
+    nil
+  end
+
+  def strip_html(html)
+    Nokogiri::HTML(html).text.squish
   end
 
   def fetch_page_diff
