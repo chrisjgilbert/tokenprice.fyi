@@ -23,9 +23,58 @@
     gap: 40px;
     align-items: start;
     margin-bottom: 64px;
+    position: relative;
   }
   @media (max-width: 900px) {
     .hero-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Ambient depth: a slow-drifting glow plus a few of this tab's own numbers
+     (already stated in the subhead) floating at low opacity in the gap
+     between the columns — texture, not a new claim, tuned to stay clear of
+     both the headline text and the card. */
+  .hero-grid::before {
+    content: "";
+    position: absolute;
+    top: -80px;
+    right: 6%;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,.14) 0%, rgba(99,102,241,0) 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: hero-glow-drift 16s ease-in-out infinite alternate;
+  }
+  @keyframes hero-glow-drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-20px, 16px) scale(1.06); }
+  }
+
+  .hero-float-chip {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 999px;
+    color: var(--color-indigo-600);
+    background: rgba(99,102,241,.08);
+    border: 1px solid rgba(99,102,241,.16);
+    animation: hero-chip-float 7s ease-in-out infinite;
+  }
+  @keyframes hero-chip-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-9px); }
+  }
+  .hero-float-chip.c1 { top: 4%;  left: 51%; animation-delay: 0s;   opacity: .8; }
+  .hero-float-chip.c2 { top: 28%; left: 47%; animation-delay: 1.4s; opacity: .5; }
+  .hero-float-chip.c3 { top: 54%; left: 40%; animation-delay: 2.8s; opacity: .35; }
+  @media (max-width: 900px) {
+    .hero-grid::before,
+    .hero-float-chip { display: none; }
   }
 
   /* Eyebrow pill */
@@ -100,15 +149,34 @@
   /* Hero CTA: how pricing works */
   .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
+  /* Sheen sweep on the primary CTA's hover, scoped to the hero only — this
+     is not a global button restyle. */
+  .hero-cta .tp-btn-primary { position: relative; overflow: hidden; }
+  .hero-cta .tp-btn-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.35) 42%, transparent 64%);
+    transform: translateX(-120%);
+    transition: transform .6s var(--ease-out);
+  }
+  .hero-cta .tp-btn-primary:hover::before { transform: translateX(120%); }
+
   /* Latest update card */
   .hero-card {
     border-radius: var(--radius-xl);
     background: linear-gradient(160deg, #14163a, #1e2150 55%, #2a2f6e);
+    background-size: 220% 220%;
     border: 1px solid rgba(99,102,241,.22);
     box-shadow: 0 24px 64px -16px rgba(79,70,229,.38), 0 4px 16px rgba(0,0,0,.28);
     position: relative;
     overflow: hidden;
     padding: 28px;
+    animation: hero-card-breathe 16s ease infinite;
+  }
+  @keyframes hero-card-breathe {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
   /* Radial indigo glow */
   .hero-card::before {
@@ -148,6 +216,20 @@
     text-transform: uppercase;
   }
   .hero-card-tag svg { width: 13px; height: 13px; }
+  .hero-card-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    flex: none;
+    box-shadow: 0 0 0 0 rgba(52,211,153,.55);
+    animation: hero-live-pulse 1.8s ease-out infinite;
+  }
+  @keyframes hero-live-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,.55); }
+    70%  { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+  }
 
   .hero-card-headline { margin-bottom: 18px; }
   .hero-card-title {
@@ -281,6 +363,17 @@
     font-weight: 500;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .hero-grid::before,
+    .hero-float-chip,
+    .hero-card,
+    .hero-card-live-dot,
+    .hero-cta .tp-btn-primary::before {
+      animation: none;
+      transition: none;
+    }
+  }
+
 </style>
 
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
@@ -295,6 +388,13 @@
   %>
 
   <div class="hero-grid">
+    <%# Ambient chips: this tab's own counts and billing unit, already stated
+        in the subhead below — just reused as floating texture, not new
+        claims. Hidden under the 900px breakpoint alongside the glow. %>
+    <span class="hero-float-chip c1"><%= @category_counts[@category.slug] %> models</span>
+    <span class="hero-float-chip c2"><%= @providers_count %> providers</span>
+    <span class="hero-float-chip c3"><%= @category.billing_noun %></span>
+
     <%# Left column: the price-index hero. Copy is per-category (ModelCategory),
         so a directory tab never claims per-token rates or full history. The
         subhead is a format string filled with this category's own model count
@@ -333,6 +433,7 @@
     <div class="hero-card">
       <div class="hero-card-inner">
         <div class="hero-card-tag">
+          <span class="hero-card-live-dot"></span>
           <%= icon(:spark, size: 13) %>
           Latest events
         </div>
