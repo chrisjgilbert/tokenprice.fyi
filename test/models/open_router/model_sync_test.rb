@@ -380,11 +380,12 @@ module OpenRouter
       assert AiModel.find_by(openrouter_id: "openai/gpt-5.6-sol-max")
     end
 
-    test "keeps a same-priced dated snapshot rather than retiring it as a twin" do
+    test "retires a same-priced dated snapshot of a CURATED base, never the curated row" do
+      # Base is hand-curated (source: manual) — the blind spot the sweep now
+      # closes: it matches twins against the whole catalogue, not just imports.
       base = AiModel.create!(
         name: "Nova 2", slug: "nova-2",
-        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
-        openrouter_id: "acme/nova-2", status: "active"
+        provider: providers(:anthropic), source: AiModel::MANUAL_SOURCE, status: "active"
       )
       base.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 8)
 
@@ -397,8 +398,50 @@ module OpenRouter
 
       sync([])
 
-      assert_equal "active", base.reload.status
-      assert_equal "active", snapshot.reload.status
+      assert_equal "active",  base.reload.status     # curated row is never auto-retired
+      assert_equal "retired", snapshot.reload.status # dated-snapshot twin retired
+    end
+
+    test "retires a same-priced 'Preview' twin" do
+      base = AiModel.create!(
+        name: "Aurora 4", slug: "aurora-4",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/aurora-4", status: "active"
+      )
+      base.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 12)
+
+      preview = AiModel.create!(
+        name: "Aurora 4 Preview", slug: "aurora-4-preview",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/aurora-4-preview", status: "active"
+      )
+      preview.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 2, output_per_mtok: 12)
+
+      sync([])
+
+      assert_equal "retired", preview.reload.status
+    end
+
+    test "leaves a same-priced descriptive-word variant alone (not an alias marker)" do
+      # "Codex"/"Chat"/"Multi-Agent" name genuinely distinct models that happen to
+      # share a price with the base — they must never be retired as aliases.
+      base = AiModel.create!(
+        name: "Zeta 5", slug: "zeta-5",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/zeta-5", status: "active"
+      )
+      base.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 1, output_per_mtok: 4)
+
+      codex = AiModel.create!(
+        name: "Zeta 5 Codex", slug: "zeta-5-codex",
+        provider: providers(:anthropic), source: AiModel::OPENROUTER_SOURCE,
+        openrouter_id: "acme/zeta-5-codex", status: "active"
+      )
+      codex.price_points.create!(effective_on: Date.new(2026, 7, 1), input_per_mtok: 1, output_per_mtok: 4)
+
+      sync([])
+
+      assert_equal "active", codex.reload.status
     end
 
     test "one malformed row does not abort the whole sync" do
