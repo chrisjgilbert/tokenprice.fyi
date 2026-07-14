@@ -29,10 +29,14 @@
     .hero-grid { grid-template-columns: 1fr; }
   }
 
-  /* Ambient depth: a slow-drifting glow plus a few of this tab's own numbers
-     (already stated in the subhead) floating at low opacity in the gap
-     between the columns — texture, not a new claim, tuned to stay clear of
-     both the headline text and the card. */
+  /* Ambient depth: a slow-drifting glow behind the headline. A decorative
+     floating-chip layer (this tab's model/provider counts) was tried here
+     too, but absolutely-positioning real content against the taller of two
+     independently-sized columns (fixed-length copy vs. a card whose height
+     tracks live event-timeline data) can't guarantee it stays clear of the
+     text — dropped rather than chased further, since the subhead states
+     the same counts already. Hidden alongside the grid's own single-column
+     collapse, since the glow is placed for the two-column layout. */
   .hero-grid::before {
     content: "";
     position: absolute;
@@ -44,47 +48,16 @@
     background: radial-gradient(circle, rgba(99,102,241,.14) 0%, rgba(99,102,241,0) 70%);
     pointer-events: none;
     z-index: 0;
-    animation: hero-glow-drift 16s ease-in-out infinite alternate;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-grid::before { animation: hero-glow-drift 16s ease-in-out infinite alternate; }
   }
   @keyframes hero-glow-drift {
     from { transform: translate(0, 0) scale(1); }
     to   { transform: translate(-20px, 16px) scale(1.06); }
   }
-
-  .hero-float-chip {
-    position: absolute;
-    z-index: 0;
-    pointer-events: none;
-    white-space: nowrap;
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 5px 11px;
-    border-radius: 999px;
-    color: var(--color-indigo-600);
-    background: rgba(99,102,241,.08);
-    border: 1px solid rgba(99,102,241,.16);
-    animation: hero-chip-float 7s ease-in-out infinite;
-  }
-  @keyframes hero-chip-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-9px); }
-  }
-  /* Both chips report short, digit-bounded counts (unlike the category's
-     billing_noun, whose length swings from "per 1M tokens" to "per search
-     or per 1M tokens" across tabs — too variable to place safely, so it's
-     not used here). The gap between the columns is too narrow, at any
-     width, to clear both the card AND the headline/subhead lines the left
-     column can wrap to — so both chips sit low, below where even the
-     longest tab's left-column content (language's 3-line subhead) ends,
-     leaving only the card's left edge to stay clear of. Verified at
-     >=1200px, hence the raised breakpoint below (wider than the grid's own
-     900px column-collapse point). */
-  .hero-float-chip.c1 { top: 62%; left: 51%; animation-delay: 0s;   opacity: .8; }
-  .hero-float-chip.c2 { top: 80%; left: 47%; animation-delay: 1.4s; opacity: .5; }
-  @media (max-width: 1200px) {
-    .hero-grid::before,
-    .hero-float-chip { display: none; }
+  @media (max-width: 900px) {
+    .hero-grid::before { display: none; }
   }
 
   /* Eyebrow pill */
@@ -159,8 +132,7 @@
   /* Hero CTA: how pricing works */
   .hero-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
-  /* Sheen sweep on the primary CTA's hover, scoped to the hero only — this
-     is not a global button restyle. */
+  /* Scoped to .hero-cta so this doesn't restyle .tp-btn-primary sitewide. */
   .hero-cta .tp-btn-primary { position: relative; overflow: hidden; }
   .hero-cta .tp-btn-primary::before {
     content: "";
@@ -177,12 +149,15 @@
     border-radius: var(--radius-xl);
     background: linear-gradient(160deg, #14163a, #1e2150 55%, #2a2f6e);
     background-size: 220% 220%;
+    background-position: 0% 50%;
     border: 1px solid rgba(99,102,241,.22);
     box-shadow: 0 24px 64px -16px rgba(79,70,229,.38), 0 4px 16px rgba(0,0,0,.28);
     position: relative;
     overflow: hidden;
     padding: 28px;
-    animation: hero-card-breathe 16s ease infinite;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-card { animation: hero-card-breathe 16s ease infinite; }
   }
   @keyframes hero-card-breathe {
     0%, 100% { background-position: 0% 50%; }
@@ -226,19 +201,21 @@
     text-transform: uppercase;
   }
   .hero-card-tag svg { width: 13px; height: 13px; }
+  /* Reuses tp-eyebrow-pulse (app/assets/tailwind/application.css), the same
+     ring-pulse the nav's .nav-dot already does for "live" — just in
+     emerald via its color custom properties, instead of a second keyframe. */
   .hero-card-live-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: #34d399;
     flex: none;
-    box-shadow: 0 0 0 0 rgba(52,211,153,.55);
-    animation: hero-live-pulse 1.8s ease-out infinite;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.35);
+    --tp-pulse-ring-start: rgba(52,211,153,.55);
+    --tp-pulse-ring-end: rgba(52,211,153,0);
   }
-  @keyframes hero-live-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,.55); }
-    70%  { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
-    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-card-live-dot { animation: tp-eyebrow-pulse 1.8s ease-out infinite; }
   }
 
   .hero-card-headline { margin-bottom: 18px; }
@@ -373,17 +350,6 @@
     font-weight: 500;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .hero-grid::before,
-    .hero-float-chip,
-    .hero-card,
-    .hero-card-live-dot,
-    .hero-cta .tp-btn-primary::before {
-      animation: none;
-      transition: none;
-    }
-  }
-
 </style>
 
 <%# ── HERO (outside Turbo Frame) ─────────────────────────────────── %>
@@ -398,14 +364,6 @@
   %>
 
   <div class="hero-grid">
-    <%# Ambient chips: this tab's own counts, already stated in the subhead
-        below — just reused as floating texture, not new claims. Both are
-        short, digit-bounded strings by construction (unlike billing_noun,
-        which swings too wide across tabs to place safely — see the CSS
-        note on .hero-float-chip). Hidden below 1150px alongside the glow. %>
-    <span class="hero-float-chip c1"><%= @category_counts[@category.slug] %> models</span>
-    <span class="hero-float-chip c2"><%= @providers_count %> providers</span>
-
     <%# Left column: the price-index hero. Copy is per-category (ModelCategory),
         so a directory tab never claims per-token rates or full history. The
         subhead is a format string filled with this category's own model count
