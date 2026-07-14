@@ -325,6 +325,7 @@
         <% else %>
           <%= link_to sources_path, class: "tp-btn tp-btn-primary" do %>How prices are sourced<% end %>
         <% end %>
+        <%= link_to "#price-table", class: "tp-btn tp-btn-ghost" do %>View models<% end %>
       </div>
     </div>
 
@@ -407,7 +408,7 @@
      data-action="turbo:frame-load@document->compare-tray#frameLoaded">
 
 <%# ── FILTERS (outside Turbo Frame) ──────────────────────────────── %>
-<p class="tp-section-label mb-4">Price table</p>
+<p id="price-table" class="tp-section-label mb-4">Price table</p>
 
 <%# Every filter/sort URL on this page must stay on the CURRENT category's path,
     so a sort inside the image tab reloads /image-generation, not /. The path

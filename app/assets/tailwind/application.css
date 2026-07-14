@@ -42,7 +42,7 @@
    this: clip on body alone is not reliably propagated to the viewport in all
    browsers. `clip` (not `hidden`) avoids creating a scroll container, which
    keeps the sticky nav's scroll context intact. */
-html { overflow-x: clip; }
+html { overflow-x: clip; scroll-behavior: smooth; }
 body {
   font-family: var(--font-sans);
   font-size: 15px;
@@ -1017,6 +1017,9 @@ table.tp-data tbody tr.tp-row-selected { background: var(--color-indigo-50); }
   font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
   color: var(--color-slate-400); font-family: var(--font-mono);
 }
+/* Offsets the hero's "View models" anchor jump so the sticky nav doesn't
+   cover the price table's label on landing. */
+#price-table { scroll-margin-top: calc(var(--nav-h) + 20px); }
 
 /* ============================================================ EMPTY STATE */
 .tp-empty { padding: 64px 24px; text-align: center; color: var(--color-slate-400); }
