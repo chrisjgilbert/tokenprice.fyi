@@ -1,29 +1,4 @@
 class ModelsController < ApplicationController
-  SORTS = {
-    "input" => ->(m) { m.current_input || Float::INFINITY },
-    "output" => ->(m) { m.current_output || Float::INFINITY },
-    "cached" => ->(m) { m.current_cached_input || Float::INFINITY },
-    "context" => ->(m) { m.context_window || 0 },
-    "name" => ->(m) { m.name.to_s.downcase },
-    # Image-category sorts: it has no per-token axis, so it ranks by provider and
-    # release date instead. A nil release sorts oldest rather than to the top.
-    "provider" => ->(m) { m.provider.name.to_s.downcase },
-    "released" => ->(m) { m.released_on || Date.new(1970, 1, 1) },
-    # Speech-to-text ranks on its numeric native per-minute rate; a row without
-    # one maps to infinity and sinks (see SINK_SORTS).
-    "native_price" => ->(m) { m.native_price_usd || Float::INFINITY }
-  }.freeze
-
-  # Price sorts a price-less row must always sink to the bottom of — regardless
-  # of direction, so it never floats above a priced row when the list is
-  # reversed. Each maps to the predicate that marks a row rankable on that axis:
-  # a per-token rate for the token columns, a native per-minute rate for
-  # speech-to-text. Name/context sort every row normally and aren't listed.
-  SINK_SORTS = {
-    "input" => :token_priced?, "output" => :token_priced?, "cached" => :token_priced?,
-    "native_price" => :native_priced?
-  }.freeze
-
   def index
     @providers = Provider.order(:name).to_a
 
@@ -31,10 +6,7 @@ class ModelsController < ApplicationController
     # defaults, SEO) is read off it, so a new tab is a registry + route change.
     @category = ModelCategory.for(params[:category])
 
-    scope = AiModel.listed.includes(:provider, :price_points)
-
     @provider_slugs = Array(params[:providers]).map(&:to_s) & @providers.map(&:slug)
-    scope = scope.where(provider: @providers.select { |p| p.slug.in?(@provider_slugs) }) if @provider_slugs.any?
 
     @sort = params[:sort].presence_in(@category.sorts) || @category.default_sort
     @dir = params[:dir].presence_in(%w[asc desc]) || @category.default_dir
@@ -67,34 +39,11 @@ class ModelsController < ApplicationController
     return if catalog_fresh?(etag: [ :index, @category.slug, @provider_slugs.sort, @sort, @dir, @query, @modalities.sort ],
       last_modified: helpers.timeline_last_modified)
 
-    # Tab labels: how many listed models fall in each category. Classified via the
-    # SAME derived modality_class the row filter uses (not the denormalised column),
-    # so a badge count always equals its tab's row count. One light load, not a
-    # query per tab.
-    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
-    @category_counts = ModelCategory.all.to_h { |category|
-      [ category.slug, listed_classes.count { |mc| category.member?(mc) } ]
-    }
-
-    models = scope.to_a
-    if @query.match?(/[a-z0-9]/i)
-      if @query.include?(",")
-        segments = @query.split(",").map(&:strip).select { |s| s.match?(/[a-z0-9]/i) }
-        models.select! { |m| segments.any? { |seg| m.matches?(seg) } } if segments.any?
-      else
-        models.select! { |m| m.matches?(@query) }
-      end
-    end
-    # Restrict to the current tab's pricing family before deriving facets, so both
-    # the modality facet options and the row set reflect only this category.
-    models.select! { |m| @category.member?(m.modality_class) }
-    # Facet options: the classes present among the rows the other filters left,
-    # so no pill leads to an empty table. Derived before the modality filter is
-    # applied so switching between classes stays possible.
-    @modality_classes = models.map { |m| m.modality_class.to_s }.uniq.sort
-    models.select! { |m| @modalities.include?(m.modality_class.to_s) } if @modalities.any?
-    @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
-      sink_unranked: SINK_SORTS[@sort])
+    listing = ModelListing.new(category: @category, sort: @sort, dir: @dir,
+      provider_slugs: @provider_slugs, query: @query, modalities: @modalities)
+    @models = listing.models
+    @modality_classes = listing.modality_classes
+    @category_counts = listing.category_counts
 
     # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
