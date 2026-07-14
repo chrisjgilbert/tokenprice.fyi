@@ -3,12 +3,15 @@
 # regenerates the ones AiModel.description_stale flags (age, or a newer
 # same-provider release) on a rolling daily cadence.
 #
-# Scoped to `from_openrouter`: curated rows are hand-maintained and must never be
-# overwritten by generated copy. Capped per run and non-fatal per model — a flaky
-# API call is logged, not raised, so it doesn't poison the queue, and the row it
-# skipped is still stale and picked up on a later run. The cap plus the daily
-# schedule drains the whole catalogue well within the STALE_AFTER window rather
-# than firing a monthly spike; a launch-triggered batch is smoothed the same way.
+# Covers every row with generated copy regardless of source — an OpenRouter
+# import or an approved candidate (source: manual, but LLM-written). The gate is
+# description_stale, which keys off the generation stamp, so hand-written seed
+# editorial (no stamp) is never touched. Capped per run and non-fatal per model —
+# a flaky API call is logged, not raised, so it doesn't poison the queue, and the
+# row it skipped is still stale and picked up on a later run. The cap plus the
+# daily schedule drains the whole catalogue well within the STALE_AFTER window
+# rather than firing a monthly spike; a launch-triggered batch is smoothed the
+# same way.
 class DescriptionRefreshJob < ApplicationJob
   queue_as :default
 
@@ -19,7 +22,7 @@ class DescriptionRefreshJob < ApplicationJob
   REFRESH_PER_RUN = 25
 
   def perform
-    models = AiModel.from_openrouter.listed.description_stale
+    models = AiModel.listed.description_stale
                     .stalest_description_first
                     .includes(:provider)
                     .limit(REFRESH_PER_RUN)

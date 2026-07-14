@@ -61,14 +61,27 @@ class DescriptionRefreshJobTest < ActiveJob::TestCase
     assert_equal "Old.", fresh.reload.description
   end
 
-  test "never refreshes curated rows" do
+  # An approved-candidate row is source: manual but its copy is generated (it has
+  # a stamp), so it is refreshed like any other generated row.
+  test "refreshes generated manual rows (approved candidates)" do
     stub_anthropic
-    curated = stale_model(source: AiModel::MANUAL_SOURCE,
-                          generated_at: (AiModel::STALE_AFTER + 1.day).ago)
+    candidate = stale_model(source: AiModel::MANUAL_SOURCE,
+                            generated_at: (AiModel::STALE_AFTER + 1.day).ago)
 
     DescriptionRefreshJob.perform_now
 
-    assert_equal "Old.", curated.reload.description
+    assert_equal "Refreshed.", candidate.reload.description
+  end
+
+  # A hand-written seed row has no generation stamp; automation must never touch
+  # it, even when it's manual and old.
+  test "never refreshes hand-written rows (no generation stamp)" do
+    stub_anthropic
+    hand_written = stale_model(source: AiModel::MANUAL_SOURCE, generated_at: nil)
+
+    DescriptionRefreshJob.perform_now
+
+    assert_equal "Old.", hand_written.reload.description
   end
 
   test "honours the per-run cap" do

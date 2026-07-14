@@ -24,9 +24,19 @@ class AiModel::DescriptionStaleTest < ActiveSupport::TestCase
     assert_includes AiModel.description_stale, model
   end
 
-  test "a written-up row that was never stamped is stale" do
-    model = written_up(description_generated_at: nil)
-    assert_includes AiModel.description_stale, model
+  # A nil stamp means hand-written seed editorial (or an empty row): automation
+  # must never overwrite it, so it is inert here regardless of source.
+  test "a written-up row that was never stamped is not stale (hand-written)" do
+    hand_written = written_up(source: AiModel::MANUAL_SOURCE, description_generated_at: nil)
+    assert_not_includes AiModel.description_stale, hand_written
+  end
+
+  # An approved-candidate row is source: manual but its copy was generated, so it
+  # carries a stamp and IS refreshed like any other generated row.
+  test "a manual row with a generation stamp is stale on age like any generated row" do
+    candidate = written_up(source: AiModel::MANUAL_SOURCE,
+                           description_generated_at: (AiModel::STALE_AFTER + 1.day).ago)
+    assert_includes AiModel.description_stale, candidate
   end
 
   test "a row without a write-up is never stale (it's a first-generation job)" do
@@ -60,14 +70,14 @@ class AiModel::DescriptionStaleTest < ActiveSupport::TestCase
     assert_not_includes AiModel.description_stale, sibling
   end
 
-  test "stalest_description_first orders never-stamped then oldest first" do
+  test "stalest_description_first orders the oldest stamp first" do
     newest = written_up(description_generated_at: 10.days.ago)
     oldest = written_up(description_generated_at: 200.days.ago)
-    never  = written_up(description_generated_at: nil)
+    middle = written_up(description_generated_at: 100.days.ago)
 
-    ordered = AiModel.where(id: [ newest, oldest, never ].map(&:id))
+    ordered = AiModel.where(id: [ newest, oldest, middle ].map(&:id))
                      .stalest_description_first.to_a
 
-    assert_equal [ never, oldest, newest ], ordered
+    assert_equal [ oldest, middle, newest ], ordered
   end
 end

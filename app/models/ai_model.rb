@@ -60,25 +60,25 @@ class AiModel < ApplicationRecord
   # the refresh job (DescriptionRefreshJob) rewrites them on roughly this cadence.
   STALE_AFTER = 90.days
 
-  # Written-up rows whose editorial copy is due a refresh. Two ways to go stale,
-  # unified into one predicate so no event plumbing is needed:
+  # Rows with *generated* editorial copy that is due a refresh. Two ways to go
+  # stale, unified into one predicate so no event plumbing is needed:
   #
-  #   1. Age — the description is older than STALE_AFTER, or was never stamped
-  #      (legacy rows written up before the timestamp existed; treated as due).
+  #   1. Age — the description is older than STALE_AFTER.
   #   2. A newer sibling — a same-provider model launched *after* this row was
   #      described. A new release shifts how its siblings should be positioned
   #      ("best for X" / "superseded by Y"), so their write-ups are re-evaluated.
   #      Self-limiting: once refreshed, the row's stamp moves past the launch, so
   #      the same launch can't flag it twice.
   #
-  # Only "written up" rows (a `strengths` facet marks the whole write-up as done)
-  # qualify — a blank row is a first-generation job, not a refresh. Callers scope
-  # to `from_openrouter`: a curated description is hand-maintained and must never
-  # be overwritten by a generated one.
+  # The discriminator is the stamp, not `source`. A set description_generated_at
+  # means *we* generated the copy (an OpenRouter import or an approved candidate),
+  # so it's ours to refresh; a nil stamp means hand-written seed editorial (or an
+  # empty row), which automation must never overwrite — both stale clauses compare
+  # against the stamp, so a nil row is inert here. `strengths` present marks the
+  # write-up as done, so a half-filled row isn't picked up mid-generation.
   scope :description_stale, -> {
     where.not(strengths: [ nil, "" ]).where(
-      "ai_models.description_generated_at IS NULL" \
-      " OR ai_models.description_generated_at < :cutoff" \
+      "ai_models.description_generated_at < :cutoff" \
       " OR EXISTS (" \
       "   SELECT 1 FROM ai_models sib" \
       "   WHERE sib.provider_id = ai_models.provider_id" \
@@ -90,11 +90,10 @@ class AiModel < ApplicationRecord
     )
   }
 
-  # Oldest / never-stamped descriptions first — the order the refresh job drains
-  # them, so the most stale copy is rewritten before the merely-due.
-  scope :stalest_description_first, -> {
-    order(Arel.sql("ai_models.description_generated_at IS NULL DESC"), :description_generated_at)
-  }
+  # Oldest descriptions first — the order the refresh job drains them, so the most
+  # stale copy is rewritten first. (description_stale excludes nil-stamp rows, so
+  # there are no nulls to position here.)
+  scope :stalest_description_first, -> { order(:description_generated_at) }
 
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
   # "desc", then sink rows that can't be ranked on the sorted column to the
