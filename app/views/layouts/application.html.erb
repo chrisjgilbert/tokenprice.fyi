@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <% page_title = content_for(:title).presence || "tokenprice.fyi — LLM API price tracker" %>
-    <% page_description = content_for(:description).presence || "LLM API token prices for Anthropic, OpenAI, Google, xAI, DeepSeek and more. Full price history, market events, input/output/cached rates tracked daily." %>
+    <% page_title = content_for(:title).presence || "tokenprice.fyi — AI model API price index" %>
+    <% page_description = content_for(:description).presence || "AI model API prices — per token, per image, per minute of audio — for Anthropic, OpenAI, Google and 30+ providers. Full price history for language models; dated list prices across seven categories." %>
     <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= page_description %>">
@@ -40,7 +40,7 @@
           name: "tokenprice.fyi",
           url: root_url,
           logo: "#{request.base_url}/icon.png",
-          description: "Independent LLM API pricing tracker — input, output, and cached token prices for 40+ models, updated daily."
+          description: "Independent price record of AI model APIs — per-token rates with full history for language models, and dated list prices for embeddings, rerank, speech, image, and video."
         }) %>
     <%= json_ld({
           "@context": "https://schema.org",
@@ -134,9 +134,9 @@
           <span>tokenprice<span class="fyi">.fyi</span></span>
         <% end %>
         <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
-        <span>List prices · USD per 1M tokens</span>
+        <span>List prices, in each API's billing unit</span>
         <span>Independent price record, not affiliated with any provider</span>
-        <span>sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
+        <span>Sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
         <%= link_to "Compare models", compare_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>

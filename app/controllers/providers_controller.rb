@@ -25,6 +25,12 @@ class ProvidersController < ApplicationController
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(@sort), dir: @dir,
       sink_unranked: (:token_priced? if PRICE_SORTS.include?(@sort)))
 
+    # Grouped by pricing family, in registry (tab) order, so the view renders one
+    # table per category with that category's own columns. Sort order within each
+    # group is inherited from @models above.
+    @model_groups = @models.group_by { |m| ModelCategory.claiming(m.modality_class) }
+      .sort_by { |category, _| ModelCategory.all.index(category) }
+
     # Newest data write across this provider's models (latest price-row write, or
     # the provider row itself). Read off the already-loaded price points so it
     # adds no query. Always <= the global PriceCatalog.last_modified the

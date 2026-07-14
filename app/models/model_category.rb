@@ -20,12 +20,24 @@ class ModelCategory
   Category = Data.define(
     :slug, :label, :param, :path_name,
     :sorts, :default_sort, :default_dir,
-    :title, :meta_description, :matcher, :columns
+    :title, :meta_description, :matcher, :columns,
+    :hero_eyebrow, :hero_heading, :hero_subhead, :billing_noun
   ) do
     def member?(modality_class)
       mc = modality_class.to_sym
       matcher ? matcher.call(mc) : ModelCategory.unclaimed?(mc)
     end
+
+    # Language bills per token and leads the price index; every other category is
+    # the manually-maintained directory tier. The view branches on this for the
+    # hero CTA (pricing explainer vs. /sources) and tier-honest chrome.
+    def language? = matcher.nil?
+
+    # Embeddings are the middle case in the comparison view: token-priced like
+    # language, but input-only (the output is a vector), so they compare on input
+    # + dimensions rather than the I/O pair. A named predicate keeps the view off
+    # a raw slug string, mirroring `language?`.
+    def embeddings? = slug == "embeddings"
 
     # The empty-state row spans every column plus the leading select and trailing
     # go columns the layout always renders.
@@ -49,7 +61,12 @@ class ModelCategory
     meta_description: "LLM API token prices for Claude, GPT-5, Gemini, Grok, and DeepSeek. " \
                       "Input, output, and cached rates per 1M tokens, updated daily.",
     matcher: nil,
-    columns: %i[name input output cached context released]
+    columns: %i[name input output cached context released],
+    hero_eyebrow: "Live LLM API price index",
+    hero_heading: "LLM API pricing, tracked from launch.",
+    hero_subhead: "%{models} language models across %{providers} providers — input, output, and " \
+                  "cached rates per 1M tokens, updated daily, with full price history.",
+    billing_noun: "per 1M tokens"
   )
 
   # Embeddings bill per input token only — the output is a vector, so there is no
@@ -67,7 +84,12 @@ class ModelCategory
     meta_description: "Text embedding model prices, billed per 1M input tokens. " \
                       "Input rates and vector dimensions, updated as providers publish them.",
     matcher: ->(mc) { mc == :embedding },
-    columns: %i[name provider input dimensions context released]
+    columns: %i[name provider input dimensions context released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Embedding API pricing, per 1M input tokens.",
+    hero_subhead: "%{models} embedding models — input rates and vector dimensions, " \
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per 1M input tokens"
   )
 
   # Rerank completes the retrieval pair with embeddings. It's image-shaped, not
@@ -86,7 +108,12 @@ class ModelCategory
     meta_description: "Reranker (relevance-scoring) model pricing, in each model's native unit — per search " \
                       "or per 1M tokens. Native rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :rerank },
-    columns: %i[name provider pricing released]
+    columns: %i[name provider pricing released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Reranker API pricing, per search or per 1M tokens.",
+    hero_subhead: "%{models} rerankers — priced per search or per 1M tokens; " \
+                  "every price dated and sourced.",
+    billing_noun: "per search or per 1M tokens"
   )
 
   # Speech-to-text (transcription) bills against audio duration, not tokens, so
@@ -104,7 +131,12 @@ class ModelCategory
     meta_description: "Speech-to-text (transcription) model pricing, billed per minute of audio. " \
                       "Native per-minute rates across providers, updated as they publish them.",
     matcher: ->(mc) { mc == :speech_to_text },
-    columns: %i[name provider native_price released]
+    columns: %i[name provider native_price released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Speech-to-text API pricing, per minute of audio.",
+    hero_subhead: "%{models} transcription models — native per-minute rates, " \
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per minute of audio"
   )
 
   # Text-to-speech (synthesis) is speech-to-text-shaped: it bills predominantly
@@ -123,7 +155,12 @@ class ModelCategory
     meta_description: "Text-to-speech (speech synthesis) model pricing, billed per 1M characters of input text. " \
                       "Native per-character rates across providers, updated as they publish them.",
     matcher: ->(mc) { mc == :text_to_speech },
-    columns: %i[name provider native_price released]
+    columns: %i[name provider native_price released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Text-to-speech API pricing, per 1M characters.",
+    hero_subhead: "%{models} speech models — native per-character rates, " \
+                  "dated and sourced from provider price pages.",
+    billing_noun: "per 1M characters"
   )
 
   IMAGE = Category.new(
@@ -138,7 +175,12 @@ class ModelCategory
     meta_description: "Image generation model pricing, billed per image rather than per token. " \
                       "Native per-image rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :image_generation },
-    columns: %i[name provider pricing released]
+    columns: %i[name provider pricing released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Image generation API pricing, per image or in credits.",
+    hero_subhead: "%{models} image models — per image, per megapixel, or in credits; " \
+                  "every price dated and sourced.",
+    billing_noun: "per image"
   )
 
   # Video generation is image-generation-shaped: a directory class with
@@ -157,7 +199,12 @@ class ModelCategory
     meta_description: "Video generation model pricing in each model's native units — per second, per clip, " \
                       "in credits, or in tokens. Native rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :video_generation },
-    columns: %i[name provider pricing released]
+    columns: %i[name provider pricing released],
+    hero_eyebrow: "Price directory",
+    hero_heading: "Video generation API pricing, per second or per clip.",
+    hero_subhead: "%{models} video models — per second, per clip, or in credits; " \
+                  "every price dated and sourced.",
+    billing_noun: "per second or per clip"
   )
 
   ALL = [ LANGUAGE, EMBEDDINGS, RERANK, SPEECH_TO_TEXT, TEXT_TO_SPEECH, IMAGE, VIDEO_GENERATION ].freeze
@@ -177,4 +224,13 @@ class ModelCategory
   # A modality_class is language's iff no other category's matcher claims it —
   # the seam that keeps language as the fallback without listing every class.
   def self.unclaimed?(mc) = ALL.none? { |c| c.matcher && c.matcher.call(mc) }
+
+  # The category that owns a model's modality_class — the reverse of `member?`,
+  # for pages that start from a model and need its tab (breadcrumb, provider
+  # grouping, the untracked-price billing unit). The first matcher to claim it
+  # wins; language (nil matcher) is the fallback.
+  def self.claiming(modality_class)
+    mc = modality_class.to_sym
+    ALL.find { |c| c.matcher&.call(mc) } || LANGUAGE
+  end
 end

@@ -29,6 +29,24 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_match root_url, response.body
   end
 
+  test "llms.txt lists every category tab URL and describes the two tiers" do
+    get llms_txt_url
+    assert_response :success
+    body = response.body
+    assert_match image_generation_url, body
+    assert_match speech_to_text_url, body
+    assert_match embeddings_url, body
+    assert_match video_generation_url, body
+    # Frames the product as a cross-category record, not an LLM-only tracker.
+    assert_match(/price record of AI model APIs/i, body)
+    assert_no_match(/independent LLM API pricing tracker/i, body)
+  end
+
+  test "llms.txt no longer advertises a public JSON API" do
+    get llms_txt_url
+    assert_no_match(%r{/api/v1}, response.body)
+  end
+
   test "how-pricing-works emits a self-canonical link that ignores query params" do
     get how_pricing_works_url(ref: "twitter")
     assert_response :success

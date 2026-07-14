@@ -1,6 +1,6 @@
 <% content_for :title, "#{@provider.name} model pricing — tokenprice.fyi" %>
 <% content_for :description, @provider.description.presence&.truncate(160) ||
-     "#{@provider.name} API pricing across #{@models.size} models — input/output rates per 1M tokens, with price history." %>
+     "#{@provider.name} API pricing across #{@models.size} models — per-token rates for language models, native rates for embeddings, rerank, speech, image, and video, with price history where tracked." %>
 <% content_for :canonical, provider_url(@provider) %>
 <% content_for :head do %>
   <%= json_ld({
@@ -37,38 +37,50 @@
 <% end %>
 
 <p class="mb-8 max-w-2xl text-sm leading-relaxed text-slate-600">
-  <%= @provider.name %> API pricing for <%= @models.size %> models, updated daily with full price
-  history since 2023. For the launches and price moves across the market, see the
+  <%= @provider.name %> API pricing for <%= @models.size %> models. Language models are updated
+  daily with full price history; embeddings, rerank, speech, image, and video carry dated list prices. For the
+  launches and price moves across the market, see the
   <%= link_to "market-events timeline", events_path, class: "text-indigo-600 hover:underline" %>.
 </p>
 
-<div class="tp-cardify-wrap overflow-x-auto rounded-xl border border-slate-200 bg-white">
-  <table class="tp-cardify min-w-full divide-y divide-slate-200 text-sm">
-    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-      <tr>
-        <th scope="col" aria-sort="<%= aria_sort_for("name", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium"><%= sort_link("Model", "name", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("input", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link("Input", "input", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("output", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link("Output", "output", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("context", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link("Context", "context", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
-        <th scope="col" aria-sort="<%= aria_sort_for("released", current_sort: @sort, current_dir: @dir) %>" class="px-4 py-3 font-medium text-right"><%= sort_link("Released", "released", current_sort: @sort, current_dir: @dir) { |p| provider_path(@provider, p) } %></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-100">
-      <% @models.each do |model| %>
-        <tr class="hover:bg-slate-50 <%= 'opacity-60 grayscale hover:opacity-100 hover:grayscale-0' if model.suspended? %>">
-          <td class="tp-card-title px-4 py-3">
-            <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
-            <%= status_badge(model.status) %>
-          </td>
-          <td data-label="Input" class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_input) %></td>
-          <td data-label="Output" class="px-4 py-3 text-right tabular-nums"><%= usd(model.current_output) %></td>
-          <td data-label="Context" class="px-4 py-3 text-right tabular-nums text-slate-500"><%= tokens_short(model.context_window) %></td>
-          <td data-label="Released" class="px-4 py-3 text-right tabular-nums text-slate-500"><%= model.released_on&.strftime("%b %Y") || "—" %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%# Grouped by pricing family (in the controller) so a provider's image/speech/
+    embedding models get their own columns and native prices, never blank
+    per-token cells. Each group uses the category's own column shape and shares
+    the price cells with the main table (models/_data_cell). %>
+<% @model_groups.each do |category, models| %>
+  <%# The provider column is redundant here — every row is this provider. %>
+  <% cols = category.columns - [ :provider ] %>
+  <section class="mb-10">
+    <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500"><%= category.label %></h2>
+    <div class="tp-cardify-wrap overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table class="tp-cardify min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <% cols.each do |key| %>
+              <th scope="col" class="px-4 py-3 font-medium"><%= column_header(key) %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% models.each do |model| %>
+            <tr class="hover:bg-slate-50 <%= 'opacity-60 grayscale hover:opacity-100 hover:grayscale-0' if model.suspended? %>">
+              <% cols.each do |key| %>
+                <% if key == :name %>
+                  <td class="tp-card-title px-4 py-3">
+                    <%= link_to model.name, model_path(model), class: "font-medium hover:text-indigo-600" %>
+                    <%= status_badge(model.status) %>
+                  </td>
+                <% else %>
+                  <%= render "models/data_cell", model: model, key: key %>
+                <% end %>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>
 
 <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 text-sm text-slate-500">
   <%= data_updated_tag(@last_updated) %>

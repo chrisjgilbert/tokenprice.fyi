@@ -9,6 +9,15 @@ class EventsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", /Market events/
   end
 
+  test "a native-priced model's launch entry shows its price headline, not an empty token tag" do
+    # Give a native-priced (per-image) model a release date so it appears as a
+    # launch. Its price tag must read the native headline, not a dash I/O tag.
+    ai_models(:image_priced).update!(released_on: Date.new(2026, 7, 1))
+    get events_url
+    assert_response :success
+    assert_select ".ev-tag", text: %r{\$0\.04 / image}
+  end
+
   test "lists curated market events and model launches" do
     # Dated today so it lands on the first page regardless of how many events
     # the catalog accumulates ahead of it.

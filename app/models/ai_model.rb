@@ -1,6 +1,7 @@
 class AiModel < ApplicationRecord
   include Insightful
   include Describable
+  include NativePriceHistory
 
   # Trailing windows for the "% change over time" indicators, in display order.
   # A window is the price in effect that long ago vs. now; :launch spans

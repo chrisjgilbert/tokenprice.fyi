@@ -1,26 +1,31 @@
 # llms.txt — tokenprice.fyi
 # https://llmstxt.org/
 
-# tokenprice.fyi is an independent LLM API pricing tracker.
-# It records input, output, and cached token prices for 40+ models across 12 providers,
-# updated daily, with full price history since launch.
+# tokenprice.fyi is an independent price record of AI model APIs.
+# It tracks prices across seven categories — language, embeddings, rerank,
+# speech-to-text, text-to-speech, image generation, and video generation.
+# Language models carry full per-token price history, updated daily; the other
+# categories are dated, sourced list prices in each API's native billing unit.
 
-> tokenprice.fyi: LLM API price tracker. Input, output, and cached token prices for Claude, GPT, Gemini, Grok, DeepSeek and more. Updated daily with full price history.
+> tokenprice.fyi: the price record of AI model APIs. Per-token rates with full history for language models (Claude, GPT, Gemini, Grok, DeepSeek), plus dated, sourced list prices for embeddings, rerank, speech, image, and video models.
+
+## Pricing tables (by category)
+<% ModelCategory.all.each do |category| %>
+- <%= category.label %>: <%= send("#{category.path_name}_url") %>
+<% end %>
 
 ## Pages
 
-- Pricing table (all models): <%= root_url %>
 - Compare two models side by side: <%= compare_url %>
 - Market events & price change timeline: <%= events_url %>
 - Data sources & methodology: <%= sources_url %>
-- JSON API (pricing data): <%= api_v1_models_url(format: :json) %>
 
 ## Providers
 <% @providers.each do |provider| %>
 - <%= provider.name %>: <%= provider_url(provider) %>
 <% end %>
 
-## Learn — explainers on LLM API pricing
+## Learn — explainers on per-token LLM pricing
 
 - How LLM pricing works: <%= how_pricing_works_url %>
 - What drives the cost of common features: <%= learn_feature_costs_url %>
