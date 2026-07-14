@@ -25,18 +25,9 @@
     margin-bottom: 64px;
     position: relative;
   }
-  @media (max-width: 900px) {
-    .hero-grid { grid-template-columns: 1fr; }
-  }
 
-  /* Ambient depth: a slow-drifting glow behind the headline. A decorative
-     floating-chip layer (this tab's model/provider counts) was tried here
-     too, but absolutely-positioning real content against the taller of two
-     independently-sized columns (fixed-length copy vs. a card whose height
-     tracks live event-timeline data) can't guarantee it stays clear of the
-     text — dropped rather than chased further, since the subhead states
-     the same counts already. Hidden alongside the grid's own single-column
-     collapse, since the glow is placed for the two-column layout. */
+  /* Ambient depth: a slow-drifting glow behind the headline, placed for the
+     two-column layout so it's hidden alongside the grid's own collapse. */
   .hero-grid::before {
     content: "";
     position: absolute;
@@ -57,6 +48,7 @@
     to   { transform: translate(-20px, 16px) scale(1.06); }
   }
   @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
     .hero-grid::before { display: none; }
   }
 
@@ -157,11 +149,17 @@
     padding: 28px;
   }
   @media (prefers-reduced-motion: no-preference) {
-    .hero-card { animation: hero-card-breathe 16s ease infinite; }
+    .hero-card { animation: hero-card-breathe 16s ease infinite; will-change: background-position; }
   }
   @keyframes hero-card-breathe {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
+  }
+  @media (max-width: 900px) {
+    /* Same tradeoff as the glow above, but more pointed: background-position
+       is paint-triggering (unlike transform), so it's worth not running it
+       on mobile even though the OS-level reduced-motion query is separate. */
+    .hero-card { animation: none; will-change: auto; }
   }
   /* Radial indigo glow */
   .hero-card::before {
@@ -208,11 +206,11 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #34d399;
+    background: var(--color-emerald-500);
     flex: none;
-    box-shadow: 0 0 0 3px rgba(52,211,153,.35);
-    --tp-pulse-ring-start: rgba(52,211,153,.55);
-    --tp-pulse-ring-end: rgba(52,211,153,0);
+    box-shadow: 0 0 0 3px var(--color-emerald-100);
+    --tp-pulse-ring-start: var(--color-emerald-100);
+    --tp-pulse-ring-end: rgba(16,185,129,.12);
   }
   @media (prefers-reduced-motion: no-preference) {
     .hero-card-live-dot { animation: tp-eyebrow-pulse 1.8s ease-out infinite; }
