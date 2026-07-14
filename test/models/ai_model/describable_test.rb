@@ -64,6 +64,57 @@ class AiModel::DescribableTest < ActiveSupport::TestCase
     end
   end
 
+  test "sibling_lineup covers the provider's other listed models, newest first" do
+    names = model.sibling_lineup.map(&:name)
+
+    assert_not_includes names, model.name,          "excludes itself"
+    assert_not_includes names, "Claude Instant 1",  "excludes retired siblings"
+    assert_not_includes names, "Claude No Price",   "excludes unlisted (price-less) siblings"
+    assert_includes names, "Guide Haiku Fixture"
+
+    dated = model.sibling_lineup.map(&:released_on).compact
+    assert_equal dated.sort.reverse, dated, "ordered newest first"
+  end
+
+  test "sibling_lineup respects the limit" do
+    assert_operator model.sibling_lineup(limit: 1).size, :<=, 1
+  end
+
+  test "generate_description feeds the provider lineup to the generator" do
+    captured = {}
+    fake = fake_anthropic_tool_client(
+      input: { description: "D.", strengths: "S.", best_for: "B.", limitations: "L." },
+      into:  captured
+    )
+
+    model.generate_description(client: fake)
+
+    content = captured[:messages].first[:content]
+    assert_includes content, "Provider lineup"
+    assert_includes content, "Guide Haiku Fixture"
+  end
+
+  # The headline behaviour: a launch flags a sibling stale, and the refresh must
+  # actually see the newer model so it can reposition against it.
+  test "refresh_description feeds a newer sibling into the prompt" do
+    newer = model.provider.ai_models.create!(
+      source: AiModel::OPENROUTER_SOURCE, name: "Claude Nova 9", status: "active",
+      released_on: Date.current, description: "The newest frontier model."
+    )
+    newer.price_points.create!(effective_on: Date.current, input_per_mtok: 1,
+                               output_per_mtok: 1, source: "test")
+    model.update!(strengths: "S.", description_generated_at: 100.days.ago)
+    captured = {}
+    fake = fake_anthropic_tool_client(
+      input: { description: "D.", strengths: "S.", best_for: "B.", limitations: "L." },
+      into:  captured
+    )
+
+    model.refresh_description(client: fake)
+
+    assert_includes captured[:messages].first[:content], "Claude Nova 9"
+  end
+
   # A refresh never sends the stale description back as source_text — it
   # regenerates from Claude's current knowledge rather than paraphrasing the copy
   # it's replacing.

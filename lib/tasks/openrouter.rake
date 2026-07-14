@@ -31,7 +31,8 @@ namespace :openrouter do
         name:           model.name,
         provider:       model.provider.name,
         context_window: model.context_window,
-        source_text:    model.description.presence
+        source_text:    model.description.presence,
+        lineup:         model.sibling_lineup
       )
       next if copy.blank?
 

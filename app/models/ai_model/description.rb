@@ -61,6 +61,13 @@ class AiModel::Description
     don't tell the reader what their situation is. Never mention price, cost, or dollars —
     pricing is shown separately and would go stale. If you are unsure of a concrete fact, keep
     the claim general rather than inventing specifics.
+
+    When a provider lineup is given, position the model within it: say where it sits relative to
+    its siblings — a newer step up, a smaller or faster tier, or a model a later release has
+    superseded — usually in the best-for or limitations field. Refer to a sibling by name only
+    when the relationship is clear from the facts given (its name and release date); don't invent
+    a ranking you can't support, and never rank on price. The lineup is context for positioning,
+    not a subject to describe — write about the model, not its siblings.
   PROMPT
 
   def self.generate(...) = new.generate(...)
@@ -69,11 +76,16 @@ class AiModel::Description
     @client = client
   end
 
-  def generate(name:, provider:, context_window: nil, source_text: nil)
+  def generate(name:, provider:, context_window: nil, source_text: nil, lineup: [])
     content = +"Model: #{name}\nProvider: #{provider}"
     content << "\nContext window: #{context_window} tokens" if context_window
     if source_text.present?
       content << "\n\nUpstream description (may be truncated; use only as a hint):\n#{source_text}"
+    end
+    if lineup.present?
+      content << "\n\nProvider lineup (other #{provider} models, newest first — position this " \
+                 "model relative to them):\n"
+      content << lineup.map { |sibling| "- #{sibling.to_prompt_line}" }.join("\n")
     end
 
     input = AnthropicClient.tool_call(
