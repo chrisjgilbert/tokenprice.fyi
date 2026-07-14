@@ -95,6 +95,11 @@ class AiModel < ApplicationRecord
   # there are no nulls to position here.)
   scope :stalest_description_first, -> { order(:description_generated_at) }
 
+  # The refresh work-list: listed rows with generated copy that's due a refresh,
+  # stalest first. One source of truth for both DescriptionRefreshJob (capped) and
+  # the on-demand `openrouter:refresh_descriptions` rake task (uncapped).
+  scope :due_for_description_refresh, -> { listed.description_stale.stalest_description_first }
+
   # Order an already-loaded list for a listing table: sort by `by`, reverse for
   # "desc", then sink rows that can't be ranked on the sorted column to the
   # bottom in BOTH directions (they'd otherwise float to the top on reverse).

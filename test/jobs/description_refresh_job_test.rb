@@ -101,4 +101,35 @@ class DescriptionRefreshJobTest < ActiveJob::TestCase
     assert_nothing_raised { DescriptionRefreshJob.perform_now }
     assert_equal "Old.", model.reload.description
   end
+
+  # A non-GenerateError from one model (here an SDK error the operation doesn't
+  # wrap) must not abort the batch — the remaining models are still refreshed.
+  test "an unexpected error on one model does not abort the rest of the batch" do
+    stub_anthropic_key!
+    calls = 0
+    tool_block = Object.new
+    tool_block.define_singleton_method(:type)  { :tool_use }
+    tool_block.define_singleton_method(:input) do
+      { description: "Refreshed.", strengths: "Refreshed S.",
+        best_for: "Refreshed B.", limitations: "Refreshed L." }
+    end
+    response = Object.new
+    response.define_singleton_method(:content) { [ tool_block ] }
+    messages = Object.new
+    messages.define_singleton_method(:create) do |**_kwargs|
+      calls += 1
+      calls == 1 ? raise(ArgumentError, "boom") : response
+    end
+    fake = Object.new
+    fake.define_singleton_method(:messages) { messages }
+    Anthropic::Client.define_singleton_method(:new) { |**_| fake }
+
+    first  = stale_model(generated_at: 200.days.ago) # processed first (oldest)
+    second = stale_model(generated_at: 100.days.ago)
+
+    assert_nothing_raised { DescriptionRefreshJob.perform_now }
+
+    assert_equal "Old.",       first.reload.description,  "the failing model is left untouched"
+    assert_equal "Refreshed.", second.reload.description, "the batch continues past the failure"
+  end
 end

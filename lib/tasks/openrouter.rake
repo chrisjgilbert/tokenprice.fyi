@@ -59,8 +59,7 @@ namespace :openrouter do
   # left alone. Set LIMIT to cap a trial run.
   desc "Refresh stale editorial copy for models that are due one"
   task refresh_descriptions: :environment do
-    scope = AiModel.listed.description_stale
-                   .stalest_description_first.includes(:provider)
+    scope = AiModel.due_for_description_refresh.includes(:provider)
     scope = scope.limit(Integer(ENV["LIMIT"])) if ENV["LIMIT"].present?
     models = scope.to_a
 

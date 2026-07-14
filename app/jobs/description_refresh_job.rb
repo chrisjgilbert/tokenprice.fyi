@@ -22,8 +22,7 @@ class DescriptionRefreshJob < ApplicationJob
   REFRESH_PER_RUN = 25
 
   def perform
-    models = AiModel.listed.description_stale
-                    .stalest_description_first
+    models = AiModel.due_for_description_refresh
                     .includes(:provider)
                     .limit(REFRESH_PER_RUN)
                     .to_a
@@ -33,8 +32,11 @@ class DescriptionRefreshJob < ApplicationJob
     models.each do |model|
       model.refresh_description
       refreshed += 1
-    rescue AiModel::Description::GenerateError => e
-      Rails.logger.warn("DescriptionRefreshJob: #{e.message} (model ##{model.id})")
+    rescue => e
+      # Isolate per model: one row's failure — a generation error, an SDK error
+      # the operation didn't wrap, or a save failure — must not abort the rest of
+      # the batch. The skipped row stays stale and is retried on a later run.
+      Rails.logger.warn("DescriptionRefreshJob: #{e.class}: #{e.message} (model ##{model.id})")
       Honeybadger.notify(e) if defined?(Honeybadger)
     end
 

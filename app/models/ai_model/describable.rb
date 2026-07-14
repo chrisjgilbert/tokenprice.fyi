@@ -63,15 +63,13 @@ module AiModel::Describable
     scope = provider.ai_models.listed
     scope = scope.where.not(id: id) if persisted?
 
-    most_relevant(scope.to_a, limit)
-      .sort_by { |sib| sib.released_on || Date.new(0) }.reverse
-      .map do |sib|
-        AiModel::Sibling.new(
-          name:        sib.name,
-          released_on: sib.released_on,
-          summary:     sib.description.to_s.squish.truncate(160).presence
-        )
-      end
+    most_relevant(scope.to_a, limit).map do |sib|
+      AiModel::Sibling.new(
+        name:        sib.name,
+        released_on: sib.released_on,
+        summary:     sib.description.to_s.squish.truncate(160).presence
+      )
+    end
   end
 
   # Write the four editorial columns from a generated copy hash, keeping an
@@ -90,21 +88,32 @@ module AiModel::Describable
 
   private
 
-  # Pick the `limit` siblings most useful for positioning this model: those
-  # released closest to it in time — its own generation and nearest successors —
-  # so a provider with more than `limit` models yields the target's cohort rather
-  # than only the globally newest rows (which may be a different tier). Ties break
-  # toward the newer sibling (the more likely successor). Undated siblings rank
-  # last. With no release date to anchor on we can't measure proximity, so fall
-  # back to the newest siblings.
+  # The `limit` siblings most useful for positioning this model, returned newest
+  # first so the caller just maps. With a release date to anchor on, pick the ones
+  # closest in time — the model's own generation and nearest successors — so a
+  # provider with more than `limit` models yields the target's cohort rather than
+  # only the globally newest rows (which may be a different tier); ties break
+  # toward the newer sibling (the more likely successor), and undated siblings
+  # rank last. With no anchor we can't measure proximity, so fall back to the
+  # newest siblings.
   def most_relevant(siblings, limit)
-    return siblings.sort_by { |s| s.released_on || Date.new(0) }.last(limit) if released_on.nil?
+    cohort =
+      if released_on.nil?
+        siblings
+      else
+        dated, undated = siblings.partition(&:released_on)
+        nearest = dated.sort_by do |sib|
+          delta = (sib.released_on - released_on).to_i
+          [ delta.abs, -delta ]
+        end
+        (nearest + undated).first(limit)
+      end
 
-    dated, undated = siblings.partition(&:released_on)
-    nearest = dated.sort_by do |sib|
-      delta = (sib.released_on - released_on).to_i
-      [ delta.abs, -delta ]
-    end
-    (nearest + undated).first(limit)
+    newest_first(cohort).first(limit)
+  end
+
+  # Newest release first; an undated sibling (no released_on) sorts to the end.
+  def newest_first(siblings)
+    siblings.sort_by { |sib| sib.released_on || Date.new(0) }.reverse
   end
 end
