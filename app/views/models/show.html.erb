@@ -157,7 +157,7 @@
     <% end %>
   </div>
 <% else %>
-  <% noun = ModelCategory.claiming(@model.modality_class).billing_noun %>
+  <% noun = crumb.billing_noun %>
   <div class="mb-8 rounded-xl border border-slate-200 bg-white p-5">
     <p class="text-xs uppercase tracking-wide text-slate-500">Pricing</p>
     <p class="mt-1 text-lg font-semibold text-slate-600"><%= @model.price_detail.present? ? "Pricing not published" : "Priced #{noun} — not yet tracked" %></p>

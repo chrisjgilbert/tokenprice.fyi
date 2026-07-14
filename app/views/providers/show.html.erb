@@ -43,13 +43,11 @@
   <%= link_to "market-events timeline", events_path, class: "text-indigo-600 hover:underline" %>.
 </p>
 
-<%# Grouped by pricing family so a provider's image/speech/embedding models get
-    their own columns and native prices, never blank per-token cells. Each group
-    uses the category's own column shape and shares the price cells with the
-    main table (models/_data_cell). %>
-<% @models.group_by { |m| ModelCategory.claiming(m.modality_class) }
-        .sort_by { |category, _| ModelCategory.all.index(category) }
-        .each do |category, models| %>
+<%# Grouped by pricing family (in the controller) so a provider's image/speech/
+    embedding models get their own columns and native prices, never blank
+    per-token cells. Each group uses the category's own column shape and shares
+    the price cells with the main table (models/_data_cell). %>
+<% @model_groups.each do |category, models| %>
   <%# The provider column is redundant here — every row is this provider. %>
   <% cols = category.columns - [ :provider ] %>
   <section class="mb-10">

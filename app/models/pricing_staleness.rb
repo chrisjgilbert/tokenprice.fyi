@@ -78,9 +78,7 @@ class PricingStaleness
   # Every category except language (the default fallback).
   def reported_categories = ModelCategory.all - [ ModelCategory.default ]
 
-  def category_for(model)
-    ModelCategory.all.find { |c| c.member?(model.modality_class) }
-  end
+  def category_for(model) = ModelCategory.claiming(model.modality_class)
 
   def row_for(model)
     priced_on = priced_on_for(model)

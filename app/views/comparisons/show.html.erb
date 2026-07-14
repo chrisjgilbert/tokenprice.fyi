@@ -478,7 +478,7 @@
             { label: "Δ output since launch", a_val: @left.output_change_since_launch, b_val: @right.output_change_since_launch, fmt: :change },
           ] + common_text_rows
         %>
-      <% elsif @category.slug == "embeddings" %>
+      <% elsif @category.embeddings? %>
         <%
           numeric_rows = [
             { label: "Input /1M", a_val: @left.current_input,  b_val: @right.current_input,  cmp: :lower_better,  fmt: :usd },

@@ -33,6 +33,12 @@ class ModelCategory
     # hero CTA (pricing explainer vs. /sources) and tier-honest chrome.
     def language? = matcher.nil?
 
+    # Embeddings are the middle case in the comparison view: token-priced like
+    # language, but input-only (the output is a vector), so they compare on input
+    # + dimensions rather than the I/O pair. A named predicate keeps the view off
+    # a raw slug string, mirroring `language?`.
+    def embeddings? = slug == "embeddings"
+
     # The empty-state row spans every column plus the leading select and trailing
     # go columns the layout always renders.
     def table_colspan = columns.size + 2
@@ -221,6 +227,10 @@ class ModelCategory
 
   # The category that owns a model's modality_class — the reverse of `member?`,
   # for pages that start from a model and need its tab (breadcrumb, provider
-  # grouping, the untracked-price billing unit). Language is the fallback.
-  def self.claiming(modality_class) = ALL.find { |c| c.member?(modality_class) }
+  # grouping, the untracked-price billing unit). The first matcher to claim it
+  # wins; language (nil matcher) is the fallback.
+  def self.claiming(modality_class)
+    mc = modality_class.to_sym
+    ALL.find { |c| c.matcher&.call(mc) } || LANGUAGE
+  end
 end
