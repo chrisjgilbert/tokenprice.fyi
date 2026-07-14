@@ -5,8 +5,8 @@
 # is the entry point for filling a *saved* record (e.g. a freshly curated model).
 module AiModel::Describable
   # How many provider-siblings to feed the generator for positioning. Enough to
-  # cover a provider's current lineup (the newest releases — the ones a write-up
-  # is positioned against) without ballooning the prompt for a big catalogue.
+  # cover a model's generation and its nearest successors without ballooning the
+  # prompt for a big catalogue (see sibling_lineup for how the cohort is picked).
   LINEUP_LIMIT = 12
 
   def generate_description(client: nil)
@@ -52,20 +52,26 @@ module AiModel::Describable
     save!
   end
 
-  # The provider's other listed models, newest first, as compact Sibling
-  # descriptors for the generator to position this model against. Self is
-  # excluded once persisted; an unsaved row (the OpenRouter import) isn't in the
-  # table yet, so nothing to exclude. Capped at LINEUP_LIMIT.
+  # The provider-siblings to position this model against, as compact Sibling
+  # descriptors, presented newest first. Self is excluded once persisted; an
+  # unsaved row (the OpenRouter import) isn't in the table yet, so nothing to
+  # exclude. When a provider has more than LINEUP_LIMIT models the cohort is
+  # chosen by release-proximity (see most_relevant), so an older model is
+  # positioned against its own generation and nearest successors rather than a
+  # dozen newer, possibly different-tier releases.
   def sibling_lineup(limit: LINEUP_LIMIT)
-    scope = provider.ai_models.listed.by_release
+    scope = provider.ai_models.listed
     scope = scope.where.not(id: id) if persisted?
-    scope.limit(limit).map do |sib|
-      AiModel::Sibling.new(
-        name:        sib.name,
-        released_on: sib.released_on,
-        summary:     sib.description.to_s.squish.truncate(160).presence
-      )
-    end
+
+    most_relevant(scope.to_a, limit)
+      .sort_by { |sib| sib.released_on || Date.new(0) }.reverse
+      .map do |sib|
+        AiModel::Sibling.new(
+          name:        sib.name,
+          released_on: sib.released_on,
+          summary:     sib.description.to_s.squish.truncate(160).presence
+        )
+      end
   end
 
   # Write the four editorial columns from a generated copy hash, keeping an
@@ -80,5 +86,25 @@ module AiModel::Describable
     self.best_for    = copy[:best_for]
     self.limitations = copy[:limitations]
     self.description_generated_at = Time.current
+  end
+
+  private
+
+  # Pick the `limit` siblings most useful for positioning this model: those
+  # released closest to it in time — its own generation and nearest successors —
+  # so a provider with more than `limit` models yields the target's cohort rather
+  # than only the globally newest rows (which may be a different tier). Ties break
+  # toward the newer sibling (the more likely successor). Undated siblings rank
+  # last. With no release date to anchor on we can't measure proximity, so fall
+  # back to the newest siblings.
+  def most_relevant(siblings, limit)
+    return siblings.sort_by { |s| s.released_on || Date.new(0) }.last(limit) if released_on.nil?
+
+    dated, undated = siblings.partition(&:released_on)
+    nearest = dated.sort_by do |sib|
+      delta = (sib.released_on - released_on).to_i
+      [ delta.abs, -delta ]
+    end
+    (nearest + undated).first(limit)
   end
 end

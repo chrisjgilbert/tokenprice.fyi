@@ -5,6 +5,16 @@ class AiModel::DescribableTest < ActiveSupport::TestCase
     @model ||= ai_models(:opus)
   end
 
+  # A listed (priced) OpenRouter row on the given provider.
+  def listed_model(provider, **attrs)
+    m = provider.ai_models.create!({
+      source: AiModel::OPENROUTER_SOURCE, status: "active", description: "d"
+    }.merge(attrs))
+    m.price_points.create!(effective_on: Date.current, input_per_mtok: 1,
+                           output_per_mtok: 1, source: "test")
+    m
+  end
+
   test "generates and persists the four editorial columns" do
     fake = fake_anthropic_tool_client(input: {
       description: "A frontier reasoning model from Anthropic.",
@@ -78,6 +88,32 @@ class AiModel::DescribableTest < ActiveSupport::TestCase
 
   test "sibling_lineup respects the limit" do
     assert_operator model.sibling_lineup(limit: 1).size, :<=, 1
+  end
+
+  # For a provider with more models than the cap, the lineup is the target's
+  # release-neighbours — not the globally newest rows, which may be a different
+  # tier — so an older model is positioned against its own cohort and successors.
+  test "sibling_lineup for a large provider picks release-neighbours, not just the newest" do
+    provider = Provider.create!(name: "BigLab", slug: "biglab-#{SecureRandom.hex(3)}")
+    target = listed_model(provider, name: "Mid", released_on: Date.new(2025, 1, 1))
+    listed_model(provider, name: "Far New A", released_on: Date.new(2026, 1, 1))
+    listed_model(provider, name: "Far New B", released_on: Date.new(2026, 2, 1))
+    listed_model(provider, name: "Near Older", released_on: Date.new(2024, 12, 1))
+    listed_model(provider, name: "Near Newer", released_on: Date.new(2025, 2, 1))
+
+    names = target.sibling_lineup(limit: 2).map(&:name)
+
+    assert_equal [ "Near Newer", "Near Older" ], names,
+                 "nearest two by release, newest presented first"
+  end
+
+  test "sibling_lineup falls back to newest when the target has no release date" do
+    provider = Provider.create!(name: "DatelessLab", slug: "dateless-#{SecureRandom.hex(3)}")
+    target = listed_model(provider, name: "Undated", released_on: nil)
+    listed_model(provider, name: "Oldest", released_on: Date.new(2024, 1, 1))
+    listed_model(provider, name: "Newest", released_on: Date.new(2026, 1, 1))
+
+    assert_equal [ "Newest" ], target.sibling_lineup(limit: 1).map(&:name)
   end
 
   test "generate_description feeds the provider lineup to the generator" do
