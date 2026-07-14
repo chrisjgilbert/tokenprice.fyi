@@ -164,7 +164,7 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_response :success
     assert_select ".tp-foot",
-      text: /sourced from provider price pages · costs are per-call estimates, never a monthly bill/
+      text: /Sourced from provider price pages · costs are per-call estimates, never a monthly bill/
   end
 
   test "the beta flag is gone from the chrome" do

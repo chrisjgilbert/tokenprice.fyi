@@ -40,7 +40,7 @@
           name: "tokenprice.fyi",
           url: root_url,
           logo: "#{request.base_url}/icon.png",
-          description: "Independent price record of AI model APIs — per-token rates with full history for language models, and dated list prices for embeddings, speech, image, and video."
+          description: "Independent price record of AI model APIs — per-token rates with full history for language models, and dated list prices for embeddings, rerank, speech, image, and video."
         }) %>
     <%= json_ld({
           "@context": "https://schema.org",
@@ -136,7 +136,7 @@
         <span style="margin-left:auto" class="num"><%= AiModel.listed.count %> models · <%= Provider.count %> providers</span>
         <span>List prices, in each API's billing unit</span>
         <span>Independent price record, not affiliated with any provider</span>
-        <span>sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
+        <span>Sourced from provider price pages · costs are per-call estimates, never a monthly bill</span>
         <%= link_to "Compare models", compare_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Data sources", sources_path, style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>
         <%= link_to "Contact", "mailto:chris@chrisgilbert.dev", style: "color:var(--color-slate-500);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--color-slate-300)" %>

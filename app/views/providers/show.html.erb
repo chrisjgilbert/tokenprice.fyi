@@ -1,6 +1,6 @@
 <% content_for :title, "#{@provider.name} model pricing — tokenprice.fyi" %>
 <% content_for :description, @provider.description.presence&.truncate(160) ||
-     "#{@provider.name} API pricing across #{@models.size} models — per-token rates for language models, native rates for image, speech, and more, with price history where tracked." %>
+     "#{@provider.name} API pricing across #{@models.size} models — per-token rates for language models, native rates for embeddings, rerank, speech, image, and video, with price history where tracked." %>
 <% content_for :canonical, provider_url(@provider) %>
 <% content_for :head do %>
   <%= json_ld({
@@ -38,7 +38,7 @@
 
 <p class="mb-8 max-w-2xl text-sm leading-relaxed text-slate-600">
   <%= @provider.name %> API pricing for <%= @models.size %> models. Language models are updated
-  daily with full price history; image, speech, and video carry dated list prices. For the
+  daily with full price history; embeddings, rerank, speech, image, and video carry dated list prices. For the
   launches and price moves across the market, see the
   <%= link_to "market-events timeline", events_path, class: "text-indigo-600 hover:underline" %>.
 </p>

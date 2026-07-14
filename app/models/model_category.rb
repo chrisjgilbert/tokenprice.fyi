@@ -79,7 +79,7 @@ class ModelCategory
                       "Input rates and vector dimensions, updated as providers publish them.",
     matcher: ->(mc) { mc == :embedding },
     columns: %i[name provider input dimensions context released],
-    hero_eyebrow: "Price directory — dated list prices",
+    hero_eyebrow: "Price directory",
     hero_heading: "Embedding API pricing, per 1M input tokens.",
     hero_subhead: "%{models} embedding models — input rates and vector dimensions, " \
                   "dated and sourced from provider price pages.",
@@ -103,8 +103,8 @@ class ModelCategory
                       "or per 1M tokens. Native rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :rerank },
     columns: %i[name provider pricing released],
-    hero_eyebrow: "Price directory — dated list prices",
-    hero_heading: "Reranker API pricing, in native units.",
+    hero_eyebrow: "Price directory",
+    hero_heading: "Reranker API pricing, per search or per 1M tokens.",
     hero_subhead: "%{models} rerankers — priced per search or per 1M tokens; " \
                   "every price dated and sourced.",
     billing_noun: "per search or per 1M tokens"
@@ -126,7 +126,7 @@ class ModelCategory
                       "Native per-minute rates across providers, updated as they publish them.",
     matcher: ->(mc) { mc == :speech_to_text },
     columns: %i[name provider native_price released],
-    hero_eyebrow: "Price directory — dated list prices",
+    hero_eyebrow: "Price directory",
     hero_heading: "Speech-to-text API pricing, per minute of audio.",
     hero_subhead: "%{models} transcription models — native per-minute rates, " \
                   "dated and sourced from provider price pages.",
@@ -150,7 +150,7 @@ class ModelCategory
                       "Native per-character rates across providers, updated as they publish them.",
     matcher: ->(mc) { mc == :text_to_speech },
     columns: %i[name provider native_price released],
-    hero_eyebrow: "Price directory — dated list prices",
+    hero_eyebrow: "Price directory",
     hero_heading: "Text-to-speech API pricing, per 1M characters.",
     hero_subhead: "%{models} speech models — native per-character rates, " \
                   "dated and sourced from provider price pages.",
@@ -170,8 +170,8 @@ class ModelCategory
                       "Native per-image rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :image_generation },
     columns: %i[name provider pricing released],
-    hero_eyebrow: "Price directory — dated list prices",
-    hero_heading: "Image generation API pricing, in native units.",
+    hero_eyebrow: "Price directory",
+    hero_heading: "Image generation API pricing, per image or in credits.",
     hero_subhead: "%{models} image models — per image, per megapixel, or in credits; " \
                   "every price dated and sourced.",
     billing_noun: "per image"
@@ -194,8 +194,8 @@ class ModelCategory
                       "in credits, or in tokens. Native rates and pricing models, updated as providers publish them.",
     matcher: ->(mc) { mc == :video_generation },
     columns: %i[name provider pricing released],
-    hero_eyebrow: "Price directory — dated list prices",
-    hero_heading: "Video generation API pricing, in native units.",
+    hero_eyebrow: "Price directory",
+    hero_heading: "Video generation API pricing, per second or per clip.",
     hero_subhead: "%{models} video models — per second, per clip, or in credits; " \
                   "every price dated and sourced.",
     billing_noun: "per second or per clip"
