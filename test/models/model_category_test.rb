@@ -197,6 +197,16 @@ class ModelCategoryTest < ActiveSupport::TestCase
     refute ModelCategory.for("embeddings").language?
   end
 
+  test "counts tallies every category across the whole listed catalog" do
+    counts = ModelCategory.counts
+
+    language_total = AiModel.listed.count { |m| ModelCategory.for("language").member?(m.modality_class) }
+    image_total = AiModel.listed.count { |m| ModelCategory.for("image").member?(m.modality_class) }
+    assert_equal language_total, counts["language"]
+    assert_equal image_total, counts["image"]
+    assert_equal ModelCategory.all.map(&:slug).sort, counts.keys.sort
+  end
+
   test "claiming returns the category that owns a modality class" do
     assert_equal "image", ModelCategory.claiming(:image_generation).slug
     assert_equal "speech-to-text", ModelCategory.claiming(:speech_to_text).slug

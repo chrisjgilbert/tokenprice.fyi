@@ -233,4 +233,14 @@ class ModelCategory
     mc = modality_class.to_sym
     ALL.find { |c| c.matcher&.call(mc) } || LANGUAGE
   end
+
+  # Tab labels: how many listed models fall in each category, keyed by slug.
+  # Classified via the SAME derived modality_class #member? uses (not the
+  # denormalised column), so a badge count always agrees with what that tab
+  # actually lists. Independent of any one page's own filters — this is the
+  # catalog-wide total for each tab, not a filtered view's count.
+  def self.counts
+    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
+    ALL.to_h { |category| [ category.slug, listed_classes.count { |mc| category.member?(mc) } ] }
+  end
 end

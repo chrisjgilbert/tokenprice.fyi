@@ -90,14 +90,4 @@ class ModelListingTest < ActiveSupport::TestCase
     desc = build(sort: "released", dir: "desc").models
     assert_equal "Claude Fable 5", desc.first.name
   end
-
-  test "category_counts tallies every category across the whole listed catalog, ignoring this listing's own filters" do
-    counts = build(category: ModelCategory.for("image"), provider_slugs: [ "deepseek" ], query: "nothing-will-match").category_counts
-
-    language_total = AiModel.listed.count { |m| language.member?(m.modality_class) }
-    image_total = AiModel.listed.count { |m| ModelCategory.for("image").member?(m.modality_class) }
-    assert_equal language_total, counts["language"]
-    assert_equal image_total, counts["image"]
-    assert_equal ModelCategory.all.map(&:slug).sort, counts.keys.sort
-  end
 end

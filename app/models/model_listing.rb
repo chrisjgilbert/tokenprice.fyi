@@ -1,8 +1,10 @@
 # The row set behind the models index table: one pricing-family tab
 # (ModelCategory), filtered by provider/search/modality and sorted, plus the
-# facet and tab-count data the same page renders alongside it. Extracted from
+# facet data the same page renders alongside it. Extracted from
 # ModelsController#index so the controller stays down to param resolution,
-# conditional GET, and rendering.
+# conditional GET, and rendering. Tab badge counts are ModelCategory.counts —
+# a catalog-wide total independent of any one listing's own filters, so it
+# isn't part of this class.
 #
 # `sort`/`dir`/`provider_slugs`/`modalities` are taken as already resolved
 # against `category` (unknown values stripped, defaults applied) — that
@@ -33,18 +35,7 @@ class ModelListing
     "native_price" => :native_priced?
   }.freeze
 
-  attr_reader :models, :modality_classes, :category_counts
-
-  # Tab labels: how many listed models fall in each category. Classified via the
-  # SAME derived modality_class the row filter uses (not the denormalised
-  # column), so a badge count always equals its tab's row count. Independent of
-  # any one listing's own provider/search/modality filters — the badge always
-  # reads the tab's full total, not the current view's filtered count — which is
-  # why it's a class method rather than an instance computation.
-  def self.category_counts
-    listed_classes = AiModel.listed.select(:input_modalities, :output_modalities).map(&:modality_class)
-    ModelCategory.all.to_h { |category| [ category.slug, listed_classes.count { |mc| category.member?(mc) } ] }
-  end
+  attr_reader :models, :modality_classes
 
   def initialize(category:, sort:, dir:, provider_slugs: [], query: "", modalities: [])
     models = matching_models(category: category, provider_slugs: provider_slugs, query: query)
@@ -56,14 +47,18 @@ class ModelListing
     models = models.select { |m| modalities.include?(m.modality_class.to_s) } if modalities.any?
 
     @models = AiModel.sort_for_display(models, by: SORTS.fetch(sort), dir: dir, sink_unranked: SINK_SORTS[sort])
-    @category_counts = self.class.category_counts
   end
 
   private
 
   def matching_models(category:, provider_slugs:, query:)
     scope = AiModel.listed.includes(:provider, :price_points)
-    scope = scope.joins(:provider).where(providers: { slug: provider_slugs }) if provider_slugs.any?
+    # A hash-keyed `.where(providers: {...})` combined with `.joins(:provider)`
+    # trips Rails' auto-reference detection and switches the whole scope from
+    # preload to eager_load — one LEFT OUTER JOIN against price_points that
+    # fans a row out per price point instead of per model. A `where(provider:
+    # <relation>)` subquery filters by provider_id without triggering that.
+    scope = scope.where(provider: Provider.where(slug: provider_slugs)) if provider_slugs.any?
     filter_by_query(scope.to_a, query).select { |m| category.member?(m.modality_class) }
   end
 

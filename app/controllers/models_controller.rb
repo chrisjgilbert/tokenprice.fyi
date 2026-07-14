@@ -43,7 +43,7 @@ class ModelsController < ApplicationController
       provider_slugs: @provider_slugs, query: @query, modalities: @modalities)
     @models = listing.models
     @modality_classes = listing.modality_classes
-    @category_counts = listing.category_counts
+    @category_counts = ModelCategory.counts
 
     # Hero content (loaded once; lives outside the Turbo Frame).
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
