@@ -155,6 +155,48 @@ class ModelCategoryTest < ActiveSupport::TestCase
     end
   end
 
+  test "every category carries hero copy" do
+    ModelCategory.all.each do |c|
+      assert c.hero_eyebrow.present?, "#{c.slug} should have a hero eyebrow"
+      assert c.hero_heading.present?, "#{c.slug} should have a hero heading"
+      assert c.hero_subhead.present?, "#{c.slug} should have a hero subhead"
+    end
+  end
+
+  test "language hero leads the price index; directory categories signal dated list prices" do
+    language = ModelCategory.for("language")
+    assert_match(/price index/i, language.hero_eyebrow)
+    assert_match(/tracked from launch/i, language.hero_heading)
+
+    %w[embeddings rerank speech-to-text text-to-speech image video].each do |slug|
+      eyebrow = ModelCategory.for(slug).hero_eyebrow
+      assert_match(/director|dated/i, eyebrow, "#{slug} eyebrow should signal the directory tier")
+    end
+  end
+
+  test "directory hero headings name their native billing unit, not tokens" do
+    assert_match(/image/i, ModelCategory.for("image").hero_heading)
+    assert_match(/per minute/i, ModelCategory.for("speech-to-text").hero_heading)
+    assert_match(/character/i, ModelCategory.for("text-to-speech").hero_heading)
+    assert_no_match(/per 1M tokens/i, ModelCategory.for("image").hero_subhead)
+  end
+
+  test "hero subhead is a format string filled from model and provider counts" do
+    filled = ModelCategory.for("image").hero_subhead % { models: 22, providers: 9 }
+    assert_match(/22/, filled)
+    assert_no_match(/%\{/, filled)
+
+    filled_lang = ModelCategory.for("language").hero_subhead % { models: 63, providers: 12 }
+    assert_match(/63/, filled_lang)
+    assert_match(/12/, filled_lang)
+  end
+
+  test "only language is language?" do
+    assert ModelCategory.for("language").language?
+    refute ModelCategory.for("image").language?
+    refute ModelCategory.for("embeddings").language?
+  end
+
   test "language sorts allow the token-price keys; image sorts do not" do
     language = ModelCategory.for("language")
     image = ModelCategory.for("image")

@@ -1,5 +1,5 @@
-<% content_for :title, "Market events — LLM pricing & launch timeline — tokenprice.fyi" %>
-<% content_for :description, "A dated timeline of LLM market events and model launches, newest first." %>
+<% content_for :title, "Market events — AI model pricing & launch timeline — tokenprice.fyi" %>
+<% content_for :description, "A dated timeline of AI model market events and launches, newest first." %>
 <% content_for :canonical, events_url %>
 <% content_for :head do %>
   <%= json_ld({
@@ -7,7 +7,7 @@
         "@type": "WebPage",
         name: "Market events",
         url: events_url,
-        description: "A timeline of LLM market events and model launches, newest first.",
+        description: "A timeline of AI model market events and launches, newest first.",
         isPartOf: { "@type": "WebSite", "@id": "#{request.base_url}/#website" }
       }) %>
 <% end %>

@@ -1,6 +1,6 @@
 <% both = @left && @right %>
-<% content_for :title, both ? "#{@left.name} vs #{@right.name} — tokenprice.fyi" : "Compare LLM API prices — tokenprice.fyi" %>
-<% content_for :description, both ? "#{@left.name} vs #{@right.name}: input, output, and cached token rates compared side by side." : "Compare LLM API token prices side by side — input, output, and cached rates per 1M tokens." %>
+<% content_for :title, both ? "#{@left.name} vs #{@right.name} — tokenprice.fyi" : "Compare AI model API prices — tokenprice.fyi" %>
+<% content_for :description, both ? "#{@left.name} vs #{@right.name}: prices compared side by side." : "Compare two AI models' API prices side by side — per-token rates for language models, native rates elsewhere." %>
 <%# Collapse every ?a=&b= permutation onto one param-free URL. %>
 <% content_for :canonical, compare_url %>
 

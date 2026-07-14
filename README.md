@@ -1,15 +1,17 @@
 # tokenprice.fyi
 
-**[tokenprice.fyi](https://tokenprice.fyi)** — track and compare LLM API token prices across
-10+ providers (Anthropic, OpenAI, Google, xAI, DeepSeek, Meta, Mistral, Cohere, Alibaba,
-Moonshot AI) and see how prices change over time.
+**[tokenprice.fyi](https://tokenprice.fyi)** — the price record of AI model APIs, across
+seven categories (language, embeddings, rerank, speech-to-text, text-to-speech, image
+generation, video generation) and 30+ providers. Language models carry full per-token
+price history, updated daily; the other categories are dated, sourced list prices in each
+API's native billing unit (per image, per minute, per character, per second).
 
 It answers questions like:
 
 - How much does Opus 4.8 cost vs GPT-5.5?
 - How has the price of Sonnet changed?
 - What's the cheapest frontier model right now?
-- How has pricing moved this year?
+- What do the image-generation and speech APIs charge, and in what unit?
 
 ## Stack
 

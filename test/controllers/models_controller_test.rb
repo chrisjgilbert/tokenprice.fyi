@@ -21,13 +21,37 @@ class ModelsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".hero-cta a[href=?]", how_pricing_works_path, text: /How pricing works/
   end
 
-  test "hero subtitle renders the dynamic model and provider counts, never a static 40+" do
+  test "hero subtitle renders the dynamic category and provider counts, never a static 40+" do
     get root_url
     assert_response :success
-    count = AiModel.listed.count
-    assert_select ".hero-sub", /models across/
-    assert_select ".hero-sub .num", text: count.to_s
+    language_count = AiModel.listed.to_a.count { |m| ModelCategory.for("language").member?(m.modality_class) }
+    assert_select ".hero-sub", /language models across/
+    assert_select ".hero-sub .num", text: language_count.to_s
     assert_select ".hero-sub", text: /40\+/, count: 0
+  end
+
+  test "each category tab renders its own hero heading, not the language one" do
+    get image_generation_url
+    assert_response :success
+    assert_select "h1.hero-h1", text: ModelCategory.for("image").hero_heading
+    assert_select "h1", text: /LLM API pricing, tracked from launch/, count: 0
+    assert_select ".hero-eyebrow", /director|dated/i
+  end
+
+  test "directory hero subhead counts that category's models, not the whole catalog" do
+    get image_generation_url
+    assert_response :success
+    image_count = AiModel.listed.to_a.count { |m| ModelCategory.for("image").member?(m.modality_class) }
+    assert_operator image_count, :>, 0
+    assert_select ".hero-sub .num", text: image_count.to_s
+    assert_select ".hero-sub", /image models/
+  end
+
+  test "directory tabs route the hero CTA to sources, language to the pricing explainer" do
+    get image_generation_url
+    assert_select ".hero-cta a[href=?]", sources_path
+    get root_url
+    assert_select ".hero-cta a[href=?]", how_pricing_works_path
   end
 
   test "index emits an owned meta description targeting the head term and providers" do
