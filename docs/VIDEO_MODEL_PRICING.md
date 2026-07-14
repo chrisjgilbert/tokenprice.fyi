@@ -183,6 +183,19 @@ the live model and **Seedance 2.0** resource-pack rates (from ~$4.3–$7.7 / 1M
 tokens, 720p/1080p) — those are **not** on the primary doc fetched and go in the
 caveats. Publish the confirmed **1.0 Pro $2.50/1M** as the token-based rate.
 
+## Meta (Muse Video)
+
+Muse Video, built on the same pretraining base as Muse Image, is Meta
+Superintelligence Labs' first video generation model — native audio support,
+"coming soon to creators and in Meta AI" per the launch post. **H that no
+public developer API exists** (as of 2026-07-14): it's positioned as a
+consumer feature inside Meta's own apps, not a metered API product, so there's
+no rate to publish.
+
+| Model | Headline | Pricing model | Basis + tiers | conf | Source (as of 2026-07-14) |
+|---|---|---|---|---|---|
+| **Muse Video** | no public API | — | Consumer feature only ("coming soon to creators and Meta AI"); no developer API, no rate | no-API H | ai.meta.com/blog/introducing-muse-image-muse-video-msl |
+
 ## Open-weight models (self-host $0 / hosted via partner)
 
 These have **no single price**: run them on your own GPU for the cost of compute
