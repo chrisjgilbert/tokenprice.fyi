@@ -513,7 +513,8 @@ module OpenRouter
         name:           model.name,
         provider:       model.provider.name,
         context_window: model.context_window,
-        source_text:    model.description.presence
+        source_text:    model.description.presence,
+        lineup:         model.sibling_lineup
       )
       return if copy.blank?
 
@@ -595,13 +596,13 @@ module OpenRouter
     end
 
     # OpenRouter also lists suffixed twins that duplicate a canonical entry at the
-    # SAME price — a "… Pro"/"… (preview)"/codename variant carrying identical
-    # rates to a shorter-named sibling. Unlike the ":latest"/":fast" markers these
-    # share no fixed token, and the name alone can't decide it: a real "GPT-5.5
-    # Pro" is a genuinely pricier model, not an alias. The tell is a name that
-    # extends a sibling's at a word boundary AND matches its headline price — a
-    # real variant charges a premium, so identical pricing means it's the same
-    # model listed twice. Retire the twin, keep the canonical shorter row.
+    # SAME price — a "… Preview", a dated snapshot ("… 2512", "… (08-2024)"), or a
+    # same-priced "… Pro" (a real Pro charges a premium, so identical pricing means
+    # it's the base listed twice). The tell is a name that extends a sibling's at a
+    # word boundary, matches its headline price, AND ends in a recognized alias
+    # marker (see `alias_suffix?`). A descriptive-word suffix at a shared price
+    # ("GPT-5 Codex", "GPT-5 Chat", "Grok 4.20 Multi-Agent") names a genuinely
+    # distinct model and is left alone. Retire the twin, keep the canonical row.
     def alias_duplicate?(row, pricing)
       return false if pricing.nil?
 
@@ -620,19 +621,22 @@ module OpenRouter
       end
     end
 
-    # Retire any already-imported twin the guard above would now skip: an
-    # OpenRouter row whose name extends a same-provider, same-price sibling.
-    # Prices come from each row's current snapshot, so a base without a tracked
-    # price yields no match and its variants are left alone.
+    # Retire any already-imported twin the guard above would now skip. The base is
+    # matched against the WHOLE non-retired catalogue — curated rows included — so
+    # an imported "… Preview" of a hand-curated flagship (Gemini 3.1 Pro, Command
+    # R) is caught even though the base isn't OpenRouter-sourced. Only the imported
+    # row is ever retired; a curated model is never auto-retired. Prices come from
+    # each row's current snapshot, so a base without a tracked price yields no match.
     def retire_alias_duplicates
-      models   = AiModel.from_openrouter.where.not(status: "retired").includes(:price_points)
-      siblings = models.group_by(&:provider_id).transform_values do |group|
+      catalog  = AiModel.where.not(status: "retired").includes(:price_points)
+      siblings = catalog.group_by(&:provider_id).transform_values do |group|
         group.map { |m| [ m.name, m.current_input, m.current_output ] }
       end
 
-      duplicates = models.select do |model|
-        alias_of_sibling?(model.name, model.current_input, model.current_output,
-                          siblings[model.provider_id])
+      duplicates = catalog.select do |model|
+        model.source == AiModel::OPENROUTER_SOURCE &&
+          alias_of_sibling?(model.name, model.current_input, model.current_output,
+                            siblings[model.provider_id])
       end
       return if duplicates.empty?
 
@@ -642,9 +646,10 @@ module OpenRouter
     end
 
     # Is `name` a longer, same-priced extension of some model in `siblings` (a list
-    # of [name, input, output])? Requires both a word-boundary name extension (the
-    # trailing space rules out "o1"⊂"o1-mini") and an exact headline-price match,
-    # so a genuinely distinct premium variant is never mistaken for an alias.
+    # of [name, input, output])? Requires a word-boundary name extension (the
+    # trailing space rules out "o1"⊂"o1-mini"), an exact headline-price match, and
+    # an alias-marker suffix — so a same-priced but genuinely distinct variant
+    # ("GPT-5 Codex") is never mistaken for an alias.
     def alias_of_sibling?(name, input, output, siblings)
       return false if input.nil? || output.nil? || siblings.blank?
 
@@ -652,15 +657,21 @@ module OpenRouter
         next false if base_name == name || base_input != input || base_output != output
 
         suffix = name.delete_prefix("#{base_name} ")
-        suffix != name && !version_suffix?(suffix)
+        suffix != name && alias_suffix?(suffix)
       end
     end
 
-    # A bare version or date suffix ("V4 0715", "2025-04-01") pins a snapshot of
-    # the same model rather than naming a paid variant, so a same-priced "… 0715"
-    # row is kept alongside its base. A word suffix ("Pro", "preview") marks a
-    # variant and is treated as a duplicate.
-    def version_suffix?(suffix) = suffix.to_s.match?(/\A\d[\d.\-\s]*\z/)
+    # The suffix that makes a longer same-priced name a duplicate of its base
+    # rather than a distinct product: "preview", a same-priced "pro" (a real Pro
+    # charges more), or a bare date/version token ("2512", "05-06", "(08-2024)")
+    # that pins a republished copy. A descriptive word ("Codex", "Chat",
+    # "Multi-Agent", "Vision") names a different model at a shared price — not a
+    # marker, so it's left alone.
+    ALIAS_SUFFIX_WORDS = /\A(preview|pro)\b/i
+    def alias_suffix?(suffix)
+      stripped = suffix.delete("()").strip
+      stripped.match?(ALIAS_SUFFIX_WORDS) || stripped.match?(%r{\A\d[\d.\-/ ]*\z})
+    end
 
     def curated_duplicate?(provider, row)
       names = curated_names[provider.id]

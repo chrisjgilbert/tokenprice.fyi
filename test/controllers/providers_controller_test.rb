@@ -14,7 +14,28 @@ class ProvidersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "link[rel=canonical][href=?]", provider_url(provider)
     assert_select "meta[name=description][content*=?]", "Anthropic API pricing across"
-    assert_select "meta[name=description][content*=?]", "input/output rates per 1M tokens"
+    # Category-neutral: no longer claims per-1M-token rates for every model.
+    assert_select "meta[name=description][content*=?]", "native rates"
+    assert_select "meta[name=description]" do |tags|
+      assert_no_match(/input\/output rates per 1M tokens/, tags.first["content"])
+    end
+  end
+
+  test "a provider's models are grouped by category, each with its own columns" do
+    get provider_url(providers(:anthropic))
+    assert_response :success
+    # anthropic fixtures span language, image, speech, embeddings, etc.
+    assert_select "h2", text: /Language models/
+    assert_select "h2", text: /Image generation/
+    assert_select "h2", text: /Speech to text/
+  end
+
+  test "a provider's image models show their native price, not blank token cells" do
+    get provider_url(providers(:anthropic))
+    assert_response :success
+    # image_priced renders its native headline under the image group's pricing
+    # column — never a blank Input/Output cell.
+    assert_select "td", text: %r{\$0\.04 / image}
   end
 
   test "renders the description blurb and uses it for the meta description when present" do

@@ -42,14 +42,24 @@ We **sell no inference and take no referral fee.** That's the one thing the gate
 **2. The cost product (build later, if signs justify).**
 *"Know what my feature actually costs, and cut it."* A neutral cross-model cost-optimization tool fed by a developer's real traces and usage. The differentiated, monetizable product.
 
-**The seam between them:** the cost product reads price data only through a defined interface — a `PriceCatalog` service and a public JSON API — never ad hoc. That one decision (a) keeps the two cleanly separable, (b) *is* the "free API → licensed dataset" monetization, and (c) lets the product later move to its own brand/domain as a packaging change, not a rebuild. It also keeps other data sources possible, since the product depends on the interface, not our table.
+**The seam between them:** the cost product reads price data only through a defined interface — the `PriceCatalog` service — never ad hoc. That one decision (a) keeps the two cleanly separable and (b) lets the product later move to its own brand/domain as a packaging change, not a rebuild. It also keeps other data sources possible, since the product depends on the interface, not our table.
+
+> **Update (July 2026): the public JSON API was removed.** Current-price
+> APIs are a commodity — LiteLLM and models.dev give away cross-category
+> current prices with better distribution — so a free endpoint seeded no
+> flywheel worth its maintenance and contradicted itself (a per-token unit
+> envelope over native prices). The `PriceCatalog` seam stays as an internal
+> boundary; if a licensed dataset is ever built, it ships as a deliberate
+> product against that seam, not as a always-on public endpoint. This
+> retires monetization path #1 below as the *primary* thesis; the moat is
+> now the record itself (SEO authority + citation), not an API.
 
 ## Operating principles
 
 - **Estimate and measure are one grounding ladder**, trading friction for fidelity: *describe in words* → *paste a real prompt/trace* → *import a usage CSV* → *consume telemetry*. The same optimizer consumes all of them; V1 only does the first (typed inputs).
 - **We never see prompts.** When the product ingests real calls, tokens are counted client-side and only counts and costs are sent — a privacy feature and a major de-scope (no trace store, no PII, no compliance load).
 - **Cost-led honesty.** Every number states its assumptions; a cross-model "what-if" reprices the *same tokens* and is labelled a cost comparison, not a quality verdict ("validate with your eval").
-- **Owner attention is the scarce resource.** This is a side project. Favour build-once-compounds surfaces (SEO pages, education, shareable permalinks, a free API) over maintenance treadmills — the market-events/news pipeline stays as quiet chart context, never a headline; the map page is buried.
+- **Owner attention is the scarce resource.** This is a side project. Favour build-once-compounds surfaces (SEO pages, education, shareable permalinks) over maintenance treadmills — the market-events/news pipeline stays as quiet chart context, never a headline; the map page is buried.
 - **Don't rebrand on a guess.** Keep the clean, fast, info-style aesthetic for the reference pages (it's an SEO asset); give the product its own polish under `tokenprice.fyi/cost` (or a subdomain). Split into a separate brand/domain only once the product proves itself — you'll know the right name by then.
 
 ## V1 — the index, done well
@@ -82,7 +92,7 @@ This product can graduate to its own brand and domain; it still reads prices thr
 
 In rough order of cleanliness, none of which compromises neutrality:
 
-1. **A free JSON API → a licensed historical dataset.** The free current-price API seeds a citation/backlink flywheel; the dated, sourced history is the paid product that analysts, finance teams, and tool-builders buy. The moat, monetized directly.
+1. **A licensed historical dataset.** The dated, sourced history is the paid product that analysts, finance teams, and tool-builders buy — sold as a deliberate data deal against the `PriceCatalog` seam, not a public API (that endpoint was removed; see the update above). The moat, monetized directly, if and when demand appears.
 2. **A thin Pro/Team tier** on the second product — saved workloads, price-move alerts, team sharing. No API keys, no spend dashboards.
 3. **Opportunistic consulting** — "cut your AI bill" engagements. Doesn't scale, which is fine for a side project; highest $/hour.
 

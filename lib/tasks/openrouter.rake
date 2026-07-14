@@ -31,7 +31,8 @@ namespace :openrouter do
         name:           model.name,
         provider:       model.provider.name,
         context_window: model.context_window,
-        source_text:    model.description.presence
+        source_text:    model.description.presence,
+        lineup:         model.sibling_lineup
       )
       next if copy.blank?
 
@@ -49,5 +50,32 @@ namespace :openrouter do
     end
 
     puts "Done: #{updated} updated, #{failed} failed."
+  end
+
+  # On-demand refresh of stale editorial copy — the same work DescriptionRefreshJob
+  # does nightly, run now and uncapped for a one-off sweep (e.g. after tuning the
+  # prompt or STALE_AFTER). Covers any listed row with generated copy (OpenRouter
+  # or approved-candidate); hand-written seed editorial (no generation stamp) is
+  # left alone. Set LIMIT to cap a trial run.
+  desc "Refresh stale editorial copy for models that are due one"
+  task refresh_descriptions: :environment do
+    scope = AiModel.due_for_description_refresh.includes(:provider)
+    scope = scope.limit(Integer(ENV["LIMIT"])) if ENV["LIMIT"].present?
+    models = scope.to_a
+
+    puts "Refreshing #{models.size} stale description(s)…"
+    refreshed = 0
+    failed    = 0
+
+    models.each do |model|
+      model.refresh_description
+      refreshed += 1
+      puts "  ✓ #{model.slug}"
+    rescue => e
+      failed += 1
+      warn "  ✗ #{model.slug} — #{e.class}: #{e.message}"
+    end
+
+    puts "Done: #{refreshed} refreshed, #{failed} failed."
   end
 end

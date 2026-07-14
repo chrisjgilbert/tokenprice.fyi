@@ -100,7 +100,6 @@ class ModelsController < ApplicationController
     # Only loaded on full-page renders, not on Turbo Frame refreshes.
     unless request.headers["Turbo-Frame"] == "models"
       @all_events = helpers.build_all_events
-      @all_models_count = AiModel.listed.count
       @providers_count = Provider.count
     end
   end

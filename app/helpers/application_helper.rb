@@ -6,6 +6,16 @@ module ApplicationHelper
     url if url.to_s.match?(%r{\Ahttps?://\S+\z}i)
   end
 
+  # Human header for a category column key — the plain-text label for a table
+  # `<th>` (the main table's headers carry sort links; the provider groups are
+  # static). Keyed off the same column symbols ModelCategory#columns uses.
+  COLUMN_HEADERS = {
+    name: "Model", input: "Input", output: "Output", cached: "Cached",
+    context: "Context", provider: "Provider", released: "Released",
+    dimensions: "Dimensions", native_price: "Price", pricing: "Pricing"
+  }.freeze
+  def column_header(key) = COLUMN_HEADERS.fetch(key, key.to_s.humanize)
+
   # Format a USD-per-million-tokens figure. The numeric rule lives in PriceFormat
   # so the insight services format identically; this layer adds HTML/em-dash.
   def usd(value, decimals: 4)

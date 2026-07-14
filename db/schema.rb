@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_14_075342) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_120000) do
   create_table "ai_models", force: :cascade do |t|
     t.text "best_for"
     t.integer "context_window"
     t.datetime "created_at", null: false
     t.text "description"
+    t.datetime "description_generated_at"
     t.integer "dimensions"
     t.json "input_modalities", default: [], null: false
     t.text "limitations"
@@ -40,6 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_075342) do
     t.string "status", default: "active", null: false
     t.text "strengths"
     t.datetime "updated_at", null: false
+    t.index ["description_generated_at"], name: "index_ai_models_on_description_generated_at"
     t.index ["modality_class"], name: "index_ai_models_on_modality_class"
     t.index ["openrouter_id"], name: "index_ai_models_on_openrouter_id", unique: true
     t.index ["provider_id"], name: "index_ai_models_on_provider_id"
@@ -84,6 +86,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_075342) do
     t.index ["news_item_id"], name: "index_model_candidates_on_news_item_id"
     t.index ["slug"], name: "index_model_candidates_on_slug"
     t.index ["status"], name: "index_model_candidates_on_status"
+  end
+
+  create_table "native_price_snapshots", force: :cascade do |t|
+    t.integer "ai_model_id", null: false
+    t.datetime "created_at", null: false
+    t.string "native_price_unit"
+    t.decimal "native_price_usd", precision: 12, scale: 6
+    t.string "price_source"
+    t.string "price_summary"
+    t.date "priced_as_of"
+    t.string "pricing_model"
+    t.datetime "updated_at", null: false
+    t.index ["ai_model_id", "created_at"], name: "index_native_price_snapshots_on_ai_model_id_and_created_at"
+    t.index ["ai_model_id"], name: "index_native_price_snapshots_on_ai_model_id"
   end
 
   create_table "news_items", force: :cascade do |t|
@@ -142,5 +158,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_075342) do
 
   add_foreign_key "ai_models", "providers"
   add_foreign_key "model_candidates", "news_items"
+  add_foreign_key "native_price_snapshots", "ai_models"
   add_foreign_key "price_points", "ai_models"
 end

@@ -1,5 +1,5 @@
-<% content_for :title, "Learn — understand LLM API pricing · tokenprice.fyi" %>
-<% content_for :description, "Explainers on how LLM API pricing works, what drives feature costs, and how to cut them — backed by live prices." %>
+<% content_for :title, "Learn — how LLM API pricing works · tokenprice.fyi" %>
+<% content_for :description, "Explainers on how per-token LLM pricing works — the input/output split, caching, reasoning tokens, and what cuts a bill. Embeddings, rerank, speech, image, and video pricing are shown on their own category tabs." %>
 <% content_for :canonical, learn_url %>
 <% content_for :head do %>
   <%= json_ld({
@@ -20,7 +20,7 @@
     <span class="tp-section-label">Learn</span>
   </div>
   <h1>Understand what you're paying for.</h1>
-  <p>What an LLM feature actually costs, and why: the chain of calls it runs, how the bill reads, what reasoning tokens add, where the tokens go, and which levers cut it.</p>
+  <p>What an LLM feature actually costs, and why: the chain of calls it runs, how the bill reads, what reasoning tokens add, where the tokens go, and which levers cut it. This is the per-token side of pricing, where the cost model has the most moving parts; embeddings, rerank, speech, image, and video models bill in simpler native units, priced on their own category tabs.</p>
 </header>
 
 <section class="led-series">

@@ -35,7 +35,11 @@
           <%= provider_square(event.provider, size: :sm) %>
           <span><%= event.provider.name %></span>
         <% end %>
-        <span class="ev-tag"><%= io_price(m, tag: true) %></span>
+        <% if m.native_priced? %>
+          <span class="ev-tag"><%= m.price_headline %></span>
+        <% elsif m.token_priced? %>
+          <span class="ev-tag"><%= io_price(m, tag: true) %></span>
+        <% end %>
         <% if m.context_window %>
           <span class="ev-tag num"><%= tokens_short(m.context_window) %> ctx</span>
         <% end %>
