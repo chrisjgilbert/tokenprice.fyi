@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_120000) do
     t.datetime "created_at", null: false
     t.datetime "curated_at"
     t.datetime "curated_for_model_at"
+    t.text "excerpt"
     t.string "kind"
     t.integer "market_event_id"
     t.datetime "notified_at"

@@ -25,8 +25,13 @@ class NewsItem::Classification
 
   SYSTEM_PROMPT = <<~PROMPT.strip
     You are a relevance classifier for an LLM token pricing tracker (tokenprice.fyi).
-    Given a news headline and its source, determine if the story is relevant to LLM API pricing:
-    model releases, price changes, or significant market events affecting LLM API costs.
+    Given a news headline, its source, and (when available) an excerpt of the linked
+    article, determine if the story is relevant to LLM API pricing: model releases,
+    price changes, or significant market events affecting LLM API costs.
+    Some sources are daily roundups covering several unrelated stories in one item —
+    judge relevance on the excerpt as a whole, not just the headline: a roundup whose
+    title covers one story can still contain a release, price change, or market event
+    buried further in the excerpt.
     Be concise in rationale (one sentence).
   PROMPT
 
@@ -36,7 +41,7 @@ class NewsItem::Classification
   end
 
   def run
-    content = "Headline: #{news_item.title}\nSource: #{news_item.source}"
+    content = "Headline: #{news_item.title}\nSource: #{news_item.source}#{news_item.excerpt_section}"
 
     input = AnthropicClient.tool_call(
       model:      MODEL,

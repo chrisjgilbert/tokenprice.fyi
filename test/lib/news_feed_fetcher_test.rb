@@ -85,6 +85,218 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  test "a non-2xx response is logged instead of failing silently" do
+    config = { "name" => "meta_ai", "type" => "rss", "url" => "https://ai.meta.com/blog/rss" }
+
+    with_stubbed_response(404, "") do
+      with_captured_warnings do |warnings|
+        NewsFeedFetcher.fetch(config)
+        assert(warnings.any? { |w| w.include?("meta_ai") && w.include?("404") },
+               "expected a warning naming the source and status; got: #{warnings.inspect}")
+      end
+    end
+  end
+
+  test "a page_diff non-2xx response is also logged" do
+    config = { "name" => "anthropic", "type" => "page_diff", "url" => "https://www.anthropic.com/news" }
+
+    with_stubbed_response(404, "") do
+      with_captured_warnings do |warnings|
+        NewsFeedFetcher.fetch(config)
+        assert(warnings.any? { |w| w.include?("anthropic") && w.include?("404") },
+               "expected a warning naming the source and status; got: #{warnings.inspect}")
+      end
+    end
+  end
+
+  # --- excerpt capture -------------------------------------------------------
+
+  RSS_WITH_CONTENT_ENCODED = <<~XML
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+      <channel>
+        <title>AINews</title>
+        <link>https://news.smol.ai</link>
+        <item>
+          <title>OpenAI launches GPT 5.6</title>
+          <link>https://news.smol.ai/issues/2026-07-09</link>
+          <pubDate>Thu, 09 Jul 2026 05:44:39 GMT</pubDate>
+          <description>Short summary mentioning only GPT-5.6.</description>
+          <content:encoded><![CDATA[<p>Full roundup. Buried in here: <b>Meta launches Muse Spark 1.1</b>, a new agentic model.</p>]]></content:encoded>
+        </item>
+      </channel>
+    </rss>
+  XML
+
+  RSS_WITH_DESCRIPTION_ONLY = <<~XML
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Latent Space</title>
+        <link>https://latent.space</link>
+        <item>
+          <title>Some post</title>
+          <link>https://latent.space/p/some-post</link>
+          <pubDate>Thu, 09 Jul 2026 05:44:39 GMT</pubDate>
+          <description><![CDATA[<p>A plain description body.</p>]]></description>
+        </item>
+      </channel>
+    </rss>
+  XML
+
+  RSS_TITLE_ONLY = <<~XML
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>TLDR AI</title>
+        <link>https://tldr.tech/ai</link>
+        <item>
+          <title>GPT-5.6, Muse Spark 1.1, ChatGPT Work</title>
+          <link>https://tldr.tech/ai/2026-07-10</link>
+          <pubDate>Fri, 10 Jul 2026 00:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+  XML
+
+  test "RSS fetch captures excerpt from content:encoded, stripped of HTML" do
+    config = { "name" => "ainews", "type" => "rss", "url" => "https://news.smol.ai/rss.xml" }
+
+    with_stubbed_response(200, RSS_WITH_CONTENT_ENCODED) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_includes items[0][:excerpt], "Meta launches Muse Spark 1.1"
+      assert_not_includes items[0][:excerpt], "<b>"
+    end
+  end
+
+  test "RSS fetch falls back to description when content:encoded is absent" do
+    config = { "name" => "latent_space", "type" => "rss", "url" => "https://latent.space/feed" }
+
+    with_stubbed_response(200, RSS_WITH_DESCRIPTION_ONLY) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_includes items[0][:excerpt], "A plain description body."
+    end
+  end
+
+  test "RSS fetch falls back to fetching the item's own link when the feed carries no body" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+    responses = {
+      "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY,
+      "https://tldr.tech/ai/2026-07-10" => "<html><body><p>Full issue text mentioning Muse Spark 1.1 here.</p></body></html>"
+    }
+
+    with_stubbed_responses_by_url(responses) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_includes items[0][:excerpt], "Muse Spark 1.1"
+    end
+  end
+
+  test "RSS fetch does not fetch the item link when a body is already present" do
+    config = { "name" => "ainews", "type" => "rss", "url" => "https://news.smol.ai/rss.xml" }
+    fetched_urls = []
+    responses = { "https://news.smol.ai/rss.xml" => RSS_WITH_CONTENT_ENCODED }
+
+    with_stubbed_responses_by_url(responses, fetched_urls:) do
+      NewsFeedFetcher.fetch(config)
+      assert_equal [ "https://news.smol.ai/rss.xml" ], fetched_urls
+    end
+  end
+
+  ATOM_NO_BODY = <<~XML
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Google DeepMind Blog</title>
+      <link href="https://blog.google/technology/ai/"/>
+      <id>https://blog.google/technology/ai/</id>
+      <updated>2026-07-09T00:00:00Z</updated>
+      <entry>
+        <title>Some Atom post</title>
+        <link href="https://blog.google/technology/ai/some-post"/>
+        <id>https://blog.google/technology/ai/some-post</id>
+        <updated>2026-07-09T00:00:00Z</updated>
+      </entry>
+    </feed>
+  XML
+
+  test "RSS fetch does not crash on an Atom entry, which has no #description method" do
+    config = { "name" => "google_deepmind", "type" => "rss", "url" => "https://blog.google/technology/ai/rss" }
+
+    with_stubbed_response(200, ATOM_NO_BODY) do
+      assert_nothing_raised { NewsFeedFetcher.fetch(config) }
+    end
+  end
+
+  RSS_OPAQUE_GUID = <<~XML
+    <?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Some Aggregator</title>
+        <link>https://example.com</link>
+        <item>
+          <title>A story with no real link</title>
+          <guid isPermaLink="false">urn:uuid:not-a-fetchable-url</guid>
+          <pubDate>Fri, 10 Jul 2026 00:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+  XML
+
+  test "RSS fetch does not crash when an item's link/guid is not a fetchable URL" do
+    config = { "name" => "some_aggregator", "type" => "rss", "url" => "https://example.com/rss" }
+
+    with_stubbed_response(200, RSS_OPAQUE_GUID) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_equal 1, items.size
+      assert_nil items[0][:excerpt]
+    end
+  end
+
+  test "known_urls skips the fallback link fetch for an already-seen item" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+    fetched_urls = []
+    responses = { "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY }
+
+    with_stubbed_responses_by_url(responses, fetched_urls:) do
+      items = NewsFeedFetcher.fetch(config, known_urls: Set["https://tldr.tech/ai/2026-07-10"])
+
+      assert_equal [ "https://tldr.tech/api/rss/ai" ], fetched_urls, "should not have fetched the item's own link"
+      assert_nil items[0][:excerpt]
+    end
+  end
+
+  test "excerpt fetched from a linked page strips script and style content" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+    page = <<~HTML
+      <html><head><style>body{color:red}</style><script>var x=1;</script></head>
+      <body><p>Real article text mentioning Muse Spark 1.1.</p></body></html>
+    HTML
+    responses = { "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY, "https://tldr.tech/ai/2026-07-10" => page }
+
+    with_stubbed_responses_by_url(responses) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_includes items[0][:excerpt], "Real article text mentioning Muse Spark 1.1."
+      assert_not_includes items[0][:excerpt], "color:red"
+      assert_not_includes items[0][:excerpt], "var x=1;"
+    end
+  end
+
+  test "a failed link fallback fetch leaves excerpt nil instead of dropping the item" do
+    config = { "name" => "tldr_ai", "type" => "rss", "url" => "https://tldr.tech/api/rss/ai" }
+
+    with_stubbed_responses_by_url({ "https://tldr.tech/api/rss/ai" => RSS_TITLE_ONLY },
+                                   raise_for_others: SocketError.new("getaddrinfo failed")) do
+      items = NewsFeedFetcher.fetch(config)
+
+      assert_equal 1, items.size
+      assert_nil items[0][:excerpt]
+    end
+  end
+
   # --- page_diff fetch -----------------------------------------------------
 
   test "page_diff fetch extracts article links from minimal HTML" do
@@ -144,6 +356,17 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
 
   private
 
+  # Captures every Rails.logger.warn message raised during the block into an
+  # array, so a test can assert a failure was logged rather than swallowed.
+  def with_captured_warnings
+    warnings = []
+    original = Rails.logger.method(:warn)
+    Rails.logger.define_singleton_method(:warn) { |msg = nil, &blk| warnings << (msg || blk.call) }
+    yield warnings
+  ensure
+    Rails.logger.define_singleton_method(:warn, original)
+  end
+
   # Build a fake Net::HTTP that returns a canned HTTP response without making
   # real network calls. Uses the Net::HTTP.stub_new pattern.
   def with_stubbed_response(code, body)
@@ -159,6 +382,42 @@ class NewsFeedFetcherTest < ActiveSupport::TestCase
     fake.define_singleton_method(:get) { |_path, _headers = {}| response }
 
     Net::HTTP.stub_new(fake) { yield }
+  end
+
+  # Build a fake Net::HTTP that returns a different canned body per requested
+  # URL, so tests can distinguish the main feed fetch from a per-item link
+  # fallback fetch. `responses` is keyed by full URL string. Records every URL
+  # requested into `fetched_urls` when given. `raise_for_others` raises that
+  # error for any URL not present in `responses` (simulates a broken fallback).
+  #
+  # NewsFeedFetcher#http_get calls Net::HTTP.start(host, port, **opts, &blk),
+  # and inside the block calls http.get(uri.request_uri, headers) — the host
+  # is only known at the .start call, the path only at .get, so this stub joins
+  # both to recover the full URL each request actually targeted.
+  def with_stubbed_responses_by_url(responses, fetched_urls: [], raise_for_others: nil)
+    scheme_and_host = nil
+
+    fake = Object.new
+    fake.define_singleton_method(:get) do |path, _headers = {}|
+      url = "#{scheme_and_host}#{path}"
+      fetched_urls << url
+      body = responses[url]
+      if body.nil?
+        raise raise_for_others if raise_for_others
+        next Net::HTTPNotFound.new("1.1", "404", "Not Found").tap { |r| r.define_singleton_method(:body) { "" } }
+      end
+      Net::HTTPOK.new("1.1", "200", "OK").tap { |r| r.define_singleton_method(:body) { body } }
+    end
+
+    original_start = Net::HTTP.singleton_class.instance_method(:start)
+    Net::HTTP.define_singleton_method(:start) do |host, _port = nil, use_ssl: false, **_kwargs, &blk|
+      scheme_and_host = "#{use_ssl ? "https" : "http"}://#{host}"
+      blk.call(fake)
+    end
+
+    yield
+  ensure
+    Net::HTTP.singleton_class.define_method(:start, original_start) if original_start
   end
 
   # Build a fake that raises the given error class on any method call.

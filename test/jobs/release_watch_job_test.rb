@@ -36,6 +36,14 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
     assert_equal "openai", item.source
   end
 
+  test "persists the excerpt the fetcher returns" do
+    stub_fetcher([ FAKE_ITEMS.first.merge(excerpt: "Full article body text.") ])
+
+    ReleaseWatchJob.perform_now
+    item = NewsItem.find_by!(url: "https://openai.com/blog/gpt-5")
+    assert_equal "Full article body text.", item.excerpt
+  end
+
   # --- duplicate URLs are silently skipped -----------------------------------
 
   test "duplicate URL (RecordNotUnique) is silently skipped" do
@@ -114,10 +122,13 @@ class ReleaseWatchJobTest < ActiveJob::TestCase
     @yaml_original = original
   end
 
+  # ||= so a test that calls this a second time (to change the stubbed items
+  # mid-test, on top of setup's initial stub) doesn't capture its own stub as
+  # "the original" — that would make teardown restore NewsFeedFetcher.fetch to
+  # a permanent stub instead of the real method, corrupting every later test.
   def stub_fetcher(items)
-    original = NewsFeedFetcher.singleton_class.instance_method(:fetch)
-    NewsFeedFetcher.define_singleton_method(:fetch) { |_config| items }
-    @fetcher_original = original
+    @fetcher_original ||= NewsFeedFetcher.singleton_class.instance_method(:fetch)
+    NewsFeedFetcher.define_singleton_method(:fetch) { |_config, **_kwargs| items }
   end
 
   def stub_classifier(result)

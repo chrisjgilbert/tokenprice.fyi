@@ -1,8 +1,13 @@
 # The detection→curation bridge. Runs on a schedule, takes recent
 # "release"-classified news_items (new-model launches the classifier already
-# flagged), and asks Claude to extract a ModelCandidate from each — a proposed
-# catalog row for a human to approve in the admin review queue. The twin of
-# EventCurationJob (news → MarketEvent drafts), targeting AiModel instead.
+# flagged), and asks Claude to extract a ModelCandidate for each model named in
+# the item — a proposed catalog row for a human to approve in the admin review
+# queue. The twin of EventCurationJob (news → MarketEvent drafts), targeting
+# AiModel instead.
+#
+# One item can yield several candidates — a digest item bundles multiple
+# stories, and any of them can name a new model — so each candidate is
+# persisted (and can fail) independently of its siblings.
 #
 # Nothing here publishes: a candidate is a draft. Dedup is layered — a launch
 # already in the catalog, or already sitting as a pending candidate, produces
@@ -28,16 +33,17 @@ class ModelCurationJob < ApplicationJob
     errored  = []
 
     items.each do |item|
-      candidate = item.extract_model_candidate
-      created += 1 if candidate && persist(candidate)
+      item.extract_model_candidates.each do |candidate|
+        created += 1 if persist(candidate)
+      rescue ActiveRecord::RecordInvalid => e
+        # Malformed extracted data won't self-heal on retry, so log and move on —
+        # one bad candidate can't crash the batch, retry-storm, or block a sibling
+        # candidate from the same item.
+        Rails.logger.warn("ModelCurationJob: invalid candidate from #{item.url} — #{e.message}")
+      end
     rescue NewsItem::ModelExtraction::Error => e
       errored << item.id
       Rails.logger.warn("ModelCurationJob: extraction error for #{item.url} — #{e.message}")
-    rescue ActiveRecord::RecordInvalid => e
-      # Malformed extracted data won't self-heal on retry, so log and let the item
-      # be stamped (not added to errored) — one bad candidate can't crash the batch
-      # or retry-storm.
-      Rails.logger.warn("ModelCurationJob: invalid candidate from #{item.url} — #{e.message}")
     end
 
     # Stamp everything we processed cleanly (including items that yielded no

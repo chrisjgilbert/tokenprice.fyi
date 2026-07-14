@@ -29,8 +29,14 @@ class NewsSourcesConfigTest < ActiveSupport::TestCase
   end
 
   test "keeps the first-party provider feeds that already catch launches" do
-    assert_includes names, "meta_ai"       # the feed that already surfaces Meta launches
     assert_includes names, "openai"
     assert_includes names, "anthropic"
+  end
+
+  test "does not poll the dead meta_ai feed" do
+    # ai.meta.com/blog/rss 404s with no autodiscoverable replacement; Meta
+    # launches still reach us via the aggregator feeds and HN. Re-add once a
+    # working feed exists — see the comment in news_sources.yml.
+    assert_not_includes names, "meta_ai"
   end
 end
