@@ -75,9 +75,9 @@ end
 catalog = [
   # ---- Anthropic --------------------------------------------------------
   {
-    provider: :anthropic, name: "Claude Fable 5", status: "suspended",
+    provider: :anthropic, name: "Claude Fable 5", status: "active",
     context_window: 1_000_000, max_output_tokens: 128_000, released_on: "2026-06-09",
-    description: "Anthropic's most powerful model — a new Mythos-class tier above Opus, aimed at the hardest reasoning and agentic work. Access is currently suspended.",
+    description: "Anthropic's most powerful model — a new Mythos-class tier above Opus, aimed at the hardest reasoning and agentic work.",
     prices: [ { on: "2026-06-09", in: 10, out: 50, cached: 1.0, src: "anthropic.com/pricing", note: "List price" } ]
   },
   {
