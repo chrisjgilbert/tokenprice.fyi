@@ -10,63 +10,45 @@ models; history for the other categories begins when tracking begins.
 **Goals it serves:** a product to be proud of, some traffic, low
 maintenance. Not category-winning.
 
-The split below is fix vs. enhance: the short-term goal is that the product
+The split below is fix vs. enhance: the short-term goal was that the product
 *hangs together* — copy and journeys all make sense — and everything
-additive waits behind that.
+additive waits behind that. **Section 1 (the fixes) shipped and merged in
+#144 (July 2026); sections 2 and 3 are what remains.**
 
-## 1. Hang together (now — fixes only)
+## 1. Hang together — DONE (shipped in #144, July 2026)
 
-### Copy says what the product is
+All of the "fixes" phase landed on `main`. Kept here as the record of what
+changed:
 
-- Category-aware hero on the models index (eyebrow / H1 / subhead from
-  `ModelCategory`, which already holds per-tab copy); only the tracked tier
-  claims "updated daily, full price history".
-- Default `<title>`/meta/OG and Organization JSON-LD in the layout: re-scope
-  from "LLM API token prices" to the record framing.
-- Footer tagline: drop "USD per 1M tokens" as a site-wide claim.
-- Page titles on /compare, /events, /changes: category-neutral.
-- llms.txt: describe all seven categories and list their URLs; state the
-  two tiers (tracked history vs. dated list prices).
-- PWA manifest description and README to match.
-- Learn index re-lede: the explainers cover per-token pricing, where the
-  complexity concentrates — say so instead of implying it's the whole
-  product.
+**Copy now says what the product is** — category-aware hero (per-tab
+eyebrow / heading / subhead from `ModelCategory`, filled with the tab's own
+model count); record-framed default `<title>`/meta/OG and Organization
+JSON-LD; footer off the site-wide "per 1M tokens" claim; category-neutral
+/compare, /events, /changes titles; llms.txt lists all seven category URLs
+and states the two tiers; PWA manifest, README, and the learn index lede
+updated.
 
-### Journeys make sense
+**Journeys hang together** — model breadcrumb returns to the model's own
+category tab; provider pages group by category via a shared
+`models/_data_cell` partial (no more blank per-token cells); /compare is
+scoped to one category with per-category row shapes; `/events` launches show
+native price headlines; the untracked-price fallback reads the category's
+billing unit; model JSON-LD uses the modality label; `priced_as_of` shows on
+the directory tables; tab switches preserve scroll.
 
-- Model page breadcrumb returns to the model's own category tab, not the
-  language table.
-- Provider pages group models by category and use each category's column
-  shape (today: hardcoded Input/Output/Context with blank cells for
-  non-token models).
-- Compare is scoped to one category (picker B follows picker A); native-
-  priced pairs get a sensible row shape (price headline, pricing model,
-  released) instead of per-token dashes; the homepage compare tray resets
-  on category change.
-- Events launch entries render `price_headline` for native-priced models
-  instead of an empty per-token I/O line.
-- The untracked-price fallback on model pages reads the category's unit
-  (today a video model is described as "priced per image").
-- Model-page JSON-LD `category` uses the modality label, not a hardcoded
-  "LLM API model".
-- `priced_as_of` shown on the directory tab tables, not only the show page.
-- Category tab switches preserve scroll position (small Stimulus sprinkle;
-  the switches are already Turbo visits — see the review appendix).
+**The data layer stopped contradicting itself** — the commodity public JSON
+API was removed (`PriceCatalog` stays an internal seam; see the
+`PRODUCT_VISION.md` July update); native price changes now append a dated
+`NativePriceSnapshot` (history begins when tracking begins); a weekly
+`PricingStalenessDigestJob` posts flagged stale/undated/unpriced counts to
+Slack.
 
-### The data layer doesn't contradict itself
+One knock-on for the sections below: append-only snapshots plus the weekly
+staleness ping make the section-2 re-verification *guided* — you're told
+which rows are due and each pass deposits history — rather than a
+from-memory chore.
 
-- The public JSON API was removed (July 2026): a commodity surface (LiteLLM,
-  models.dev) that seeded no flywheel worth its upkeep and contradicted
-  itself (token-unit envelope over native prices). The `PriceCatalog` seam
-  stays internal; see the `PRODUCT_VISION.md` July update.
-- Append a dated snapshot when a native price changes instead of
-  overwriting (manual re-verification starts depositing history — the claim
-  "history begins when tracking begins" becomes true).
-- Schedule `PricingStaleness` weekly in `config/recurring.yml` with a Slack
-  ping via `SlackNotifier` (the re-verification chore becomes
-  un-forgettable; the copy's honesty stops depending on memory).
-
-## 2. Grow (next — the stated focus once coherent)
+## 2. Grow (next — the current focus)
 
 - **More models.** Language grows semi-automatically (OpenRouter sync +
   candidate queue). Deliberate effort goes to the directory categories via
