@@ -447,32 +447,60 @@
         </div>
       <% end %>
 
-      <%# Row 1 — I/O price (accent, no winner) %>
-      <div class="cmp-row accent">
-        <div class="lbl">I/O price /1M</div>
-        <div class="cmp-cell">
-          <span class="val"><%= io_price(@left) %></span>
-        </div>
-        <div class="cmp-cell">
-          <span class="val"><%= io_price(@right) %></span>
-        </div>
-      </div>
-
+      <%# Rows are per-category: language compares per-token rates, embeddings
+          compares input + dimensions, and the native categories (image, video,
+          speech, rerank) bill in units that don't line up across providers, so
+          their price is an accent row with no winner. Released/Status/Provider
+          are common to all. %>
       <%
-        numeric_rows = [
-          { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         cmp: :lower_better,  fmt: :usd },
-          { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        cmp: :lower_better,  fmt: :usd },
-          { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  cmp: :lower_better,  fmt: :usd },
-          { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
-        ]
-        text_rows = [
-          { label: "Δ input since launch",  a_val: @left.input_change_since_launch,  b_val: @right.input_change_since_launch,  fmt: :change },
-          { label: "Δ output since launch", a_val: @left.output_change_since_launch, b_val: @right.output_change_since_launch, fmt: :change },
+        common_text_rows = [
           { label: "Released", a_val: fmt_date(@left.released_on), b_val: fmt_date(@right.released_on), fmt: :text },
           { label: "Status",   a_val: status_badge(@left.status),  b_val: status_badge(@right.status),  fmt: :raw  },
           { label: "Provider", a_val: nil, b_val: nil, fmt: :provider },
         ]
       %>
+
+      <% if @category.language? %>
+        <div class="cmp-row accent">
+          <div class="lbl">I/O price /1M</div>
+          <div class="cmp-cell"><span class="val"><%= io_price(@left) %></span></div>
+          <div class="cmp-cell"><span class="val"><%= io_price(@right) %></span></div>
+        </div>
+        <%
+          numeric_rows = [
+            { label: "Input /1M",      a_val: @left.current_input,         b_val: @right.current_input,         cmp: :lower_better,  fmt: :usd },
+            { label: "Output /1M",     a_val: @left.current_output,        b_val: @right.current_output,        cmp: :lower_better,  fmt: :usd },
+            { label: "Cached in /1M",  a_val: @left.current_cached_input,  b_val: @right.current_cached_input,  cmp: :lower_better,  fmt: :usd },
+            { label: "Context",        a_val: @left.context_window,        b_val: @right.context_window,        cmp: :higher_better, fmt: :tokens },
+          ]
+          text_rows = [
+            { label: "Δ input since launch",  a_val: @left.input_change_since_launch,  b_val: @right.input_change_since_launch,  fmt: :change },
+            { label: "Δ output since launch", a_val: @left.output_change_since_launch, b_val: @right.output_change_since_launch, fmt: :change },
+          ] + common_text_rows
+        %>
+      <% elsif @category.slug == "embeddings" %>
+        <%
+          numeric_rows = [
+            { label: "Input /1M", a_val: @left.current_input,  b_val: @right.current_input,  cmp: :lower_better,  fmt: :usd },
+            { label: "Context",   a_val: @left.context_window, b_val: @right.context_window, cmp: :higher_better, fmt: :tokens },
+          ]
+          text_rows = [
+            { label: "Dimensions", a_val: @left.dimensions, b_val: @right.dimensions, fmt: :text },
+          ] + common_text_rows
+        %>
+      <% else %>
+        <div class="cmp-row accent">
+          <div class="lbl">Price</div>
+          <div class="cmp-cell"><span class="val"><%= @left.price_headline %></span></div>
+          <div class="cmp-cell"><span class="val"><%= @right.price_headline %></span></div>
+        </div>
+        <%
+          numeric_rows = []
+          text_rows = [
+            { label: "Pricing", a_val: @left.pricing_model_label, b_val: @right.pricing_model_label, fmt: :text },
+          ] + common_text_rows
+        %>
+      <% end %>
 
       <%# Numeric rows with winner highlighting %>
       <% numeric_rows.each_with_index do |row, i| %>
