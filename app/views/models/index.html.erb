@@ -641,6 +641,11 @@
                                   <span class="tp-hovercard-fact"><%= fmt_date(model.released_on) %></span>
                                 <% end %>
                               </div>
+                              <div class="tp-hovercard-footer">
+                                <%= link_to model_path(model), class: "tp-hovercard-view" do %>
+                                  View model <%= icon(:chevron_right, size: 12) %>
+                                <% end %>
+                              </div>
                             </div>
                           <% end %>
                         </div>
