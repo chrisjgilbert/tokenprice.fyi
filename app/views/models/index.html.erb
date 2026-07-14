@@ -55,6 +55,7 @@
     position: absolute;
     z-index: 0;
     pointer-events: none;
+    white-space: nowrap;
     font-family: var(--font-mono);
     font-size: 11.5px;
     font-weight: 600;
@@ -69,10 +70,19 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-9px); }
   }
-  .hero-float-chip.c1 { top: 4%;  left: 51%; animation-delay: 0s;   opacity: .8; }
-  .hero-float-chip.c2 { top: 28%; left: 47%; animation-delay: 1.4s; opacity: .5; }
-  .hero-float-chip.c3 { top: 54%; left: 40%; animation-delay: 2.8s; opacity: .35; }
-  @media (max-width: 900px) {
+  /* Both chips report short, digit-bounded counts (unlike the category's
+     billing_noun, whose length swings from "per 1M tokens" to "per search
+     or per 1M tokens" across tabs — too variable to place safely, so it's
+     not used here). The gap between the columns is too narrow, at any
+     width, to clear both the card AND the headline/subhead lines the left
+     column can wrap to — so both chips sit low, below where even the
+     longest tab's left-column content (language's 3-line subhead) ends,
+     leaving only the card's left edge to stay clear of. Verified at
+     >=1200px, hence the raised breakpoint below (wider than the grid's own
+     900px column-collapse point). */
+  .hero-float-chip.c1 { top: 62%; left: 51%; animation-delay: 0s;   opacity: .8; }
+  .hero-float-chip.c2 { top: 80%; left: 47%; animation-delay: 1.4s; opacity: .5; }
+  @media (max-width: 1200px) {
     .hero-grid::before,
     .hero-float-chip { display: none; }
   }
@@ -388,12 +398,13 @@
   %>
 
   <div class="hero-grid">
-    <%# Ambient chips: this tab's own counts and billing unit, already stated
-        in the subhead below — just reused as floating texture, not new
-        claims. Hidden under the 900px breakpoint alongside the glow. %>
+    <%# Ambient chips: this tab's own counts, already stated in the subhead
+        below — just reused as floating texture, not new claims. Both are
+        short, digit-bounded strings by construction (unlike billing_noun,
+        which swings too wide across tabs to place safely — see the CSS
+        note on .hero-float-chip). Hidden below 1150px alongside the glow. %>
     <span class="hero-float-chip c1"><%= @category_counts[@category.slug] %> models</span>
     <span class="hero-float-chip c2"><%= @providers_count %> providers</span>
-    <span class="hero-float-chip c3"><%= @category.billing_noun %></span>
 
     <%# Left column: the price-index hero. Copy is per-category (ModelCategory),
         so a directory tab never claims per-token rates or full history. The
