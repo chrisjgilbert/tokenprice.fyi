@@ -9,12 +9,11 @@ module OpenRouter
   class SyncDigest
     BASE_URL = "https://tokenprice.fyi"
 
-    # Slack rejects a message ("invalid_blocks", HTTP 400) once a section block's
-    # text exceeds 3000 characters, and separately once a message has more than 50
-    # blocks. LINE_PACK_LIMIT keeps each chunk's line content under budget, leaving
-    # headroom so the bold group header (merged into the first chunk) and the "see
-    # all" trailer (merged into the last chunk) don't push a block past 3000 chars.
-    # MAX_BLOCKS keeps the whole message under the block-count limit.
+    # Slack rejects a message ("invalid_blocks", HTTP 400) once a message has
+    # more than 50 blocks. LINE_PACK_LIMIT (passed to SlackBlockPacker) leaves
+    # headroom under Slack's 3000-char section limit for the bold group header
+    # (merged into the first chunk) and the "see all" trailer (merged into the
+    # last chunk), so neither push a block past the cap.
     LINE_PACK_LIMIT = 2700
     MAX_BLOCKS       = 50
 
@@ -130,7 +129,7 @@ module OpenRouter
     # into the first block and `trailer` (if given) into the last, so a single
     # line long enough to fill a block on its own can never overflow either.
     def pack_blocks(lines, header:, trailer: nil)
-      chunks = pack_lines(lines)
+      chunks = SlackBlockPacker.pack(lines, limit: LINE_PACK_LIMIT)
       chunks.each_with_index.map do |chunk, i|
         parts = []
         parts << header if i.zero?
@@ -138,37 +137,6 @@ module OpenRouter
         parts << trailer if trailer && i == chunks.size - 1
         mrkdwn_section(parts.join("\n"))
       end
-    end
-
-    # Groups lines into chunks whose newline-joined length stays under
-    # LINE_PACK_LIMIT. A single line longer than the limit (e.g. an unusually
-    # long model name) is truncated with an ellipsis rather than dropped.
-    def pack_lines(lines)
-      chunks  = []
-      current = []
-      length  = 0
-
-      lines.each do |line|
-        line = truncate_line(line)
-        # +1 accounts for the "\n" that joins this line to the previous one.
-        added = current.empty? ? line.length : line.length + 1
-        if current.any? && length + added > LINE_PACK_LIMIT
-          chunks << current
-          current = [ line ]
-          length  = line.length
-        else
-          current << line
-          length  += added
-        end
-      end
-      chunks << current if current.any?
-      chunks
-    end
-
-    def truncate_line(line)
-      return line if line.length <= LINE_PACK_LIMIT
-
-      line[0, LINE_PACK_LIMIT - 1] + "…"
     end
 
     def mrkdwn_section(text)
