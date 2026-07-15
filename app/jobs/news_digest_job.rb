@@ -31,7 +31,7 @@ class NewsDigestJob < ApplicationJob
   # into the next run rather than being dropped silently.
   def slack_payload(items)
     lines  = items.map { |item| digest_line(item) }
-    chunks = pack_lines(lines)
+    chunks = SlackBlockPacker.pack(lines, limit: SECTION_TEXT_LIMIT)
 
     shown_chunks = chunks.first(MAX_ITEM_SECTIONS)
     shown_count  = shown_chunks.sum(&:size)
@@ -63,38 +63,5 @@ class NewsDigestJob < ApplicationJob
     else
       "• #{link} (#{item.source}) — #{item.kind || "unknown"} · #{item.rationale || "—"}"
     end
-  end
-
-  # Pack lines into groups whose newline-joined length stays under
-  # SECTION_TEXT_LIMIT, so each group becomes a section block within Slack's
-  # limit. Returns an array of line-arrays (one per section); each input line is
-  # one item, so a group's size is the number of items it covers. A single line
-  # longer than the limit (e.g. a very long title) is truncated rather than dropped.
-  def pack_lines(lines)
-    chunks  = []
-    current = []
-    length  = 0
-
-    lines.each do |line|
-      line = truncate_line(line)
-      # +1 accounts for the "\n" that joins this line to the previous one.
-      added = current.empty? ? line.length : line.length + 1
-      if current.any? && length + added > SECTION_TEXT_LIMIT
-        chunks << current
-        current = [ line ]
-        length  = line.length
-      else
-        current << line
-        length  += added
-      end
-    end
-    chunks << current if current.any?
-    chunks
-  end
-
-  def truncate_line(line)
-    return line if line.length <= SECTION_TEXT_LIMIT
-
-    line[0, SECTION_TEXT_LIMIT - 1] + "…"
   end
 end

@@ -162,6 +162,68 @@ module OpenRouter
       assert section_texts.any? { |t| t.include?("New models") }
     end
 
+    # --- Slack block size limits ---------------------------------------------
+
+    # Slack rejects a message ("invalid_blocks", HTTP 400) when a single section
+    # block's text exceeds 3000 chars. A large repricing run can blow past that,
+    # so the lines must be split across multiple section blocks.
+    test "splits a large price-moves batch across multiple section blocks under Slack's limit" do
+      records = 40.times.map do |i|
+        make_repriced(model_name: "Model #{i} #{"x" * 60}",
+                      model_slug: "provider-model-#{i}")
+      end
+      payload = digest(make_result(repriced_records: records)).to_slack_payload
+
+      sections = payload[:blocks].select { |b| b[:type] == "section" }
+      assert_operator sections.size, :>, 1, "expected the batch to span multiple section blocks"
+      sections.each do |block|
+        assert_operator block.dig(:text, :text).length, :<=, 3000,
+                        "each section block must stay within Slack's 3000-char limit"
+      end
+
+      section_texts = sections.map { |b| b.dig(:text, :text) }
+      assert_includes section_texts.first, "Price moves (40)"
+      assert_includes section_texts.last, "See all recent price changes"
+    end
+
+    test "splits a large new-models batch across multiple section blocks under Slack's limit" do
+      records = 40.times.map do |i|
+        make_created(model_name: "Model #{i} #{"x" * 60}", model_slug: "newlab-model-#{i}")
+      end
+      payload = digest(make_result(created_records: records)).to_slack_payload
+
+      sections = payload[:blocks].select { |b| b[:type] == "section" }
+      assert_operator sections.size, :>, 1, "expected the batch to span multiple section blocks"
+      sections.each do |block|
+        assert_operator block.dig(:text, :text).length, :<=, 3000,
+                        "each section block must stay within Slack's 3000-char limit"
+      end
+      assert_includes sections.first.dig(:text, :text), "New models (40)"
+    end
+
+    test "truncates a single line that exceeds the section limit" do
+      r = make_repriced(model_name: "z" * 4000)
+      payload = digest(make_result(repriced_records: [ r ])).to_slack_payload
+
+      sections = payload[:blocks].select { |b| b[:type] == "section" }
+      sections.each do |block|
+        assert_operator block.dig(:text, :text).length, :<=, 3000
+      end
+      text = sections.map { |b| b.dig(:text, :text) }.join("\n")
+      assert_includes text, "…", "an over-long line should be truncated with an ellipsis"
+    end
+
+    test "caps the payload at Slack's 50-block limit" do
+      # Each line exceeds the per-block budget, so it gets its own section block
+      # — 60 records would need 60 sections plus the header, well past 50.
+      records = 60.times.map do |i|
+        make_repriced(model_name: "Model #{i} #{"x" * 3000}", model_slug: "provider-model-#{i}")
+      end
+      payload = digest(make_result(repriced_records: records)).to_slack_payload
+
+      assert_operator payload[:blocks].size, :<=, OpenRouter::SyncDigest::MAX_BLOCKS
+    end
+
     # --- header and date formatting -----------------------------------------
 
     test "header block contains the formatted date" do
